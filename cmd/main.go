@@ -4,8 +4,19 @@ import (
 	"fmt"
 
 	"github.com/mperham/worq"
+	"github.com/mperham/worq/cli"
 )
 
 func main() {
-	fmt.Println("Worq v", worq.Version)
+	cli.SetupLogging()
+	opts := cli.ParseArguments()
+	s := worq.NewServer(opts.Binding)
+
+	go cli.HandleSignals(s)
+
+	err := s.Start()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }

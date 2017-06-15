@@ -10,18 +10,21 @@ import (
 )
 
 type Server struct {
-	bind       string
+	Binding    string
 	pwd        string
 	listener   net.Listener
 	processors map[string]chan *Connection
 }
 
-func NewServer() *Server {
-	return &Server{bind: ":7419", pwd: "123456", processors: make(map[string]chan *Connection)}
+func NewServer(binding string) *Server {
+	if binding == "" {
+		binding = "localhost:7419"
+	}
+	return &Server{Binding: binding, pwd: "123456", processors: make(map[string]chan *Connection)}
 }
 
 func (s *Server) Start() error {
-	addr, err := net.ResolveTCPAddr("tcp", s.bind)
+	addr, err := net.ResolveTCPAddr("tcp", s.Binding)
 	if err != nil {
 		return err
 	}
@@ -35,6 +38,7 @@ func (s *Server) Start() error {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			s.listener.Close()
+			s.listener = nil
 			return err
 		}
 		s.processConnection(conn)
@@ -43,8 +47,14 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) Stop() {
-	s.listener.Close()
+func (s *Server) Stop(f func()) {
+	if s.listener != nil {
+		s.listener.Close()
+		s.listener = nil
+	}
+	if f != nil {
+		f()
+	}
 }
 
 func (s *Server) processConnection(conn net.Conn) {

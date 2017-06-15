@@ -11,7 +11,7 @@ import (
 )
 
 func runServer(runner func()) {
-	s := NewServer()
+	s := NewServer("")
 	go s.Start()
 	runner()
 }

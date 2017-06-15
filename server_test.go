@@ -3,16 +3,27 @@ package worq
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/mperham/worq/storage"
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	storage.DefaultPath = "test/default.db"
+}
+
 func runServer(runner func()) {
 	s := NewServer("")
-	go s.Start()
+	go func() {
+		err := s.Start()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 	runner()
 }
 

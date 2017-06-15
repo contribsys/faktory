@@ -19,31 +19,6 @@ func (c *Connection) Close() {
 	c.conn.Close()
 }
 
-func (c *Connection) Push(qname string, job *Job) error {
-	queue := LookupQueue(qname)
-	return queue.Push(job)
-}
-
-func (c *Connection) Pop(queues ...string) *Job {
-	for _, qe := range queues {
-		qeue := LookupQueue(qe)
-		j := qeue.Pop()
-		if j != nil {
-			// TODO reserve job
-			return j
-		}
-	}
-	return nil
-}
-
-func (c *Connection) Ack(jid string) error {
-	return nil
-}
-
-func (c *Connection) Fail(jid string, error_message string, error_class string, ctx map[string]interface{}) error {
-	return nil
-}
-
 func (c *Connection) Error(err error) error {
 	c.conn.Write([]byte("ERR "))
 	c.conn.Write([]byte(err.Error()))

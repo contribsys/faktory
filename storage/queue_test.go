@@ -1,4 +1,4 @@
-package worq
+package storage
 
 import (
 	"testing"
@@ -9,15 +9,18 @@ import (
 func TestBasicQueue(t *testing.T) {
 	t.Parallel()
 
-	q := NewQueue("default")
+	db, err := OpenStore("../test/basic.db")
+	assert.NoError(t, err)
+
+	q := db.NewQueue("default")
 	assert.Equal(t, 0, q.Size())
 
-	j := &Job{}
+	j := &[]byte{}
 	assert.Equal(t, nil, q.Push(j))
 	assert.Equal(t, 1, q.Size())
 
 	assert.Equal(t, j, q.Pop())
 	assert.Equal(t, 0, q.Size())
-	j = q.Pop()
-	assert.Nil(t, j)
+	x := q.Pop()
+	assert.Nil(t, x)
 }

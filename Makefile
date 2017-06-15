@@ -31,11 +31,7 @@ prepare:
 	#   brew install go --with-cc-common
 
 test:
-	@go generate
 	@go test -parallel 4 ./... | grep -v "no test files"
-
-# gocc produces ill-formated code, clean it up with fmt
-parsers: gocc fmt
 
 # Generate parser and token package for conf/global/format.bnf and
 # conf/inq/format.bnf
@@ -68,7 +64,7 @@ real:
 package: clean version_check build_deb build_rpm
 
 version_check:
-	@grep -q $(VERSION) inspeqtor.go || (echo VERSIONS OUT OF SYNC && false)
+	@grep -q $(VERSION) worq.go || (echo VERSIONS OUT OF SYNC && false)
 
 purge_deb:
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/inspeqtor' || true

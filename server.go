@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/mperham/worq/storage"
 )
 
 type Server struct {
@@ -14,6 +16,7 @@ type Server struct {
 	pwd        string
 	listener   net.Listener
 	processors map[string]chan *Connection
+	store      *storage.Store
 }
 
 func NewServer(binding string) *Server {
@@ -24,6 +27,12 @@ func NewServer(binding string) *Server {
 }
 
 func (s *Server) Start() error {
+	store, err := storage.OpenStore("")
+	if err != nil {
+		return err
+	}
+	s.store = store
+
 	addr, err := net.ResolveTCPAddr("tcp", s.Binding)
 	if err != nil {
 		return err
@@ -105,71 +114,61 @@ func (s *Server) processConnection(conn net.Conn) {
 		}
 	}
 
+	conn.Write([]byte("OK\n"))
+
 	id, ok := attrs["id"]
 	if !ok {
 		id = conn.RemoteAddr().String()
 	}
-	app := "default"
-	c, ok := s.processors[app]
-	if ok == false {
-		c = make(chan *Connection)
-		s.processors[app] = c
-		go process(c, app)
-	}
-
-	conn.Write([]byte("OK\n"))
-
-	c <- &Connection{
+	c := &Connection{
 		ident: id,
 		conn:  conn,
 		buf:   buf,
 	}
+	go process(c, s)
 }
 
-func process(c chan *Connection, app string) {
+func process(conn *Connection, server *Server) {
 	for {
-		conn := <-c
-		for {
-			cmd, e := conn.buf.ReadString('\n')
-			if e != nil {
-				fmt.Println(e)
-				conn.Close()
+		cmd, e := conn.buf.ReadString('\n')
+		if e != nil {
+			fmt.Println(e)
+			conn.Close()
+			break
+		}
+
+		fmt.Println(cmd)
+
+		switch {
+		case cmd == "END\n":
+			conn.Ok()
+			conn.Close()
+			break
+		case strings.HasPrefix(cmd, "POP "):
+			qs := strings.Split(cmd, " ")[1:]
+			job := server.store.Pop(qs...)
+			res, err := json.Marshal(job)
+			if err != nil {
+				conn.Error(err)
+				break
+			}
+			conn.Result(res)
+		case strings.HasPrefix(cmd, "PUSH {"):
+			job, err := ParseJob([]byte(cmd[5:]))
+			if err != nil {
+				conn.Error(err)
+				break
+			}
+			qname := job.Queue
+			err = server.store.LookupQueue(qname).Push(job)
+			if err != nil {
+				conn.Error(err)
 				break
 			}
 
-			fmt.Println(cmd)
-
-			switch {
-			case cmd == "END\n":
-				conn.Ok()
-				conn.Close()
-				break
-			case strings.HasPrefix(cmd, "POP "):
-				qs := strings.Split(cmd, " ")[1:]
-				job := conn.Pop(qs...)
-				res, err := json.Marshal(job)
-				if err != nil {
-					conn.Error(err)
-					break
-				}
-				conn.Result(res)
-			case strings.HasPrefix(cmd, "PUSH {"):
-				job, err := ParseJob([]byte(cmd[5:]))
-				if err != nil {
-					conn.Error(err)
-					break
-				}
-				qname := job.Queue
-				err = conn.Push(qname, job)
-				if err != nil {
-					conn.Error(err)
-					break
-				}
-
-				conn.Result([]byte(job.Jid))
-			default:
-				conn.Error(errors.New("unknown command"))
-			}
+			conn.Result([]byte(job.Jid))
+		default:
+			conn.Error(errors.New("unknown command"))
 		}
 	}
 }

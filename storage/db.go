@@ -8,14 +8,14 @@ import (
 )
 
 type Store struct {
-	Name      string
-	db        *bolt.DB
-	scheduled *TimedSet
-	retries   *TimedSet
+	Name string
+	db   *bolt.DB
 }
 
 var (
-	DefaultPath = "/var/run/worq/default.db"
+	DefaultPath     = "/var/run/worq/default.db"
+	ScheduledBucket = "scheduled"
+	RetriesBucket   = "retries"
 )
 
 func OpenStore(path string) (*Store, error) {
@@ -28,15 +28,12 @@ func OpenStore(path string) (*Store, error) {
 		return nil, err
 	}
 
-	var sched *bolt.Bucket
-	var retry *bolt.Bucket
-
 	err = db.Update(func(tx *bolt.Tx) error {
-		retry, err = tx.CreateBucketIfNotExists([]byte("Retries"))
+		_, err = tx.CreateBucketIfNotExists([]byte(RetriesBucket))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		sched, err = tx.CreateBucketIfNotExists([]byte("Scheduled"))
+		_, err = tx.CreateBucketIfNotExists([]byte(ScheduledBucket))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
@@ -47,9 +44,15 @@ func OpenStore(path string) (*Store, error) {
 	}
 
 	return &Store{
-		Name:      "default",
-		db:        db,
-		scheduled: &TimedSet{"Scheduled", db},
-		retries:   &TimedSet{"Retries", db},
+		Name: "default",
+		db:   db,
 	}, nil
+}
+
+func (store *Store) Retries() *TimedSet {
+	return &TimedSet{RetriesBucket, store.db}
+}
+
+func (store *Store) Scheduled() *TimedSet {
+	return &TimedSet{ScheduledBucket, store.db}
 }

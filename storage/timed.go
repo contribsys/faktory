@@ -8,19 +8,17 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+/*
+ * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
+ */
 type TimedSet struct {
 	Name string
 	db   *bolt.DB
 }
 
-func (ts *TimedSet) view(f func(*bolt.Bucket) error) {
-	ts.db.View(func(tx *bolt.Tx) error {
-		// Assume bucket exists and has keys
-		b := tx.Bucket([]byte(ts.Name))
-		return f(b)
-	})
-}
-
+/*
+ * Warning: Complexity: O(N), call with caution.
+ */
 func (ts *TimedSet) Size() int {
 	count := 0
 
@@ -48,7 +46,6 @@ func (ts *TimedSet) Add(sec int64, jid string, payload []byte) error {
 func (ts *TimedSet) RemoveBefore(sec int64) ([][]byte, error) {
 	timestamp := time.Unix(sec, 0).UTC()
 	key := timestamp.Format(time.RFC3339) + "|"
-	fmt.Printf("Looking for less than %s\n", key)
 	prefix := []byte(key)
 
 	results := [][]byte{}
@@ -75,4 +72,12 @@ func (ts *TimedSet) RemoveBefore(sec int64) ([][]byte, error) {
 	}
 
 	return results, nil
+}
+
+func (ts *TimedSet) view(f func(*bolt.Bucket) error) {
+	ts.db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket([]byte(ts.Name))
+		return f(b)
+	})
 }

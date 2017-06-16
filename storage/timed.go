@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -35,11 +36,43 @@ func (ts *TimedSet) Size() int {
 }
 
 func (ts *TimedSet) Add(sec int64, jid string, payload []byte) error {
-	timestamp := time.Unix(sec, 0)
-	key := []byte(fmt.Sprintf(timestamp.Format(time.RFC3339)+"-%s", jid))
+	timestamp := time.Unix(sec, 0).UTC()
+	key := []byte(fmt.Sprintf(timestamp.Format(time.RFC3339)+"|%s", jid))
 
 	return ts.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		return b.Put(key, payload)
 	})
+}
+
+func (ts *TimedSet) RemoveBefore(sec int64) ([][]byte, error) {
+	timestamp := time.Unix(sec, 0).UTC()
+	key := timestamp.Format(time.RFC3339) + "|"
+	fmt.Printf("Looking for less than %s\n", key)
+	prefix := []byte(key)
+
+	results := [][]byte{}
+	count := 0
+
+	err := ts.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		c := b.Cursor()
+
+		for k, v := c.Seek([]byte("0")); k != nil && bytes.Compare(k, prefix) <= 0; k, v = c.Next() {
+			cp := make([]byte, len(v))
+			copy(cp, v)
+			results = append(results, cp)
+			count += 1
+			err := b.Delete(k)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

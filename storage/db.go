@@ -9,9 +9,9 @@ import (
 
 type Store struct {
 	Name      string
-	keyspace  *bolt.DB
-	scheduled *bolt.Bucket
-	retries   *bolt.Bucket
+	db        *bolt.DB
+	scheduled *TimedSet
+	retries   *TimedSet
 }
 
 var (
@@ -48,8 +48,8 @@ func OpenStore(path string) (*Store, error) {
 
 	return &Store{
 		Name:      "default",
-		keyspace:  db,
-		scheduled: sched,
-		retries:   retry,
+		db:        db,
+		scheduled: &TimedSet{"Scheduled", db},
+		retries:   &TimedSet{"Retries", db},
 	}, nil
 }

@@ -31,13 +31,8 @@ prepare:
 	#   brew install go --with-cc-common
 
 test:
+	@rm -f test/*.db
 	@go test -parallel 4 ./... | grep -v "no test files"
-
-# Generate parser and token package for conf/global/format.bnf and
-# conf/inq/format.bnf
-#gocc:
-	#cd $(shell pwd)/conf/global && $(GOPATH)/bin/gocc format.bnf
-	#cd $(shell pwd)/conf/inq && $(GOPATH)/bin/gocc format.bnf
 
 build: test
 	@GOOS=linux GOARCH=amd64 go build -o worq cmd/main.go

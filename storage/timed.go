@@ -33,19 +33,17 @@ func (ts *TimedSet) Size() int {
 	return count
 }
 
-func (ts *TimedSet) Add(sec int64, jid string, payload []byte) error {
-	timestamp := time.Unix(sec, 0).UTC()
-	key := []byte(fmt.Sprintf(timestamp.Format(time.RFC3339)+"|%s", jid))
+func (ts *TimedSet) AddElement(tstamp time.Time, jid string, payload []byte) error {
+	key := fmt.Sprintf("%.10d|%s", tstamp.Unix(), jid)
 
 	return ts.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
-		return b.Put(key, payload)
+		return b.Put([]byte(key), payload)
 	})
 }
 
-func (ts *TimedSet) RemoveBefore(sec int64) ([][]byte, error) {
-	timestamp := time.Unix(sec, 0).UTC()
-	key := timestamp.Format(time.RFC3339) + "|"
+func (ts *TimedSet) RemoveBefore(tstamp time.Time) ([][]byte, error) {
+	key := fmt.Sprintf("%.10d|", tstamp.Unix())
 	prefix := []byte(key)
 
 	results := [][]byte{}

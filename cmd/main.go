@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
 )
 
 func main() {
-	cli.SetupLogging()
+	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
 	s := worq.NewServer(opts.Binding)
 

@@ -30,9 +30,8 @@ prepare:
 	# or ensure your Homebrew'd Go can cross compile:
 	#   brew install go --with-cc-common
 
-test:
-	@rm -f test/*.db
-	@go test -parallel 4 ./... | grep -v "no test files"
+test: clean
+	go test -parallel 4 ./...
 
 build: test
 	@GOOS=linux GOARCH=amd64 go build -o worq cmd/main.go
@@ -45,6 +44,7 @@ lint:
 	gometalinter ./...
 
 clean:
+	rm -f test/*.db
 	rm -f main worq templates.go
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart

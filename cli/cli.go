@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -28,12 +29,12 @@ var (
 	}
 )
 
-func SetupLogging() {
+func SetupLogging(io io.Writer) {
 	// Modern POSIX processes should log to STDOUT only
 	// and use a smart init system to manage logging.  That
 	// logging system should add things like PID, timestamp, etc
 	// to the logging output so we don't add any context at all.
-	log.SetOutput(os.Stdout)
+	log.SetOutput(io)
 	log.SetFlags(0)
 }
 

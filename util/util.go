@@ -3,8 +3,11 @@ package util
 import (
 	"bufio"
 	"bytes"
+	cryptorand "crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
+	mathrand "math/rand"
 	"os"
 	"time"
 )
@@ -102,6 +105,16 @@ func DebugDebug(msg string, args ...interface{}) {
 			log.Println(preamble('V') + msg)
 		}
 	}
+}
+
+func RandomJid() string {
+	bytes := make([]byte, 12)
+	_, err := cryptorand.Read(bytes)
+	if err != nil {
+		mathrand.Read(bytes)
+	}
+
+	return base64.URLEncoding.EncodeToString(bytes)
 }
 
 const (

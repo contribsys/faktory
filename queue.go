@@ -1,4 +1,4 @@
-package storage
+package worq
 
 import (
 	"container/list"
@@ -16,32 +16,37 @@ var (
 	queueLock = sync.Mutex{}
 )
 
-func (db *Store) LookupQueue(name string) *Queue {
+func LookupQueue(name string) *Queue {
 	queueLock.Lock()
 	defer queueLock.Unlock()
 
 	_, ok := queues[name]
 	if !ok {
-		queues[name] = db.NewQueue(name)
+		queues[name] = NewQueue(name)
 	}
 	return queues[name]
 }
 
-func (db *Store) NewQueue(name string) *Queue {
+func NewQueue(name string) *Queue {
 	return &Queue{Name: name, contents: list.New(), listeners: list.New()}
 }
 
-func (db *Store) Pop(names ...string) interface{} {
+func Pop(f func(*Job) error, names ...string) (*Job, error) {
 	for _, qname := range names {
-		j := db.LookupQueue(qname).Pop()
+		j := LookupQueue(qname).Pop()
 		if j != nil {
-			return j
+			err := f(j)
+			if err != nil {
+				return nil, err
+			}
+			return j, nil
 		}
 	}
-	return nil
+	// TODO Blocking
+	return nil, nil
 }
 
-func (q *Queue) Push(jobs ...interface{}) error {
+func (q *Queue) Push(jobs ...*Job) error {
 	for _, job := range jobs {
 		q.contents.PushBack(job)
 	}
@@ -52,10 +57,10 @@ func (q *Queue) Size() int {
 	return q.contents.Len()
 }
 
-func (q *Queue) Pop() interface{} {
+func (q *Queue) Pop() *Job {
 	if q.contents.Len() == 0 {
 		return nil
 	}
 
-	return q.contents.Remove(q.contents.Front())
+	return q.contents.Remove(q.contents.Front()).(*Job)
 }

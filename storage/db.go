@@ -16,6 +16,7 @@ var (
 	DefaultPath     = "/var/run/worq/default.db"
 	ScheduledBucket = "scheduled"
 	RetriesBucket   = "retries"
+	WorkingBucket   = "working"
 )
 
 func OpenStore(path string) (*Store, error) {
@@ -37,6 +38,10 @@ func OpenStore(path string) (*Store, error) {
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
+		_, err = tx.CreateBucketIfNotExists([]byte(WorkingBucket))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
 		return nil
 	})
 	if err != nil {
@@ -55,4 +60,8 @@ func (store *Store) Retries() *TimedSet {
 
 func (store *Store) Scheduled() *TimedSet {
 	return &TimedSet{ScheduledBucket, store.db}
+}
+
+func (store *Store) Working() *TimedSet {
+	return &TimedSet{WorkingBucket, store.db}
 }

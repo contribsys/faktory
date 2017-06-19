@@ -124,3 +124,8 @@ const (
 func preamble(lvl rune) string {
 	return fmt.Sprintf("%c %s %d ", lvl, time.Now().UTC().Format(TimestampFormat), os.Getpid())
 }
+
+func Nowf() float64 {
+	now := time.Now()
+	return float64(now.Unix()) + float64(now.UnixNano())/float64(1000000000)
+}

@@ -146,13 +146,22 @@ func process(conn *Connection, server *Server) {
 			break
 		case strings.HasPrefix(cmd, "POP "):
 			qs := strings.Split(cmd, " ")[1:]
-			job := server.store.Pop(qs...)
-			res, err := json.Marshal(job)
+			job, err := Pop(func(job *Job) error {
+				return Reserve(server, conn, job)
+			}, qs...)
 			if err != nil {
 				conn.Error(err)
 				break
 			}
-			conn.Result(res)
+			if job != nil {
+				res, err := json.Marshal(job)
+				if err != nil {
+					conn.Error(err)
+					break
+				}
+				conn.Result(res)
+			}
+			conn.Result([]byte("\n"))
 		case strings.HasPrefix(cmd, "PUSH {"):
 			job, err := ParseJob([]byte(cmd[5:]))
 			if err != nil {
@@ -160,7 +169,7 @@ func process(conn *Connection, server *Server) {
 				break
 			}
 			qname := job.Queue
-			err = server.store.LookupQueue(qname).Push(job)
+			err = LookupQueue(qname).Push(job)
 			if err != nil {
 				conn.Error(err)
 				break

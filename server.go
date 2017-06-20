@@ -160,8 +160,9 @@ func process(conn *Connection, server *Server) {
 					break
 				}
 				conn.Result(res)
+			} else {
+				conn.Result([]byte("\n"))
 			}
-			conn.Result([]byte("\n"))
 		case strings.HasPrefix(cmd, "PUSH {"):
 			job, err := ParseJob([]byte(cmd[5:]))
 			if err != nil {
@@ -176,6 +177,11 @@ func process(conn *Connection, server *Server) {
 			}
 
 			conn.Result([]byte(job.Jid))
+		case strings.HasPrefix(cmd, "ACK "):
+			//jid := cmd[4:]
+			//Acknowledge(server, jid)
+
+			conn.Ok()
 		default:
 			conn.Error(errors.New("unknown command"))
 		}

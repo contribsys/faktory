@@ -13,21 +13,30 @@ var (
 	DefaultTimeout = 600
 )
 
-type Job struct {
-	Jid        string        `json:"jid"`
-	Gid        string        `json:"gid"`
-	Queue      string        `json:"queue"`
-	EnqueuedAt float64       `json:"enqueued_at"`
-	CreatedAt  float64       `json:"created_at"`
-	Class      string        `json:"class"`
-	Args       []interface{} `json:"args"`
-	Timeout    int           `json:"reserve_for"`
-
-	FailedAt     float64  `json:"failed_at"`
-	RetryCount   int32    `json:"retry_count"`
-	ErrorMessage string   `json:"error_message"`
-	ErrorType    string   `json:"error_type"`
+type Failure struct {
+	RetryCount   int      `json:"retry_count"`
+	FailedAt     string   `json:"failed_at"`
+	ErrorMessage string   `json:"message"`
+	ErrorType    string   `json:"errtype"`
 	Backtrace    []string `json:"backtrace"`
+}
+
+type Job struct {
+	// required
+	Jid   string        `json:"jid"`
+	Queue string        `json:"queue"`
+	Type  string        `json:"jobtype"`
+	Args  []interface{} `json:"args"`
+
+	// optional
+	Gid        string                 `json:"gid"`
+	CreatedAt  string                 `json:"created_at"`
+	EnqueuedAt string                 `json:"enqueued_at"`
+	ReserveFor int                    `json:"reserve_for"`
+	Retry      int                    `json:"retry"`
+	Backtrace  int                    `json:"backtrace"`
+	Failure    *Failure               `json:"failure"`
+	Custom     map[string]interface{} `json:"custom"`
 }
 
 func ParseJob(buf []byte) (*Job, error) {
@@ -38,8 +47,8 @@ func ParseJob(buf []byte) (*Job, error) {
 		return nil, err
 	}
 
-	if job.CreatedAt == 0 {
-		job.CreatedAt = util.Nowf()
+	if job.CreatedAt == "" {
+		job.CreatedAt = util.Nows()
 	}
 	return &job, nil
 }
@@ -57,7 +66,7 @@ func Reserve(s *Server, conn *Connection, job *Job) error {
 		Who:   conn.Identity(),
 	}
 
-	timeout := job.Timeout
+	timeout := job.ReserveFor
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
@@ -69,5 +78,5 @@ func Reserve(s *Server, conn *Connection, job *Job) error {
 		return err
 	}
 
-	return s.store.Working().AddElement(time.Now().Add(time.Duration(job.Timeout)*time.Second), job.Jid, buf.Bytes())
+	return s.store.Working().AddElement(time.Now().Add(time.Duration(timeout)*time.Second), job.Jid, buf.Bytes())
 }

@@ -3,7 +3,6 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -33,36 +32,36 @@ func (ts *TimedSet) Size() int {
 	return count
 }
 
-func (ts *TimedSet) AddElement(tstamp time.Time, jid string, payload []byte) error {
-	key := fmt.Sprintf("%.10d|%s", tstamp.Unix(), jid)
+func (ts *TimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
-	return ts.db.Update(func(tx *bolt.Tx) error {
+	return ts.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
-		return b.Put([]byte(key), payload)
+		return b.Put(key, payload)
 	})
 }
 
-func (ts *TimedSet) RemoveBefore(tstamp time.Time) ([][]byte, error) {
-	key := fmt.Sprintf("%.10d|", tstamp.Unix())
-	prefix := []byte(key)
-
+func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
 	count := 0
 
-	err := ts.db.Update(func(tx *bolt.Tx) error {
+	err := ts.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		c := b.Cursor()
+		local := [][]byte{}
 
 		for k, v := c.Seek([]byte("0")); k != nil && bytes.Compare(k, prefix) <= 0; k, v = c.Next() {
 			cp := make([]byte, len(v))
 			copy(cp, v)
-			results = append(results, cp)
+			local = append(local, cp)
 			count += 1
 			err := b.Delete(k)
 			if err != nil {
 				return err
 			}
 		}
+		results = local
 		return nil
 	})
 	if err != nil {

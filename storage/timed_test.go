@@ -21,21 +21,21 @@ func TestBasicTimedSet(t *testing.T) {
 	past := time.Now()
 
 	assert.Equal(t, 0, db.Retries().Size())
-	err = db.Retries().AddElement(past, "1239712983", j1)
+	err = db.Retries().AddElement(util.Thens(past), "1239712983", j1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, db.Retries().Size())
 
 	j2 := []byte(fakeJob())
-	err = db.Retries().AddElement(past, "1239712984", j2)
+	err = db.Retries().AddElement(util.Thens(past), "1239712984", j2)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, db.Retries().Size())
 
 	current := time.Now()
-	err = db.Retries().AddElement(current.Add(10*time.Second), "1239712985", []byte(fakeJob()))
+	err = db.Retries().AddElement(util.Thens(current.Add(10*time.Second)), "1239712985", []byte(fakeJob()))
 	assert.NoError(t, err)
 	assert.Equal(t, 3, db.Retries().Size())
 
-	results, err := db.Retries().RemoveBefore(current.Add(1 * time.Second))
+	results, err := db.Retries().RemoveBefore(util.Thens(current.Add(1 * time.Second)))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, db.Retries().Size())
 	assert.Equal(t, 2, len(results))
@@ -49,7 +49,7 @@ func BenchmarkBasicTimedSet(b *testing.B) {
 	assert.NoError(b, err)
 	start := time.Now()
 	for i := 0; i < count; i++ {
-		err = db.Retries().AddElement(start.Add(time.Duration(rand.Intn(10*count))*time.Second), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
+		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
 	}
 	info, err := os.Stat("../test/bench.db")
 	assert.NoError(b, err)

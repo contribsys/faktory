@@ -125,6 +125,10 @@ func preamble(lvl rune) string {
 	return fmt.Sprintf("%c %s %d ", lvl, time.Now().UTC().Format(TimestampFormat), os.Getpid())
 }
 
+func Thens(tim time.Time) string {
+	return tim.UTC().Format(TimestampFormat)
+}
+
 func Nows() string {
 	return time.Now().UTC().Format(TimestampFormat)
 }

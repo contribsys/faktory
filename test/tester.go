@@ -60,7 +60,7 @@ func pushJob(conn net.Conn, idx int) error {
 	j := &worq.Job{
 		Jid:   util.RandomJid(),
 		Queue: "default",
-		Class: "SomeJob",
+		Type:  "SomeJob",
 		Args:  []interface{}{1, "string", 3},
 	}
 	jobytes, err := json.Marshal(j)
@@ -74,7 +74,7 @@ func pushJob(conn net.Conn, idx int) error {
 }
 
 func pop(conn net.Conn) (*worq.Job, error) {
-	conn.Write("POP default\n")
+	conn.Write([]byte("POP default\n"))
 	buf := bufio.NewReader(conn)
 	line, err := buf.ReadString('\n')
 	if err != nil {
@@ -82,11 +82,11 @@ func pop(conn net.Conn) (*worq.Job, error) {
 	}
 
 	var job worq.Job
-	err = json.Unmarshal(line, &job)
+	err = json.Unmarshal([]byte(line), &job)
 	if err != nil {
 		return nil, err
 	}
-	return job, nil
+	return &job, nil
 }
 
 func ack(conn net.Conn, job *worq.Job) error {
@@ -96,10 +96,10 @@ func ack(conn net.Conn, job *worq.Job) error {
 	buf := bufio.NewReader(conn)
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if line != "OK\n" {
-		return nil, errors.New("Bad acknowledgment: " + line)
+		return errors.New("Bad acknowledgment: " + line)
 	}
 	return nil
 }

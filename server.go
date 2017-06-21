@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/mperham/worq/storage"
+	"github.com/mperham/worq/util"
 )
 
 type Server struct {
@@ -137,7 +139,7 @@ func process(conn *Connection, server *Server) {
 			break
 		}
 
-		fmt.Println(cmd)
+		//fmt.Println(cmd)
 
 		switch {
 		case cmd == "END\n":
@@ -147,7 +149,7 @@ func process(conn *Connection, server *Server) {
 		case strings.HasPrefix(cmd, "POP "):
 			qs := strings.Split(cmd, " ")[1:]
 			job, err := Pop(func(job *Job) error {
-				return Reserve(conn.Identity(), job)
+				return server.Reserve(conn.Identity(), job)
 			}, qs...)
 			if err != nil {
 				conn.Error(err)
@@ -178,12 +180,66 @@ func process(conn *Connection, server *Server) {
 
 			conn.Result([]byte(job.Jid))
 		case strings.HasPrefix(cmd, "ACK "):
-			//jid := cmd[4:]
-			//Acknowledge(server, jid)
+			jid := cmd[4 : len(cmd)-1]
+			err := server.Acknowledge(jid)
+			if err != nil {
+				conn.Error(err)
+				break
+			}
 
 			conn.Ok()
 		default:
 			conn.Error(errors.New("unknown command"))
 		}
 	}
+}
+
+func (s *Server) Acknowledge(jid string) error {
+	res, ok := workingMap[jid]
+	if !ok {
+		return fmt.Errorf("JID %s not found", jid)
+	}
+	delete(workingMap, jid)
+	return s.store.Working().RemoveElement(util.Thens(res.Expiry), jid)
+}
+
+func (s *Server) ReapWorkingSet() (int, error) {
+	now := time.Now()
+
+	for jid, res := range workingMap {
+		if res.Expiry.Before(now) {
+			delete(workingMap, jid)
+		}
+	}
+
+	// TODO Not transactional, need to remove from working
+	// and add to queue as part of one transaction
+	elements, err := s.store.Working().RemoveBefore(util.Thens(now))
+	if err != nil {
+		return 0, err
+	}
+
+	return len(elements), nil
+}
+
+func (s *Server) Reserve(identity string, job *Job) error {
+	now := time.Now()
+	timeout := job.ReserveFor
+	if timeout == 0 {
+		timeout = DefaultTimeout
+	}
+
+	var res = &Reservation{
+		Job:    job,
+		Since:  now,
+		Expiry: now.Add(time.Duration(timeout) * time.Second),
+		Who:    identity,
+	}
+
+	resbytes, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
+	workingMap[job.Jid] = res
+	return s.store.Working().AddElement(util.Thens(res.Expiry), job.Jid, resbytes)
 }

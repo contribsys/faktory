@@ -60,6 +60,11 @@ func TestServerStart(t *testing.T) {
 		assert.Equal(t, "12345678901234567890abcd", hash["jid"])
 		//assert.Equal(t, "{\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n", result)
 
+		conn.Write([]byte(fmt.Sprintf("ACK %s\n", hash["jid"])))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "OK\n", result)
+
 		conn.Write([]byte("END\n"))
 		//result, err = buf.ReadString('\n')
 		//assert.NoError(t, err)

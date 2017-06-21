@@ -41,6 +41,15 @@ func (ts *TimedSet) AddElement(tstamp string, jid string, payload []byte) error 
 	})
 }
 
+func (ts *TimedSet) RemoveElement(tstamp string, jid string) error {
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
+
+	return ts.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		return b.Delete(key)
+	})
+}
+
 func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
@@ -73,7 +82,6 @@ func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 func (ts *TimedSet) view(f func(*bolt.Bucket) error) {
 	ts.db.View(func(tx *bolt.Tx) error {
-		// Assume bucket exists and has keys
 		b := tx.Bucket([]byte(ts.Name))
 		return f(b)
 	})

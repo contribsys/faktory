@@ -27,21 +27,3 @@ func TestJsonParse(t *testing.T) {
 	assert.Equal(t, "2006-01-02T15:04:05.001000Z", job.CreatedAt)
 	assert.Equal(t, "2006-01-02T15:04:05.001001Z", job.EnqueuedAt)
 }
-
-func TestJobReservation(t *testing.T) {
-	job := &Job{
-		Jid:   "123xyz",
-		Queue: "default",
-		Type:  "Something",
-		Args:  []interface{}{1, "string", 3},
-	}
-
-	assert.Equal(t, 0, workingSet.Len())
-	err := Reserve("myconn", job)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, workingSet.Len())
-
-	count := ReapWorkingSet()
-	assert.Equal(t, 0, count)
-	assert.Equal(t, 1, workingSet.Len())
-}

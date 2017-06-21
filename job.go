@@ -1,9 +1,7 @@
 package worq
 
 import (
-	"container/list"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/mperham/worq/util"
@@ -61,48 +59,13 @@ type Reservation struct {
 }
 
 var (
-	workingSet = list.New()
+	// Hold the working set in memory so we don't need to burn CPU
+	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
+	// When client ack's JID, we can lookup reservation
+	// and remove Bolt entry quickly.
+	workingMap = map[string]*Reservation{}
 )
 
-func Acknowledge(jid string) error {
-	for e := workingSet.Front(); e != nil; e = e.Next() {
-		res := e.Value.(*Reservation)
-		if res.Job.Jid == jid {
-			workingSet.Remove(e)
-			return nil
-		}
-	}
-	return errors.New("Job not found in working set: " + jid)
-}
-
-func ReapWorkingSet() int {
-	count := 0
-	now := time.Now()
-	for e := workingSet.Front(); e != nil; e = e.Next() {
-		res := e.Value.(*Reservation)
-		if res.Expiry.Before(now) {
-			workingSet.Remove(e)
-			_ = LookupQueue(res.Job.Queue).Push(res.Job)
-			count = count + 1
-		}
-	}
-	return count
-}
-
-func Reserve(identity string, job *Job) error {
-	now := time.Now()
-	timeout := job.ReserveFor
-	if timeout == 0 {
-		timeout = DefaultTimeout
-	}
-
-	var res = &Reservation{
-		Job:    job,
-		Since:  now,
-		Expiry: now.Add(time.Duration(timeout) * time.Second),
-		Who:    identity,
-	}
-
-	workingSet.PushBack(res)
-	return nil
+func workingSize() int {
+	return len(workingMap)
 }

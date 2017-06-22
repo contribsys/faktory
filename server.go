@@ -84,6 +84,7 @@ func (s *Server) processConnection(conn net.Conn) {
 	valid := strings.HasPrefix(line, "AHOY ")
 	if !valid {
 		fmt.Println("Invalid preamble", line)
+		fmt.Println("Need a valid AHOY")
 		conn.Close()
 		return
 	}

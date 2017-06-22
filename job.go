@@ -63,6 +63,10 @@ var (
 	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
 	// When client ack's JID, we can lookup reservation
 	// and remove Bolt entry quickly.
+	//
+	// TODO Need to hydrate this map into memory when starting up
+	// or a crash can leak reservations into the persistent Working
+	// set.
 	workingMap = map[string]*Reservation{}
 )
 

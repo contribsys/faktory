@@ -64,6 +64,7 @@ func Dial(host string, port int, params *Options) (*Client, error) {
 
 func (c *Client) Close() error {
 	_, err := c.wtr.Write([]byte("END\n"))
+	err = c.wtr.Flush()
 	return err
 }
 
@@ -94,9 +95,13 @@ func (c *Client) Push(job *Job) error {
 	if err != nil {
 		return err
 	}
-	c.wtr.WriteString("PUSH ")
-	c.wtr.Write(jobytes)
-	c.wtr.WriteString("\n")
+	_, err = c.wtr.WriteString("PUSH ")
+	_, err = c.wtr.Write(jobytes)
+	_, err = c.wtr.WriteString("\n")
+	err = c.wtr.Flush()
+	if err != nil {
+		return err
+	}
 	line, err := c.rdr.ReadString('\n')
 	if err != nil {
 		return err

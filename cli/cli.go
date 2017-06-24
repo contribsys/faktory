@@ -39,7 +39,7 @@ func SetupLogging(io io.Writer) {
 }
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "info", "/var/run/worq.sock"}
+	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "debug", "/var/run/worq.sock"}
 
 	log.Println(worq.Name, worq.Version)
 	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))

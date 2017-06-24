@@ -81,6 +81,8 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
+	util.Debug(fmt.Sprintf("Cmd: %s", line))
+
 	valid := strings.HasPrefix(line, "AHOY ")
 	if !valid {
 		fmt.Println("Invalid preamble", line)
@@ -139,8 +141,7 @@ func process(conn *Connection, server *Server) {
 			conn.Close()
 			break
 		}
-
-		//fmt.Println(cmd)
+		util.Debug(fmt.Sprintf("Cmd: %s", strings.TrimSuffix(cmd, "\n")))
 
 		switch {
 		case cmd == "END\n":
@@ -179,7 +180,7 @@ func process(conn *Connection, server *Server) {
 				break
 			}
 
-			conn.Result([]byte(job.Jid))
+			conn.Ok()
 		case strings.HasPrefix(cmd, "ACK "):
 			jid := cmd[4 : len(cmd)-1]
 			err := server.Acknowledge(jid)

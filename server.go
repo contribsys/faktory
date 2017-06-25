@@ -69,6 +69,9 @@ func (s *Server) Stop(f func()) {
 }
 
 func (s *Server) processConnection(conn net.Conn) {
+	// operation must complete within 1 second
+	conn.SetDeadline(time.Now().Add(1 * time.Second))
+
 	buf := bufio.NewReader(conn)
 
 	// The first line sent upon connection must be:
@@ -81,7 +84,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	util.Debug(fmt.Sprintf("Cmd: %s", line))
+	util.DebugDebug(fmt.Sprintf("Cmd: %s", line))
 
 	valid := strings.HasPrefix(line, "AHOY ")
 	if !valid {
@@ -130,69 +133,97 @@ func (s *Server) processConnection(conn net.Conn) {
 		conn:  conn,
 		buf:   buf,
 	}
-	go process(c, s)
+	go processLines(c, s)
 }
 
-func process(conn *Connection, server *Server) {
+type command func(c *Connection, s *Server, cmd string)
+
+var cmdSet = map[string]command{
+	"END":  end,
+	"PUSH": push,
+	"POP":  pop,
+	"ACK":  ack,
+	"FAIL": fail,
+}
+
+func end(c *Connection, s *Server, cmd string) {
+	c.Ok()
+	c.Close()
+}
+
+func push(c *Connection, s *Server, cmd string) {
+	job, err := ParseJob([]byte(cmd[5:]))
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	qname := job.Queue
+	q := LookupQueue(qname)
+	err = q.Push(job)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	c.Ok()
+}
+
+func pop(c *Connection, s *Server, cmd string) {
+	qs := strings.Split(cmd, " ")[1:]
+	job, err := Pop(func(job *Job) error {
+		return s.Reserve(c.Identity(), job)
+	}, qs...)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	if job != nil {
+		res, err := json.Marshal(job)
+		if err != nil {
+			c.Error(cmd, err)
+			return
+		}
+		c.Result(res)
+	} else {
+		c.Result([]byte("\n"))
+	}
+}
+
+func ack(c *Connection, s *Server, cmd string) {
+	jid := cmd[4:]
+	err := s.Acknowledge(jid)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+
+	c.Ok()
+}
+
+func fail(c *Connection, s *Server, cmd string) {
+	c.Ok()
+	c.Close()
+}
+
+func processLines(conn *Connection, server *Server) {
 	for {
+		// every operation must complete within 1 second
+		conn.conn.SetDeadline(time.Now().Add(1 * time.Second))
+
 		cmd, e := conn.buf.ReadString('\n')
-		cmd = strings.TrimSuffix(cmd, "\n")
 		if e != nil {
 			util.Debug("Invalid socket input")
 			conn.Close()
-			break
+			return
 		}
-		//util.Debug(fmt.Sprintf("Cmd: %s", cmd))
+		cmd = strings.TrimSuffix(cmd, "\n")
+		util.DebugDebug(fmt.Sprintf("Cmd: %s", cmd))
 
-		switch {
-		case cmd == "END\n":
-			conn.Ok()
-			conn.Close()
-			break
-		case strings.HasPrefix(cmd, "POP "):
-			qs := strings.Split(cmd, " ")[1:]
-			job, err := Pop(func(job *Job) error {
-				return server.Reserve(conn.Identity(), job)
-			}, qs...)
-			if err != nil {
-				conn.Error(cmd, err)
-				break
-			}
-			if job != nil {
-				res, err := json.Marshal(job)
-				if err != nil {
-					conn.Error(cmd, err)
-					break
-				}
-				conn.Result(res)
-			} else {
-				conn.Result([]byte("\n"))
-			}
-		case strings.HasPrefix(cmd, "PUSH {"):
-			job, err := ParseJob([]byte(cmd[5:]))
-			if err != nil {
-				conn.Error(cmd, err)
-				break
-			}
-			qname := job.Queue
-			q := LookupQueue(qname)
-			err = q.Push(job)
-			if err != nil {
-				conn.Error(cmd, err)
-				break
-			}
-			conn.Ok()
-		case strings.HasPrefix(cmd, "ACK "):
-			jid := cmd[4:]
-			err := server.Acknowledge(jid)
-			if err != nil {
-				conn.Error(cmd, err)
-				break
-			}
-
-			conn.Ok()
-		default:
+		verb := cmd[0:strings.Index(cmd, " ")]
+		proc, ok := cmdSet[verb]
+		if !ok {
 			conn.Error(cmd, errors.New("unknown command"))
+		} else {
+			proc(conn, server, cmd)
 		}
 	}
 }

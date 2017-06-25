@@ -13,7 +13,7 @@ type Store struct {
 }
 
 var (
-	DefaultPath     = "/var/run/worq/default.db"
+	DefaultPath     = "/var/run/worq/"
 	ScheduledBucket = "scheduled"
 	RetriesBucket   = "retries"
 	WorkingBucket   = "working"

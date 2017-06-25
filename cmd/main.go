@@ -11,7 +11,7 @@ import (
 func main() {
 	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
-	s := worq.NewServer(opts.Binding)
+	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding})
 
 	go cli.HandleSignals(s)
 

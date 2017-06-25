@@ -103,7 +103,7 @@ func HandleSignals(s *worq.Server) {
 		signal.Notify(signals, k)
 	}
 
-	fmt.Printf("Now listening at %s, press Ctrl-C to stop\n", s.Binding)
+	fmt.Printf("Now listening at %s, press Ctrl-C to stop\n", s.Options.Binding)
 	for {
 		sig := <-signals
 		util.Debug("Received signal %d", sig)

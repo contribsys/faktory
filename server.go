@@ -13,29 +13,38 @@ import (
 	"github.com/mperham/worq/util"
 )
 
-type Server struct {
-	Binding    string
-	pwd        string
-	listener   net.Listener
-	processors map[string]chan *Connection
-	store      *storage.Store
+type ServerOptions struct {
+	Binding     string
+	StoragePath string
+	Password    string
 }
 
-func NewServer(binding string) *Server {
-	if binding == "" {
-		binding = "localhost:7419"
+type Server struct {
+	Options  *ServerOptions
+	pwd      string
+	listener net.Listener
+	store    *storage.Store
+}
+
+func NewServer(opts *ServerOptions) *Server {
+	if opts.Binding == "" {
+		opts.Binding = "localhost:7419"
 	}
-	return &Server{Binding: binding, pwd: "123456", processors: make(map[string]chan *Connection)}
+	if opts.StoragePath == "" {
+		opts.StoragePath = fmt.Sprintf("%s/%s.db",
+			storage.DefaultPath, strings.Replace(opts.Binding, ":", "_", -1))
+	}
+	return &Server{Options: opts, pwd: "123456"}
 }
 
 func (s *Server) Start() error {
-	store, err := storage.OpenStore("")
+	store, err := storage.OpenStore(s.Options.StoragePath)
 	if err != nil {
 		return err
 	}
 	s.store = store
 
-	addr, err := net.ResolveTCPAddr("tcp", s.Binding)
+	addr, err := net.ResolveTCPAddr("tcp", s.Options.Binding)
 	if err != nil {
 		return err
 	}
@@ -170,7 +179,7 @@ func push(c *Connection, s *Server, cmd string) {
 func pop(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
 	job, err := Pop(func(job *Job) error {
-		return s.Reserve(c.Identity(), job)
+		return Reserve(c.Identity(), job)
 	}, qs...)
 	if err != nil {
 		c.Error(cmd, err)
@@ -276,7 +285,7 @@ func workingSize() int {
 	return len(workingMap)
 }
 
-func (s *Server) Reserve(identity string, job *Job) error {
+func Reserve(identity string, job *Job) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {

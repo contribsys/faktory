@@ -12,19 +12,17 @@ import (
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
-	"github.com/mperham/worq/storage"
 	"github.com/mperham/worq/util"
 )
 
 func TestSystem(t *testing.T) {
 	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
-	s := worq.NewServer(opts.Binding)
+
+	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "./system.db"})
 
 	util.LogDebug = true
 	util.LogInfo = true
-
-	storage.DefaultPath = "./system.db"
 
 	go stacks()
 	go cli.HandleSignals(s)

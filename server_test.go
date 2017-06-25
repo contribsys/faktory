@@ -13,11 +13,14 @@ import (
 )
 
 func init() {
-	storage.DefaultPath = "test/default.db"
+	storage.DefaultPath = "test"
 }
 
 func runServer(runner func()) {
-	s := NewServer("localhost:7420")
+	opts := &ServerOptions{
+		Binding: "localhost:7420",
+	}
+	s := NewServer(opts)
 	go func() {
 		err := s.Start()
 		if err != nil {

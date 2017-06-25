@@ -59,6 +59,16 @@ func Dial(host string, port int, params *Options) (*Client, error) {
 		return nil, err
 	}
 
+	line, err := r.ReadString('\n')
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	if line != "OK\n" {
+		conn.Close()
+		return nil, errors.New(line)
+	}
+
 	return &Client{Hostname: host, Port: port, Options: params, conn: conn, rdr: r, wtr: w}, nil
 }
 
@@ -118,6 +128,7 @@ func (c *Client) Push(job *Job) error {
 
 func (c *Client) Pop(q string) (*Job, error) {
 	_, err := c.wtr.WriteString(fmt.Sprintf("POP %s\n", q))
+	err = c.wtr.Flush()
 	if err != nil {
 		return nil, err
 	}

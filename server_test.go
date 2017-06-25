@@ -17,7 +17,7 @@ func init() {
 }
 
 func runServer(runner func()) {
-	s := NewServer("")
+	s := NewServer("localhost:7420")
 	go func() {
 		err := s.Start()
 		if err != nil {
@@ -30,7 +30,7 @@ func runServer(runner func()) {
 func TestServerStart(t *testing.T) {
 	t.Parallel()
 	runServer(func() {
-		conn, err := net.DialTimeout("tcp", "localhost:7419", 1*time.Second)
+		conn, err := net.DialTimeout("tcp", "localhost:7420", 1*time.Second)
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)
 
@@ -47,7 +47,7 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "12345678901234567890abcd\n", result)
+		assert.Equal(t, "OK\n", result)
 
 		conn.Write([]byte("POP default some other\n"))
 		result, err = buf.ReadString('\n')

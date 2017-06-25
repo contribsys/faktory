@@ -49,7 +49,6 @@ func pushAndPop() {
 
 	util.Debug("Pushing")
 	for i := 0; i < 10000; i++ {
-		//fmt.Println("Pushing")
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -63,7 +62,6 @@ func pushAndPop() {
 			handleError(err)
 			return
 		}
-		fmt.Printf("Processing %s\n", job.Jid)
 		err = client.Ack(job.Jid)
 		if err != nil {
 			handleError(err)

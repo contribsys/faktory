@@ -3,6 +3,8 @@ package worq
 import (
 	"bufio"
 	"net"
+
+	"github.com/mperham/worq/util"
 )
 
 type Connection struct {
@@ -19,9 +21,12 @@ func (c *Connection) Close() {
 	c.conn.Close()
 }
 
-func (c *Connection) Error(err error) error {
+func (c *Connection) Error(cmd string, err error) error {
+	x := internalError(err)
+	util.Warn("Error processing line: %s", cmd)
+	util.Error(x.Error.Error(), x.Stack)
 	c.conn.Write([]byte("ERR "))
-	c.conn.Write([]byte(err.Error()))
+	c.conn.Write([]byte(x.Error.Error()))
 	c.conn.Write([]byte("\n"))
 	return nil
 }

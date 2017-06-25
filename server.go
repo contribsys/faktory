@@ -136,12 +136,13 @@ func (s *Server) processConnection(conn net.Conn) {
 func process(conn *Connection, server *Server) {
 	for {
 		cmd, e := conn.buf.ReadString('\n')
+		cmd = strings.TrimSuffix(cmd, "\n")
 		if e != nil {
-			fmt.Println(e)
+			util.Debug("Invalid socket input")
 			conn.Close()
 			break
 		}
-		util.Debug(fmt.Sprintf("Cmd: %s", strings.TrimSuffix(cmd, "\n")))
+		//util.Debug(fmt.Sprintf("Cmd: %s", cmd))
 
 		switch {
 		case cmd == "END\n":
@@ -154,13 +155,13 @@ func process(conn *Connection, server *Server) {
 				return server.Reserve(conn.Identity(), job)
 			}, qs...)
 			if err != nil {
-				conn.Error(err)
+				conn.Error(cmd, err)
 				break
 			}
 			if job != nil {
 				res, err := json.Marshal(job)
 				if err != nil {
-					conn.Error(err)
+					conn.Error(cmd, err)
 					break
 				}
 				conn.Result(res)
@@ -170,58 +171,78 @@ func process(conn *Connection, server *Server) {
 		case strings.HasPrefix(cmd, "PUSH {"):
 			job, err := ParseJob([]byte(cmd[5:]))
 			if err != nil {
-				conn.Error(err)
+				conn.Error(cmd, err)
 				break
 			}
 			qname := job.Queue
-			err = LookupQueue(qname).Push(job)
+			q := LookupQueue(qname)
+			err = q.Push(job)
 			if err != nil {
-				conn.Error(err)
+				conn.Error(cmd, err)
 				break
 			}
-
 			conn.Ok()
 		case strings.HasPrefix(cmd, "ACK "):
-			jid := cmd[4 : len(cmd)-1]
+			jid := cmd[4:]
 			err := server.Acknowledge(jid)
 			if err != nil {
-				conn.Error(err)
+				conn.Error(cmd, err)
 				break
 			}
 
 			conn.Ok()
 		default:
-			conn.Error(errors.New("unknown command"))
+			conn.Error(cmd, errors.New("unknown command"))
 		}
 	}
 }
 
 func (s *Server) Acknowledge(jid string) error {
-	res, ok := workingMap[jid]
+	_, ok := workingMap[jid]
 	if !ok {
 		return fmt.Errorf("JID %s not found", jid)
 	}
 	delete(workingMap, jid)
-	return s.store.Working().RemoveElement(util.Thens(res.Expiry), jid)
+	return nil
 }
 
 func (s *Server) ReapWorkingSet() (int, error) {
 	now := time.Now()
+	count := 0
 
 	for jid, res := range workingMap {
-		if res.Expiry.Before(now) {
+		if res.texpiry.Before(now) {
 			delete(workingMap, jid)
+			count += 1
 		}
 	}
 
-	// TODO Not transactional, need to remove from working
-	// and add to queue as part of one transaction
-	elements, err := s.store.Working().RemoveBefore(util.Thens(now))
-	if err != nil {
-		return 0, err
-	}
+	return count, nil
+}
 
-	return len(elements), nil
+type Reservation struct {
+	Job     *Job   `json:"job"`
+	Since   string `json:"reserved_at"`
+	Expiry  string `json:"expires_at"`
+	Who     string `json:"worker"`
+	tsince  time.Time
+	texpiry time.Time
+}
+
+var (
+	// Hold the working set in memory so we don't need to burn CPU
+	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
+	// When client ack's JID, we can lookup reservation
+	// and remove Bolt entry quickly.
+	//
+	// TODO Need to hydrate this map into memory when starting up
+	// or a crash can leak reservations into the persistent Working
+	// set.
+	workingMap = map[string]*Reservation{}
+)
+
+func workingSize() int {
+	return len(workingMap)
 }
 
 func (s *Server) Reserve(identity string, job *Job) error {
@@ -231,17 +252,20 @@ func (s *Server) Reserve(identity string, job *Job) error {
 		timeout = DefaultTimeout
 	}
 
+	exp := now.Add(time.Duration(timeout) * time.Second)
 	var res = &Reservation{
-		Job:    job,
-		Since:  now,
-		Expiry: now.Add(time.Duration(timeout) * time.Second),
-		Who:    identity,
+		Job:     job,
+		Since:   util.Thens(now),
+		Expiry:  util.Thens(exp),
+		Who:     identity,
+		tsince:  now,
+		texpiry: exp,
 	}
 
-	resbytes, err := json.Marshal(res)
+	_, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 	workingMap[job.Jid] = res
-	return s.store.Working().AddElement(util.Thens(res.Expiry), job.Jid, resbytes)
+	return nil
 }

@@ -2,7 +2,6 @@ package worq
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/mperham/worq/util"
 )
@@ -49,27 +48,4 @@ func ParseJob(buf []byte) (*Job, error) {
 		job.CreatedAt = util.Nows()
 	}
 	return &job, nil
-}
-
-type Reservation struct {
-	Job    *Job      `json:"job"`
-	Since  time.Time `json:"reserved_at"`
-	Expiry time.Time `json:"expires_at"`
-	Who    string    `json:"worker"`
-}
-
-var (
-	// Hold the working set in memory so we don't need to burn CPU
-	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
-	// When client ack's JID, we can lookup reservation
-	// and remove Bolt entry quickly.
-	//
-	// TODO Need to hydrate this map into memory when starting up
-	// or a crash can leak reservations into the persistent Working
-	// set.
-	workingMap = map[string]*Reservation{}
-)
-
-func workingSize() int {
-	return len(workingMap)
 }

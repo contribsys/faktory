@@ -60,7 +60,7 @@ func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 		c := b.Cursor()
 		local := [][]byte{}
 
-		for k, v := c.Seek([]byte("0")); k != nil && bytes.Compare(k, prefix) <= 0; k, v = c.Next() {
+		for k, v := c.First(); k != nil && bytes.Compare(k, prefix) <= 0; k, v = c.Next() {
 			cp := make([]byte, len(v))
 			copy(cp, v)
 			local = append(local, cp)

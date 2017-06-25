@@ -65,6 +65,11 @@ func SetLogLevel(level string) {
 	}
 }
 
+func Error(msg string, stack []byte) {
+	log.Println(preamble('E') + msg)
+	log.Println(string(stack))
+}
+
 // Uh oh, not good but not worthy of process death
 func Warn(msg string, args ...interface{}) {
 	if len(args) > 0 {

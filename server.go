@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mperham/worq/storage"
@@ -21,10 +22,12 @@ type ServerOptions struct {
 }
 
 type Server struct {
-	Options  *ServerOptions
-	pwd      string
-	listener net.Listener
-	store    *storage.Store
+	Options   *ServerOptions
+	Processed int64
+	Failures  int64
+	pwd       string
+	listener  net.Listener
+	store     *storage.Store
 }
 
 func NewServer(opts *ServerOptions) *Server {
@@ -157,7 +160,6 @@ var cmdSet = map[string]command{
 }
 
 func end(c *Connection, s *Server, cmd string) {
-	c.Ok()
 	c.Close()
 }
 
@@ -192,6 +194,7 @@ func pop(c *Connection, s *Server, cmd string) {
 			c.Error(cmd, err)
 			return
 		}
+		atomic.AddInt64(&s.Processed, 1)
 		c.Result(res)
 	} else {
 		c.Result([]byte("\n"))
@@ -229,6 +232,7 @@ func fail(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
+	atomic.AddInt64(&s.Failures, 1)
 	c.Ok()
 }
 
@@ -247,12 +251,19 @@ func processLines(conn *Connection, server *Server) {
 		cmd = strings.TrimSuffix(cmd, "\n")
 		util.DebugDebug(fmt.Sprintf("Cmd: %s", cmd))
 
-		verb := cmd[0:strings.Index(cmd, " ")]
+		idx := strings.Index(cmd, " ")
+		verb := cmd
+		if idx >= 0 {
+			verb = cmd[0:idx]
+		}
 		proc, ok := cmdSet[verb]
 		if !ok {
 			conn.Error(cmd, errors.New("unknown command"))
 		} else {
 			proc(conn, server, cmd)
+		}
+		if verb == "END" {
+			break
 		}
 	}
 }

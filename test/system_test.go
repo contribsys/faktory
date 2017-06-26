@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 
@@ -27,9 +28,21 @@ func TestSystem(t *testing.T) {
 
 	go stacks()
 	go cli.HandleSignals(s)
-	go pushAndPop()
-	go pushAndPop()
-	go pushAndPop()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			pushAndPop()
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		fmt.Println(s.Processed, s.Failures)
+		os.Exit(0)
+	}()
 
 	err := s.Start()
 	if err != nil {
@@ -39,8 +52,6 @@ func TestSystem(t *testing.T) {
 }
 
 func pushAndPop() {
-	defer os.Exit(0)
-
 	client, err := worq.Dial(&worq.ClientOptions{Pwd: "123456"})
 	if err != nil {
 		handleError(err)

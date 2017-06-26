@@ -208,17 +208,17 @@ func ack(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
-type Failure struct {
-	Jid       string
-	Message   string
-	ErrorType string
-	Backtrace []string
+type JobFailure struct {
+	Jid       string   `json:"jid"`
+	Message   string   `json:"message"`
+	ErrorType string   `json:"errortype"`
+	Backtrace []string `json:"backtrace"`
 }
 
 func fail(c *Connection, s *Server, cmd string) {
-	json := cmd[5:]
-	var failure Failure
-	err := json.Unmarshal([]byte(json), &failure)
+	raw := cmd[5:]
+	var failure JobFailure
+	err := json.Unmarshal([]byte(raw), &failure)
 	if err != nil {
 		c.Error(cmd, err)
 		return

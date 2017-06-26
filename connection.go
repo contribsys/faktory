@@ -24,7 +24,7 @@ func (c *Connection) Close() {
 func (c *Connection) Error(cmd string, err error) error {
 	x := internalError(err)
 	util.Warn("Error processing line: %s", cmd)
-	util.Error(x.Error.Error(), x.Stack)
+	util.Error(err, x.Stack)
 	c.conn.Write([]byte("ERR "))
 	c.conn.Write([]byte(x.Error.Error()))
 	c.conn.Write([]byte("\n"))

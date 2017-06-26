@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -38,7 +39,7 @@ func TestSystem(t *testing.T) {
 func pushAndPop() {
 	defer os.Exit(0)
 
-	client, err := worq.Dial("localhost", 7419, &worq.Options{Pwd: "123456"})
+	client, err := worq.Dial(&worq.ClientOptions{Pwd: "123456"})
 	if err != nil {
 		handleError(err)
 		return
@@ -60,7 +61,11 @@ func pushAndPop() {
 			handleError(err)
 			return
 		}
-		err = client.Ack(job.Jid)
+		if i%100 == 99 {
+			err = client.Fail(job.Jid, errors.New("oops"), nil)
+		} else {
+			err = client.Ack(job.Jid)
+		}
 		if err != nil {
 			handleError(err)
 			return

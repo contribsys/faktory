@@ -9,6 +9,7 @@ import (
 	"log"
 	mathrand "math/rand"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -65,9 +66,11 @@ func SetLogLevel(level string) {
 	}
 }
 
-func Error(msg string, stack []byte) {
-	log.Println(preamble('E') + msg)
-	log.Println(string(stack))
+func Error(err error, stack []byte) {
+	log.Println(preamble('E'), reflect.TypeOf(err).Name(), err.Error())
+	if stack != nil {
+		log.Println(string(stack))
+	}
 }
 
 // Uh oh, not good but not worthy of process death

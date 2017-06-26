@@ -208,9 +208,27 @@ func ack(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
+type Failure struct {
+	Jid       string
+	Message   string
+	ErrorType string
+	Backtrace []string
+}
+
 func fail(c *Connection, s *Server, cmd string) {
+	json := cmd[5:]
+	var failure Failure
+	err := json.Unmarshal([]byte(json), &failure)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	err = s.Acknowledge(failure.Jid)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
 	c.Ok()
-	c.Close()
 }
 
 func processLines(conn *Connection, server *Server) {
@@ -221,6 +239,7 @@ func processLines(conn *Connection, server *Server) {
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			util.Debug("Invalid socket input")
+			util.Error(e, nil)
 			conn.Close()
 			return
 		}

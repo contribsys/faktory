@@ -6,25 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 )
 
-type Options struct {
-	Pwd    string
-	Format string
+type ClientOptions struct {
+	Hostname string
+	Port     int
+	Pwd      string
+	Format   string
 }
 
-func (opt *Options) String() string {
+func (opt *ClientOptions) String() string {
 	return fmt.Sprintf("Pwd:%s Format:%s", opt.Pwd, opt.Format)
 }
 
 type Client struct {
-	Hostname string
-	Port     int
-	Options  *Options
-	rdr      *bufio.Reader
-	wtr      *bufio.Writer
-	conn     net.Conn
+	Options *ClientOptions
+	rdr     *bufio.Reader
+	wtr     *bufio.Writer
+	conn    net.Conn
 }
 
 /*
@@ -32,72 +33,59 @@ type Client struct {
  * You must include a 'pwd' parameter if the server is configured to require
  * a password:
  *
- *   worq.Dial("localhost", 7419, Parameters{"pwd":"topsecret", "another":"thing"})
+ *   worq.Dial(&worq.ClientOptions{
+ *												 Pwd: "topsecret",
+ *												 Hostname: "localhost",
+ *		  									 Port: 7419})
  *
  */
-func Dial(host string, port int, params *Options) (*Client, error) {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+func Dial(params *ClientOptions) (*Client, error) {
+	if params == nil {
+		params = &ClientOptions{}
+	}
+	if params.Format == "" {
+		params.Format = "json"
+	}
+	if params.Hostname == "" {
+		params.Hostname = "localhost"
+	}
+	if params.Port == 0 {
+		params.Port = 7419
+	}
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", params.Hostname, params.Port))
 	if err != nil {
 		return nil, err
 	}
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
-	if params == nil {
-		params = &Options{}
-	}
-	if params.Format == "" {
-		params.Format = "json"
-	}
-
-	_, err = w.WriteString("AHOY ")
-	_, err = w.WriteString(params.String())
-	_, err = w.WriteString("\n")
-	err = w.Flush()
+	err = writeLine(w, "AHOY", []byte(params.String()))
 	if err != nil {
 		conn.Close()
 		return nil, err
 	}
 
-	line, err := r.ReadString('\n')
+	err = ok(r)
 	if err != nil {
 		conn.Close()
 		return nil, err
 	}
-	if line != "OK\n" {
-		conn.Close()
-		return nil, errors.New(line)
-	}
 
-	return &Client{Hostname: host, Port: port, Options: params, conn: conn, rdr: r, wtr: w}, nil
+	return &Client{Options: params, conn: conn, rdr: r, wtr: w}, nil
 }
 
 func (c *Client) Close() error {
-	_, err := c.wtr.Write([]byte("END\n"))
-	err = c.wtr.Flush()
-	return err
+	return writeLine(c.wtr, "END", nil)
 }
 
 func (c *Client) Ack(jid string) error {
-	_, err := c.wtr.WriteString("ACK ")
-	_, err = c.wtr.WriteString(jid)
-	_, err = c.wtr.WriteString("\n")
-	err = c.wtr.Flush()
+	err := writeLine(c.wtr, "ACK", []byte(jid))
 	if err != nil {
 		return err
 	}
-	line, err := c.rdr.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	if line == "OK\n" {
-		// normal return
-		return nil
-	}
-	if strings.HasPrefix(line, "ERR ") {
-		return errors.New(line[4 : len(line)-1])
-	}
-	return errors.New(line)
+
+	return ok(c.rdr)
 }
 
 func (c *Client) Push(job *Job) error {
@@ -105,33 +93,19 @@ func (c *Client) Push(job *Job) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.wtr.WriteString("PUSH ")
-	_, err = c.wtr.Write(jobytes)
-	_, err = c.wtr.WriteString("\n")
-	err = c.wtr.Flush()
+	err = writeLine(c.wtr, "PUSH", jobytes)
 	if err != nil {
 		return err
 	}
-	line, err := c.rdr.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	if line == "OK\n" {
-		// normal return
-		return nil
-	}
-	if strings.HasPrefix(line, "ERR ") {
-		return errors.New(line[4 : len(line)-1])
-	}
-	return errors.New(line)
+	return ok(c.rdr)
 }
 
 func (c *Client) Pop(q string) (*Job, error) {
-	_, err := c.wtr.WriteString(fmt.Sprintf("POP %s\n", q))
-	err = c.wtr.Flush()
+	err := writeLine(c.wtr, "POP", []byte(q))
 	if err != nil {
 		return nil, err
 	}
+
 	line, err := c.rdr.ReadString('\n')
 	if err != nil {
 		return nil, err
@@ -146,4 +120,66 @@ func (c *Client) Pop(q string) (*Job, error) {
 		return nil, err
 	}
 	return &job, nil
+}
+
+/*
+ buff := make([]byte, 4096)
+ count := runtime.Stack(buff, false)
+ str := string(buff[0:count])
+ bt := strings.Split(str, "\n")
+*/
+
+func (c *Client) Fail(jid string, err error, backtrace []string) error {
+	failure := map[string]interface{}{
+		"jid":       jid,
+		"message":   err.Error(),
+		"errortype": reflect.TypeOf(err).Name(),
+	}
+
+	if backtrace != nil {
+		failure["backtrace"] = backtrace
+	}
+	failbytes, err := json.Marshal(failure)
+	if err != nil {
+		return err
+	}
+	err = writeLine(c.wtr, "FAIL", failbytes)
+	if err != nil {
+		return err
+	}
+	return ok(c.rdr)
+}
+
+func writeLine(io *bufio.Writer, op string, payload []byte) error {
+	_, err := io.Write([]byte(op))
+	if payload != nil {
+		if err == nil {
+			_, err = io.Write([]byte(" "))
+		}
+		if err == nil {
+			_, err = io.Write(payload)
+		}
+	}
+	if err == nil {
+		_, err = io.Write([]byte("\n"))
+	}
+	if err == nil {
+		err = io.Flush()
+	}
+	return err
+}
+
+func ok(io *bufio.Reader) error {
+	line, err := io.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	if line == "OK\n" {
+		// normal return
+		return nil
+	}
+	if strings.HasPrefix(line, "ERR ") {
+		return errors.New(line[4 : len(line)-1])
+	}
+	return errors.New(line)
 }

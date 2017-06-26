@@ -47,6 +47,9 @@ func Pop(f func(*Job) error, names ...string) (*Job, error) {
 }
 
 func (q *Queue) Push(jobs ...*Job) error {
+	queueLock.Lock()
+	defer queueLock.Unlock()
+
 	for _, job := range jobs {
 		q.contents.PushBack(job)
 	}
@@ -58,6 +61,9 @@ func (q *Queue) Size() int {
 }
 
 func (q *Queue) Pop() *Job {
+	queueLock.Lock()
+	defer queueLock.Unlock()
+
 	if q.contents.Len() == 0 {
 		return nil
 	}

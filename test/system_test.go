@@ -28,6 +28,8 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 	go pushAndPop()
+	go pushAndPop()
+	go pushAndPop()
 
 	err := s.Start()
 	if err != nil {

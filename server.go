@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mperham/worq/storage"
@@ -257,6 +258,8 @@ func processLines(conn *Connection, server *Server) {
 }
 
 func (s *Server) Acknowledge(jid string) error {
+	workingMutex.Lock()
+	defer workingMutex.Unlock()
 	_, ok := workingMap[jid]
 	if !ok {
 		return fmt.Errorf("JID %s not found", jid)
@@ -269,6 +272,8 @@ func (s *Server) ReapWorkingSet() (int, error) {
 	now := time.Now()
 	count := 0
 
+	workingMutex.Lock()
+	defer workingMutex.Unlock()
 	for jid, res := range workingMap {
 		if res.texpiry.Before(now) {
 			delete(workingMap, jid)
@@ -297,7 +302,8 @@ var (
 	// TODO Need to hydrate this map into memory when starting up
 	// or a crash can leak reservations into the persistent Working
 	// set.
-	workingMap = map[string]*Reservation{}
+	workingMap   = map[string]*Reservation{}
+	workingMutex = &sync.Mutex{}
 )
 
 func workingSize() int {
@@ -325,6 +331,8 @@ func Reserve(identity string, job *Job) error {
 	if err != nil {
 		return err
 	}
+	workingMutex.Lock()
 	workingMap[job.Jid] = res
+	workingMutex.Unlock()
 	return nil
 }

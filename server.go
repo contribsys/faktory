@@ -47,6 +47,7 @@ func (s *Server) Start() error {
 		return err
 	}
 	s.store = store
+	s.StartScheduler()
 
 	addr, err := net.ResolveTCPAddr("tcp", s.Options.Binding)
 	if err != nil {

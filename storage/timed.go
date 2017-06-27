@@ -2,7 +2,9 @@ package storage
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
+	"sync"
 
 	"github.com/boltdb/bolt"
 )
@@ -13,32 +15,65 @@ import (
 type TimedSet struct {
 	Name string
 	db   *bolt.DB
+	q    *list.List
+	m    sync.Mutex
 }
 
-/*
- * Warning: Complexity: O(N), call with caution.
- */
-func (ts *TimedSet) Size() int {
-	count := 0
+type kv struct {
+	k []byte
+	v []byte
+}
 
-	ts.view(func(b *bolt.Bucket) error {
+func newTimedSet(name string, db *bolt.DB) *TimedSet {
+	return &TimedSet{Name: name, db: db, q: list.New(), m: sync.Mutex{}}
+}
+
+func (ts *TimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
+
+	ts.m.Lock()
+	ts.q.PushBack(&kv{key, payload})
+	ts.m.Unlock()
+	return nil
+}
+
+func (ts *TimedSet) flush() error {
+	ts.m.Lock()
+	defer ts.m.Unlock()
+
+	if ts.q.Front() == nil {
+		return nil
+	}
+	err := ts.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		for e := ts.q.Front(); e != nil; e = e.Next() {
+			kv := e.Value.(*kv)
+			err := b.Put(kv.k, kv.v)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err == nil {
+		ts.q.Init()
+	}
+	return err
+}
+
+func (ts *TimedSet) Size() int {
+	ts.flush()
+
+	count := 0
+	ts.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
 		c := b.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			count += 1
 		}
 		return nil
 	})
-
 	return count
-}
-
-func (ts *TimedSet) AddElement(tstamp string, jid string, payload []byte) error {
-	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
-
-	return ts.db.Batch(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ts.Name))
-		return b.Put(key, payload)
-	})
 }
 
 func (ts *TimedSet) RemoveElement(tstamp string, jid string) error {
@@ -51,6 +86,7 @@ func (ts *TimedSet) RemoveElement(tstamp string, jid string) error {
 }
 
 func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+	ts.flush()
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
 	count := 0
@@ -78,11 +114,4 @@ func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	}
 
 	return results, nil
-}
-
-func (ts *TimedSet) view(f func(*bolt.Bucket) error) {
-	ts.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ts.Name))
-		return f(b)
-	})
 }

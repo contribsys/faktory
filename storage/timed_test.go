@@ -20,24 +20,25 @@ func TestBasicTimedSet(t *testing.T) {
 
 	past := time.Now()
 
-	assert.Equal(t, 0, db.Retries().Size())
-	err = db.Retries().AddElement(util.Thens(past), "1239712983", j1)
+	r := db.Retries()
+	assert.Equal(t, 0, r.Size())
+	err = r.AddElement(util.Thens(past), "1239712983", j1)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, db.Retries().Size())
+	assert.Equal(t, 1, r.Size())
 
 	j2 := []byte(fakeJob())
-	err = db.Retries().AddElement(util.Thens(past), "1239712984", j2)
+	err = r.AddElement(util.Thens(past), "1239712984", j2)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, db.Retries().Size())
+	assert.Equal(t, 2, r.Size())
 
 	current := time.Now()
-	err = db.Retries().AddElement(util.Thens(current.Add(10*time.Second)), "1239712985", []byte(fakeJob()))
+	err = r.AddElement(util.Thens(current.Add(10*time.Second)), "1239712985", []byte(fakeJob()))
 	assert.NoError(t, err)
-	assert.Equal(t, 3, db.Retries().Size())
+	assert.Equal(t, 3, r.Size())
 
-	results, err := db.Retries().RemoveBefore(util.Thens(current.Add(1 * time.Second)))
+	results, err := r.RemoveBefore(util.Thens(current.Add(1 * time.Second)))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, db.Retries().Size())
+	assert.Equal(t, 1, r.Size())
 	assert.Equal(t, 2, len(results))
 	values := [][]byte{j1, j2}
 	assert.Equal(t, values, results)

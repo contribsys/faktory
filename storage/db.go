@@ -55,13 +55,13 @@ func OpenStore(path string) (*Store, error) {
 }
 
 func (store *Store) Retries() *TimedSet {
-	return &TimedSet{RetriesBucket, store.db}
+	return newTimedSet(RetriesBucket, store.db)
 }
 
 func (store *Store) Scheduled() *TimedSet {
-	return &TimedSet{ScheduledBucket, store.db}
+	return newTimedSet(ScheduledBucket, store.db)
 }
 
 func (store *Store) Working() *TimedSet {
-	return &TimedSet{WorkingBucket, store.db}
+	return newTimedSet(WorkingBucket, store.db)
 }

@@ -50,11 +50,8 @@ clean:
 	mkdir -p packaging/output/upstart
 	mkdir -p packaging/output/systemd
 
-real:
-	# Place real configuration with passwords, etc in "realtest".
-	# git will ignore that directory and you can integration test
-	# Inspeqtor on your local machine just by running "make real"
-	GOMAXPROCS=4 go run -race cmd/main.go -l debug -s i.sock -c realtest
+run:
+	go run -race cmd/main.go -l verbose -s i.sock -d .
 
 package: clean version_check build_deb build_rpm
 

@@ -61,9 +61,7 @@ func (s *Server) Start() error {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			s.listener.Close()
-			s.listener = nil
-			return err
+			return nil
 		}
 		s.processConnection(conn)
 	}
@@ -72,10 +70,8 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(f func()) {
-	if s.listener != nil {
-		s.listener.Close()
-		s.listener = nil
-	}
+	s.listener.Close()
+
 	if f != nil {
 		f()
 	}
@@ -92,17 +88,17 @@ func (s *Server) processConnection(conn net.Conn) {
 	// AHOY pwd:<password> other:pair more:etc\n
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		fmt.Println("Closing connection: ", err)
+		util.Error("Closing connection", err, nil)
 		conn.Close()
 		return
 	}
 
-	util.DebugDebug(fmt.Sprintf("Cmd: %s", line))
+	util.DebugDebug(line)
 
 	valid := strings.HasPrefix(line, "AHOY ")
 	if !valid {
-		fmt.Println("Invalid preamble", line)
-		fmt.Println("Need a valid AHOY")
+		util.Info("Invalid preamble", line)
+		util.Info("Need a valid AHOY")
 		conn.Close()
 		return
 	}
@@ -113,7 +109,7 @@ func (s *Server) processConnection(conn net.Conn) {
 	for _, pair := range pairs[1:] {
 		two := strings.Split(pair, ":")
 		if len(two) != 2 {
-			fmt.Println("Invalid pair", pair)
+			util.Info("Invalid pair", pair)
 			conn.Close()
 			return
 		}
@@ -127,7 +123,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		switch key {
 		case "pwd":
 			if value != s.pwd {
-				fmt.Println("Invalid password")
+				util.Info("Invalid password")
 				conn.Close()
 				return
 			}
@@ -135,7 +131,12 @@ func (s *Server) processConnection(conn net.Conn) {
 		}
 	}
 
-	conn.Write([]byte("OK\n"))
+	_, err = conn.Write([]byte("OK\n"))
+	if err != nil {
+		util.Error("Closing connection", err, nil)
+		conn.Close()
+		return
+	}
 
 	id, ok := attrs["id"]
 	if !ok {
@@ -243,13 +244,11 @@ func processLines(conn *Connection, server *Server) {
 
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
-			util.Debug("Invalid socket input")
-			util.Error(e, nil)
 			conn.Close()
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\n")
-		util.DebugDebug(fmt.Sprintf("Cmd: %s", cmd))
+		//util.DebugDebug(cmd)
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd

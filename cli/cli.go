@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mperham/worq"
+	"github.com/mperham/worq/storage"
 	"github.com/mperham/worq/util"
 )
 
@@ -21,6 +22,7 @@ type CmdOptions struct {
 	ConfigDirectory string
 	LogLevel        string
 	SocketPath      string
+	StoragePath     string
 }
 
 var (
@@ -39,7 +41,7 @@ func SetupLogging(io io.Writer) {
 }
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "debug", "/var/run/worq.sock"}
+	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "debug", "/var/run/worq.sock", "/var/run/worq"}
 
 	log.Println(worq.Name, worq.Version)
 	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
@@ -53,6 +55,7 @@ func ParseArguments() CmdOptions {
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (warn, info, debug, verbose)")
 	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production, etc)")
+	flag.StringVar(&defaults.StoragePath, "d", "/var/run/worq", "Storage directory")
 
 	// undocumented on purpose, for testing only, we don't want people changing these
 	// if possible
@@ -73,6 +76,7 @@ func ParseArguments() CmdOptions {
 	}
 
 	util.SetLogLevel(defaults.LogLevel)
+	storage.DefaultPath = defaults.StoragePath
 
 	return defaults
 }
@@ -81,6 +85,7 @@ func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
 	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
+	log.Println("-d [dir]\tStorage directory, default: /var/run/worq")
 	log.Println("-tc\t\tTest configuration and exit")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")

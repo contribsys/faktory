@@ -2,6 +2,7 @@ package worq
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 
 	"github.com/mperham/worq/util"
@@ -23,8 +24,7 @@ func (c *Connection) Close() {
 
 func (c *Connection) Error(cmd string, err error) error {
 	x := internalError(err)
-	util.Warn("Error processing line: %s", cmd)
-	util.Error(err, x.Stack)
+	util.Error(fmt.Sprintf("Error processing line: %s", cmd), err, x.Stack)
 	c.conn.Write([]byte("ERR "))
 	c.conn.Write([]byte(x.Error.Error()))
 	c.conn.Write([]byte("\n"))

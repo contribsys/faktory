@@ -33,7 +33,8 @@ func NewQueue(name string) *Queue {
 
 func Pop(f func(*Job) error, names ...string) (*Job, error) {
 	for _, qname := range names {
-		j := LookupQueue(qname).Pop()
+		q := LookupQueue(qname)
+		j := q.Pop()
 		if j != nil {
 			err := f(j)
 			if err != nil {

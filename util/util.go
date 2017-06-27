@@ -66,8 +66,8 @@ func SetLogLevel(level string) {
 	}
 }
 
-func Error(err error, stack []byte) {
-	log.Println(preamble('E'), reflect.TypeOf(err).Name(), err.Error())
+func Error(msg string, err error, stack []byte) {
+	log.Println(preamble('E'), msg, reflect.TypeOf(err).Name(), err.Error())
 	if stack != nil {
 		log.Println(string(stack))
 	}
@@ -76,7 +76,7 @@ func Error(err error, stack []byte) {
 // Uh oh, not good but not worthy of process death
 func Warn(msg string, args ...interface{}) {
 	if len(args) > 0 {
-		log.Printf(preamble('W')+msg+"\n", args...)
+		log.Printf("%s %s %v\n", preamble('W'), msg, args)
 	} else {
 		log.Println(preamble('W') + msg)
 	}
@@ -86,7 +86,7 @@ func Warn(msg string, args ...interface{}) {
 func Info(msg string, args ...interface{}) {
 	if LogInfo {
 		if len(args) > 0 {
-			log.Printf(preamble('I')+msg+"\n", args...)
+			log.Printf("%s %s %v\n", preamble('I'), msg, args)
 		} else {
 			log.Println(preamble('I') + msg)
 		}
@@ -97,9 +97,9 @@ func Info(msg string, args ...interface{}) {
 func Debug(msg string, args ...interface{}) {
 	if LogDebug {
 		if len(args) > 0 {
-			log.Printf(preamble('D')+msg+"\n", args...)
+			log.Printf("%s %s %v\n", preamble('D'), msg, args)
 		} else {
-			log.Println(preamble('D') + msg)
+			log.Println(preamble('D'), msg)
 		}
 	}
 }

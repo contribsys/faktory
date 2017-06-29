@@ -71,12 +71,12 @@ func (ts *TimedSet) flush() error {
 	return err
 }
 
-func (ts *TimedSet) Size() int64 {
+func (ts *TimedSet) Size() int {
 	ts.m.Lock()
 	defer ts.m.Unlock()
 
 	if ts.size >= 0 {
-		return ts.size
+		return int(ts.size)
 	}
 
 	count := int64(0)
@@ -90,7 +90,7 @@ func (ts *TimedSet) Size() int64 {
 	})
 
 	ts.size = count
-	return count
+	return int(count)
 }
 
 func (ts *TimedSet) RemoveElement(tstamp string, jid string) error {

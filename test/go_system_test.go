@@ -10,16 +10,19 @@ import (
 	"sync"
 	"syscall"
 	"testing"
-	"time"
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
+	"github.com/mperham/worq/storage"
 	"github.com/mperham/worq/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSystem(t *testing.T) {
 	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
+
+	storage.DefaultPath = "."
 
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "./system.db"})
 
@@ -40,8 +43,9 @@ func TestSystem(t *testing.T) {
 
 	go func() {
 		wg.Wait()
+		assert.Equal(t, 3000, s.Processed)
+		assert.Equal(t, 30, s.Failures)
 		fmt.Println(s.Processed, s.Failures)
-		time.Sleep(30 * time.Second)
 		os.Exit(0)
 	}()
 
@@ -61,7 +65,7 @@ func pushAndPop() {
 	defer client.Close()
 
 	util.Debug("Pushing")
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100000; i++ {
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -69,7 +73,7 @@ func pushAndPop() {
 	}
 	util.Debug("Popping")
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100000; i++ {
 		job, err := client.Pop("default")
 		if err != nil {
 			handleError(err)
@@ -90,7 +94,9 @@ func pushAndPop() {
 		handleError(err)
 		return
 	}
-	fmt.Println(hash)
+	if len(hash) != 5 {
+		fmt.Println("Info", hash)
+	}
 }
 
 func pushJob(client *worq.Client, idx int) error {

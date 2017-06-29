@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -232,86 +230,6 @@ func info(c *Connection, s *Server, cmd string) {
 
 	c.Result(bytes)
 }
-
-type JobFailure struct {
-	Jid          string   `json:"jid"`
-	RetryAt      string   `json:"retry_at"`
-	ErrorMessage string   `json:"message"`
-	ErrorType    string   `json:"errtype"`
-	Backtrace    []string `json:"backtrace"`
-}
-
-func fail(c *Connection, s *Server, cmd string) {
-	raw := cmd[5:]
-	var failure JobFailure
-	err := json.Unmarshal([]byte(raw), &failure)
-	if err != nil {
-		c.Error(cmd, err)
-		return
-	}
-
-	job, err := s.Acknowledge(failure.Jid)
-	if err != nil {
-		c.Error(cmd, err)
-		return
-	}
-
-	if job.Failure != nil {
-		job.Failure.RetryCount += 1
-		job.Failure.ErrorMessage = failure.ErrorMessage
-		job.Failure.ErrorType = failure.ErrorType
-		job.Failure.Backtrace = failure.Backtrace
-	} else {
-		job.Failure = &Failure{
-			RetryCount:   0,
-			FailedAt:     util.Nows(),
-			ErrorMessage: failure.ErrorMessage,
-			ErrorType:    failure.ErrorType,
-			Backtrace:    failure.Backtrace,
-		}
-	}
-
-	when := nextRetry(failure.RetryAt, job)
-	bytes, err := json.Marshal(job)
-	if err != nil {
-		c.Error(cmd, err)
-		return
-	}
-
-	util.Info("Adding retry", job.Jid, when)
-	s.store.Retries().AddElement(util.Thens(when), job.Jid, bytes)
-	atomic.AddInt64(&s.Failures, 1)
-	c.Ok()
-}
-
-var (
-	// about one month
-	maxRetryDelay = 720 * time.Hour
-)
-
-func nextRetry(override string, job *Job) time.Time {
-	if override != "" {
-		tm, err := time.Parse(time.RFC3339, override)
-		if err != nil {
-			util.Warn("Invalid retry_at: %s", override)
-			return defaultRetry(job)
-		}
-		if tm.Before(time.Now()) || tm.After(time.Now().Add(maxRetryDelay)) {
-			// retry time out of range
-			util.Warn("Invalid retry_at time: %s", tm)
-			return defaultRetry(job)
-		}
-		return tm
-	}
-	return defaultRetry(job)
-}
-
-func defaultRetry(job *Job) time.Time {
-	count := job.Failure.RetryCount
-	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
-	return time.Now().Add(time.Duration(secs) * time.Second)
-}
-
 func processLines(conn *Connection, server *Server) {
 	for {
 		// every operation must complete within 1 second
@@ -340,86 +258,4 @@ func processLines(conn *Connection, server *Server) {
 			break
 		}
 	}
-}
-
-func (s *Server) Acknowledge(jid string) (*Job, error) {
-	workingMutex.Lock()
-	defer workingMutex.Unlock()
-
-	res, ok := workingMap[jid]
-	if !ok {
-		return nil, fmt.Errorf("JID %s not found", jid)
-	}
-	delete(workingMap, jid)
-	return res.Job, nil
-}
-
-func (s *Server) ReapWorkingSet() (int, error) {
-	now := time.Now()
-	count := 0
-
-	workingMutex.Lock()
-	defer workingMutex.Unlock()
-
-	for jid, res := range workingMap {
-		if res.texpiry.Before(now) {
-			delete(workingMap, jid)
-			count += 1
-		}
-	}
-
-	return count, nil
-}
-
-type Reservation struct {
-	Job     *Job   `json:"job"`
-	Since   string `json:"reserved_at"`
-	Expiry  string `json:"expires_at"`
-	Who     string `json:"worker"`
-	tsince  time.Time
-	texpiry time.Time
-}
-
-var (
-	// Hold the working set in memory so we don't need to burn CPU
-	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
-	// When client ack's JID, we can lookup reservation
-	// and remove Bolt entry quickly.
-	//
-	// TODO Need to hydrate this map into memory when starting up
-	// or a crash can leak reservations into the persistent Working
-	// set.
-	workingMap   = map[string]*Reservation{}
-	workingMutex = &sync.Mutex{}
-)
-
-func workingSize() int {
-	return len(workingMap)
-}
-
-func Reserve(identity string, job *Job) error {
-	now := time.Now()
-	timeout := job.ReserveFor
-	if timeout == 0 {
-		timeout = DefaultTimeout
-	}
-
-	exp := now.Add(time.Duration(timeout) * time.Second)
-	var res = &Reservation{
-		Job:     job,
-		Since:   util.Thens(now),
-		Expiry:  util.Thens(exp),
-		Who:     identity,
-		tsince:  now,
-		texpiry: exp,
-	}
-
-	_, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-	workingMutex.Lock()
-	workingMap[job.Jid] = res
-	workingMutex.Unlock()
-	return nil
 }

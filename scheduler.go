@@ -26,7 +26,7 @@ func (s *Scheduler) Run() {
 				var job Job
 				err := json.Unmarshal(elm, &job)
 				if err != nil {
-					reportError(elm, err)
+					util.Error("Unable to unmarshal json", err, elm)
 					continue
 				}
 				q := LookupQueue(job.Queue)
@@ -43,10 +43,6 @@ func (s *Scheduler) Run() {
 
 func (s *Scheduler) Stop() {
 	s.stopping = true
-}
-
-func reportError(data []byte, err error) {
-	util.Error("Unable to unmarshal json", err, data)
 }
 
 func (s *Server) StartScheduler() error {

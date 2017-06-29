@@ -106,16 +106,8 @@ func (c *Client) Pop(q string) (*Job, error) {
 		return nil, err
 	}
 
-	line, err := c.rdr.ReadString('\n')
-	if err != nil {
-		return nil, err
-	}
-	if strings.HasPrefix(line, "ERR ") {
-		return nil, errors.New(line[4 : len(line)-1])
-	}
-
 	var job Job
-	err = json.Unmarshal([]byte(line), &job)
+	err = jsonResult(c.rdr, &job)
 	if err != nil {
 		return nil, err
 	}
@@ -131,9 +123,9 @@ func (c *Client) Pop(q string) (*Job, error) {
 
 func (c *Client) Fail(jid string, err error, backtrace []string) error {
 	failure := map[string]interface{}{
-		"jid":       jid,
-		"message":   err.Error(),
-		"errortype": reflect.TypeOf(err).Name(),
+		"jid":     jid,
+		"message": err.Error(),
+		"errtype": reflect.TypeOf(err).Name(),
 	}
 
 	if backtrace != nil {
@@ -149,6 +141,24 @@ func (c *Client) Fail(jid string, err error, backtrace []string) error {
 	}
 	return ok(c.rdr)
 }
+
+func (c *Client) Info() (map[string]interface{}, error) {
+	err := writeLine(c.wtr, "INFO", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var hash map[string]interface{}
+
+	err = jsonResult(c.rdr, &hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, nil
+}
+
+//////////////////////////////////////////////////
 
 func writeLine(io *bufio.Writer, op string, payload []byte) error {
 	_, err := io.Write([]byte(op))
@@ -182,4 +192,20 @@ func ok(io *bufio.Reader) error {
 		return errors.New(line[4 : len(line)-1])
 	}
 	return errors.New(line)
+}
+
+func jsonResult(io *bufio.Reader, thing interface{}) error {
+	line, err := io.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(line, "ERR ") {
+		return errors.New(line[4 : len(line)-1])
+	}
+
+	err = json.Unmarshal([]byte(line), thing)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -8,8 +8,11 @@ import (
 )
 
 type Store struct {
-	Name string
-	db   *bolt.DB
+	Name      string
+	db        *bolt.DB
+	retries   *TimedSet
+	scheduled *TimedSet
+	working   *TimedSet
 }
 
 var (
@@ -49,19 +52,22 @@ func OpenStore(path string) (*Store, error) {
 	}
 
 	return &Store{
-		Name: "default",
-		db:   db,
+		Name:      "default",
+		db:        db,
+		retries:   newTimedSet(RetriesBucket, db),
+		scheduled: newTimedSet(ScheduledBucket, db),
+		working:   newTimedSet(WorkingBucket, db),
 	}, nil
 }
 
 func (store *Store) Retries() *TimedSet {
-	return newTimedSet(RetriesBucket, store.db)
+	return store.retries
 }
 
 func (store *Store) Scheduled() *TimedSet {
-	return newTimedSet(ScheduledBucket, store.db)
+	return store.scheduled
 }
 
 func (store *Store) Working() *TimedSet {
-	return newTimedSet(WorkingBucket, store.db)
+	return store.working
 }

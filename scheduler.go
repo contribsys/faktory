@@ -20,18 +20,18 @@ var (
 
 func (s *Scheduler) Run() {
 	for {
-		util.Debug(s.Name, "running")
 		elms, err := s.ts.RemoveBefore(util.Nows())
 		if err == nil {
 			for _, elm := range elms {
-				var job *Job
-				err := json.Unmarshal(elm, job)
+				var job Job
+				err := json.Unmarshal(elm, &job)
 				if err != nil {
 					reportError(elm, err)
 					continue
 				}
 				q := LookupQueue(job.Queue)
-				q.Push(job)
+				q.Push(&job)
+				util.Info(s.Name, "enqueuing", job.Jid)
 			}
 		}
 		time.Sleep(delay)

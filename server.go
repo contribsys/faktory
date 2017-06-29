@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -159,6 +160,7 @@ var cmdSet = map[string]command{
 	"POP":  pop,
 	"ACK":  ack,
 	"FAIL": fail,
+	"INFO": info,
 }
 
 func end(c *Connection, s *Server, cmd string) {
@@ -205,7 +207,7 @@ func pop(c *Connection, s *Server, cmd string) {
 
 func ack(c *Connection, s *Server, cmd string) {
 	jid := cmd[4:]
-	err := s.Acknowledge(jid)
+	_, err := s.Acknowledge(jid)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -214,11 +216,29 @@ func ack(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
+func info(c *Connection, s *Server, cmd string) {
+	data := map[string]interface{}{
+		"failures":  s.Failures,
+		"processed": s.Processed,
+		"working":   s.store.Working().Size(),
+		"retries":   s.store.Retries().Size(),
+		"scheduled": s.store.Scheduled().Size(),
+	}
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+
+	c.Result(bytes)
+}
+
 type JobFailure struct {
-	Jid       string   `json:"jid"`
-	Message   string   `json:"message"`
-	ErrorType string   `json:"errortype"`
-	Backtrace []string `json:"backtrace"`
+	Jid          string   `json:"jid"`
+	RetryAt      string   `json:"retry_at"`
+	ErrorMessage string   `json:"message"`
+	ErrorType    string   `json:"errtype"`
+	Backtrace    []string `json:"backtrace"`
 }
 
 func fail(c *Connection, s *Server, cmd string) {
@@ -229,13 +249,67 @@ func fail(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
-	err = s.Acknowledge(failure.Jid)
+
+	job, err := s.Acknowledge(failure.Jid)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
+
+	if job.Failure != nil {
+		job.Failure.RetryCount += 1
+		job.Failure.ErrorMessage = failure.ErrorMessage
+		job.Failure.ErrorType = failure.ErrorType
+		job.Failure.Backtrace = failure.Backtrace
+	} else {
+		job.Failure = &Failure{
+			RetryCount:   0,
+			FailedAt:     util.Nows(),
+			ErrorMessage: failure.ErrorMessage,
+			ErrorType:    failure.ErrorType,
+			Backtrace:    failure.Backtrace,
+		}
+	}
+
+	when := nextRetry(failure.RetryAt, job)
+	bytes, err := json.Marshal(job)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+
+	util.Info("Adding retry", job.Jid, when)
+	s.store.Retries().AddElement(util.Thens(when), job.Jid, bytes)
 	atomic.AddInt64(&s.Failures, 1)
 	c.Ok()
+}
+
+var (
+	// about one month
+	maxRetryDelay = 720 * time.Hour
+)
+
+func nextRetry(override string, job *Job) time.Time {
+	if override != "" {
+		tm, err := time.Parse(time.RFC3339, override)
+		if err != nil {
+			util.Warn("Invalid retry_at: %s", override)
+			return defaultRetry(job)
+		}
+		if tm.Before(time.Now()) || tm.After(time.Now().Add(maxRetryDelay)) {
+			// retry time out of range
+			util.Warn("Invalid retry_at time: %s", tm)
+			return defaultRetry(job)
+		}
+		return tm
+	}
+	return defaultRetry(job)
+}
+
+func defaultRetry(job *Job) time.Time {
+	count := job.Failure.RetryCount
+	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
+	return time.Now().Add(time.Duration(secs) * time.Second)
 }
 
 func processLines(conn *Connection, server *Server) {
@@ -268,15 +342,16 @@ func processLines(conn *Connection, server *Server) {
 	}
 }
 
-func (s *Server) Acknowledge(jid string) error {
+func (s *Server) Acknowledge(jid string) (*Job, error) {
 	workingMutex.Lock()
 	defer workingMutex.Unlock()
-	_, ok := workingMap[jid]
+
+	res, ok := workingMap[jid]
 	if !ok {
-		return fmt.Errorf("JID %s not found", jid)
+		return nil, fmt.Errorf("JID %s not found", jid)
 	}
 	delete(workingMap, jid)
-	return nil
+	return res.Job, nil
 }
 
 func (s *Server) ReapWorkingSet() (int, error) {
@@ -285,6 +360,7 @@ func (s *Server) ReapWorkingSet() (int, error) {
 
 	workingMutex.Lock()
 	defer workingMutex.Unlock()
+
 	for jid, res := range workingMap {
 		if res.texpiry.Before(now) {
 			delete(workingMap, jid)

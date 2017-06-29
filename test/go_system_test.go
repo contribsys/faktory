@@ -1,7 +1,6 @@
 package tester
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
@@ -41,6 +41,7 @@ func TestSystem(t *testing.T) {
 	go func() {
 		wg.Wait()
 		fmt.Println(s.Processed, s.Failures)
+		time.Sleep(30 * time.Second)
 		os.Exit(0)
 	}()
 
@@ -60,7 +61,7 @@ func pushAndPop() {
 	defer client.Close()
 
 	util.Debug("Pushing")
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -68,14 +69,14 @@ func pushAndPop() {
 	}
 	util.Debug("Popping")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		job, err := client.Pop("default")
 		if err != nil {
 			handleError(err)
 			return
 		}
 		if i%100 == 99 {
-			err = client.Fail(job.Jid, errors.New("oops"), nil)
+			err = client.Fail(job.Jid, os.ErrClosed, nil)
 		} else {
 			err = client.Ack(job.Jid)
 		}
@@ -84,6 +85,12 @@ func pushAndPop() {
 			return
 		}
 	}
+	hash, err := client.Info()
+	if err != nil {
+		handleError(err)
+		return
+	}
+	fmt.Println(hash)
 }
 
 func pushJob(client *worq.Client, idx int) error {

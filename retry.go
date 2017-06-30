@@ -31,10 +31,19 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	job, err := s.Acknowledge(failure.Jid)
+	err = s.Fail(&failure)
 	if err != nil {
 		c.Error(cmd, err)
 		return
+	}
+
+	c.Ok()
+}
+
+func (s *Server) Fail(failure *JobFailure) error {
+	job, err := s.Acknowledge(failure.Jid)
+	if err != nil {
+		return err
 	}
 
 	if job.Failure != nil {
@@ -55,14 +64,12 @@ func fail(c *Connection, s *Server, cmd string) {
 	when := nextRetry(failure.RetryAt, job)
 	bytes, err := json.Marshal(job)
 	if err != nil {
-		c.Error(cmd, err)
-		return
+		return err
 	}
 
-	util.Info("Adding retry", job.Jid, when)
-	s.store.Retries().AddElement(util.Thens(when), job.Jid, bytes)
+	err = s.store.Retries().AddElement(util.Thens(when), job.Jid, bytes)
 	atomic.AddInt64(&s.Failures, 1)
-	c.Ok()
+	return nil
 }
 
 func nextRetry(override string, job *Job) time.Time {

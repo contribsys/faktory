@@ -43,10 +43,7 @@ func TestSystem(t *testing.T) {
 
 	go func() {
 		wg.Wait()
-		assert.Equal(t, 3000, s.Processed)
-		assert.Equal(t, 30, s.Failures)
-		fmt.Println(s.Processed, s.Failures)
-		os.Exit(0)
+		s.Stop(nil)
 	}()
 
 	err := s.Start()
@@ -54,6 +51,8 @@ func TestSystem(t *testing.T) {
 		fmt.Println(err)
 		return
 	}
+	assert.Equal(t, int64(30000), s.Processed)
+	assert.Equal(t, int64(300), s.Failures)
 }
 
 func pushAndPop() {
@@ -65,7 +64,7 @@ func pushAndPop() {
 	defer client.Close()
 
 	util.Debug("Pushing")
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 10000; i++ {
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -73,7 +72,7 @@ func pushAndPop() {
 	}
 	util.Debug("Popping")
 
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 10000; i++ {
 		job, err := client.Pop("default")
 		if err != nil {
 			handleError(err)

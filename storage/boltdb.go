@@ -7,22 +7,15 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-type Store struct {
+type BoltStore struct {
 	Name      string
 	db        *bolt.DB
-	retries   *TimedSet
-	scheduled *TimedSet
-	working   *TimedSet
+	retries   *BoltTimedSet
+	scheduled *BoltTimedSet
+	working   *BoltTimedSet
 }
 
-var (
-	DefaultPath     = "/var/run/worq/"
-	ScheduledBucket = "scheduled"
-	RetriesBucket   = "retries"
-	WorkingBucket   = "working"
-)
-
-func OpenStore(path string) (*Store, error) {
+func OpenBolt(path string) (Store, error) {
 	if path == "" {
 		path = DefaultPath
 	}
@@ -51,23 +44,27 @@ func OpenStore(path string) (*Store, error) {
 		return nil, err
 	}
 
-	return &Store{
-		Name:      "default",
+	return &BoltStore{
+		Name:      path,
 		db:        db,
-		retries:   newTimedSet(RetriesBucket, db),
-		scheduled: newTimedSet(ScheduledBucket, db),
-		working:   newTimedSet(WorkingBucket, db),
+		retries:   &BoltTimedSet{Name: RetriesBucket, db: db},
+		scheduled: &BoltTimedSet{Name: ScheduledBucket, db: db},
+		working:   &BoltTimedSet{Name: WorkingBucket, db: db},
 	}, nil
 }
 
-func (store *Store) Retries() *TimedSet {
+func (store *BoltStore) Close() error {
+	return store.db.Close()
+}
+
+func (store *BoltStore) Retries() TimedSet {
 	return store.retries
 }
 
-func (store *Store) Scheduled() *TimedSet {
+func (store *BoltStore) Scheduled() TimedSet {
 	return store.scheduled
 }
 
-func (store *Store) Working() *TimedSet {
+func (store *BoltStore) Working() TimedSet {
 	return store.working
 }

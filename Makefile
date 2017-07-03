@@ -20,8 +20,15 @@ prepare:
 	#sudo tar -C /usr/local -xzf go1.5.1.linux-amd64.tar.gz
 	go get github.com/stretchr/testify/...
 	go get github.com/jteeuwen/go-bindata/...
+	go get -u github.com/kardianos/govendor
 	#linters
 	go get github.com/alecthomas/gometalinter
+	#you must have .local.sh with ROCKSDB_HOME set
+	#export ROCKSDB_HOME=/usr/local/Cellar/rocksdb/5.5.1
+	# brew install rocksdb zstd
+	#export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
+	#export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
+	go get github.com/tecbot/gorocksdb
 	gometalinter --install
 	gem install -N fpm
 	@echo Now you should be ready to run "make"
@@ -44,7 +51,7 @@ lint:
 	gometalinter ./...
 
 clean:
-	rm -f test/*.db
+	rm -rf test/*.db
 	rm -f main worq templates.go
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart

@@ -27,6 +27,7 @@ func runServer(runner func()) {
 			fmt.Println(err)
 		}
 	}()
+	time.Sleep(100 * time.Millisecond)
 	runner()
 }
 

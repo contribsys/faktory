@@ -10,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
@@ -56,6 +57,7 @@ func TestSystem(t *testing.T) {
 }
 
 func pushAndPop() {
+	time.Sleep(50 * time.Millisecond)
 	client, err := worq.Dial(&worq.ClientOptions{Pwd: "123456"})
 	if err != nil {
 		handleError(err)

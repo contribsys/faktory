@@ -14,7 +14,7 @@ import (
 func TestBasicTimedSet(t *testing.T) {
 	t.Parallel()
 
-	db, err := OpenStore("../test/timed.db")
+	db, err := Open("rocksdb", "../test/timed")
 	assert.NoError(t, err)
 	j1 := []byte(fakeJob())
 
@@ -45,7 +45,7 @@ func TestBasicTimedSet(t *testing.T) {
 }
 
 func BenchmarkBasicTimedSet(b *testing.B) {
-	db, err := OpenStore("../test/bench.db")
+	db, err := Open("bolt", "../test/bench.db")
 	count := 10000
 	assert.NoError(b, err)
 	start := time.Now()
@@ -56,27 +56,6 @@ func BenchmarkBasicTimedSet(b *testing.B) {
 	assert.NoError(b, err)
 	fmt.Printf("%d bytes, %.3f bytes per record\n", info.Size(), float64(info.Size())/float64(count))
 }
-
-//func TestGob(t *testing.T) {
-//job := fakeJob()
-//hash, err := util.ParseJob([]byte(job))
-//assert.NoError(t, err)
-//var buf bytes.Buffer
-//fmt.Println(hash)
-//enc := gob.NewEncoder(&buf)
-//err = enc.Encode(hash)
-//assert.NoError(t, err)
-//fmt.Println(len(job), len(buf.Bytes()))
-//fmt.Printf("%s", buf.Bytes())
-//}
-
-//func TestTimestampFormat(t *testing.T) {
-//tstamp := time.Now()
-//jid := "aksdfask"
-//key := fmt.Sprintf("%.10d|%s", tstamp.Unix(), jid)
-
-//fmt.Println(key)
-//}
 
 func fakeJob() string {
 	return `{"jid":"` + util.RandomJid() + `","created_at":1234567890123123123,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`

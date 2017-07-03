@@ -2,10 +2,7 @@ package storage
 
 import (
 	"bytes"
-	"container/list"
 	"fmt"
-	"sync"
-	"sync/atomic"
 
 	"github.com/boltdb/bolt"
 )
@@ -13,73 +10,28 @@ import (
 /*
  * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
  */
-type TimedSet struct {
+type BoltTimedSet struct {
 	Name string
 	db   *bolt.DB
-	q    *list.List
-	m    sync.Mutex
-	size int64
 }
 
-type kv struct {
-	k []byte
-	v []byte
-}
-
-func newTimedSet(name string, db *bolt.DB) *TimedSet {
-	return &TimedSet{Name: name, db: db, q: list.New(), m: sync.Mutex{}, size: -1}
-}
-
-func (ts *TimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+func (ts *BoltTimedSet) AddElement(tstamp string, jid string, payload []byte) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
-	if ts.size == -1 {
-		ts.Size()
-	}
-
-	ts.m.Lock()
-	ts.q.PushBack(&kv{key, payload})
-	atomic.AddInt64(&ts.size, 1)
-	ts.m.Unlock()
-	return nil
-}
-
-func (ts *TimedSet) flush() error {
-	ts.m.Lock()
-	defer ts.m.Unlock()
-
-	if ts.q.Front() == nil {
-		return nil
-	}
-	count := 0
 	err := ts.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
-		for e := ts.q.Front(); e != nil; e = e.Next() {
-			kv := e.Value.(*kv)
-			err := b.Put(kv.k, kv.v)
-			if err != nil {
-				return err
-			}
-			count += 1
+		err := b.Put(key, payload)
+		if err != nil {
+			return err
 		}
 		return nil
 	})
 
-	if err == nil {
-		ts.q.Init()
-	}
 	return err
 }
 
-func (ts *TimedSet) Size() int {
-	ts.m.Lock()
-	defer ts.m.Unlock()
-
-	if ts.size >= 0 {
-		return int(ts.size)
-	}
-
-	count := int64(0)
+func (ts *BoltTimedSet) Size() int {
+	count := 0
 	ts.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		c := b.Cursor()
@@ -89,35 +41,23 @@ func (ts *TimedSet) Size() int {
 		return nil
 	})
 
-	ts.size = count
-	return int(count)
+	return count
 }
 
-func (ts *TimedSet) RemoveElement(tstamp string, jid string) error {
-	ts.m.Lock()
-	defer ts.m.Unlock()
-
+func (ts *BoltTimedSet) RemoveElement(tstamp string, jid string) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
 	err := ts.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		return b.Delete(key)
 	})
-	if err == nil {
-		atomic.AddInt64(&ts.size, -1)
-	}
 	return err
 }
 
-func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
-	ts.flush()
-
+func (ts *BoltTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
-	count := int64(0)
 
-	ts.m.Lock()
-	defer ts.m.Unlock()
 	err := ts.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		c := b.Cursor()
@@ -131,7 +71,6 @@ func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 			if err != nil {
 				return err
 			}
-			count += 1
 		}
 		results = local
 		return nil
@@ -139,7 +78,6 @@ func (ts *TimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	atomic.AddInt64(&ts.size, -1*count)
 
 	return results, nil
 }

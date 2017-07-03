@@ -34,8 +34,7 @@ func NewServer(opts *ServerOptions) *Server {
 		opts.Binding = "localhost:7419"
 	}
 	if opts.StoragePath == "" {
-		opts.StoragePath = fmt.Sprintf("%s/%s.db",
-			storage.DefaultPath, strings.Replace(opts.Binding, ":", "_", -1))
+		opts.StoragePath = fmt.Sprintf("./%s.db", strings.Replace(opts.Binding, ":", "_", -1))
 	}
 	return &Server{Options: opts, pwd: "123456"}
 }
@@ -70,7 +69,12 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(f func()) {
-	s.listener.Close()
+	if s.listener != nil {
+		s.listener.Close()
+	}
+	if s.store != nil {
+		s.store.Close()
+	}
 
 	if f != nil {
 		f()

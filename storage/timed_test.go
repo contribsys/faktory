@@ -62,12 +62,13 @@ func TestBoltTimedSet(b *testing.T) {
 func TestRocksTimedSet(b *testing.T) {
 	os.RemoveAll("rocks.db")
 	db, err := Open("rocksdb", "rocks.db")
-	count := 1000000
+	count := 100000
 	assert.NoError(b, err)
 	start := time.Now()
 	for i := 0; i < count; i++ {
 		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
 	}
+	db.Close()
 }
 
 func fakeJob() string {

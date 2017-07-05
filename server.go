@@ -26,7 +26,7 @@ type Server struct {
 	Failures  int64
 	pwd       string
 	listener  net.Listener
-	store     *storage.Store
+	store     storage.Store
 }
 
 func NewServer(opts *ServerOptions) *Server {
@@ -40,7 +40,7 @@ func NewServer(opts *ServerOptions) *Server {
 }
 
 func (s *Server) Start() error {
-	store, err := storage.OpenStore(s.Options.StoragePath)
+	store, err := storage.Open("boltdb", s.Options.StoragePath)
 	if err != nil {
 		return err
 	}

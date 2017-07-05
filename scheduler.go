@@ -10,7 +10,7 @@ import (
 
 type Scheduler struct {
 	Name     string
-	ts       *storage.TimedSet
+	ts       storage.TimedSet
 	stopping bool
 }
 

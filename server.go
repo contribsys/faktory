@@ -40,7 +40,7 @@ func NewServer(opts *ServerOptions) *Server {
 }
 
 func (s *Server) Start() error {
-	store, err := storage.Open("rocksdb", s.Options.StoragePath)
+	store, err := storage.Open("boltdb", s.Options.StoragePath)
 	if err != nil {
 		return err
 	}

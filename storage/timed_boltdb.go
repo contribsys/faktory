@@ -1,0 +1,83 @@
+package storage
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/boltdb/bolt"
+)
+
+/*
+ * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
+ */
+type BoltTimedSet struct {
+	Name string
+	db   *bolt.DB
+}
+
+func (ts *BoltTimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
+
+	err := ts.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		err := b.Put(key, payload)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
+func (ts *BoltTimedSet) Size() int {
+	count := 0
+	ts.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		c := b.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			count += 1
+		}
+		return nil
+	})
+
+	return count
+}
+
+func (ts *BoltTimedSet) RemoveElement(tstamp string, jid string) error {
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
+
+	err := ts.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		return b.Delete(key)
+	})
+	return err
+}
+
+func (ts *BoltTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+	prefix := []byte(tstamp + "|")
+	results := [][]byte{}
+
+	err := ts.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		c := b.Cursor()
+		local := [][]byte{}
+
+		for k, v := c.First(); k != nil && bytes.Compare(k, prefix) <= 0; k, v = c.Next() {
+			cp := make([]byte, len(v))
+			copy(cp, v)
+			local = append(local, cp)
+			err := b.Delete(k)
+			if err != nil {
+				return err
+			}
+		}
+		results = local
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}

@@ -14,7 +14,8 @@ import (
 func TestBasicTimedSet(t *testing.T) {
 	t.Parallel()
 
-	db, err := Open("rocksdb", "../test/timed")
+	os.RemoveAll("../test/timed.db")
+	db, err := Open("boltdb", "../test/timed.db")
 	assert.NoError(t, err)
 	j1 := []byte(fakeJob())
 
@@ -44,17 +45,29 @@ func TestBasicTimedSet(t *testing.T) {
 	assert.Equal(t, values, results)
 }
 
-func BenchmarkBasicTimedSet(b *testing.B) {
-	db, err := Open("bolt", "../test/bench.db")
-	count := 10000
+func TestBoltTimedSet(b *testing.T) {
+	os.RemoveAll("bolt.db")
+	db, err := Open("boltdb", "bolt.db")
+	count := 100
 	assert.NoError(b, err)
 	start := time.Now()
 	for i := 0; i < count; i++ {
 		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
 	}
-	info, err := os.Stat("../test/bench.db")
+	info, err := os.Stat("bolt.db")
 	assert.NoError(b, err)
 	fmt.Printf("%d bytes, %.3f bytes per record\n", info.Size(), float64(info.Size())/float64(count))
+}
+
+func TestRocksTimedSet(b *testing.T) {
+	os.RemoveAll("rocks.db")
+	db, err := Open("rocksdb", "rocks.db")
+	count := 1000000
+	assert.NoError(b, err)
+	start := time.Now()
+	for i := 0; i < count; i++ {
+		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
+	}
 }
 
 func fakeJob() string {

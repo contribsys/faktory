@@ -24,9 +24,7 @@ type TimedSet interface {
 }
 
 func Open(dbtype string, path string) (Store, error) {
-	if dbtype == "boltdb" {
-		return OpenBolt(path)
-	} else if dbtype == "rocksdb" {
+	if dbtype == "rocksdb" {
 		return OpenRocks(path)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)

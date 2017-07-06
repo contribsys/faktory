@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mperham/gorocksdb"
 )
@@ -26,8 +27,38 @@ func (ts *RocksTimedSet) Close() {
 	ts.cf.Destroy()
 }
 
+func (ts *RocksTimedSet) EachElement(proc func(string, string, []byte) error) error {
+	ro := gorocksdb.NewDefaultReadOptions()
+	ro.SetFillCache(false)
+
+	it := ts.db.NewIteratorCF(ro, ts.cf)
+	defer it.Close()
+
+	for it.SeekToFirst(); it.Valid(); it.Next() {
+		if err := it.Err(); err != nil {
+			return err
+		}
+		k := it.Key()
+		v := it.Value()
+		key := k.Data()
+		strs := strings.Split(string(key), "|")
+		payload := v.Data()
+		err := proc(strs[0], strs[1], payload)
+		k.Free()
+		v.Free()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (ts *RocksTimedSet) Size() int {
-	it := ts.db.NewIteratorCF(ts.ro, ts.cf)
+	ro := gorocksdb.NewDefaultReadOptions()
+	ro.SetFillCache(false)
+
+	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
 
 	count := 0

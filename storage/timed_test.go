@@ -17,23 +17,24 @@ func TestBasicTimedSet(t *testing.T) {
 	os.RemoveAll("../test/timed.db")
 	db, err := Open("boltdb", "../test/timed.db")
 	assert.NoError(t, err)
-	j1 := []byte(fakeJob())
+	jid, j1 := fakeJob()
 
 	past := time.Now()
 
 	r := db.Retries()
 	assert.Equal(t, 0, r.Size())
-	err = r.AddElement(util.Thens(past), "1239712983", j1)
+	err = r.AddElement(util.Thens(past), fmt.Sprintf("0%s", jid), j1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, r.Size())
 
-	j2 := []byte(fakeJob())
-	err = r.AddElement(util.Thens(past), "1239712984", j2)
+	jid, j2 := fakeJob()
+	err = r.AddElement(util.Thens(past), fmt.Sprintf("1%s", jid), j2)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, r.Size())
 
 	current := time.Now()
-	err = r.AddElement(util.Thens(current.Add(10*time.Second)), "1239712985", []byte(fakeJob()))
+	jid, j3 := fakeJob()
+	err = r.AddElement(util.Thens(current.Add(10*time.Second)), jid, j3)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, r.Size())
 
@@ -50,27 +51,76 @@ func TestBoltTimedSet(b *testing.T) {
 	db, err := Open("boltdb", "bolt.db")
 	count := 100
 	assert.NoError(b, err)
+
+	retries := db.Retries()
 	start := time.Now()
 	for i := 0; i < count; i++ {
-		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
+		jid, job := fakeJob()
+		err = retries.AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), jid, job)
+		assert.NoError(b, err)
+		assert.Equal(b, i+1, retries.Size())
 	}
-	info, err := os.Stat("bolt.db")
+
+	amt := 0
+	err = retries.EachElement(func(tstamp string, jid string, elm []byte) error {
+		assert.Equal(b, 27, len(tstamp))
+		assert.Equal(b, 16, len(jid))
+		assert.NotNil(b, elm)
+		amt += 1
+		return nil
+	})
 	assert.NoError(b, err)
-	fmt.Printf("%d bytes, %.3f bytes per record\n", info.Size(), float64(info.Size())/float64(count))
+	assert.Equal(b, count, amt)
+
+	remd := 0
+	start = time.Now()
+	for i := 0; i < count; i++ {
+		elms, err := retries.RemoveBefore(util.Thens(start.Add(time.Duration(rand.Intn(5*count)) * time.Second)))
+		assert.NoError(b, err)
+		remd += len(elms)
+		assert.Equal(b, count-remd, retries.Size())
+		//assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
+	}
 }
 
 func TestRocksTimedSet(b *testing.T) {
 	os.RemoveAll("rocks.db")
 	db, err := Open("rocksdb", "rocks.db")
-	count := 100000
+	count := 1000
 	assert.NoError(b, err)
+
+	retries := db.Retries()
 	start := time.Now()
 	for i := 0; i < count; i++ {
-		err = db.Retries().AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), fmt.Sprintf("abcdefghijk%d", i), []byte(fakeJob()))
+		jid, job := fakeJob()
+		err = retries.AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), jid, job)
+		assert.NoError(b, err)
+	}
+
+	amt := 0
+	err = retries.EachElement(func(tstamp string, jid string, elm []byte) error {
+		assert.Equal(b, 27, len(tstamp))
+		assert.Equal(b, 16, len(jid))
+		assert.NotNil(b, elm)
+		amt += 1
+		return nil
+	})
+	assert.NoError(b, err)
+	assert.Equal(b, count, amt)
+
+	remd := 0
+	start = time.Now()
+	for i := 0; i < count; i++ {
+		elms, err := retries.RemoveBefore(util.Thens(start.Add(time.Duration(rand.Intn(5*count)) * time.Second)))
+		assert.NoError(b, err)
+		remd += len(elms)
+		assert.Equal(b, count-remd, retries.Size())
+		//assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
 	}
 	db.Close()
 }
 
-func fakeJob() string {
-	return `{"jid":"` + util.RandomJid() + `","created_at":1234567890123123123,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`
+func fakeJob() (string, []byte) {
+	jid := util.RandomJid()
+	return jid, []byte(`{"jid":"` + jid + `","created_at":1234567890123123123,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`)
 }

@@ -21,6 +21,7 @@ type TimedSet interface {
 	RemoveElement(timestamp string, jid string) error
 	RemoveBefore(timestamp string) ([][]byte, error)
 	Size() int
+	EachElement(func(string, string, []byte) error) error
 }
 
 func Open(dbtype string, path string) (Store, error) {

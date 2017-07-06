@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/boltdb/bolt"
 )
@@ -42,6 +43,27 @@ func (ts *BoltTimedSet) Size() int {
 	})
 
 	return count
+}
+
+func (ts *BoltTimedSet) EachElement(proc func(string, string, []byte) error) error {
+	er := ts.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ts.Name))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			payload := make([]byte, len(v))
+			copy(payload, v)
+			key := make([]byte, len(k))
+			copy(key, k)
+			strs := strings.Split(string(key), "|")
+			err := proc(strs[0], strs[1], payload)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return er
 }
 
 func (ts *BoltTimedSet) RemoveElement(tstamp string, jid string) error {

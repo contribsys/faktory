@@ -103,3 +103,6 @@ func (ts *BoltTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 	return results, nil
 }
+func (ts *BoltTimedSet) MoveTo(ots TimedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+	return nil
+}

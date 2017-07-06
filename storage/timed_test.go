@@ -98,7 +98,11 @@ func TestRocksTimedSet(b *testing.T) {
 	}
 
 	amt := 0
+	ajid := ""
+	atstamp := ""
 	err = retries.EachElement(func(tstamp string, jid string, elm []byte) error {
+		ajid = jid
+		atstamp = tstamp
 		assert.Equal(b, 27, len(tstamp))
 		assert.Equal(b, 16, len(jid))
 		assert.NotNil(b, elm)
@@ -107,6 +111,20 @@ func TestRocksTimedSet(b *testing.T) {
 	})
 	assert.NoError(b, err)
 	assert.Equal(b, count, amt)
+
+	assert.Equal(b, 0, db.Working().Size())
+	err = retries.MoveTo(db.Working(), atstamp, ajid, func(payload []byte) (string, []byte, error) {
+		return util.Nows(), payload, nil
+	})
+	assert.NoError(b, err)
+	assert.Equal(b, 1, db.Working().Size())
+	assert.Equal(b, count-1, retries.Size())
+	count -= 1
+
+	err = retries.MoveTo(db.Working(), "1231", ajid, func(payload []byte) (string, []byte, error) {
+		return util.Nows(), payload, nil
+	})
+	assert.Error(b, err)
 
 	remd := 0
 	start = time.Now()

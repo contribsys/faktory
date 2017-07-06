@@ -111,3 +111,29 @@ func (ts *RocksTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 	return results, nil
 }
+func (ts *RocksTimedSet) MoveTo(ots TimedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+	other := ots.(*RocksTimedSet)
+	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
+
+	slice, err := ts.db.GetCF(ts.ro, ts.cf, key)
+	if err != nil {
+		return err
+	}
+	defer slice.Free()
+
+	data := slice.Data()
+	if len(data) == 0 {
+		return fmt.Errorf("Element not found in %s: %s", ts.Name, jid)
+	}
+
+	newtstamp, payload, err := mutator(data)
+	if err != nil {
+		return err
+	}
+	newkey := []byte(fmt.Sprintf("%s|%s", newtstamp, jid))
+
+	wb := gorocksdb.NewWriteBatch()
+	wb.DeleteCF(ts.cf, key)
+	wb.PutCF(other.cf, newkey, payload)
+	return ts.db.Write(ts.wo, wb)
+}

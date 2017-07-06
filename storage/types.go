@@ -22,6 +22,13 @@ type TimedSet interface {
 	RemoveBefore(timestamp string) ([][]byte, error)
 	Size() int
 	EachElement(func(string, string, []byte) error) error
+
+	/*
+		Move the given tstamp/jid pair from this TimedSet to the given
+		TimedSet atomically.  The given func may mutate the payload and
+		return a new tstamp.
+	*/
+	MoveTo(TimedSet, string, string, func([]byte) (string, []byte, error)) error
 }
 
 func Open(dbtype string, path string) (Store, error) {

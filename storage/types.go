@@ -4,9 +4,9 @@ import "fmt"
 
 type Store interface {
 	Close() error
-	Retries() TimedSet
-	Scheduled() TimedSet
-	Working() TimedSet
+	Retries() SortedSet
+	Scheduled() SortedSet
+	Working() SortedSet
 }
 
 var (
@@ -16,7 +16,7 @@ var (
 	WorkingBucket   = "working"
 )
 
-type TimedSet interface {
+type SortedSet interface {
 	AddElement(timestamp string, jid string, payload []byte) error
 	RemoveElement(timestamp string, jid string) error
 	RemoveBefore(timestamp string) ([][]byte, error)
@@ -24,11 +24,11 @@ type TimedSet interface {
 	EachElement(func(string, string, []byte) error) error
 
 	/*
-		Move the given tstamp/jid pair from this TimedSet to the given
-		TimedSet atomically.  The given func may mutate the payload and
+		Move the given tstamp/jid pair from this SortedSet to the given
+		SortedSet atomically.  The given func may mutate the payload and
 		return a new tstamp.
 	*/
-	MoveTo(TimedSet, string, string, func([]byte) (string, []byte, error)) error
+	MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error
 }
 
 func Open(dbtype string, path string) (Store, error) {

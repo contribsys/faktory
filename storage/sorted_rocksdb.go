@@ -10,7 +10,7 @@ import (
 /*
  * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
  */
-type RocksTimedSet struct {
+type RocksSortedSet struct {
 	Name string
 	db   *gorocksdb.DB
 	cf   *gorocksdb.ColumnFamilyHandle
@@ -18,16 +18,16 @@ type RocksTimedSet struct {
 	wo   *gorocksdb.WriteOptions
 }
 
-func (ts *RocksTimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+func (ts *RocksSortedSet) AddElement(tstamp string, jid string, payload []byte) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 	return ts.db.PutCF(ts.wo, ts.cf, key, payload)
 }
 
-func (ts *RocksTimedSet) Close() {
+func (ts *RocksSortedSet) Close() {
 	ts.cf.Destroy()
 }
 
-func (ts *RocksTimedSet) EachElement(proc func(string, string, []byte) error) error {
+func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) error {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
 
@@ -54,7 +54,7 @@ func (ts *RocksTimedSet) EachElement(proc func(string, string, []byte) error) er
 	return nil
 }
 
-func (ts *RocksTimedSet) Size() int {
+func (ts *RocksSortedSet) Size() int {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
 
@@ -71,12 +71,12 @@ func (ts *RocksTimedSet) Size() int {
 	return count
 }
 
-func (ts *RocksTimedSet) RemoveElement(tstamp string, jid string) error {
+func (ts *RocksSortedSet) RemoveElement(tstamp string, jid string) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 	return ts.db.DeleteCF(ts.wo, ts.cf, key)
 }
 
-func (ts *RocksTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+func (ts *RocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
 	count := int64(0)
@@ -111,8 +111,8 @@ func (ts *RocksTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 	return results, nil
 }
-func (ts *RocksTimedSet) MoveTo(ots TimedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
-	other := ots.(*RocksTimedSet)
+func (ts *RocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+	other := ots.(*RocksSortedSet)
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
 	slice, err := ts.db.GetCF(ts.ro, ts.cf, key)

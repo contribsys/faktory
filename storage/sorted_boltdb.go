@@ -11,12 +11,12 @@ import (
 /*
  * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
  */
-type BoltTimedSet struct {
+type BoltSortedSet struct {
 	Name string
 	db   *bolt.DB
 }
 
-func (ts *BoltTimedSet) AddElement(tstamp string, jid string, payload []byte) error {
+func (ts *BoltSortedSet) AddElement(tstamp string, jid string, payload []byte) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
 	err := ts.db.Batch(func(tx *bolt.Tx) error {
@@ -31,7 +31,7 @@ func (ts *BoltTimedSet) AddElement(tstamp string, jid string, payload []byte) er
 	return err
 }
 
-func (ts *BoltTimedSet) Size() int {
+func (ts *BoltSortedSet) Size() int {
 	count := 0
 	ts.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
@@ -45,7 +45,7 @@ func (ts *BoltTimedSet) Size() int {
 	return count
 }
 
-func (ts *BoltTimedSet) EachElement(proc func(string, string, []byte) error) error {
+func (ts *BoltSortedSet) EachElement(proc func(string, string, []byte) error) error {
 	er := ts.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Name))
 		c := b.Cursor()
@@ -66,7 +66,7 @@ func (ts *BoltTimedSet) EachElement(proc func(string, string, []byte) error) err
 	return er
 }
 
-func (ts *BoltTimedSet) RemoveElement(tstamp string, jid string) error {
+func (ts *BoltSortedSet) RemoveElement(tstamp string, jid string) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
 	err := ts.db.Batch(func(tx *bolt.Tx) error {
@@ -76,7 +76,7 @@ func (ts *BoltTimedSet) RemoveElement(tstamp string, jid string) error {
 	return err
 }
 
-func (ts *BoltTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+func (ts *BoltSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
 
@@ -103,6 +103,6 @@ func (ts *BoltTimedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 	return results, nil
 }
-func (ts *BoltTimedSet) MoveTo(ots TimedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+func (ts *BoltSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
 	return nil
 }

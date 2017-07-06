@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBasicTimedSet(t *testing.T) {
+func TestBasicSortedSet(t *testing.T) {
 	t.Parallel()
 
 	os.RemoveAll("../test/timed.db")
@@ -46,7 +46,7 @@ func TestBasicTimedSet(t *testing.T) {
 	assert.Equal(t, values, results)
 }
 
-func TestBoltTimedSet(b *testing.T) {
+func TestBoltSortedSet(b *testing.T) {
 	os.RemoveAll("bolt.db")
 	db, err := Open("boltdb", "bolt.db")
 	count := 100
@@ -83,7 +83,7 @@ func TestBoltTimedSet(b *testing.T) {
 	}
 }
 
-func TestRocksTimedSet(b *testing.T) {
+func TestRocksSortedSet(b *testing.T) {
 	os.RemoveAll("rocks.db")
 	db, err := Open("rocksdb", "rocks.db")
 	count := 1000

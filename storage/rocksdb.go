@@ -9,9 +9,9 @@ import (
 type RocksStore struct {
 	Name      string
 	db        *gorocksdb.DB
-	retries   *RocksTimedSet
-	scheduled *RocksTimedSet
-	working   *RocksTimedSet
+	retries   *RocksSortedSet
+	scheduled *RocksSortedSet
+	working   *RocksSortedSet
 }
 
 func OpenRocks(path string) (Store, error) {
@@ -35,9 +35,9 @@ func OpenRocks(path string) (Store, error) {
 	return &RocksStore{
 		Name:      path,
 		db:        db,
-		scheduled: &RocksTimedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo},
-		retries:   &RocksTimedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo},
-		working:   &RocksTimedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo},
+		scheduled: &RocksSortedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo},
+		retries:   &RocksSortedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo},
+		working:   &RocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo},
 	}, nil
 }
 
@@ -49,14 +49,14 @@ func (store *RocksStore) Close() error {
 	return nil
 }
 
-func (store *RocksStore) Retries() TimedSet {
+func (store *RocksStore) Retries() SortedSet {
 	return store.retries
 }
 
-func (store *RocksStore) Scheduled() TimedSet {
+func (store *RocksStore) Scheduled() SortedSet {
 	return store.scheduled
 }
 
-func (store *RocksStore) Working() TimedSet {
+func (store *RocksStore) Working() SortedSet {
 	return store.working
 }

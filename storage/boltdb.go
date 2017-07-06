@@ -10,9 +10,9 @@ import (
 type BoltStore struct {
 	Name      string
 	db        *bolt.DB
-	retries   *BoltTimedSet
-	scheduled *BoltTimedSet
-	working   *BoltTimedSet
+	retries   *BoltSortedSet
+	scheduled *BoltSortedSet
+	working   *BoltSortedSet
 }
 
 func OpenBolt(path string) (Store, error) {
@@ -47,9 +47,9 @@ func OpenBolt(path string) (Store, error) {
 	return &BoltStore{
 		Name:      path,
 		db:        db,
-		retries:   &BoltTimedSet{Name: RetriesBucket, db: db},
-		scheduled: &BoltTimedSet{Name: ScheduledBucket, db: db},
-		working:   &BoltTimedSet{Name: WorkingBucket, db: db},
+		retries:   &BoltSortedSet{Name: RetriesBucket, db: db},
+		scheduled: &BoltSortedSet{Name: ScheduledBucket, db: db},
+		working:   &BoltSortedSet{Name: WorkingBucket, db: db},
 	}, nil
 }
 
@@ -57,14 +57,14 @@ func (store *BoltStore) Close() error {
 	return store.db.Close()
 }
 
-func (store *BoltStore) Retries() TimedSet {
+func (store *BoltStore) Retries() SortedSet {
 	return store.retries
 }
 
-func (store *BoltStore) Scheduled() TimedSet {
+func (store *BoltStore) Scheduled() SortedSet {
 	return store.scheduled
 }
 
-func (store *BoltStore) Working() TimedSet {
+func (store *BoltStore) Working() SortedSet {
 	return store.working
 }

@@ -14,8 +14,8 @@ import (
 func TestBasicSortedSet(t *testing.T) {
 	t.Parallel()
 
-	os.RemoveAll("../test/timed.db")
-	db, err := Open("boltdb", "../test/timed.db")
+	os.RemoveAll("sorted.db")
+	db, err := Open("rocksdb", "sorted.db")
 	assert.NoError(t, err)
 	jid, j1 := fakeJob()
 
@@ -47,8 +47,9 @@ func TestBasicSortedSet(t *testing.T) {
 }
 
 func TestBoltSortedSet(b *testing.T) {
-	os.RemoveAll("bolt.db")
-	db, err := Open("boltdb", "bolt.db")
+	b.Parallel()
+	os.RemoveAll("basic.db")
+	db, err := Open("rocksdb", "basic.db")
 	count := 100
 	assert.NoError(b, err)
 
@@ -84,6 +85,7 @@ func TestBoltSortedSet(b *testing.T) {
 }
 
 func TestRocksSortedSet(b *testing.T) {
+	b.Parallel()
 	os.RemoveAll("rocks.db")
 	db, err := Open("rocksdb", "rocks.db")
 	count := 1000

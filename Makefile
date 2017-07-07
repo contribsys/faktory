@@ -51,9 +51,7 @@ lint:
 	gometalinter ./...
 
 clean:
-	rm -rf test/*.db
-	rm -rf storage/*.db
-	rm -rf *.db
+	rm -rf tmp
 	rm -f main worq templates.go
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart

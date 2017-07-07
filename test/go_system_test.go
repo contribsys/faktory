@@ -25,7 +25,7 @@ func TestSystem(t *testing.T) {
 
 	storage.DefaultPath = "."
 
-	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "./system.db"})
+	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "../tmp/system.db"})
 
 	util.LogDebug = true
 	util.LogInfo = true

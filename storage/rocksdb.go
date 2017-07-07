@@ -19,12 +19,13 @@ type RocksStore struct {
 
 func OpenRocks(path string) (Store, error) {
 	if path == "" {
-		path = fmt.Sprintf("%s/%s", DefaultPath, "default")
+		path = "default"
 	}
+	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
-	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, path,
+	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
 		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, "default", "queues"},
 		[]*gorocksdb.Options{opts, opts, opts, opts, opts})
 	if err != nil {

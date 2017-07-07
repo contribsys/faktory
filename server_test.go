@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -13,10 +14,12 @@ import (
 )
 
 func init() {
-	storage.DefaultPath = "test"
+	storage.DefaultPath = "tmp"
+	os.Mkdir("tmp", os.FileMode(os.ModeDir|0755))
 }
 
 func runServer(runner func()) {
+	os.RemoveAll("tmp/localhost_7420.db")
 	opts := &ServerOptions{
 		Binding: "localhost:7420",
 	}
@@ -27,6 +30,7 @@ func runServer(runner func()) {
 			fmt.Println(err)
 		}
 	}()
+	// rocks takes a few ms to initialize
 	time.Sleep(100 * time.Millisecond)
 	runner()
 }

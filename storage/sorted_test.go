@@ -11,10 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	DefaultPath = "../tmp"
+	os.Mkdir("../tmp", os.FileMode(os.ModeDir|0755))
+}
+
 func TestBasicSortedSet(t *testing.T) {
 	t.Parallel()
 
-	os.RemoveAll("sorted.db")
+	os.RemoveAll("../tmp/sorted.db")
 	db, err := Open("rocksdb", "sorted.db")
 	assert.NoError(t, err)
 	jid, j1 := fakeJob()
@@ -46,47 +51,9 @@ func TestBasicSortedSet(t *testing.T) {
 	assert.Equal(t, values, results)
 }
 
-func TestBoltSortedSet(b *testing.T) {
-	b.Parallel()
-	os.RemoveAll("basic.db")
-	db, err := Open("rocksdb", "basic.db")
-	count := 100
-	assert.NoError(b, err)
-
-	retries := db.Retries()
-	start := time.Now()
-	for i := 0; i < count; i++ {
-		jid, job := fakeJob()
-		err = retries.AddElement(util.Thens(start.Add(time.Duration(rand.Intn(10*count))*time.Second)), jid, job)
-		assert.NoError(b, err)
-		assert.Equal(b, i+1, retries.Size())
-	}
-
-	amt := 0
-	err = retries.EachElement(func(tstamp string, jid string, elm []byte) error {
-		assert.Equal(b, 27, len(tstamp))
-		assert.Equal(b, 16, len(jid))
-		assert.NotNil(b, elm)
-		amt += 1
-		return nil
-	})
-	assert.NoError(b, err)
-	assert.Equal(b, count, amt)
-
-	remd := 0
-	start = time.Now()
-	for i := 0; i < count; i++ {
-		elms, err := retries.RemoveBefore(util.Thens(start.Add(time.Duration(rand.Intn(5*count)) * time.Second)))
-		assert.NoError(b, err)
-		remd += len(elms)
-		assert.Equal(b, count-remd, retries.Size())
-		//assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
-	}
-}
-
 func TestRocksSortedSet(b *testing.T) {
 	b.Parallel()
-	os.RemoveAll("rocks.db")
+	os.RemoveAll("../tmp/rocks.db")
 	db, err := Open("rocksdb", "rocks.db")
 	count := 1000
 	assert.NoError(b, err)

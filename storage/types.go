@@ -7,6 +7,13 @@ type Store interface {
 	Retries() SortedSet
 	Scheduled() SortedSet
 	Working() SortedSet
+	GetQueue(string) Queue
+}
+
+type Queue interface {
+	Size() int64
+	Push(string, []byte) error
+	Pop() (string, []byte, error)
 }
 
 var (

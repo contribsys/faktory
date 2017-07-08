@@ -47,19 +47,25 @@ func OpenRocks(path string) (Store, error) {
 	}, nil
 }
 
-func (store *RocksStore) GetQueue(name string) Queue {
+func (store *RocksStore) GetQueue(name string) (Queue, error) {
 	q, ok := store.queueSet[name]
 	if ok {
-		return q
+		return q, nil
 	}
 	q = &RocksQueue{
 		Name:  name,
 		size:  -1,
 		store: store,
 		cf:    store.queues,
+		high:  0,
+		low:   0,
+	}
+	err := q.Init()
+	if err != nil {
+		return nil, err
 	}
 	store.queueSet[name] = q
-	return q
+	return q, nil
 }
 
 func (store *RocksStore) Close() error {

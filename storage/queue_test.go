@@ -2,7 +2,9 @@ package storage
 
 import (
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -41,8 +43,8 @@ func TestDecentQueueUsage(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), q.Size())
-	n := 10000
 	err = q.Push([]byte("first"))
+	n := 50000
 	// Push N jobs to queue
 	// Get Size() each time
 	for i := 0; i < n; i++ {
@@ -52,6 +54,7 @@ func TestDecentQueueUsage(t *testing.T) {
 		assert.Equal(t, int64(i+2), q.Size())
 	}
 	err = q.Push([]byte("last"))
+	assert.Equal(t, int64(n+2), q.Size())
 	// Close DB, reopen
 	store.Close()
 
@@ -79,6 +82,44 @@ func TestDecentQueueUsage(t *testing.T) {
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Nil(t, data)
+}
+
+func TestThreadedQueueUsage(t *testing.T) {
+	defer os.RemoveAll("../tmp/qthreaded.db")
+	store, err := Open("rocksdb", "qthreaded.db")
+	assert.NoError(t, err)
+	q, err := store.GetQueue("default")
+	assert.NoError(t, err)
+
+	tcnt := 10
+	n := 5000
+
+	var wg sync.WaitGroup
+	for i := 0; i < tcnt; i++ {
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			pushAndPop(t, n, q)
+		}()
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	wg.Wait()
+	assert.Equal(t, int64(0), q.Size())
+	store.Close()
+}
+
+func pushAndPop(t *testing.T, n int, q Queue) {
+	for i := 0; i < n; i++ {
+		_, data := fakeJob()
+		err := q.Push(data)
+		assert.NoError(t, err)
+	}
+
+	for i := 0; i < n; i++ {
+		_, err := q.Pop()
+		assert.NoError(t, err)
+	}
 }
 
 func TestQueueKeys(t *testing.T) {

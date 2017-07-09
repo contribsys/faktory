@@ -77,10 +77,15 @@ func (q *RocksQueue) Size() int64 {
 func (q *RocksQueue) Push(payload []byte) error {
 	k := q.nextkey()
 	v := payload
-	atomic.AddInt64(&q.size, 1)
 	wo := queueWriteOptions()
 	defer wo.Destroy()
-	return q.store.db.PutCF(wo, q.cf, k, v)
+	err := q.store.db.PutCF(wo, q.cf, k, v)
+	if err != nil {
+		return err
+	}
+
+	atomic.AddInt64(&q.size, 1)
+	return nil
 }
 
 func (q *RocksQueue) Pop() ([]byte, error) {

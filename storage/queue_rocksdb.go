@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/mperham/gorocksdb"
+	"github.com/mperham/worq/util"
 )
 
 var (
@@ -23,7 +23,7 @@ type RocksQueue struct {
 func (q *RocksQueue) Init() error {
 	upper := upperBound(q.Name)
 
-	ro := queueReadOptions()
+	ro := queueReadOptions(false)
 	ro.SetIterateUpperBound(upper)
 	ro.SetFillCache(false)
 	defer ro.Destroy()
@@ -50,7 +50,7 @@ func (q *RocksQueue) Init() error {
 	for ; it.Valid(); it.Next() {
 		count += 1
 	}
-	it.Prev()
+	it.SeekToLast()
 
 	if it.Err() != nil {
 		return it.Err()
@@ -66,7 +66,7 @@ func (q *RocksQueue) Init() error {
 	}
 	q.size = count
 
-	fmt.Printf("Queue init: %s %d elements %d/%d\n", q.Name, q.size, q.low, q.high)
+	util.Debug("Queue init: %s %d elements %d/%d\n", q.Name, q.size, q.low, q.high)
 	return nil
 }
 
@@ -84,7 +84,7 @@ func (q *RocksQueue) Push(payload []byte) error {
 }
 
 func (q *RocksQueue) Pop() ([]byte, error) {
-	ro := queueReadOptions()
+	ro := queueReadOptions(true)
 	defer ro.Destroy()
 
 	key := keyfor(q.Name, q.low)
@@ -159,9 +159,9 @@ func toInt64(bytes []byte) int64 {
 	return value
 }
 
-func queueReadOptions() *gorocksdb.ReadOptions {
+func queueReadOptions(tailing bool) *gorocksdb.ReadOptions {
 	ro := gorocksdb.NewDefaultReadOptions()
-	ro.SetTailing(true)
+	ro.SetTailing(tailing)
 	return ro
 }
 

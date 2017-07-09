@@ -14,7 +14,6 @@ import (
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
-	"github.com/mperham/worq/storage"
 	"github.com/mperham/worq/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,8 +22,7 @@ func TestSystem(t *testing.T) {
 	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
 
-	storage.DefaultPath = "."
-
+	defer os.RemoveAll("../tmp/system.db")
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "../tmp/system.db"})
 
 	util.LogDebug = true
@@ -66,7 +64,7 @@ func pushAndPop() {
 	defer client.Close()
 
 	util.Debug("Pushing")
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -74,7 +72,7 @@ func pushAndPop() {
 	}
 	util.Debug("Popping")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		job, err := client.Pop("default")
 		if err != nil {
 			handleError(err)

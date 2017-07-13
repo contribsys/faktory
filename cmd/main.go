@@ -2,15 +2,18 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
 )
 
 func main() {
-	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
+
+	// This takes over the default logger in `log` and gives us
+	// extra powers for adding fields, errors to log output.
+	worq.InitializeLogger(opts.LogLevel)
+
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding})
 
 	go cli.HandleSignals(s)

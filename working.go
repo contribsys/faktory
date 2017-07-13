@@ -2,7 +2,6 @@ package worq
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -11,28 +10,53 @@ import (
 
 func (s *Server) Acknowledge(jid string) (*Job, error) {
 	workingMutex.Lock()
-	defer workingMutex.Unlock()
-
 	res, ok := workingMap[jid]
 	if !ok {
-		return nil, fmt.Errorf("JID %s not found", jid)
+		workingMutex.Unlock()
+		util.Info("No such job to acknowledge", jid)
+		return nil, nil
 	}
+
 	delete(workingMap, jid)
-	return res.Job, nil
+	workingMutex.Unlock()
+
+	err := s.store.Working().RemoveElement(util.Thens(res.texpiry), jid)
+	return res.Job, err
 }
 
 func (s *Server) ReapWorkingSet() (int, error) {
-	now := time.Now()
 	count := 0
 
-	workingMutex.Lock()
-	defer workingMutex.Unlock()
+	jobs, err := s.store.Working().RemoveBefore(util.Nows())
+	if err != nil {
+		return 0, err
+	}
 
-	for jid, res := range workingMap {
-		if res.texpiry.Before(now) {
-			delete(workingMap, jid)
-			count += 1
+	for _, data := range jobs {
+		var job Job
+		err := json.Unmarshal(data, &job)
+		if err != nil {
+			util.Error("Unable to unmarshal job", err, nil)
+			continue
 		}
+
+		q, err := s.store.GetQueue(job.Queue)
+		if err != nil {
+			util.Error("Unable to retrieve queue", err, nil)
+			continue
+		}
+
+		workingMutex.Lock()
+		delete(workingMap, job.Jid)
+		workingMutex.Unlock()
+
+		err = q.Push(data)
+		if err != nil {
+			util.Error("Unable to push job", err, nil)
+			continue
+		}
+
+		count += 1
 	}
 
 	return count, nil
@@ -49,9 +73,9 @@ type Reservation struct {
 
 var (
 	// Hold the working set in memory so we don't need to burn CPU
-	// marshalling between Bolt and memory when doing 1000s of jobs/sec.
+	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
 	// When client ack's JID, we can lookup reservation
-	// and remove Bolt entry quickly.
+	// and remove Rocks entry quickly.
 	//
 	// TODO Need to hydrate this map into memory when starting up
 	// or a crash can leak reservations into the persistent Working
@@ -60,11 +84,7 @@ var (
 	workingMutex = &sync.Mutex{}
 )
 
-func workingSize() int {
-	return len(workingMap)
-}
-
-func Reserve(identity string, job *Job) error {
+func (s *Server) Reserve(identity string, job *Job) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {
@@ -81,10 +101,16 @@ func Reserve(identity string, job *Job) error {
 		texpiry: exp,
 	}
 
-	_, err := json.Marshal(res)
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
+
+	err = s.store.Working().AddElement(util.Thens(res.texpiry), job.Jid, data)
+	if err != nil {
+		return err
+	}
+
 	workingMutex.Lock()
 	workingMap[job.Jid] = res
 	workingMutex.Unlock()

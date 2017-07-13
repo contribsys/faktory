@@ -90,6 +90,7 @@ func (q *RocksQueue) Push(payload []byte) error {
 
 func (q *RocksQueue) Pop() ([]byte, error) {
 	ro := queueReadOptions(true)
+	ro.SetIterateUpperBound(keyfor(q.Name, q.low))
 	defer ro.Destroy()
 
 	key := keyfor(q.Name, q.low)

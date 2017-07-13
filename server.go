@@ -34,7 +34,7 @@ func NewServer(opts *ServerOptions) *Server {
 		opts.Binding = "localhost:7419"
 	}
 	if opts.StoragePath == "" {
-		opts.StoragePath = fmt.Sprintf("./%s.db", strings.Replace(opts.Binding, ":", "_", -1))
+		opts.StoragePath = fmt.Sprintf("%s.db", strings.Replace(opts.Binding, ":", "_", -1))
 	}
 	return &Server{Options: opts, pwd: "123456"}
 }
@@ -96,8 +96,6 @@ func (s *Server) processConnection(conn net.Conn) {
 		conn.Close()
 		return
 	}
-
-	util.DebugDebug(line)
 
 	valid := strings.HasPrefix(line, "AHOY ")
 	if !valid {
@@ -170,14 +168,19 @@ func end(c *Connection, s *Server, cmd string) {
 }
 
 func push(c *Connection, s *Server, cmd string) {
-	job, err := ParseJob([]byte(cmd[5:]))
+	data := []byte(cmd[5:])
+	job, err := ParseJob(data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
 	qname := job.Queue
-	q := LookupQueue(qname)
-	err = q.Push(job)
+	q, err := s.store.GetQueue(qname)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	err = q.Push(data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -187,8 +190,8 @@ func push(c *Connection, s *Server, cmd string) {
 
 func pop(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := Pop(func(job *Job) error {
-		return Reserve(c.Identity(), job)
+	job, err := s.Pop(func(job *Job) error {
+		return s.Reserve(c.Identity(), job)
 	}, qs...)
 	if err != nil {
 		c.Error(cmd, err)
@@ -234,6 +237,7 @@ func info(c *Connection, s *Server, cmd string) {
 
 	c.Result(bytes)
 }
+
 func processLines(conn *Connection, server *Server) {
 	for {
 		// every operation must complete within 1 second
@@ -245,7 +249,6 @@ func processLines(conn *Connection, server *Server) {
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\n")
-		//util.DebugDebug(cmd)
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd

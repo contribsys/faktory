@@ -19,8 +19,8 @@ import (
 )
 
 func TestSystem(t *testing.T) {
-	cli.SetupLogging(os.Stdout)
 	opts := cli.ParseArguments()
+	worq.InitializeLogger("fatal")
 
 	defer os.RemoveAll("../tmp/system.db")
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "../tmp/system.db"})

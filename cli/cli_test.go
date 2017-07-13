@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -10,6 +11,6 @@ import (
 func TestCli(t *testing.T) {
 	file, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0666)
 	assert.NoError(t, err)
-	SetupLogging(file)
+	log.SetOutput(file)
 	help()
 }

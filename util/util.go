@@ -5,12 +5,12 @@ import (
 	"bytes"
 	cryptorand "crypto/rand"
 	"encoding/base64"
-	"fmt"
-	"log"
 	mathrand "math/rand"
 	"os"
 	"reflect"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -104,17 +104,6 @@ func Debug(msg string, args ...interface{}) {
 	}
 }
 
-// -l verbose: Very verbose for development purposes
-func DebugDebug(msg string, args ...interface{}) {
-	if LogVerbose {
-		if len(args) > 0 {
-			log.Printf(preamble('V')+msg+"\n", args...)
-		} else {
-			log.Println(preamble('V') + msg)
-		}
-	}
-}
-
 func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
@@ -130,7 +119,7 @@ const (
 )
 
 func preamble(lvl rune) string {
-	return fmt.Sprintf("%c %s %d ", lvl, time.Now().UTC().Format(TimestampFormat), os.Getpid())
+	return "" //fmt.Sprintf("%c %s %d ", lvl, time.Now().UTC().Format(TimestampFormat), os.Getpid())
 }
 
 func Thens(tim time.Time) string {

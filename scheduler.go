@@ -10,6 +10,7 @@ import (
 
 type Scheduler struct {
 	Name     string
+	store    storage.Store
 	ts       storage.SortedSet
 	stopping bool
 }
@@ -29,8 +30,17 @@ func (s *Scheduler) Run() {
 					util.Error("Unable to unmarshal json", err, elm)
 					continue
 				}
-				q := LookupQueue(job.Queue)
-				q.Push(&job)
+				que, err := s.store.GetQueue(job.Queue)
+				if err != nil {
+					util.Warn("Error getting queue", job.Queue, err)
+					continue
+				}
+				err = que.Push(elm)
+				if err != nil {
+					util.Warn("Error pushing job", job.Queue, err)
+					continue
+				}
+
 				util.Info(s.Name, "enqueuing", job.Jid)
 			}
 		}

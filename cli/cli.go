@@ -3,10 +3,11 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/signal"
+	"os/user"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -31,18 +32,10 @@ var (
 	}
 )
 
-func SetupLogging(io io.Writer) {
-	// Modern POSIX processes should log to STDOUT only
-	// and use a smart init system to manage logging.  That
-	// logging system should add things like PID, timestamp, etc
-	// to the logging output so we don't add any context at all.
-	log.SetOutput(io)
-	log.SetFlags(0)
-}
-
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "debug", "/var/run/worq.sock", "/var/run/worq"}
+	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/worq", "info", "/var/run/worq.sock", "/var/run/worq"}
 
+	log.SetFlags(0)
 	log.Println(worq.Name, worq.Version)
 	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
 
@@ -75,9 +68,16 @@ func ParseArguments() CmdOptions {
 		os.Exit(0)
 	}
 
-	util.SetLogLevel(defaults.LogLevel)
 	storage.DefaultPath = defaults.StoragePath
-
+	if defaults.Environment == "development" {
+		usr, _ := user.Current()
+		dir := usr.HomeDir
+		storage.DefaultPath = filepath.Join(dir, ".worq")
+	}
+	err := os.Mkdir(storage.DefaultPath, os.FileMode(os.ModeDir|0755))
+	if err != nil && !os.IsExist(err) {
+		log.Fatalf("Cannot create worq's data directory: %v", err)
+	}
 	return defaults
 }
 

@@ -1,26 +1,26 @@
 package storage
 
 import (
+	"sync"
 	"sync/atomic"
 
 	"github.com/mperham/gorocksdb"
 	"github.com/mperham/worq/util"
 )
 
-var (
-	MaxInt = int64(^uint64(0) >> 1)
-)
-
 type RocksQueue struct {
-	Name  string
+	Name string
+
 	size  int64
 	low   int64
 	high  int64
 	store *RocksStore
 	cf    *gorocksdb.ColumnFamilyHandle
+	mu    sync.Mutex
 }
 
-func (q *RocksQueue) Each(fn func(k, v []byte) error) error {
+func (q *RocksQueue) Each(fn func(index int, v []byte) error) error {
+	index := 0
 	upper := upperBound(q.Name)
 
 	ro := queueReadOptions(false)
@@ -37,17 +37,14 @@ func (q *RocksQueue) Each(fn func(k, v []byte) error) error {
 		return it.Err()
 	}
 	for ; it.Valid(); it.Next() {
-		k := it.Key()
-		key := k.Data()
 		v := it.Value()
 		value := v.Data()
-		err := fn(key, value)
+		err := fn(index, value)
+		index += 1
 		if err != nil {
-			k.Free()
 			v.Free()
 			return err
 		}
-		k.Free()
 		v.Free()
 	}
 	if it.Err() != nil {
@@ -56,7 +53,25 @@ func (q *RocksQueue) Each(fn func(k, v []byte) error) error {
 	return nil
 }
 
+func (q *RocksQueue) Clear() (int, error) {
+	count := 0
+	// not exactly optimized
+	// TODO impl which uses Rocks range deletes?
+	for {
+		data, err := q.Pop()
+		if err != nil {
+			return count, err
+		}
+		if data == nil {
+			break
+		}
+		count += 1
+	}
+	return count, nil
+}
+
 func (q *RocksQueue) Init() error {
+	q.mu = sync.Mutex{}
 	upper := upperBound(q.Name)
 
 	ro := queueReadOptions(false)
@@ -102,7 +117,7 @@ func (q *RocksQueue) Init() error {
 	}
 	q.size = count
 
-	util.Log().Warnf("Queue init: %s %d elements %d/%d", q.Name, q.size, q.low, q.high)
+	util.Log().Debugf("Queue init: %s %d elements %d/%d", q.Name, q.size, q.low, q.high)
 	return nil
 }
 
@@ -125,6 +140,9 @@ func (q *RocksQueue) Push(payload []byte) error {
 }
 
 func (q *RocksQueue) Pop() ([]byte, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
 	ro := queueReadOptions(true)
 	ro.SetIterateUpperBound(keyfor(q.Name, q.low))
 	defer ro.Destroy()

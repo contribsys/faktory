@@ -14,7 +14,8 @@ type Queue interface {
 	Size() int64
 	Push([]byte) error
 	Pop() ([]byte, error)
-	Each(func(k, v []byte) error) error
+	Each(func(index int, element []byte) error) error
+	Clear() (int, error)
 }
 
 var (

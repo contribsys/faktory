@@ -1,11 +1,10 @@
 package storage
 
 import (
-	"log"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,9 +29,27 @@ func TestBasicQueueOps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), q.Size())
 
+	err = q.Push([]byte("world"))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), q.Size())
+
+	values := [][]byte{
+		[]byte("hello"),
+		[]byte("world"),
+	}
+	q.Each(func(idx int, value []byte) error {
+		assert.Equal(t, values[idx], value)
+		return nil
+	})
+
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("hello"), data)
+	assert.Equal(t, int64(1), q.Size())
+
+	cnt, err := q.Clear()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, cnt)
 	assert.Equal(t, int64(0), q.Size())
 }
 
@@ -86,45 +103,55 @@ func TestDecentQueueUsage(t *testing.T) {
 }
 
 func TestThreadedQueueUsage(t *testing.T) {
+	t.Parallel()
 	defer os.RemoveAll("../tmp/qthreaded.db")
 	store, err := Open("rocksdb", "qthreaded.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	tcnt := 10
-	n := 5000
+	tcnt := 5
+	n := 10000
 
 	var wg sync.WaitGroup
 	for i := 0; i < tcnt; i++ {
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			pushAndPop(t, n, q)
 		}()
 	}
 
-	time.Sleep(5 * time.Millisecond)
 	wg.Wait()
+	assert.Equal(t, int64(0), counter)
 	assert.Equal(t, int64(0), q.Size())
-	q.(*RocksQueue).Init()
-	q.Each(func(k, v []byte) error {
-		log.Println(string(k), string(v))
+
+	q.Each(func(idx int, v []byte) error {
+		atomic.AddInt64(&counter, 1)
+		//log.Println(string(k), string(v))
 		return nil
 	})
+	assert.Equal(t, int64(0), counter)
 	store.Close()
 }
+
+var (
+	counter int64
+)
 
 func pushAndPop(t *testing.T, n int, q Queue) {
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
 		err := q.Push(data)
 		assert.NoError(t, err)
+		atomic.AddInt64(&counter, 1)
 	}
 
 	for i := 0; i < n; i++ {
-		_, err := q.Pop()
+		value, err := q.Pop()
 		assert.NoError(t, err)
+		assert.NotNil(t, value)
+		atomic.AddInt64(&counter, -1)
 	}
 }
 

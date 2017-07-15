@@ -175,3 +175,24 @@ func TestQueueKeys(t *testing.T) {
 	assert.Equal(t, x[0:3], []byte("foo"))
 	assert.Equal(t, int64(1293712941), toInt64(x[4:12]))
 }
+
+func BenchmarkQueuePerformance(b *testing.B) {
+	defer os.RemoveAll("../tmp/qblah.db")
+	store, err := Open("rocksdb", "qblah.db")
+	assert.NoError(b, err)
+	assert.NotNil(b, store)
+	defer store.Close()
+	q, err := store.GetQueue("default")
+	assert.NoError(b, err)
+
+	_, data := fakeJob()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		switch i % 2 {
+		case 0:
+			q.Push(data)
+		case 1:
+			q.Pop()
+		}
+	}
+}

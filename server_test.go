@@ -50,7 +50,7 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("CMD foo\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "ERR unknown command\n", result)
+		assert.Equal(t, "ERR unknown command CMD\n", result)
 
 		conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')

@@ -3,7 +3,6 @@ package worq
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -278,7 +277,7 @@ func processLines(conn *Connection, server *Server) {
 		}
 		proc, ok := cmdSet[verb]
 		if !ok {
-			conn.Error(cmd, errors.New("unknown command"))
+			conn.Result([]byte(fmt.Sprintf("ERR unknown command %s", verb)))
 		} else {
 			proc(conn, server, cmd)
 		}

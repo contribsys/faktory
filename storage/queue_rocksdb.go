@@ -20,6 +20,42 @@ type RocksQueue struct {
 	cf    *gorocksdb.ColumnFamilyHandle
 }
 
+func (q *RocksQueue) Each(fn func(k, v []byte) error) error {
+	upper := upperBound(q.Name)
+
+	ro := queueReadOptions(false)
+	ro.SetIterateUpperBound(upper)
+	ro.SetFillCache(false)
+	defer ro.Destroy()
+
+	it := q.store.db.NewIteratorCF(ro, q.cf)
+	defer it.Close()
+
+	prefix := append([]byte(q.Name), 0xFF)
+	it.Seek(prefix)
+	if it.Err() != nil {
+		return it.Err()
+	}
+	for ; it.Valid(); it.Next() {
+		k := it.Key()
+		key := k.Data()
+		v := it.Value()
+		value := v.Data()
+		err := fn(key, value)
+		if err != nil {
+			k.Free()
+			v.Free()
+			return err
+		}
+		k.Free()
+		v.Free()
+	}
+	if it.Err() != nil {
+		return it.Err()
+	}
+	return nil
+}
+
 func (q *RocksQueue) Init() error {
 	upper := upperBound(q.Name)
 
@@ -66,7 +102,7 @@ func (q *RocksQueue) Init() error {
 	}
 	q.size = count
 
-	util.Debug("Queue init: %s %d elements %d/%d\n", q.Name, q.size, q.low, q.high)
+	util.Log().Warnf("Queue init: %s %d elements %d/%d", q.Name, q.size, q.low, q.high)
 	return nil
 }
 

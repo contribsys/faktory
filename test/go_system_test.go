@@ -20,7 +20,7 @@ import (
 
 func TestSystem(t *testing.T) {
 	opts := cli.ParseArguments()
-	worq.InitializeLogger("fatal")
+	util.InitLogger("error")
 
 	defer os.RemoveAll("../tmp/system.db")
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "../tmp/system.db"})

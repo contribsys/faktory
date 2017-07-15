@@ -64,21 +64,20 @@ type logrusLoggerOrEntry interface {
 }
 
 func NewLogger(level string, takeOverLog bool) Logger {
-	logrus.SetFormatter(&logrus.TextFormatter{
+	logg := logrus.New()
+	logg.Formatter = &logrus.TextFormatter{
 		DisableSorting:  true,
 		FullTimestamp:   true,
 		TimestampFormat: TimestampFormat,
-	})
-	logg := logrus.New()
+	}
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
 		lvl = logrus.WarnLevel
 	}
-	logg.SetLevel(lvl)
+	logg.Level = lvl
 
 	if takeOverLog {
 		log.SetOutput(logg.Writer())
-		SetLogLevel(level)
 	}
 	return newLogrusLogger(logg).WithFields(map[string]interface{}{
 		"pid": os.Getpid(),

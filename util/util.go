@@ -9,14 +9,12 @@ import (
 	"os"
 	"reflect"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
-	LogInfo    = false
-	LogDebug   = false
-	LogVerbose = false
+	LogInfo  = false
+	LogDebug = false
+	logg     = NewLogger("info", false)
 )
 
 func Darwin() bool {
@@ -49,7 +47,8 @@ func ReadLines(data []byte) ([]string, error) {
 // Logging functions
 //
 
-func SetLogLevel(level string) {
+func InitLogger(level string) {
+	logg = NewLogger(level, true)
 	if level == "info" {
 		LogInfo = true
 	}
@@ -58,49 +57,35 @@ func SetLogLevel(level string) {
 		LogInfo = true
 		LogDebug = true
 	}
+}
 
-	if level == "verbose" {
-		LogInfo = true
-		LogDebug = true
-		LogVerbose = true
-	}
+func Log() Logger {
+	return logg
 }
 
 func Error(msg string, err error, stack []byte) {
-	log.Println(preamble('E'), msg, reflect.TypeOf(err).Name(), err.Error())
+	logg.Error(msg, reflect.TypeOf(err).Name(), err.Error())
 	if stack != nil {
-		log.Println(string(stack))
+		logg.Error(string(stack))
 	}
 }
 
 // Uh oh, not good but not worthy of process death
-func Warn(msg string, args ...interface{}) {
-	if len(args) > 0 {
-		log.Printf("%s %s %v\n", preamble('W'), msg, args)
-	} else {
-		log.Println(preamble('W') + msg)
-	}
+func Warn(args ...interface{}) {
+	logg.Warn(args...)
 }
 
 // Typical logging output, the default level
-func Info(msg string, args ...interface{}) {
+func Info(args ...interface{}) {
 	if LogInfo {
-		if len(args) > 0 {
-			log.Printf("%s %s %v\n", preamble('I'), msg, args)
-		} else {
-			log.Println(preamble('I') + msg)
-		}
+		logg.Info(args...)
 	}
 }
 
 // -l debug: Verbosity level which helps track down production issues
-func Debug(msg string, args ...interface{}) {
+func Debug(args ...interface{}) {
 	if LogDebug {
-		if len(args) > 0 {
-			log.Printf("%s %s %v\n", preamble('D'), msg, args)
-		} else {
-			log.Println(preamble('D'), msg)
-		}
+		logg.Debug(args...)
 	}
 }
 
@@ -117,10 +102,6 @@ func RandomJid() string {
 const (
 	TimestampFormat = "2006-01-02T15:04:05.000000Z"
 )
-
-func preamble(lvl rune) string {
-	return "" //fmt.Sprintf("%c %s %d ", lvl, time.Now().UTC().Format(TimestampFormat), os.Getpid())
-}
 
 func Thens(tim time.Time) string {
 	return tim.UTC().Format(TimestampFormat)

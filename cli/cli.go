@@ -46,8 +46,8 @@ func ParseArguments() CmdOptions {
 	flag.Usage = help
 	flag.BoolVar(&defaults.TestConfig, "tc", false, "Test configuration and exit")
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
-	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (warn, info, debug, verbose)")
-	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production, etc)")
+	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn*, info, debug)")
+	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development*, staging, production, etc)")
 	flag.StringVar(&defaults.StoragePath, "d", "/var/run/worq", "Storage directory")
 
 	// undocumented on purpose, for testing only, we don't want people changing these
@@ -108,7 +108,7 @@ func HandleSignals(s *worq.Server) {
 		signal.Notify(signals, k)
 	}
 
-	fmt.Printf("Now listening at %s, press Ctrl-C to stop\n", s.Options.Binding)
+	util.Info("Now listening at ", s.Options.Binding, ", press Ctrl-C to stop")
 	for {
 		sig := <-signals
 		util.Debug("Received signal %d", sig)
@@ -118,7 +118,7 @@ func HandleSignals(s *worq.Server) {
 }
 
 func exit(s *worq.Server) {
-	util.Debug(worq.Name + " exiting")
+	util.Debug(worq.Name + " shutting down")
 
 	s.Stop(func() {
 		util.Info("Goodbye")

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -27,6 +28,9 @@ type Server struct {
 	pwd       string
 	listener  net.Listener
 	store     storage.Store
+	scheduler *SchedulerSubsystem
+	pending   *sync.WaitGroup
+	mu        sync.Mutex
 }
 
 func NewServer(opts *ServerOptions) *Server {
@@ -36,7 +40,7 @@ func NewServer(opts *ServerOptions) *Server {
 	if opts.StoragePath == "" {
 		opts.StoragePath = fmt.Sprintf("%s.db", strings.Replace(opts.Binding, ":", "_", -1))
 	}
-	return &Server{Options: opts, pwd: "123456"}
+	return &Server{Options: opts, pwd: "123456", pending: &sync.WaitGroup{}, mu: sync.Mutex{}}
 }
 
 func (s *Server) Start() error {
@@ -44,8 +48,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
-	s.store = store
-	s.StartScheduler()
+	defer store.Close()
 
 	addr, err := net.ResolveTCPAddr("tcp", s.Options.Binding)
 	if err != nil {
@@ -55,26 +58,43 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
-	s.listener = listener
 
+	s.mu.Lock()
+	s.store = store
+	s.scheduler = s.StartScheduler()
+	s.listener = listener
+	s.mu.Unlock()
+
+	defer s.scheduler.Stop()
+
+	// wait for outstanding requests to finish
+	defer s.pending.Wait()
+
+	// this is the central runtime loop for the main goroutine
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			return nil
 		}
-		s.processConnection(conn)
+		go func() {
+			s.pending.Add(1)
+			defer s.pending.Done()
+
+			s.processConnection(conn)
+		}()
 	}
 
 	return nil
 }
 
 func (s *Server) Stop(f func()) {
+	// Don't allow new network connections
+	s.mu.Lock()
 	if s.listener != nil {
 		s.listener.Close()
 	}
-	if s.store != nil {
-		s.store.Close()
-	}
+	s.mu.Unlock()
+	time.Sleep(10 * time.Millisecond)
 
 	if f != nil {
 		f()
@@ -149,7 +169,8 @@ func (s *Server) processConnection(conn net.Conn) {
 		conn:  conn,
 		buf:   buf,
 	}
-	go processLines(c, s)
+
+	processLines(c, s)
 }
 
 type command func(c *Connection, s *Server, cmd string)

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"log"
 	"os"
 	"sync"
 	"testing"
@@ -103,9 +104,14 @@ func TestThreadedQueueUsage(t *testing.T) {
 		}()
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	wg.Wait()
 	assert.Equal(t, int64(0), q.Size())
+	q.(*RocksQueue).Init()
+	q.Each(func(k, v []byte) error {
+		log.Println(string(k), string(v))
+		return nil
+	})
 	store.Close()
 }
 

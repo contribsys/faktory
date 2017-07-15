@@ -5,6 +5,7 @@ import (
 
 	"github.com/mperham/worq"
 	"github.com/mperham/worq/cli"
+	"github.com/mperham/worq/util"
 )
 
 func main() {
@@ -12,7 +13,8 @@ func main() {
 
 	// This takes over the default logger in `log` and gives us
 	// extra powers for adding fields, errors to log output.
-	worq.InitializeLogger(opts.LogLevel)
+	util.InitLogger(opts.LogLevel)
+	util.Debug("Options", opts)
 
 	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding})
 

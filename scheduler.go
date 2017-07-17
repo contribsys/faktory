@@ -26,6 +26,10 @@ func (s *Scheduler) Cycle() int {
 	count := 0
 	elms, err := s.ts.RemoveBefore(util.Nows())
 	if err == nil {
+		if len(elms) > 0 {
+			util.Infof("%s enqueueing %d jobs", s.Name, len(elms))
+		}
+
 		for _, elm := range elms {
 			var job Job
 			err := json.Unmarshal(elm, &job)
@@ -44,7 +48,6 @@ func (s *Scheduler) Cycle() int {
 				continue
 			}
 
-			util.Info(s.Name, "enqueuing", job.Jid)
 			count += 1
 		}
 	}
@@ -58,16 +61,15 @@ func (s *Scheduler) Run(waiter *sync.WaitGroup) {
 
 		// add random jitter so all scheduler goroutines don't all fire at the same µs
 		time.Sleep(time.Duration(rand.Float64()) * time.Second)
-		timer := time.NewTimer(s.delay)
+		timer := time.NewTicker(s.delay)
 		defer timer.Stop()
 
-		util.Debug(s.Name, "starting")
 		for {
 			s.Cycle()
 			select {
 			case <-timer.C:
 			case <-s.stopping:
-				break
+				return
 			}
 		}
 	}()

@@ -75,6 +75,10 @@ func Warn(args ...interface{}) {
 	logg.Warn(args...)
 }
 
+func Warnf(msg string, args ...interface{}) {
+	logg.Warnf(msg, args...)
+}
+
 // Typical logging output, the default level
 func Info(args ...interface{}) {
 	if LogInfo {
@@ -82,10 +86,24 @@ func Info(args ...interface{}) {
 	}
 }
 
+// Typical logging output, the default level
+func Infof(msg string, args ...interface{}) {
+	if LogInfo {
+		logg.Infof(msg, args...)
+	}
+}
+
 // -l debug: Verbosity level which helps track down production issues
 func Debug(args ...interface{}) {
 	if LogDebug {
 		logg.Debug(args...)
+	}
+}
+
+// -l debug: Verbosity level which helps track down production issues
+func Debugf(msg string, args ...interface{}) {
+	if LogDebug {
+		logg.Debugf(msg, args...)
 	}
 }
 

@@ -242,12 +242,18 @@ func ack(c *Connection, s *Server, cmd string) {
 }
 
 func info(c *Connection, s *Server, cmd string) {
+	defalt, err := s.store.GetQueue("default")
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
 	data := map[string]interface{}{
 		"failures":  s.Failures,
 		"processed": s.Processed,
 		"working":   s.store.Working().Size(),
 		"retries":   s.store.Retries().Size(),
 		"scheduled": s.store.Scheduled().Size(),
+		"default":   defalt.Size(),
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {

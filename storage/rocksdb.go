@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/mperham/gorocksdb"
 )
@@ -15,6 +16,7 @@ type RocksStore struct {
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
 	queueSet  map[string]*RocksQueue
+	mu        sync.Mutex
 }
 
 func OpenRocks(path string) (Store, error) {
@@ -44,10 +46,14 @@ func OpenRocks(path string) (Store, error) {
 		defalt:    handles[3],
 		queues:    handles[4],
 		queueSet:  make(map[string]*RocksQueue),
+		mu:        sync.Mutex{},
 	}, nil
 }
 
 func (store *RocksStore) GetQueue(name string) (Queue, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	q, ok := store.queueSet[name]
 	if ok {
 		return q, nil

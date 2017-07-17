@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mperham/worq/storage"
@@ -16,6 +17,10 @@ type Scheduler struct {
 	ts       storage.SortedSet
 	stopping chan interface{}
 	delay    time.Duration
+
+	jobs     int64
+	walltime int64
+	cycles   int64
 }
 
 var (
@@ -24,6 +29,7 @@ var (
 
 func (s *Scheduler) Cycle() int {
 	count := 0
+	start := time.Now()
 	elms, err := s.ts.RemoveBefore(util.Nows())
 	if err == nil {
 		if len(elms) > 0 {
@@ -51,6 +57,10 @@ func (s *Scheduler) Cycle() int {
 			count += 1
 		}
 	}
+	end := time.Now()
+	atomic.AddInt64(&s.cycles, 1)
+	atomic.AddInt64(&s.jobs, int64(count))
+	atomic.AddInt64(&s.walltime, end.Sub(start).Nanoseconds())
 	return count
 }
 
@@ -75,6 +85,15 @@ func (s *Scheduler) Run(waiter *sync.WaitGroup) {
 	}()
 }
 
+func (s *Scheduler) Stats() map[string]interface{} {
+	return map[string]interface{}{
+		"size":          s.ts.Size(),
+		"enqueued":      s.jobs,
+		"cycles":        s.cycles,
+		"wall_time_sec": (float64(s.walltime) / 1000000000),
+	}
+}
+
 func (s *Scheduler) Stop() {
 	close(s.stopping)
 }
@@ -84,18 +103,18 @@ func NewScheduler(name string, store storage.Store, set storage.SortedSet) *Sche
 }
 
 type SchedulerSubsystem struct {
-	retries   *Scheduler
-	working   *Scheduler
-	scheduled *Scheduler
+	Retries   *Scheduler
+	Working   *Scheduler
+	Scheduled *Scheduler
 	waiter    *sync.WaitGroup
 }
 
 func (ss *SchedulerSubsystem) Stop() {
 	util.Info("Stopping scheduler subsystem")
 
-	ss.retries.Stop()
-	ss.working.Stop()
-	ss.scheduled.Stop()
+	ss.Retries.Stop()
+	ss.Working.Stop()
+	ss.Scheduled.Stop()
 	ss.waiter.Wait()
 }
 
@@ -103,14 +122,14 @@ func (s *Server) StartScheduler() *SchedulerSubsystem {
 	util.Info("Starting scheduler subsystem")
 
 	ss := &SchedulerSubsystem{
-		scheduled: NewScheduler("Scheduled", s.store, s.store.Scheduled()),
-		retries:   NewScheduler("Retries", s.store, s.store.Retries()),
-		working:   NewScheduler("Working", s.store, s.store.Working()),
+		Scheduled: NewScheduler("Scheduled", s.store, s.store.Scheduled()),
+		Retries:   NewScheduler("Retries", s.store, s.store.Retries()),
+		Working:   NewScheduler("Working", s.store, s.store.Working()),
 		waiter:    &sync.WaitGroup{},
 	}
 
-	ss.scheduled.Run(ss.waiter)
-	ss.retries.Run(ss.waiter)
-	ss.working.Run(ss.waiter)
+	ss.Scheduled.Run(ss.waiter)
+	ss.Retries.Run(ss.waiter)
+	ss.Working.Run(ss.waiter)
 	return ss
 }

@@ -250,9 +250,9 @@ func info(c *Connection, s *Server, cmd string) {
 	data := map[string]interface{}{
 		"failures":  s.Failures,
 		"processed": s.Processed,
-		"working":   s.store.Working().Size(),
-		"retries":   s.store.Retries().Size(),
-		"scheduled": s.store.Scheduled().Size(),
+		"working":   s.scheduler.Working.Stats(),
+		"retries":   s.scheduler.Retries.Stats(),
+		"scheduled": s.scheduler.Scheduled.Stats(),
 		"default":   defalt.Size(),
 	}
 	bytes, err := json.Marshal(data)

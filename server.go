@@ -152,7 +152,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		}
 	}
 
-	_, err = conn.Write([]byte("OK\n"))
+	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
 		util.Error("Closing connection", err, nil)
 		conn.Close()
@@ -175,12 +175,13 @@ func (s *Server) processConnection(conn net.Conn) {
 type command func(c *Connection, s *Server, cmd string)
 
 var cmdSet = map[string]command{
-	"END":  end,
-	"PUSH": push,
-	"POP":  pop,
-	"ACK":  ack,
-	"FAIL": fail,
-	"INFO": info,
+	"END":   end,
+	"PUSH":  push,
+	"POP":   pop,
+	"ACK":   ack,
+	"FAIL":  fail,
+	"INFO":  info,
+	"STORE": store,
 }
 
 func end(c *Connection, s *Server, cmd string) {
@@ -226,7 +227,7 @@ func pop(c *Connection, s *Server, cmd string) {
 		atomic.AddInt64(&s.Processed, 1)
 		c.Result(res)
 	} else {
-		c.Result([]byte("\n"))
+		c.Result(nil)
 	}
 }
 
@@ -264,6 +265,18 @@ func info(c *Connection, s *Server, cmd string) {
 	c.Result(bytes)
 }
 
+func store(c *Connection, s *Server, cmd string) {
+	subcmd := strings.ToLower(strings.Split(cmd, " ")[1])
+	switch subcmd {
+	case "stats":
+		c.Result([]byte(s.store.Stats()["stats"]))
+	case "backup":
+		// TODO
+	default:
+		c.Error(cmd, fmt.Errorf("Unknown STORE command: %s", subcmd))
+	}
+}
+
 func processLines(conn *Connection, server *Server) {
 	for {
 		// every operation must complete within 1 second
@@ -274,7 +287,7 @@ func processLines(conn *Connection, server *Server) {
 			conn.Close()
 			return
 		}
-		cmd = strings.TrimSuffix(cmd, "\n")
+		cmd = strings.TrimSuffix(cmd, "\r\n")
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd

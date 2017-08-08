@@ -50,6 +50,12 @@ func OpenRocks(path string) (Store, error) {
 	}, nil
 }
 
+func (store *RocksStore) Stats() map[string]string {
+	return map[string]string{
+		"stats": store.db.GetProperty("rocksdb.stats"),
+	}
+}
+
 func (store *RocksStore) GetQueue(name string) (Queue, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()

@@ -8,6 +8,7 @@ type Store interface {
 	Scheduled() SortedSet
 	Working() SortedSet
 	GetQueue(string) (Queue, error)
+	Stats() map[string]string
 }
 
 type Queue interface {

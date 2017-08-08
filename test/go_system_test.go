@@ -97,6 +97,12 @@ func pushAndPop() {
 		return
 	}
 	util.Info(hash)
+	res, err := client.Generic("STORE STATS")
+	if err != nil {
+		handleError(err)
+		return
+	}
+	util.Info(res)
 }
 
 func pushJob(client *worq.Client, idx int) error {

@@ -3,11 +3,11 @@ package worq
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"net"
 	"reflect"
-	"strings"
+	"strconv"
 )
 
 type ClientOptions struct {
@@ -158,9 +158,20 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	return hash, nil
 }
 
+func (c *Client) Generic(cmdline string) (string, error) {
+	err := writeLine(c.wtr, cmdline, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return readString(c.rdr)
+}
+
 //////////////////////////////////////////////////
 
 func writeLine(io *bufio.Writer, op string, payload []byte) error {
+	//util.Debugf("> %s %s", op, string(payload))
+
 	_, err := io.Write([]byte(op))
 	if payload != nil {
 		if err == nil {
@@ -171,7 +182,7 @@ func writeLine(io *bufio.Writer, op string, payload []byte) error {
 		}
 	}
 	if err == nil {
-		_, err = io.Write([]byte("\n"))
+		_, err = io.Write([]byte("\r\n"))
 	}
 	if err == nil {
 		err = io.Flush()
@@ -179,31 +190,84 @@ func writeLine(io *bufio.Writer, op string, payload []byte) error {
 	return err
 }
 
-func ok(io *bufio.Reader) error {
-	line, err := io.ReadString('\n')
+func ok(rdr *bufio.Reader) error {
+	val, err := readResponse(rdr)
 	if err != nil {
 		return err
 	}
-	if line == "OK\n" {
-		// normal return
+	if string(val) == "OK" {
 		return nil
 	}
-	if strings.HasPrefix(line, "ERR ") {
-		return errors.New(line[4 : len(line)-1])
-	}
-	return errors.New(line)
+
+	return fmt.Errorf("Invalid response: %s", string(val))
 }
 
-func jsonResult(io *bufio.Reader, thing interface{}) error {
-	line, err := io.ReadString('\n')
+func readString(rdr *bufio.Reader) (string, error) {
+	val, err := readResponse(rdr)
+	if err != nil {
+		return "", err
+	}
+
+	return string(val), nil
+}
+
+type ProtocolError struct {
+	msg string
+}
+
+func (pe *ProtocolError) Error() string {
+	return pe.msg
+}
+
+func readResponse(rdr *bufio.Reader) ([]byte, error) {
+	chr, err := rdr.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+
+	line, err := rdr.ReadBytes('\n')
+	if err != nil {
+		return nil, err
+	}
+	line = line[:len(line)-2]
+
+	switch chr {
+	case '$':
+		// read length $10\r\n
+		count, err := strconv.Atoi(string(line))
+		if err != nil {
+			return nil, err
+		}
+		var buff []byte
+		if count > 0 {
+			buff = make([]byte, count)
+			_, err = io.ReadFull(rdr, buff)
+			if err != nil {
+				return nil, err
+			}
+		}
+		_, err = rdr.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		//util.Debugf("< %s%s", string(chr), string(line))
+		//util.Debugf("< %s", string(buff))
+		return buff, nil
+	case '-':
+		return nil, &ProtocolError{msg: string(line)}
+	default:
+		//util.Debugf("< %s%s", string(chr), string(line))
+		return line, nil
+	}
+}
+
+func jsonResult(rdr *bufio.Reader, thing interface{}) error {
+	data, err := readResponse(rdr)
 	if err != nil {
 		return err
 	}
-	if strings.HasPrefix(line, "ERR ") {
-		return errors.New(line[4 : len(line)-1])
-	}
 
-	err = json.Unmarshal([]byte(line), thing)
+	err = json.Unmarshal(data, thing)
 	if err != nil {
 		return err
 	}

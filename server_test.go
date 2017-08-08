@@ -45,19 +45,25 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("AHOY pwd:123456 other:thing\n"))
 		result, err := buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "OK\n", result)
+		assert.Equal(t, "+OK\r\n", result)
 
 		conn.Write([]byte("CMD foo\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "ERR unknown command CMD\n", result)
+		assert.Equal(t, "$23\r\n", result)
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "ERR unknown command CMD\r\n", result)
 
 		conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "OK\n", result)
+		assert.Equal(t, "+OK\r\n", result)
 
 		conn.Write([]byte("POP default some other\n"))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "$189\r\n", result)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 
@@ -71,7 +77,7 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte(fmt.Sprintf("ACK %s\n", hash["jid"])))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "OK\n", result)
+		assert.Equal(t, "+OK\r\n", result)
 
 		conn.Write([]byte("END\n"))
 		//result, err = buf.ReadString('\n')

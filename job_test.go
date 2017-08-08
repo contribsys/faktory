@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"bufio"
@@ -6,13 +6,13 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/util"
 )
 
 /*
- * Represents a connection to a Worq client.
+ * Represents a connection to a faktory client.
  *
- * Worq reuses the same wire protocol as Redis: RESP.
+ * faktory reuses the same wire protocol as Redis: RESP.
  * It's a nice trade-off between human-readable and efficient.
  * Shout out to antirez for his nice design document on it.
  *

@@ -23,7 +23,7 @@ and returns if it gets any non-nil data.
 
 If all nil, the connection registers itself, blocking for a job.
 */
-package worq
+package faktory
 
 import "encoding/json"
 

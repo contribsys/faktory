@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mperham/worq/storage"
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/storage"
+	"github.com/mperham/faktory/util"
 )
 
 type Scheduler struct {

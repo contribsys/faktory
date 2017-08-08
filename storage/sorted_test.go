@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 

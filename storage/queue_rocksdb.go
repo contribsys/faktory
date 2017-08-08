@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/mperham/faktory/util"
 	"github.com/mperham/gorocksdb"
-	"github.com/mperham/worq/util"
 )
 
 type RocksQueue struct {

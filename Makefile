@@ -1,4 +1,4 @@
-NAME=worq
+NAME=faktory
 VERSION=0.0.1
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
@@ -41,7 +41,7 @@ test: clean
 	go test -parallel 4 ./...
 
 build: test
-	@GOOS=linux GOARCH=amd64 go build -o worq cmd/main.go
+	@GOOS=linux GOARCH=amd64 go build -o faktory cmd/main.go
 
 # goimports produces slightly different formatted code from go fmt
 fmt:
@@ -52,7 +52,7 @@ lint:
 
 clean:
 	rm -rf tmp
-	rm -f main worq templates.go
+	rm -f main faktory templates.go
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart
 	mkdir -p packaging/output/systemd
@@ -63,7 +63,7 @@ run:
 package: clean version_check build_deb build_rpm
 
 version_check:
-	@grep -q $(VERSION) worq.go || (echo VERSIONS OUT OF SYNC && false)
+	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
 purge_deb:
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/inspeqtor' || true

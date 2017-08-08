@@ -1,11 +1,11 @@
-package worq
+package faktory
 
 import (
 	"encoding/json"
 	"sync"
 	"time"
 
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/util"
 )
 
 func (s *Server) Acknowledge(jid string) (*Job, error) {

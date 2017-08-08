@@ -1,6 +1,6 @@
 require 'socket'
 require 'json'
-module Worq
+module Faktory
   class CommandError < StandardError;end
 
   class Client
@@ -72,7 +72,7 @@ end
 threads = []
 3.times do |ix|
   threads << Thread.new do
-    client = Worq::Client.new(password: "123456")
+    client = Faktory::Client.new(password: "123456")
 
     puts "Pushing"
     10000.times do |idx|

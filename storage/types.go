@@ -20,7 +20,7 @@ type Queue interface {
 }
 
 var (
-	DefaultPath     = "/var/run/worq/"
+	DefaultPath     = "/var/run/faktory/"
 	ScheduledBucket = "scheduled"
 	RetriesBucket   = "retries"
 	WorkingBucket   = "working"

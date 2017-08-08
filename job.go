@@ -1,9 +1,9 @@
-package worq
+package faktory
 
 import (
 	"encoding/json"
 
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/util"
 )
 
 var (

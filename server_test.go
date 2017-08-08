@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/worq/storage"
+	"github.com/mperham/faktory/storage"
 	"github.com/stretchr/testify/assert"
 )
 

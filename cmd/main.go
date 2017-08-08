@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/mperham/worq"
-	"github.com/mperham/worq/cli"
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/cli"
+	"github.com/mperham/faktory/util"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	util.InitLogger(opts.LogLevel)
 	util.Debug("Options", opts)
 
-	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding})
+	s := faktory.NewServer(&faktory.ServerOptions{Binding: opts.Binding})
 
 	go cli.HandleSignals(s)
 

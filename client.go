@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"bufio"
@@ -29,11 +29,11 @@ type Client struct {
 }
 
 /*
- * Open a connection to the remote Worq server.
+ * Open a connection to the remote faktory server.
  * You must include a 'pwd' parameter if the server is configured to require
  * a password:
  *
- *   worq.Dial(&worq.ClientOptions{
+ *   faktory.Dial(&faktory.ClientOptions{
  *												 Pwd: "topsecret",
  *												 Hostname: "localhost",
  *		  									 Port: 7419})

@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/worq"
-	"github.com/mperham/worq/cli"
-	"github.com/mperham/worq/storage"
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/cli"
+	"github.com/mperham/faktory/storage"
+	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +25,7 @@ func TestSystem(t *testing.T) {
 
 	storage.DefaultPath = "../tmp"
 	defer os.RemoveAll("../tmp/system.db")
-	s := worq.NewServer(&worq.ServerOptions{Binding: opts.Binding, StoragePath: "system.db"})
+	s := faktory.NewServer(&faktory.ServerOptions{Binding: opts.Binding, StoragePath: "system.db"})
 
 	util.LogDebug = true
 	util.LogInfo = true
@@ -58,7 +58,7 @@ func TestSystem(t *testing.T) {
 
 func pushAndPop() {
 	time.Sleep(100 * time.Millisecond)
-	client, err := worq.Dial(&worq.ClientOptions{Pwd: "123456"})
+	client, err := faktory.Dial(&faktory.ClientOptions{Pwd: "123456"})
 	if err != nil {
 		handleError(err)
 		return
@@ -105,8 +105,8 @@ func pushAndPop() {
 	util.Info(res)
 }
 
-func pushJob(client *worq.Client, idx int) error {
-	j := &worq.Job{
+func pushJob(client *faktory.Client, idx int) error {
+	j := &faktory.Job{
 		Jid:   util.RandomJid(),
 		Queue: "default",
 		Type:  "SomeJob",

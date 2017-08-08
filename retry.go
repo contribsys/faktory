@@ -1,4 +1,4 @@
-package worq
+package faktory
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mperham/worq/util"
+	"github.com/mperham/faktory/util"
 )
 
 type JobFailure struct {

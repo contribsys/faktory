@@ -1,12 +1,12 @@
-package worq
+package faktory
 
 import "runtime/debug"
 
-type worqError struct {
+type runtimeError struct {
 	Error error
 	Stack []byte
 }
 
-func internalError(err error) *worqError {
-	return &worqError{Error: err, Stack: debug.Stack()}
+func internalError(err error) *runtimeError {
+	return &runtimeError{Error: err, Stack: debug.Stack()}
 }

@@ -1,0 +1,36 @@
+<%
+package webui
+
+func layout(w io.Writer, yield func()) {
+%>
+<!doctype html>
+<html>
+  <head>
+    <title>Faktory</title>
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+    <link href="/static/bootstrap.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/application.css" media="screen" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="/javascripts/application.js"></script>
+    <meta name="google" content="notranslate" />
+  </head>
+  <body class="admin">
+    <% nav(w) %>
+    <div id="page">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12 summary_bar">
+            <% summary(w) %>
+          </div>
+
+          <div class="col-sm-12">
+            <% yield() %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% footer(w) %>
+  </body>
+</html>
+<% } %>

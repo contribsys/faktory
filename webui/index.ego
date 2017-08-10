@@ -1,0 +1,9 @@
+<%
+package webui
+
+func index(w io.Writer) {
+%>
+  <% layout(w, func() { %>
+    <p>Hello World!</p>
+  <% }) %>
+<% } %>

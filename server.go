@@ -69,6 +69,10 @@ func (s *Server) Start() error {
 	// wait for outstanding requests to finish
 	defer s.pending.Wait()
 
+	for _, x := range EventHandlers {
+		x(s)
+	}
+
 	// this is the central runtime loop for the main goroutine
 	for {
 		conn, err := s.listener.Accept()

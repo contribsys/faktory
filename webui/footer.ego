@@ -1,0 +1,23 @@
+<%
+package webui
+
+func footer(w io.Writer) {
+%>
+<div class="navbar navbar-fixed-bottom navbar-inverse ltr">
+  <div class="navbar-inner">
+    <div class="container text-center">
+        <ul class="nav">
+          <li>
+            <p class="navbar-text product-version"><%= productVersion() %></p>
+          </li>
+          <li>
+            <p class="navbar-text faktory-url"><%= serverLocation() %></p>
+          </li>
+          <li>
+            <p class="navbar-text server-utc-time"><%= serverUtcTime() %></p>
+          </li>
+        </ul>
+    </div>
+  </div>
+</div>
+<% } %>

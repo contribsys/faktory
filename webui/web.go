@@ -20,6 +20,7 @@ var (
 	}
 )
 
+//go:generate ego .
 //go:generate go-bindata -pkg webui -o static.go static/...
 
 func init() {

@@ -1,9 +1,11 @@
 <%
 package webui
 
-func index(w io.Writer) {
+import "net/http"
+
+func index(w io.Writer, req *http.Request) {
 %>
-  <% layout(w, func() { %>
+  <% layout(w, req, func() { %>
     <p>Hello World!</p>
   <% }) %>
 <% } %>

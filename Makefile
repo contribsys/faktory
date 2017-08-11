@@ -56,9 +56,10 @@ clean:
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart
 	mkdir -p packaging/output/systemd
+	go generate ./...
 
-run:
-	go run -race cmd/main.go -l debug -s i.sock -d .
+run: clean
+	go run cmd/main.go -l debug -s i.sock -d .
 
 package: clean version_check build_deb build_rpm
 

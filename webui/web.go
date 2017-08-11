@@ -10,14 +10,19 @@ import (
 	"github.com/mperham/faktory/util"
 )
 
+type Tab struct {
+	Name string
+	Path string
+}
+
 var (
-	DefaultTabs = map[string]string{
-		"Home":      "",
-		"Busy":      "busy",
-		"Queues":    "queues",
-		"Retries":   "retries",
-		"Scheduled": "scheduled",
-		"Dead":      "morgue",
+	DefaultTabs = []Tab{
+		Tab{"Home", "/"},
+		Tab{"Busy", "/busy"},
+		Tab{"Queues", "/queues"},
+		Tab{"Retries", "/retries"},
+		Tab{"Scheduled", "/scheduled"},
+		Tab{"Dead", "/morgue"},
 	}
 )
 
@@ -50,13 +55,14 @@ func FireItUp(svr *server.Server) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	index(w)
+	index(w, r)
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		pass(w, r)
-		util.Infof("%s %s", r.Method, r.RequestURI)
+		util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
 	}
 }
 

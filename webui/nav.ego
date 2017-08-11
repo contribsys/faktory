@@ -1,7 +1,12 @@
 <%
 package webui
 
-func nav(w io.Writer) {
+import (
+  "net/http"
+  "strings"
+)
+
+func nav(w io.Writer, req *http.Request) {
 %>
 <div class="navbar navbar-default navbar-fixed-top">
   <div class="container-fluid">
@@ -20,8 +25,14 @@ func nav(w io.Writer) {
 
     <div class="collapse navbar-collapse" id="navbar-menu">
       <ul class="nav navbar-nav" data-navbar="static">
-        <% for k, v := range DefaultTabs { %>
-          <a href="/<%= v %>"><%= t(k) %></a>
+        <% for _, tab := range DefaultTabs {
+           if tab.Path == "/" { %>
+            <li class="<% if req.RequestURI == "/" { %>active<% } %>">
+          <% } else { %>
+            <li class="<% if strings.HasPrefix(req.RequestURI, tab.Path) { %>active<% } %>">
+          <% } %>
+            <a href="<%= tab.Path %>"><%= t(tab.Name) %></a>
+          </li>
         <% } %>
       </ul>
       <ul class="nav navbar-nav navbar-right navbar-livereload" data-navbar="static">

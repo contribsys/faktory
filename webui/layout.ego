@@ -1,7 +1,8 @@
 <%
 package webui
+import "net/http"
 
-func layout(w io.Writer, yield func()) {
+func layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
 <html>
@@ -16,7 +17,7 @@ func layout(w io.Writer, yield func()) {
     <meta name="google" content="notranslate" />
   </head>
   <body class="admin">
-    <% nav(w) %>
+    <% nav(w, req) %>
     <div id="page">
       <div class="container">
         <div class="row">

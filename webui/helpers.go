@@ -7,8 +7,12 @@ import (
 	"github.com/mperham/faktory"
 )
 
+var (
+	utcFormat = "15:04:05 UTC"
+)
+
 func serverUtcTime() string {
-	return time.Now().UTC().String()
+	return time.Now().UTC().Format(utcFormat)
 }
 
 func productVersion() string {

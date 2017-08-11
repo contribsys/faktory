@@ -53,6 +53,10 @@ func NewServer(opts *ServerOptions) *Server {
 	return &Server{Options: opts, pwd: "123456", pending: &sync.WaitGroup{}, mu: sync.Mutex{}}
 }
 
+func (s *Server) Store() storage.Store {
+	return s.store
+}
+
 func (s *Server) Start() error {
 	store, err := storage.Open("rocksdb", s.Options.StoragePath)
 	if err != nil {

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/mperham/faktory/util"
 	"github.com/mperham/gorocksdb"
 )
 
-type RocksStore struct {
+type rocksStore struct {
 	Name      string
 	db        *gorocksdb.DB
 	retries   *RocksSortedSet
@@ -15,7 +16,7 @@ type RocksStore struct {
 	working   *RocksSortedSet
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
-	queueSet  map[string]*RocksQueue
+	queueSet  map[string]*rocksQueue
 	mu        sync.Mutex
 }
 
@@ -37,7 +38,7 @@ func OpenRocks(path string) (Store, error) {
 	ro := gorocksdb.NewDefaultReadOptions()
 	wo := gorocksdb.NewDefaultWriteOptions()
 
-	return &RocksStore{
+	rs := &rocksStore{
 		Name:      path,
 		db:        db,
 		scheduled: &RocksSortedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo},
@@ -45,18 +46,71 @@ func OpenRocks(path string) (Store, error) {
 		working:   &RocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo},
 		defalt:    handles[3],
 		queues:    handles[4],
-		queueSet:  make(map[string]*RocksQueue),
+		queueSet:  make(map[string]*rocksQueue),
 		mu:        sync.Mutex{},
-	}, nil
+	}
+	err = rs.init()
+	if err != nil {
+		return nil, err
+	}
+
+	return rs, nil
 }
 
-func (store *RocksStore) Stats() map[string]string {
+func (store *rocksStore) Stats() map[string]string {
 	return map[string]string{
 		"stats": store.db.GetProperty("rocksdb.stats"),
 	}
 }
 
-func (store *RocksStore) GetQueue(name string) (Queue, error) {
+func (store *rocksStore) EachQueue(x func(Queue)) {
+	for _, q := range store.queueSet {
+		x(q)
+	}
+}
+
+func (store *rocksStore) init() error {
+	util.Info("Initializing storage")
+	ro := queueReadOptions(false)
+	ro.SetFillCache(false)
+	defer ro.Destroy()
+
+	it := store.db.NewIteratorCF(ro, store.queues)
+	defer it.Close()
+	it.SeekToFirst()
+
+	cur := ""
+
+	for ; it.Valid(); it.Next() {
+		if it.Err() != nil {
+			return it.Err()
+		}
+		k := it.Key()
+		key := k.Data()
+		for i := 0; i < len(key); i++ {
+			if key[i] == uint8(255) {
+				name := string(key[0:i])
+				if cur != name {
+					if cur != "" {
+						store.GetQueue(name)
+					}
+					cur = name
+				}
+				break
+			}
+		}
+		k.Free()
+	}
+	if cur != "" {
+		_, err := store.GetQueue(cur)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (store *rocksStore) GetQueue(name string) (Queue, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
@@ -64,8 +118,8 @@ func (store *RocksStore) GetQueue(name string) (Queue, error) {
 	if ok {
 		return q, nil
 	}
-	q = &RocksQueue{
-		Name:  name,
+	q = &rocksQueue{
+		name:  name,
 		size:  -1,
 		store: store,
 		cf:    store.queues,
@@ -80,7 +134,8 @@ func (store *RocksStore) GetQueue(name string) (Queue, error) {
 	return q, nil
 }
 
-func (store *RocksStore) Close() error {
+func (store *rocksStore) Close() error {
+	util.Info("Stopping storage")
 	store.retries.Close()
 	store.working.Close()
 	store.scheduled.Close()
@@ -90,14 +145,14 @@ func (store *RocksStore) Close() error {
 	return nil
 }
 
-func (store *RocksStore) Retries() SortedSet {
+func (store *rocksStore) Retries() SortedSet {
 	return store.retries
 }
 
-func (store *RocksStore) Scheduled() SortedSet {
+func (store *rocksStore) Scheduled() SortedSet {
 	return store.scheduled
 }
 
-func (store *RocksStore) Working() SortedSet {
+func (store *rocksStore) Working() SortedSet {
 	return store.working
 }

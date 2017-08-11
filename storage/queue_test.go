@@ -158,8 +158,8 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 func TestQueueKeys(t *testing.T) {
 	t.Parallel()
 
-	q := &RocksQueue{
-		Name: "foo",
+	q := &rocksQueue{
+		name: "foo",
 		high: 1293712938,
 	}
 	x := q.nextkey()

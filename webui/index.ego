@@ -4,8 +4,7 @@ package webui
 import "net/http"
 
 func index(w io.Writer, req *http.Request) {
-%>
-  <% layout(w, req, func() { %>
+  layout(w, req, func() { %>
     <p>Hello World!</p>
   <% }) %>
 <% } %>

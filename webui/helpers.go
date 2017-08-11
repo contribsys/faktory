@@ -1,10 +1,12 @@
 package webui
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/storage"
 )
 
 var (
@@ -25,6 +27,24 @@ func serverLocation() string {
 
 func t(word string) string {
 	return word
+}
+
+type Queue struct {
+	Name string
+	Size int64
+}
+
+func queues() []Queue {
+	queues := make([]Queue, 0)
+	defaultServer.Store().EachQueue(func(q storage.Queue) {
+		queues = append(queues, Queue{q.Name(), q.Size()})
+	})
+	return queues
+}
+
+func csrfTag(req *http.Request) string {
+	// random string :-)
+	return `<input type="hidden" name="authenticity_token" value="p8tNCpaxTOdAEgoTT3UdSzReVPdWTRJimHS8zDXAVPw="/>`
 }
 
 func numberWithDelimiter(val int64) string {

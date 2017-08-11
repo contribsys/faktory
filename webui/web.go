@@ -24,6 +24,8 @@ var (
 		Tab{"Scheduled", "/scheduled"},
 		Tab{"Dead", "/morgue"},
 	}
+
+	defaultServer *server.Server
 )
 
 //go:generate ego .
@@ -34,6 +36,7 @@ func init() {
 	http.Handle("/static/", http.FileServer(
 		&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
+	http.HandleFunc("/queues", Log(GetOnly(queuesHandler)))
 	server.OnStart(FireItUp)
 }
 
@@ -42,6 +45,7 @@ var (
 )
 
 func FireItUp(svr *server.Server) {
+	defaultServer = svr
 	go func() {
 		s := &http.Server{
 			Addr:           ":7420",
@@ -56,6 +60,10 @@ func FireItUp(svr *server.Server) {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	index(w, r)
+}
+
+func queuesHandler(w http.ResponseWriter, r *http.Request) {
+	listQueues(w, r)
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {

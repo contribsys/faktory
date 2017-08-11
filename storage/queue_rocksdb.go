@@ -8,20 +8,23 @@ import (
 	"github.com/mperham/gorocksdb"
 )
 
-type RocksQueue struct {
-	Name string
-
+type rocksQueue struct {
+	name  string
 	size  int64
 	low   int64
 	high  int64
-	store *RocksStore
+	store *rocksStore
 	cf    *gorocksdb.ColumnFamilyHandle
 	mu    sync.Mutex
 }
 
-func (q *RocksQueue) Each(fn func(index int, v []byte) error) error {
+func (q *rocksQueue) Name() string {
+	return q.name
+}
+
+func (q *rocksQueue) Each(fn func(index int, v []byte) error) error {
 	index := 0
-	upper := upperBound(q.Name)
+	upper := upperBound(q.name)
 
 	ro := queueReadOptions(false)
 	ro.SetIterateUpperBound(upper)
@@ -31,7 +34,7 @@ func (q *RocksQueue) Each(fn func(index int, v []byte) error) error {
 	it := q.store.db.NewIteratorCF(ro, q.cf)
 	defer it.Close()
 
-	prefix := append([]byte(q.Name), 0xFF)
+	prefix := append([]byte(q.name), 0xFF)
 	it.Seek(prefix)
 	if it.Err() != nil {
 		return it.Err()
@@ -53,7 +56,7 @@ func (q *RocksQueue) Each(fn func(index int, v []byte) error) error {
 	return nil
 }
 
-func (q *RocksQueue) Clear() (int, error) {
+func (q *rocksQueue) Clear() (int, error) {
 	count := 0
 	// not exactly optimized
 	// TODO impl which uses Rocks range deletes?
@@ -70,9 +73,9 @@ func (q *RocksQueue) Clear() (int, error) {
 	return count, nil
 }
 
-func (q *RocksQueue) Init() error {
+func (q *rocksQueue) Init() error {
 	q.mu = sync.Mutex{}
-	upper := upperBound(q.Name)
+	upper := upperBound(q.name)
 
 	ro := queueReadOptions(false)
 	ro.SetIterateUpperBound(upper)
@@ -83,7 +86,7 @@ func (q *RocksQueue) Init() error {
 	it := q.store.db.NewIteratorCF(ro, q.cf)
 	defer it.Close()
 
-	prefix := append([]byte(q.Name), 0xFF)
+	prefix := append([]byte(q.name), 0xFF)
 	it.Seek(prefix)
 	if it.Err() != nil {
 		return it.Err()
@@ -92,7 +95,7 @@ func (q *RocksQueue) Init() error {
 	if it.Valid() {
 		k := it.Key()
 		key := k.Data()
-		start := len(q.Name) + 1
+		start := len(q.name) + 1
 		end := start + 8
 		q.low = toInt64(key[start:end])
 		k.Free()
@@ -110,22 +113,22 @@ func (q *RocksQueue) Init() error {
 	if it.Valid() {
 		k := it.Key()
 		key := k.Data()
-		start := len(q.Name) + 1
+		start := len(q.name) + 1
 		end := start + 8
 		q.high = toInt64(key[start:end])
 		k.Free()
 	}
 	q.size = count
 
-	util.Log().Debugf("Queue init: %s %d elements %d/%d", q.Name, q.size, q.low, q.high)
+	util.Log().Debugf("Queue init: %s %d elements %d/%d", q.name, q.size, q.low, q.high)
 	return nil
 }
 
-func (q *RocksQueue) Size() int64 {
+func (q *rocksQueue) Size() int64 {
 	return q.size
 }
 
-func (q *RocksQueue) Push(payload []byte) error {
+func (q *rocksQueue) Push(payload []byte) error {
 	k := q.nextkey()
 	v := payload
 	wo := queueWriteOptions()
@@ -139,15 +142,15 @@ func (q *RocksQueue) Push(payload []byte) error {
 	return nil
 }
 
-func (q *RocksQueue) Pop() ([]byte, error) {
+func (q *rocksQueue) Pop() ([]byte, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	ro := queueReadOptions(true)
-	ro.SetIterateUpperBound(keyfor(q.Name, q.low))
+	ro.SetIterateUpperBound(keyfor(q.name, q.low))
 	defer ro.Destroy()
 
-	key := keyfor(q.Name, q.low)
+	key := keyfor(q.name, q.low)
 	value, err := q.store.db.GetBytesCF(ro, q.cf, key)
 	if err != nil {
 		return nil, err
@@ -169,9 +172,9 @@ func (q *RocksQueue) Pop() ([]byte, error) {
 	return value, nil
 }
 
-func (q *RocksQueue) nextkey() []byte {
+func (q *rocksQueue) nextkey() []byte {
 	nxtseq := atomic.AddInt64(&q.high, 1)
-	return keyfor(q.Name, nxtseq-1)
+	return keyfor(q.name, nxtseq-1)
 }
 
 /*

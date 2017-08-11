@@ -8,10 +8,12 @@ type Store interface {
 	Scheduled() SortedSet
 	Working() SortedSet
 	GetQueue(string) (Queue, error)
+	EachQueue(func(Queue))
 	Stats() map[string]string
 }
 
 type Queue interface {
+	Name() string
 	Size() int64
 	Push([]byte) error
 	Pop() ([]byte, error)

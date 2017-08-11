@@ -1,14 +1,19 @@
-package faktory
+package server
 
 import (
 	"encoding/json"
 	"sync"
 	"time"
 
+	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/util"
 )
 
-func (s *Server) Acknowledge(jid string) (*Job, error) {
+var (
+	DefaultTimeout = 600
+)
+
+func (s *Server) Acknowledge(jid string) (*faktory.Job, error) {
 	workingMutex.Lock()
 	res, ok := workingMap[jid]
 	if !ok {
@@ -33,7 +38,7 @@ func (s *Server) ReapWorkingSet() (int, error) {
 	}
 
 	for _, data := range jobs {
-		var job Job
+		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
 			util.Error("Unable to unmarshal job", err, nil)
@@ -63,10 +68,10 @@ func (s *Server) ReapWorkingSet() (int, error) {
 }
 
 type Reservation struct {
-	Job     *Job   `json:"job"`
-	Since   string `json:"reserved_at"`
-	Expiry  string `json:"expires_at"`
-	Who     string `json:"worker"`
+	Job     *faktory.Job `json:"job"`
+	Since   string       `json:"reserved_at"`
+	Expiry  string       `json:"expires_at"`
+	Who     string       `json:"worker"`
 	tsince  time.Time
 	texpiry time.Time
 }
@@ -84,7 +89,7 @@ var (
 	workingMutex = &sync.Mutex{}
 )
 
-func (s *Server) Reserve(identity string, job *Job) error {
+func (s *Server) Reserve(identity string, job *faktory.Job) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {

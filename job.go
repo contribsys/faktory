@@ -1,15 +1,5 @@
 package faktory
 
-import (
-	"encoding/json"
-
-	"github.com/mperham/faktory/util"
-)
-
-var (
-	DefaultTimeout = 600
-)
-
 type Failure struct {
 	RetryCount   int      `json:"retry_count"`
 	FailedAt     string   `json:"failed_at"`
@@ -34,18 +24,4 @@ type Job struct {
 	Backtrace  int                    `json:"backtrace"`
 	Failure    *Failure               `json:"failure"`
 	Custom     map[string]interface{} `json:"custom"`
-}
-
-func ParseJob(buf []byte) (*Job, error) {
-	var job Job
-
-	err := json.Unmarshal(buf, &job)
-	if err != nil {
-		return nil, err
-	}
-
-	if job.CreatedAt == "" {
-		job.CreatedAt = util.Nows()
-	}
-	return &job, nil
 }

@@ -1,4 +1,4 @@
-package faktory
+package server
 
 import "runtime/debug"
 

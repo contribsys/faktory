@@ -1,4 +1,4 @@
-package faktory
+package server
 
 import (
 	"bufio"
@@ -10,8 +10,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
+)
+
+var (
+	EventHandlers = make([]func(*Server), 0)
 )
 
 type ServerOptions struct {
@@ -30,6 +35,12 @@ type Server struct {
 	scheduler *SchedulerSubsystem
 	pending   *sync.WaitGroup
 	mu        sync.Mutex
+}
+
+// register a global handler to be called when the Server instance
+// has finished booting but before it starts listening.
+func OnStart(x func(*Server)) {
+	EventHandlers = append(EventHandlers, x)
 }
 
 func NewServer(opts *ServerOptions) *Server {
@@ -194,7 +205,7 @@ func end(c *Connection, s *Server, cmd string) {
 
 func push(c *Connection, s *Server, cmd string) {
 	data := []byte(cmd[5:])
-	job, err := ParseJob(data)
+	job, err := parseJob(data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -215,7 +226,7 @@ func push(c *Connection, s *Server, cmd string) {
 
 func pop(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := s.Pop(func(job *Job) error {
+	job, err := s.Pop(func(job *faktory.Job) error {
 		return s.Reserve(c.Identity(), job)
 	}, qs...)
 	if err != nil {
@@ -308,4 +319,18 @@ func processLines(conn *Connection, server *Server) {
 			break
 		}
 	}
+}
+
+func parseJob(buf []byte) (*faktory.Job, error) {
+	var job faktory.Job
+
+	err := json.Unmarshal(buf, &job)
+	if err != nil {
+		return nil, err
+	}
+
+	if job.CreatedAt == "" {
+		job.CreatedAt = util.Nows()
+	}
+	return &job, nil
 }

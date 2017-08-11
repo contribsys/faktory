@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 )
@@ -95,14 +96,14 @@ var (
 	Term os.Signal = syscall.SIGTERM
 	Hup  os.Signal = syscall.SIGHUP
 
-	SignalHandlers = map[os.Signal]func(*faktory.Server){
+	SignalHandlers = map[os.Signal]func(*server.Server){
 		Term:         exit,
 		os.Interrupt: exit,
 		//Hup:          reload,
 	}
 )
 
-func HandleSignals(s *faktory.Server) {
+func HandleSignals(s *server.Server) {
 	signals := make(chan os.Signal)
 	for k := range SignalHandlers {
 		signal.Notify(signals, k)
@@ -117,7 +118,7 @@ func HandleSignals(s *faktory.Server) {
 	}
 }
 
-func exit(s *faktory.Server) {
+func exit(s *server.Server) {
 	util.Debug(faktory.Name + " shutting down")
 
 	s.Stop(func() {

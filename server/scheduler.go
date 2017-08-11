@@ -1,4 +1,4 @@
-package faktory
+package server
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 )
@@ -37,7 +38,7 @@ func (s *Scheduler) Cycle() int {
 		}
 
 		for _, elm := range elms {
-			var job Job
+			var job faktory.Job
 			err := json.Unmarshal(elm, &job)
 			if err != nil {
 				util.Error("Unable to unmarshal json", err, elm)

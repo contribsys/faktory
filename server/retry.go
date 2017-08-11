@@ -1,4 +1,4 @@
-package faktory
+package server
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/util"
 )
 
@@ -52,7 +53,7 @@ func (s *Server) Fail(failure *JobFailure) error {
 		job.Failure.ErrorType = failure.ErrorType
 		job.Failure.Backtrace = failure.Backtrace
 	} else {
-		job.Failure = &Failure{
+		job.Failure = &faktory.Failure{
 			RetryCount:   0,
 			FailedAt:     util.Nows(),
 			ErrorMessage: failure.ErrorMessage,
@@ -72,7 +73,7 @@ func (s *Server) Fail(failure *JobFailure) error {
 	return nil
 }
 
-func nextRetry(override string, job *Job) time.Time {
+func nextRetry(override string, job *faktory.Job) time.Time {
 	if override != "" {
 		tm, err := time.Parse(time.RFC3339, override)
 		if err != nil {
@@ -89,7 +90,7 @@ func nextRetry(override string, job *Job) time.Time {
 	return defaultRetry(job)
 }
 
-func defaultRetry(job *Job) time.Time {
+func defaultRetry(job *faktory.Job) time.Time {
 	count := job.Failure.RetryCount
 	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
 	return time.Now().Add(time.Duration(secs) * time.Second)

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/cli"
+	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/util"
 	"github.com/mperham/faktory/webui"
 )
@@ -20,7 +20,7 @@ func main() {
 	// touch webui so it initializes
 	webui.Password = "123456"
 
-	s := faktory.NewServer(&faktory.ServerOptions{Binding: opts.Binding})
+	s := server.NewServer(&server.ServerOptions{Binding: opts.Binding})
 
 	go cli.HandleSignals(s)
 

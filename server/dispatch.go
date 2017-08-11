@@ -23,11 +23,15 @@ and returns if it gets any non-nil data.
 
 If all nil, the connection registers itself, blocking for a job.
 */
-package faktory
+package server
 
-import "encoding/json"
+import (
+	"encoding/json"
 
-func (s *Server) Pop(fn func(*Job) error, queues ...string) (*Job, error) {
+	"github.com/mperham/faktory"
+)
+
+func (s *Server) Pop(fn func(*faktory.Job) error, queues ...string) (*faktory.Job, error) {
 	for _, q := range queues {
 		que, err := s.store.GetQueue(q)
 		if err != nil {
@@ -38,7 +42,7 @@ func (s *Server) Pop(fn func(*Job) error, queues ...string) (*Job, error) {
 			return nil, err
 		}
 		if data != nil {
-			var job Job
+			var job faktory.Job
 			err = json.Unmarshal(data, &job)
 			if err != nil {
 				return nil, err

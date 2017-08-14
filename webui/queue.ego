@@ -1,0 +1,49 @@
+<%
+package webui
+
+import (
+  "encoding/base64"
+  "net/http"
+
+  "github.com/mperham/faktory"
+  "github.com/mperham/faktory/storage"
+)
+
+func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPage int64) {
+  ego_layout(w, req, func() { %>
+
+<header class="row">
+  <div class="col-sm-5">
+    <h3>
+      <%= q.Name() %>
+    </h3>
+  </div>
+  <div class="col-sm-4 pull-right flip">
+    <% ego_paging(w, req, fmt.Sprintf("/queues/%s", q.Name()), q.Size(), count, currentPage) %>
+  </div>
+</header>
+<div class="table_container">
+  <table class="queue table table-hover table-bordered table-striped">
+    <thead>
+      <th><%= t("Job") %></th>
+      <th><%= t("Arguments") %></th>
+      <th></th>
+    </thead>
+    <% queueJobs(q, count, currentPage, func(idx int, key []byte, job faktory.Job) { %>
+      <tr>
+        <td><%= job.Type %></td>
+        <td><%= job.Args %></td>
+        <td>
+          <form action="/queues/<%= q.Name() %>/delete" method="post">
+            <%== csrfTag(req) %>
+            <input name="key_val" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" type="hidden" />
+            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= t("Delete") %>" data-confirm="<%= t("AreYouSure") %>" />
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </table>
+</div>
+<% ego_paging(w, req, fmt.Sprintf("/queues/%s", q.Name()), q.Size(), count, currentPage) %>
+<% }) %>
+<% } %>

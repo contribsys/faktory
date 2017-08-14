@@ -22,7 +22,7 @@ func (q *rocksQueue) Name() string {
 	return q.name
 }
 
-func (q *rocksQueue) Each(fn func(index int, v []byte) error) error {
+func (q *rocksQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
 	index := 0
 	upper := upperBound(q.name)
 
@@ -39,21 +39,42 @@ func (q *rocksQueue) Each(fn func(index int, v []byte) error) error {
 	if it.Err() != nil {
 		return it.Err()
 	}
+
+	// skip any before start point
+	for i := start; i > 0; i-- {
+		if !it.Valid() {
+			return nil
+		}
+		it.Next()
+	}
+
 	for ; it.Valid(); it.Next() {
+		if count == 0 {
+			break
+		}
+		k := it.Key()
 		v := it.Value()
 		value := v.Data()
-		err := fn(index, value)
+		key := k.Data()
+		err := fn(index, key, value)
 		index += 1
 		if err != nil {
+			k.Free()
 			v.Free()
 			return err
 		}
+		k.Free()
 		v.Free()
+		count -= 1
 	}
 	if it.Err() != nil {
 		return it.Err()
 	}
 	return nil
+}
+
+func (q *rocksQueue) Each(fn func(index int, k, v []byte) error) error {
+	return q.Page(0, -1, fn)
 }
 
 func (q *rocksQueue) Clear() (int, error) {

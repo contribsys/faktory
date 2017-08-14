@@ -1,6 +1,8 @@
 package webui
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,6 +29,14 @@ func serverLocation() string {
 
 func t(word string) string {
 	return word
+}
+
+func tf(word string, param string) string {
+	return t(word)
+}
+
+func pageparam(req *http.Request, pageValue int64) string {
+	return fmt.Sprintf("page=%d", pageValue)
 }
 
 func currentStatus() string {
@@ -71,4 +81,16 @@ func numberWithDelimiter(val int64) string {
 			out[j] = ','
 		}
 	}
+}
+
+func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int, key []byte, job faktory.Job)) {
+	q.Page((currentPage-1)*count, count, func(idx int, key, data []byte) error {
+		var job faktory.Job
+		err := json.Unmarshal(data, &job)
+		if err != nil {
+			return err
+		}
+		fn(idx, key, job)
+		return nil
+	})
 }

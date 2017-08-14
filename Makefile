@@ -37,9 +37,11 @@ prepare:
 	# or ensure your Homebrew'd Go can cross compile:
 	#   brew install go --with-cc-common
 
-test: clean
-	go generate ./...
+test: clean generate
 	go test -parallel 4 ./...
+
+generate:
+	go generate ./...
 
 build: test
 	@GOOS=linux GOARCH=amd64 go build -o faktory cmd/main.go
@@ -59,7 +61,7 @@ clean:
 	mkdir -p packaging/output/upstart
 	mkdir -p packaging/output/systemd
 
-run: clean
+run: clean generate
 	go run cmd/main.go -l debug -s i.sock -d .
 
 package: clean version_check build_deb build_rpm

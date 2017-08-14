@@ -4,6 +4,8 @@ import (
 	"crypto/subtle"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/mperham/faktory/server"
@@ -37,6 +39,7 @@ func init() {
 		&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
 	http.HandleFunc("/queues", Log(GetOnly(queuesHandler)))
+	http.HandleFunc("/queues/", Log(queueHandler))
 	server.OnStart(FireItUp)
 }
 
@@ -68,6 +71,38 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func queuesHandler(w http.ResponseWriter, r *http.Request) {
 	ego_listQueues(w, r)
+}
+
+var (
+	LAST_WORD = regexp.MustCompile(`/(\w+)\z`)
+)
+
+func queueHandler(w http.ResponseWriter, r *http.Request) {
+	name := LAST_WORD.FindStringSubmatch(r.RequestURI)
+	if name == nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	queueName := name[1]
+	q, err := defaultServer.Store().GetQueue(queueName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	currentPage := int64(1)
+	p := r.URL.Query()["page"]
+	if p != nil {
+		val, err := strconv.Atoi(p[0])
+		if err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+		currentPage = int64(val)
+	}
+	count := int64(25)
+
+	ego_queue(w, r, q, count, currentPage)
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {

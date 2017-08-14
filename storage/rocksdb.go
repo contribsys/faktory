@@ -66,10 +66,13 @@ func (store *rocksStore) Stats() map[string]string {
 
 // queues are iterated in sorted, lexigraphical order
 func (store *rocksStore) EachQueue(x func(Queue)) {
+	store.mu.Lock()
 	keys := make([]string, 0, len(store.queueSet))
 	for k, _ := range store.queueSet {
 		keys = append(keys, k)
 	}
+	store.mu.Unlock()
+
 	sort.Strings(keys)
 	for _, k := range keys {
 		x(store.queueSet[k])

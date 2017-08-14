@@ -1,7 +1,7 @@
 <%
 package webui
 
-func footer(w io.Writer) {
+func ego_footer(w io.Writer) {
 %>
 <div class="navbar navbar-fixed-bottom navbar-inverse ltr">
   <div class="navbar-inner">

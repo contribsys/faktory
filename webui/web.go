@@ -59,11 +59,15 @@ func FireItUp(svr *server.Server) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	index(w, r)
+	if defaultServer == nil {
+		http.Error(w, "Server not booted", http.StatusInternalServerError)
+		return
+	}
+	ego_index(w, r)
 }
 
 func queuesHandler(w http.ResponseWriter, r *http.Request) {
-	listQueues(w, r)
+	ego_listQueues(w, r)
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {

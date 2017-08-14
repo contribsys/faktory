@@ -3,8 +3,8 @@ package webui
 
 import "net/http"
 
-func index(w io.Writer, req *http.Request) {
-  layout(w, req, func() { %>
+func ego_index(w io.Writer, req *http.Request) {
+  ego_layout(w, req, func() { %>
     <p>Hello World!</p>
   <% }) %>
 <% } %>

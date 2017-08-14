@@ -1,7 +1,7 @@
 <%
 package webui
 
-func summary(w io.Writer) {
+func ego_summary(w io.Writer) {
 %>
 <ul class="list-unstyled summary row">
   <li class="processed col-sm-1">

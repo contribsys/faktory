@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/mperham/faktory/util"
@@ -63,9 +64,15 @@ func (store *rocksStore) Stats() map[string]string {
 	}
 }
 
+// queues are iterated in sorted, lexigraphical order
 func (store *rocksStore) EachQueue(x func(Queue)) {
-	for _, q := range store.queueSet {
-		x(q)
+	keys := make([]string, 0, len(store.queueSet))
+	for k, _ := range store.queueSet {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		x(store.queueSet[k])
 	}
 }
 

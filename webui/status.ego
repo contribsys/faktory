@@ -1,0 +1,11 @@
+<%
+package webui
+
+func ego_status(w io.Writer) {
+%>
+<span class="status">
+  <% x := currentStatus() %>
+  <i class="status-sprite status-<%= x %>"></i>
+  <%= t(x) %>
+</span>
+<% } %>

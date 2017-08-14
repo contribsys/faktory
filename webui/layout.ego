@@ -2,7 +2,7 @@
 package webui
 import "net/http"
 
-func layout(w io.Writer, req *http.Request, yield func()) {
+func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
 <html>
@@ -17,12 +17,12 @@ func layout(w io.Writer, req *http.Request, yield func()) {
     <meta name="google" content="notranslate" />
   </head>
   <body class="admin">
-    <% nav(w, req) %>
+    <% ego_nav(w, req) %>
     <div id="page">
       <div class="container">
         <div class="row">
           <div class="col-sm-12 summary_bar">
-            <% summary(w) %>
+            <% ego_summary(w) %>
           </div>
 
           <div class="col-sm-12">
@@ -31,7 +31,7 @@ func layout(w io.Writer, req *http.Request, yield func()) {
         </div>
       </div>
     </div>
-    <% footer(w) %>
+    <% ego_footer(w) %>
   </body>
 </html>
 <% } %>

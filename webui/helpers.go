@@ -22,11 +22,18 @@ func productVersion() string {
 }
 
 func serverLocation() string {
-	return "localhost:7419"
+	return defaultServer.Options.Binding
 }
 
 func t(word string) string {
 	return word
+}
+
+func currentStatus() string {
+	if defaultServer.Store().Working().Size() == 0 {
+		return "idle"
+	}
+	return "active"
 }
 
 type Queue struct {

@@ -52,7 +52,7 @@ lint:
 	gometalinter ./...
 
 clean:
-	rm webui/*.ego.go
+	rm -f webui/*.ego.go
 	rm -rf tmp
 	rm -f main faktory templates.go
 	rm -rf packaging/output

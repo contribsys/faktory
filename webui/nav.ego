@@ -6,7 +6,7 @@ import (
   "strings"
 )
 
-func nav(w io.Writer, req *http.Request) {
+func ego_nav(w io.Writer, req *http.Request) {
 %>
 <div class="navbar navbar-default navbar-fixed-top">
   <div class="container-fluid">
@@ -20,6 +20,7 @@ func nav(w io.Writer, req *http.Request) {
       </div>
       <a class="navbar-brand" href="/">
         Faktory
+        <% ego_status(w) %>
       </a>
     </div>
 

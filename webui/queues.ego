@@ -1,0 +1,38 @@
+<%
+package webui
+
+import "net/http"
+
+func listQueues(w io.Writer, req *http.Request) {
+%>
+
+<% layout(w, req, func() { %>
+
+<h3><%= t("Queues") %></h3>
+
+<div class="table_container">
+  <table class="queues table table-hover table-bordered table-striped table-white">
+    <thead>
+      <th><%= t("Queue") %></th>
+      <th><%= t("Size") %></th>
+      <th><%= t("Actions") %></th>
+    </thead>
+    <% for _, queue := range queues() { %>
+      <tr>
+        <td>
+          <a href="/queues/<%= queue.Name %>"><%= queue.Name %></a>
+        </td>
+        <td><%= numberWithDelimiter(queue.Size) %> </td>
+        <td class="delete-confirm">
+          <form action="/queues/<%= queue.Name %>" method="post">
+            <%== csrfTag(req) %>
+            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= t("Delete") %>" data-confirm="<%= t("AreYouSure") %>" />
+          </form>
+        </td>
+      </tr>
+    <% } %>
+  </table>
+</div>
+
+  <% }) %>
+<% } %>

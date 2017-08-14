@@ -38,6 +38,7 @@ prepare:
 	#   brew install go --with-cc-common
 
 test: clean
+	go generate ./...
 	go test -parallel 4 ./...
 
 build: test
@@ -51,12 +52,12 @@ lint:
 	gometalinter ./...
 
 clean:
+	rm webui/*.ego.go
 	rm -rf tmp
 	rm -f main faktory templates.go
 	rm -rf packaging/output
 	mkdir -p packaging/output/upstart
 	mkdir -p packaging/output/systemd
-	go generate ./...
 
 run: clean
 	go run cmd/main.go -l debug -s i.sock -d .

@@ -18,7 +18,7 @@ func (s *Server) Acknowledge(jid string) (*faktory.Job, error) {
 	res, ok := workingMap[jid]
 	if !ok {
 		workingMutex.Unlock()
-		util.Info("No such job to acknowledge", jid)
+		util.Infof("No such job to acknowledge %s", jid)
 		return nil, nil
 	}
 

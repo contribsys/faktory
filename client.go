@@ -123,7 +123,6 @@ func (c *Client) Pop(q string) (*Job, error) {
 
 func (c *Client) Fail(jid string, err error, backtrace []string) error {
 	failure := map[string]interface{}{
-		"jid":     jid,
 		"message": err.Error(),
 		"errtype": reflect.TypeOf(err).Name(),
 	}
@@ -135,7 +134,7 @@ func (c *Client) Fail(jid string, err error, backtrace []string) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "FAIL", failbytes)
+	err = writeLine(c.wtr, "FAIL "+jid, failbytes)
 	if err != nil {
 		return err
 	}

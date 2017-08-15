@@ -120,7 +120,7 @@ func (s *Server) Stop(f func()) {
 }
 
 func (s *Server) processConnection(conn net.Conn) {
-	// operation must complete within 1 second
+	// AHOY operation must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	buf := bufio.NewReader(conn)
@@ -135,7 +135,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	valid := strings.HasPrefix(line, "AHOY ")
+	valid := strings.HasPrefix(line, "AHOY")
 	if !valid {
 		util.Info("Invalid preamble", line)
 		util.Info("Need a valid AHOY")
@@ -182,6 +182,9 @@ func (s *Server) processConnection(conn net.Conn) {
 	if !ok {
 		id = conn.RemoteAddr().String()
 	}
+	// disable deadline
+	conn.SetDeadline(time.Time{})
+
 	c := &Connection{
 		ident: id,
 		conn:  conn,
@@ -215,6 +218,9 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 	qname := job.Queue
+	if qname == "" {
+		qname = "default"
+	}
 	q, err := s.store.GetQueue(qname)
 	if err != nil {
 		c.Error(cmd, err)
@@ -298,15 +304,15 @@ func store(c *Connection, s *Server, cmd string) {
 
 func processLines(conn *Connection, server *Server) {
 	for {
-		// every operation must complete within 1 second
-		conn.conn.SetDeadline(time.Now().Add(1 * time.Second))
-
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
+			util.Error("Unexpected socket error", e, nil)
 			conn.Close()
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")
+		cmd = strings.TrimSuffix(cmd, "\n")
+		//util.Debug(cmd)
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd
@@ -315,7 +321,7 @@ func processLines(conn *Connection, server *Server) {
 		}
 		proc, ok := cmdSet[verb]
 		if !ok {
-			conn.Result([]byte(fmt.Sprintf("ERR unknown command %s", verb)))
+			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
 			proc(conn, server, cmd)
 		}

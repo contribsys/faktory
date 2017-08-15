@@ -27,6 +27,7 @@ func OpenRocks(path string) (Store, error) {
 		path = "default"
 	}
 	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
+	util.Infof("Initializing storage at %s", fullpath)
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
@@ -82,7 +83,6 @@ func (store *rocksStore) EachQueue(x func(Queue)) {
 }
 
 func (store *rocksStore) init() error {
-	util.Info("Initializing storage")
 	ro := queueReadOptions(false)
 	ro.SetFillCache(false)
 	defer ro.Destroy()
@@ -123,6 +123,9 @@ func (store *rocksStore) init() error {
 }
 
 func (store *rocksStore) GetQueue(name string) (Queue, error) {
+	if name == "" {
+		return nil, fmt.Errorf("Queue name cannot be blank")
+	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
 

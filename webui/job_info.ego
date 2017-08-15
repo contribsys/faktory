@@ -78,10 +78,6 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
           <td><%= job.Failure.RetryCount %></td>
         </tr>
         <tr>
-          <th><%= t("LastRetry") %></th>
-          <td><%= relativeTime(job.Failure.RetriedAt) %></td>
-        </tr>
-        <tr>
           <th><%= t("OriginallyFailed") %></th>
           <td><%= relativeTime(job.Failure.FailedAt) %></td>
         </tr>

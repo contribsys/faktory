@@ -109,17 +109,17 @@ func HandleSignals(s *server.Server) {
 		signal.Notify(signals, k)
 	}
 
-	util.Info("Now listening at ", s.Options.Binding, ", press Ctrl-C to stop")
+	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 	for {
 		sig := <-signals
-		util.Debug("Received signal %d", sig)
+		util.Debugf("Received signal: %v", sig)
 		funk := SignalHandlers[sig]
 		funk(s)
 	}
 }
 
 func exit(s *server.Server) {
-	util.Debug(faktory.Name + " shutting down")
+	util.Debugf("%s shutting down", faktory.Name)
 
 	s.Stop(func() {
 		util.Info("Goodbye")

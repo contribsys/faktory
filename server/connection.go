@@ -57,7 +57,9 @@ func (c *Connection) Result(msg []byte) error {
 	c.conn.Write([]byte("$"))
 	c.conn.Write([]byte(strconv.Itoa(len(msg))))
 	c.conn.Write([]byte("\r\n"))
-	c.conn.Write(msg)
+	if msg != nil {
+		c.conn.Write(msg)
+	}
 	c.conn.Write([]byte("\r\n"))
 	return nil
 }

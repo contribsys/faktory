@@ -2,7 +2,9 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -25,72 +27,78 @@ var (
 
 func fail(c *Connection, s *Server, cmd string) {
 	raw := cmd[5:]
-	var failure JobFailure
-	err := json.Unmarshal([]byte(raw), &failure)
+	elms := strings.SplitN(raw, " ", 2)
+	jid := elms[0]
+	errtype := "unknown"
+	msg := "unknown"
+	var backtrace []string
+
+	if len(elms) > 2 {
+		var failure faktory.Failure
+		hash := elms[1]
+		err := json.Unmarshal([]byte(hash), &failure)
+		if err != nil {
+			c.Error(cmd, err)
+			return
+		}
+		if failure.ErrorType != "" {
+			errtype = failure.ErrorType
+		}
+		if failure.ErrorMessage != "" {
+			msg = failure.ErrorMessage
+		}
+		backtrace = failure.Backtrace
+	}
+
+	err := s.Fail(jid, msg, errtype, backtrace)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
 
-	err = s.Fail(&failure)
-	if err != nil {
-		c.Error(cmd, err)
-		return
-	}
+	util.Infof("%s Failure")
 
 	c.Ok()
 }
 
-func (s *Server) Fail(failure *JobFailure) error {
-	job, err := s.Acknowledge(failure.Jid)
+func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
+	job, err := s.Acknowledge(jid)
 	if err != nil {
 		return err
+	}
+	if job == nil {
+		// job has already been ack'd?
+		return fmt.Errorf("Cannot fail %s, not found in working set", jid)
 	}
 
 	if job.Failure != nil {
 		job.Failure.RetryCount += 1
-		job.Failure.ErrorMessage = failure.ErrorMessage
-		job.Failure.ErrorType = failure.ErrorType
-		job.Failure.Backtrace = failure.Backtrace
+		job.Failure.ErrorMessage = msg
+		job.Failure.ErrorType = errtype
+		job.Failure.Backtrace = backtrace
 	} else {
 		job.Failure = &faktory.Failure{
 			RetryCount:   0,
 			FailedAt:     util.Nows(),
-			ErrorMessage: failure.ErrorMessage,
-			ErrorType:    failure.ErrorType,
-			Backtrace:    failure.Backtrace,
+			ErrorMessage: msg,
+			ErrorType:    errtype,
+			Backtrace:    backtrace,
 		}
 	}
 
-	when := nextRetry(failure.RetryAt, job)
+	when := util.Thens(nextRetry(job))
+	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
 
-	err = s.store.Retries().AddElement(util.Thens(when), job.Jid, bytes)
+	err = s.store.Retries().AddElement(when, job.Jid, bytes)
 	atomic.AddInt64(&s.Failures, 1)
 	return nil
 }
 
-func nextRetry(override string, job *faktory.Job) time.Time {
-	if override != "" {
-		tm, err := time.Parse(time.RFC3339, override)
-		if err != nil {
-			util.Warn("Invalid retry_at: %s", override)
-			return defaultRetry(job)
-		}
-		if tm.Before(time.Now()) || tm.After(time.Now().Add(maxRetryDelay)) {
-			// retry time out of range
-			util.Warn("Invalid retry_at time: %s", tm)
-			return defaultRetry(job)
-		}
-		return tm
-	}
-	return defaultRetry(job)
-}
-
-func defaultRetry(job *faktory.Job) time.Time {
+func nextRetry(job *faktory.Job) time.Time {
 	count := job.Failure.RetryCount
 	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
 	return time.Now().Add(time.Duration(secs) * time.Second)

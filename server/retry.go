@@ -56,7 +56,7 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	util.Infof("%s Failure")
+	util.Infof("%s Failure", jid)
 
 	c.Ok()
 }

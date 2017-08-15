@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -306,7 +307,9 @@ func processLines(conn *Connection, server *Server) {
 	for {
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
-			util.Error("Unexpected socket error", e, nil)
+			if e != io.EOF {
+				util.Error("Unexpected socket error", e, nil)
+			}
 			conn.Close()
 			return
 		}

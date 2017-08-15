@@ -30,6 +30,7 @@ func (ts *RocksSortedSet) Close() {
 func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) error {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
+	defer ro.Destroy()
 
 	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
@@ -57,6 +58,7 @@ func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) e
 func (ts *RocksSortedSet) Size() int64 {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
+	defer ro.Destroy()
 
 	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
@@ -111,6 +113,7 @@ func (ts *RocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 
 	return results, nil
 }
+
 func (ts *RocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
 	other := ots.(*RocksSortedSet)
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))

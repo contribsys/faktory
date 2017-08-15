@@ -9,6 +9,7 @@ import (
 
 	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/storage"
+	"github.com/mperham/faktory/util"
 )
 
 var (
@@ -84,13 +85,17 @@ func numberWithDelimiter(val int64) string {
 }
 
 func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int, key []byte, job faktory.Job)) {
-	q.Page((currentPage-1)*count, count, func(idx int, key, data []byte) error {
+	err := q.Page((currentPage-1)*count, count, func(idx int, key, data []byte) error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
+			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
 		}
 		fn(idx, key, job)
 		return nil
 	})
+	if err != nil {
+		util.Warnf("Error iterating queue: %s", err.Error())
+	}
 }

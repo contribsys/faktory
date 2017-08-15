@@ -176,6 +176,25 @@ func TestQueueKeys(t *testing.T) {
 	assert.Equal(t, int64(1293712941), toInt64(x[4:12]))
 }
 
+func TestClearAndPush(t *testing.T) {
+	store, err := Open("rocksdb", "qpush.db")
+	assert.NoError(t, err)
+	q, err := store.GetQueue("lksjadfl")
+	assert.NoError(t, err)
+
+	_, err = q.Clear()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), q.Size())
+	q.Push([]byte("123o8123"))
+	q.Push([]byte("123o8123"))
+	assert.Equal(t, int64(2), q.Size())
+	_, err = q.Clear()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), q.Size())
+	q.Push([]byte("123o8123"))
+	assert.Equal(t, int64(1), q.Size())
+}
+
 func BenchmarkQueuePerformance(b *testing.B) {
 	defer os.RemoveAll("../tmp/qblah.db")
 	store, err := Open("rocksdb", "qblah.db")

@@ -41,13 +41,12 @@ func TestQueues(t *testing.T) {
 }
 
 func TestQueue(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/queues/foobar", nil)
-	assert.Nil(t, err)
+	req := httptest.NewRequest("GET", "/queues/foobar", nil)
 
 	str := defaultServer.Store()
 	q, _ := str.GetQueue("foobar")
 	q.Clear()
-	q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"`))
+	q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
 
 	w := httptest.NewRecorder()
 	queueHandler(w, req)

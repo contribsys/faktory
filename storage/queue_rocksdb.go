@@ -79,17 +79,43 @@ func (q *rocksQueue) Each(fn func(index int, k, v []byte) error) error {
 
 func (q *rocksQueue) Clear() (int, error) {
 	count := 0
-	// not exactly optimized
 	// TODO impl which uses Rocks range deletes?
-	for {
-		data, err := q.Pop()
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	upper := upperBound(q.name)
+	ro := queueReadOptions(true)
+	ro.SetIterateUpperBound(upper)
+	ro.SetFillCache(false)
+	defer ro.Destroy()
+
+	it := q.store.db.NewIteratorCF(ro, q.cf)
+	defer it.Close()
+
+	prefix := append([]byte(q.name), 0xFF)
+	it.Seek(prefix)
+	if it.Err() != nil {
+		return 0, it.Err()
+	}
+
+	if !it.Valid() {
+		return 0, nil
+	}
+
+	wo := queueWriteOptions()
+	defer wo.Destroy()
+
+	for ; it.Valid(); it.Next() {
+		k := it.Key()
+		key := k.Data()
+		err := q.store.db.DeleteCF(wo, q.cf, key)
 		if err != nil {
 			return count, err
 		}
-		if data == nil {
-			break
-		}
+		k.Free()
 		count += 1
+		atomic.AddInt64(&q.low, 1)
+		atomic.AddInt64(&q.size, -1)
 	}
 	return count, nil
 }

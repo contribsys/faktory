@@ -95,7 +95,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
 		if err != nil {
-			http.Error(w, "Invalid input", http.StatusBadRequest)
+			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
 		currentPage = int64(val)

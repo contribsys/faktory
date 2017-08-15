@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/storage"
+	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,4 +79,21 @@ func bootRuntime() *server.Server {
 		time.Sleep(1 * time.Millisecond)
 	}
 	return s
+}
+
+func fakeJob() (string, []byte) {
+	jid := util.RandomJid()
+	nows := util.Nows()
+	return jid, []byte(fmt.Sprintf(`{
+			"jid":"%s",
+			"created_at":"%s",
+			"queue":"default",
+			"args":[1,2,3],
+			"jobtype":"SomeWorker",
+			"enqueued_at":"%s",
+			"custom":{
+				"foo":"bar",
+				"tenant":1
+			}
+		}`, jid, nows, nows))
 }

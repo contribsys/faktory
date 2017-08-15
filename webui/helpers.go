@@ -111,3 +111,11 @@ func enqueuedSize() int64 {
 	})
 	return total
 }
+
+func relativeTime(moment string) string {
+	tm, err := util.ParseTime(moment)
+	if err != nil {
+		return "invalid timestamp"
+	}
+	return Timeago(tm)
+}

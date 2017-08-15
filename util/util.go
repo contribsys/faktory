@@ -128,3 +128,7 @@ func Thens(tim time.Time) string {
 func Nows() string {
 	return time.Now().UTC().Format(TimestampFormat)
 }
+
+func ParseTime(str string) (time.Time, error) {
+	return time.Parse(TimestampFormat, str)
+}

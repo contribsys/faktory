@@ -1,0 +1,96 @@
+<%
+package webui
+
+import (
+  "github.com/mperham/faktory"
+)
+
+func ego_job_info(w io.Writer, job *faktory.Job) {
+%>
+
+<header>
+  <h3><%= t("Job") %></h3>
+</header>
+
+<div class="table_container">
+  <table class="table table-bordered table-striped">
+    <tbody>
+      <tr>
+        <th><%= t("Queue") %></th>
+        <td>
+          <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+        </td>
+      </tr>
+      <tr>
+        <th><%= t("Job") %></th>
+        <td>
+          <code><%= job.Type %></code>
+        </td>
+      </tr>
+      <tr>
+        <th><%= t("Arguments") %></th>
+        <td>
+          <code class="code-wrap">
+            <!-- We don't want to truncate any job arguments when viewing a single job's status page -->
+            <div class="args-extended"><%= job.Args %></div>
+          </code>
+        </td>
+      </tr>
+      <tr>
+        <th>JID</th>
+        <td>
+          <code><%= job.Jid %></code>
+        </td>
+      </tr>
+      <tr>
+        <th><%= t("CreatedAt") %></th>
+        <td><%= relativeTime(job.CreatedAt) %></td>
+      </tr>
+      <% if job.RunAt != "" { %>
+        <tr>
+          <th><%= t("Scheduled") %></th>
+          <td><%= relativeTime(job.RunAt) %></td>
+        </tr>
+      <% } %>
+      <tr>
+        <th><%= t("Enqueued") %></th>
+        <td>
+          <% enq := job.EnqueuedAt; if enq != "" { %>
+            <%= relativeTime(enq) %>
+          <% } else { %>
+            <%= t("NotYetEnqueued") %>
+          <% } %>
+        </td>
+      </tr>
+      <% if job.Custom != nil { %>
+        <tr>
+          <th><%= t("Extras") %></th>
+          <td>
+            <code>
+              <%= job.Custom %>
+            </code>
+          </td>
+        </tr>
+      <% } %>
+      <% if job.Failure != nil { %>
+        <tr>
+          <th><%= t("RetryCount") %></th>
+          <td><%= job.Failure.RetryCount %></td>
+        </tr>
+        <tr>
+          <th><%= t("LastRetry") %></th>
+          <td><%= relativeTime(job.Failure.RetriedAt) %></td>
+        </tr>
+        <tr>
+          <th><%= t("OriginallyFailed") %></th>
+          <td><%= relativeTime(job.Failure.FailedAt) %></td>
+        </tr>
+        <tr>
+          <th><%= t("NextRetry") %></th>
+          <td><%= relativeTime(job.Failure.NextAt) %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<% } %>

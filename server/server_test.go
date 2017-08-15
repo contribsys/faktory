@@ -55,7 +55,7 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "ERR unknown command CMD\r\n", result)
 
-		conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
+		conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"jobtype\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
@@ -63,7 +63,7 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("POP default some other\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "$189\r\n", result)
+		assert.Equal(t, "$83\r\n", result)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 

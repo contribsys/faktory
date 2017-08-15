@@ -15,6 +15,7 @@ type rocksStore struct {
 	retries   *RocksSortedSet
 	scheduled *RocksSortedSet
 	working   *RocksSortedSet
+	dead      *RocksSortedSet
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
 	queueSet  map[string]*rocksQueue
@@ -30,8 +31,8 @@ func OpenRocks(path string) (Store, error) {
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
-		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, "default", "queues"},
-		[]*gorocksdb.Options{opts, opts, opts, opts, opts})
+		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, DeadBucket, "default", "queues"},
+		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts})
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,9 @@ func OpenRocks(path string) (Store, error) {
 		scheduled: &RocksSortedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo},
 		retries:   &RocksSortedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo},
 		working:   &RocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo},
-		defalt:    handles[3],
-		queues:    handles[4],
+		dead:      &RocksSortedSet{Name: DeadBucket, db: db, cf: handles[3], ro: ro, wo: wo},
+		defalt:    handles[4],
+		queues:    handles[5],
 		queueSet:  make(map[string]*rocksQueue),
 		mu:        sync.Mutex{},
 	}
@@ -146,6 +148,7 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 
 func (store *rocksStore) Close() error {
 	util.Info("Stopping storage")
+	store.dead.Close()
 	store.retries.Close()
 	store.working.Close()
 	store.scheduled.Close()
@@ -165,4 +168,8 @@ func (store *rocksStore) Scheduled() SortedSet {
 
 func (store *rocksStore) Working() SortedSet {
 	return store.working
+}
+
+func (store *rocksStore) Dead() SortedSet {
+	return store.dead
 }

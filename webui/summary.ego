@@ -5,40 +5,40 @@ func ego_summary(w io.Writer) {
 %>
 <ul class="list-unstyled summary row">
   <li class="processed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(129837918237) %></span>
+    <span class="count"><%= numberWithDelimiter(defaultServer.Processed) %></span>
     <span class="desc"><%= t("Processed") %></span>
   </li>
   <li class="failed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(12383) %></span>
+    <span class="count"><%= numberWithDelimiter(defaultServer.Failures) %></span>
     <span class="desc"><%= t("Failed") %></span>
   </li>
   <li class="busy col-sm-1">
     <a href="/busy">
-      <span class="count"><%= numberWithDelimiter(999) %></span>
+      <span class="count"><%= numberWithDelimiter(store().Working().Size()) %></span>
       <span class="desc"><%= t("Busy") %></span>
     </a>
   </li>
   <li class="enqueued col-sm-1">
     <a href="/queues">
-      <span class="count"><%= numberWithDelimiter(72) %></span>
+      <span class="count"><%= numberWithDelimiter(enqueuedSize()) %></span>
       <span class="desc"><%= t("Enqueued") %></span>
     </a>
   </li>
   <li class="retries col-sm-1">
     <a href="/retries">
-      <span class="count"><%= numberWithDelimiter(193249827) %></span>
+      <span class="count"><%= numberWithDelimiter(store().Retries().Size()) %></span>
       <span class="desc"><%= t("Retries") %></span>
     </a>
   </li>
   <li class="scheduled col-sm-1">
     <a href="/scheduled">
-      <span class="count"><%= numberWithDelimiter(712367) %></span>
+      <span class="count"><%= numberWithDelimiter(store().Scheduled().Size()) %></span>
       <span class="desc"><%= t("Scheduled") %></span>
     </a>
   </li>
   <li class="dead col-sm-1">
     <a href="/morgue">
-      <span class="count"><%= numberWithDelimiter(123) %></span>
+      <span class="count"><%= numberWithDelimiter(store().Dead().Size()) %></span>
       <span class="desc"><%= t("Dead") %></span>
     </a>
   </li>

@@ -60,6 +60,10 @@ func queues() []Queue {
 	return queues
 }
 
+func store() storage.Store {
+	return defaultServer.Store()
+}
+
 func csrfTag(req *http.Request) string {
 	// random string :-)
 	return `<input type="hidden" name="authenticity_token" value="p8tNCpaxTOdAEgoTT3UdSzReVPdWTRJimHS8zDXAVPw="/>`
@@ -98,4 +102,12 @@ func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int,
 	if err != nil {
 		util.Warnf("Error iterating queue: %s", err.Error())
 	}
+}
+
+func enqueuedSize() int64 {
+	var total int64
+	defaultServer.Store().EachQueue(func(q storage.Queue) {
+		total += q.Size()
+	})
+	return total
 }

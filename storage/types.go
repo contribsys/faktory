@@ -7,6 +7,7 @@ type Store interface {
 	Retries() SortedSet
 	Scheduled() SortedSet
 	Working() SortedSet
+	Dead() SortedSet
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string
@@ -27,13 +28,14 @@ var (
 	ScheduledBucket = "scheduled"
 	RetriesBucket   = "retries"
 	WorkingBucket   = "working"
+	DeadBucket      = "dead"
 )
 
 type SortedSet interface {
 	AddElement(timestamp string, jid string, payload []byte) error
 	RemoveElement(timestamp string, jid string) error
 	RemoveBefore(timestamp string) ([][]byte, error)
-	Size() int
+	Size() int64
 	EachElement(func(string, string, []byte) error) error
 
 	/*

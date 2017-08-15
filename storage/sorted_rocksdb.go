@@ -54,14 +54,14 @@ func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) e
 	return nil
 }
 
-func (ts *RocksSortedSet) Size() int {
+func (ts *RocksSortedSet) Size() int64 {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
 
 	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
 
-	count := 0
+	var count int64
 	for it.SeekToFirst(); it.Valid(); it.Next() {
 		count += 1
 	}

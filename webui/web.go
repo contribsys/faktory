@@ -45,6 +45,7 @@ func init() {
 	http.HandleFunc("/queues/", Log(queueHandler))
 	http.HandleFunc("/retries", Log(GetOnly(retriesHandler)))
 	http.HandleFunc("/retries/", Log(retryHandler))
+	http.HandleFunc("/scheduled", Log(GetOnly(scheduledHandler)))
 	server.OnStart(FireItUp)
 }
 
@@ -163,6 +164,26 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ego_retry(w, r, key, &job)
 }
+
+func scheduledHandler(w http.ResponseWriter, r *http.Request) {
+	set := defaultServer.Store().Scheduled()
+
+	currentPage := int64(1)
+	p := r.URL.Query()["page"]
+	if p != nil {
+		val, err := strconv.Atoi(p[0])
+		if err != nil {
+			http.Error(w, "Invalid parameter", http.StatusBadRequest)
+			return
+		}
+		currentPage = int64(val)
+	}
+	count := int64(25)
+
+	ego_listScheduled(w, r, set, count, currentPage)
+}
+
+/////////////////////////////////////
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

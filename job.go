@@ -20,7 +20,7 @@ type Job struct {
 	Gid        string                 `json:"gid,omitempty"`
 	CreatedAt  string                 `json:"created_at,omitempty"`
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
-	RunAt      string                 `json:"run_at,omitempty"`
+	At         string                 `json:"at,omitempty"`
 	ReserveFor int                    `json:"reserve_for,omitempty"`
 	Retry      int                    `json:"retry,omitempty"`
 	Backtrace  int                    `json:"backtrace,omitempty"`

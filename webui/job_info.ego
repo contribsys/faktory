@@ -40,10 +40,10 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
         <th><%= t("CreatedAt") %></th>
         <td><%= relativeTime(job.CreatedAt) %></td>
       </tr>
-      <% if job.RunAt != "" { %>
+      <% if job.At != "" { %>
         <tr>
           <th><%= t("Scheduled") %></th>
-          <td><%= relativeTime(job.RunAt) %></td>
+          <td><%= relativeTime(job.At) %></td>
         </tr>
       <% } %>
       <tr>

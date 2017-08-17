@@ -80,13 +80,10 @@ func (ts *rocksSortedSet) EachElement(proc func(int, string, []byte) error) erro
 }
 
 func (ts *rocksSortedSet) GetElement(key string) ([]byte, error) {
-	slice, err := ts.db.GetCF(ts.ro, ts.cf, []byte(key))
+	data, err := ts.db.GetBytesCF(ts.ro, ts.cf, []byte(key))
 	if err != nil {
 		return nil, err
 	}
-	defer slice.Free()
-
-	data := slice.Data()
 	return data, nil
 }
 

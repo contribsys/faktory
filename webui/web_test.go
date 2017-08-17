@@ -66,12 +66,48 @@ func TestRetries(t *testing.T) {
 	q.Clear()
 	jid, data := fakeJob()
 
-	q.AddElement(util.Nows(), jid, data)
+	err = q.AddElement(util.Nows(), jid, data)
+	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 	retriesHandler(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}
+
+func TestRetry(t *testing.T) {
+	str := defaultServer.Store()
+	q := str.Retries()
+	q.Clear()
+	jid, data := fakeJob()
+	ts := util.Nows()
+
+	err := q.AddElement(ts, jid, data)
+	assert.Nil(t, err)
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/retries/%s|%s", ts, jid), nil)
+	w := httptest.NewRecorder()
+	retryHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}
+
+func TestScheduled(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://localhost:7420/scheduled", nil)
+	assert.Nil(t, err)
+
+	str := defaultServer.Store()
+	q := str.Scheduled()
+	q.Clear()
+	jid, data := fakeJob()
+
+	err = q.AddElement(util.Nows(), jid, data)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	retriesHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), "SomeWorker"), w.Body.String())
 }
 
 func init() {
@@ -107,6 +143,7 @@ func fakeJob() (string, []byte) {
 			"queue":"default",
 			"args":[1,2,3],
 			"jobtype":"SomeWorker",
+			"at":"%s",
 			"enqueued_at":"%s",
 			"failure":{
 				"retry_count":0,
@@ -118,5 +155,5 @@ func fakeJob() (string, []byte) {
 				"foo":"bar",
 				"tenant":1
 			}
-		}`, jid, nows, nows, nows))
+		}`, jid, nows, nows, nows, nows))
 }

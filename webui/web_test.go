@@ -57,6 +57,23 @@ func TestQueue(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
 }
 
+func TestRetries(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://localhost:7420/retries", nil)
+	assert.Nil(t, err)
+
+	str := defaultServer.Store()
+	q := str.Retries()
+	q.Clear()
+	jid, data := fakeJob()
+
+	q.AddElement(util.Nows(), jid, data)
+
+	w := httptest.NewRecorder()
+	retriesHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}
+
 func init() {
 	storage.DefaultPath = "../tmp"
 	bootRuntime()
@@ -91,9 +108,15 @@ func fakeJob() (string, []byte) {
 			"args":[1,2,3],
 			"jobtype":"SomeWorker",
 			"enqueued_at":"%s",
+			"failure":{
+				"retry_count":0,
+				"failed_at":"%s",
+				"message":"Invalid argument",
+				"errtype":"RuntimeError"
+			},
 			"custom":{
 				"foo":"bar",
 				"tenant":1
 			}
-		}`, jid, nows, nows))
+		}`, jid, nows, nows, nows))
 }

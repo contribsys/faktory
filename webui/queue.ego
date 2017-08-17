@@ -29,7 +29,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
       <th><%= t("Arguments") %></th>
       <th></th>
     </thead>
-    <% queueJobs(q, count, currentPage, func(idx int, key []byte, job faktory.Job) { %>
+    <% queueJobs(q, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
       <tr>
         <td><%= job.Type %></td>
         <td><%= job.Args %></td>

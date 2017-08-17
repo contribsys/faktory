@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,14 +70,19 @@ func TestRocksSortedSet(b *testing.T) {
 		assert.NoError(b, err)
 	}
 
+	pageSize := 12
+	given := 0
+	err = retries.Page(10, 12, func(idx int, key string, elm []byte) error {
+		given += 1
+		return nil
+	})
+	assert.Equal(b, pageSize, given)
+
 	amt := int64(0)
-	ajid := ""
-	atstamp := ""
-	err = retries.EachElement(func(tstamp string, jid string, elm []byte) error {
-		ajid = jid
-		atstamp = tstamp
-		assert.Equal(b, 27, len(tstamp))
-		assert.Equal(b, 16, len(jid))
+	akey := ""
+	err = retries.EachElement(func(idx int, key string, elm []byte) error {
+		akey = key
+		assert.Equal(b, 44, len(key))
 		assert.NotNil(b, elm)
 		amt += int64(1)
 		return nil
@@ -84,8 +90,9 @@ func TestRocksSortedSet(b *testing.T) {
 	assert.NoError(b, err)
 	assert.Equal(b, count, amt)
 
+	strs := strings.Split(akey, "|")
 	assert.Equal(b, int64(0), db.Working().Size())
-	err = retries.MoveTo(db.Working(), atstamp, ajid, func(payload []byte) (string, []byte, error) {
+	err = retries.MoveTo(db.Working(), strs[0], strs[1], func(payload []byte) (string, []byte, error) {
 		return util.Nows(), payload, nil
 	})
 	assert.NoError(b, err)
@@ -93,7 +100,7 @@ func TestRocksSortedSet(b *testing.T) {
 	assert.Equal(b, count-1, retries.Size())
 	count -= 1
 
-	err = retries.MoveTo(db.Working(), "1231", ajid, func(payload []byte) (string, []byte, error) {
+	err = retries.MoveTo(db.Working(), "1231", strs[1], func(payload []byte) (string, []byte, error) {
 		return util.Nows(), payload, nil
 	})
 	assert.Error(b, err)
@@ -107,6 +114,9 @@ func TestRocksSortedSet(b *testing.T) {
 		assert.Equal(b, count-remd, retries.Size())
 		//assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
 	}
+	assert.True(b, retries.Size() > 0)
+	retries.Clear()
+	assert.Equal(b, int64(0), retries.Size())
 }
 
 func fakeJob() (string, []byte) {

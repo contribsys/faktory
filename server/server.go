@@ -218,11 +218,13 @@ func push(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
-	qname := job.Queue
-	if qname == "" {
-		qname = "default"
+	q, err := s.store.GetQueue(job.Queue)
+	if err != nil {
+		c.Error(cmd, err)
+		return
 	}
-	q, err := s.store.GetQueue(qname)
+	job.EnqueuedAt = util.Nows()
+	data, err = json.Marshal(job)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -344,6 +346,9 @@ func parseJob(buf []byte) (*faktory.Job, error) {
 
 	if job.CreatedAt == "" {
 		job.CreatedAt = util.Nows()
+	}
+	if job.Queue == "" {
+		job.Queue = "default"
 	}
 	return &job, nil
 }

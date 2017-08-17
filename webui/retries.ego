@@ -1,0 +1,95 @@
+<%
+package webui
+
+import (
+  "net/http"
+
+  "github.com/mperham/faktory"
+  "github.com/mperham/faktory/storage"
+)
+
+func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count int64, currentPage int64) {
+  totalSize := set.Size()
+%>
+
+<% ego_layout(w, req, func() { %>
+
+
+<header class="row">
+  <div class="col-sm-5">
+    <h3><%= t("Retries") %></h3>
+  </div>
+  <% if totalSize > count { %>
+    <div class="col-sm-4">
+      <% ego_paging(w, req, "/retries", totalSize, count, currentPage) %>
+    </div>
+  <% } %>
+  <%= filtering("retries") %>
+</header>
+
+<% if totalSize > 0 { %>
+  <form action="/retries" method="post">
+    <%== csrfTag(req) %>
+    <div class="table_container">
+      <table class="table table-striped table-bordered table-white">
+        <thead>
+          <tr>
+            <th class="table-checkbox checkbox-column">
+              <label>
+                <input type="checkbox" class="check_all" />
+              </label>
+            </th>
+            <th><%= t("NextRetry") %></th>
+            <th><%= t("RetryCount") %></th>
+            <th><%= t("Queue") %></th>
+            <th><%= t("Job") %></th>
+            <th><%= t("Arguments") %></th>
+            <th><%= t("Error") %></th>
+          </tr>
+        </thead>
+        <% setJobs(set, count, currentPage, func(idx int, key string, job *faktory.Job) { %>
+          <tr>
+            <td class="table-checkbox">
+              <label>
+                <input type='checkbox' name='key[]' value='<%= key %>' />
+              </label>
+            </td>
+            <td>
+              <a href="/retries/<%= key %>"><%= relativeTime(job.Failure.NextAt) %></a>
+            </td>
+            <td><%= job.Failure.RetryCount %></td>
+            <td>
+              <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+            </td>
+            <td><%= job.Type %></td>
+            <td>
+              <div class="args"><%= job.Args %></div>
+            </td>
+            <td>
+              <div><%= job.Failure.ErrorType %>: <%= job.Failure.ErrorMessage %></div>
+            </td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+    <input class="btn btn-primary btn-xs pull-left flip" type="submit" name="retry" value="<%= t("RetryNow") %>" />
+    <input class="btn btn-danger btn-xs pull-left flip" type="submit" name="delete" value="<%= t("Delete") %>" />
+    <input class="btn btn-danger btn-xs pull-left flip" type="submit" name="kill" value="<%= t("Kill") %>" />
+  </form>
+
+  <% if unfiltered() { %>
+    <form action="/retries/all/delete" method="post">
+      <%== csrfTag(req) %>
+      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="delete" value="<%= t("DeleteAll") %>" data-confirm="<%= t("AreYouSure") %>" />
+    </form>
+    <form action="/retries/all/retry" method="post">
+      <%== csrfTag(req) %>
+      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="retry" value="<%= t("RetryAll") %>" data-confirm="<%= t("AreYouSure") %>" />
+    </form>
+  <% } %>
+
+<% } else { %>
+  <div class="alert alert-success"><%= t("NoRetriesFound") %></div>
+<% } %>
+<% }) %>
+<% } %>

@@ -52,19 +52,21 @@ func (q *rocksQueue) Page(start int64, count int64, fn func(index int, k, v []by
 		if count == 0 {
 			break
 		}
+		if err := it.Err(); err != nil {
+			return err
+		}
+
 		k := it.Key()
 		v := it.Value()
 		value := v.Data()
 		key := k.Data()
 		err := fn(index, key, value)
 		index += 1
-		if err != nil {
-			k.Free()
-			v.Free()
-			return err
-		}
 		k.Free()
 		v.Free()
+		if err != nil {
+			return err
+		}
 		count -= 1
 	}
 	if it.Err() != nil {

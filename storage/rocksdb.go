@@ -12,10 +12,10 @@ import (
 type rocksStore struct {
 	Name      string
 	db        *gorocksdb.DB
-	retries   *RocksSortedSet
-	scheduled *RocksSortedSet
-	working   *RocksSortedSet
-	dead      *RocksSortedSet
+	retries   *rocksSortedSet
+	scheduled *rocksSortedSet
+	working   *rocksSortedSet
+	dead      *rocksSortedSet
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
 	queueSet  map[string]*rocksQueue
@@ -44,10 +44,10 @@ func OpenRocks(path string) (Store, error) {
 	rs := &rocksStore{
 		Name:      path,
 		db:        db,
-		scheduled: &RocksSortedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo},
-		retries:   &RocksSortedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo},
-		working:   &RocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo},
-		dead:      &RocksSortedSet{Name: DeadBucket, db: db, cf: handles[3], ro: ro, wo: wo},
+		scheduled: (&rocksSortedSet{Name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo}).init(),
+		retries:   (&rocksSortedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo}).init(),
+		working:   (&rocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo}).init(),
+		dead:      (&rocksSortedSet{Name: DeadBucket, db: db, cf: handles[3], ro: ro, wo: wo}).init(),
 		defalt:    handles[4],
 		queues:    handles[5],
 		queueSet:  make(map[string]*rocksQueue),

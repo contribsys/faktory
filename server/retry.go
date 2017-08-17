@@ -12,14 +12,6 @@ import (
 	"github.com/mperham/faktory/util"
 )
 
-type JobFailure struct {
-	Jid          string   `json:"jid"`
-	RetryAt      string   `json:"retry_at"`
-	ErrorMessage string   `json:"message"`
-	ErrorType    string   `json:"errtype"`
-	Backtrace    []string `json:"backtrace"`
-}
-
 var (
 	// about one month
 	maxRetryDelay = 720 * time.Hour
@@ -33,8 +25,8 @@ func fail(c *Connection, s *Server, cmd string) {
 	msg := "unknown"
 	var backtrace []string
 
-	if len(elms) > 2 {
-		var failure faktory.Failure
+	var failure faktory.Failure
+	if len(elms) == 2 {
 		hash := elms[1]
 		err := json.Unmarshal([]byte(hash), &failure)
 		if err != nil {
@@ -56,7 +48,7 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	util.Infof("%s Failure", jid)
+	util.Debugf("%s Failure %v", jid, failure)
 
 	c.Ok()
 }

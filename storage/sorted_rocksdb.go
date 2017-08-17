@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"strings"
+	"sync/atomic"
 
 	"github.com/mperham/gorocksdb"
 )
@@ -10,24 +10,30 @@ import (
 /*
  * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
  */
-type RocksSortedSet struct {
+type rocksSortedSet struct {
 	Name string
 	db   *gorocksdb.DB
 	cf   *gorocksdb.ColumnFamilyHandle
 	ro   *gorocksdb.ReadOptions
 	wo   *gorocksdb.WriteOptions
+	size int64
 }
 
-func (ts *RocksSortedSet) AddElement(tstamp string, jid string, payload []byte) error {
+func (ts *rocksSortedSet) AddElement(tstamp string, jid string, payload []byte) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
-	return ts.db.PutCF(ts.wo, ts.cf, key, payload)
+	err := ts.db.PutCF(ts.wo, ts.cf, key, payload)
+	if err != nil {
+		return err
+	}
+	atomic.AddInt64(&ts.size, 1)
+	return nil
 }
 
-func (ts *RocksSortedSet) Close() {
+func (ts *rocksSortedSet) Close() {
 	ts.cf.Destroy()
 }
 
-func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) error {
+func (ts *rocksSortedSet) Page(start int64, count int64, proc func(int, string, []byte) error) error {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
 	defer ro.Destroy()
@@ -35,27 +41,57 @@ func (ts *RocksSortedSet) EachElement(proc func(string, string, []byte) error) e
 	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
 
-	for it.SeekToFirst(); it.Valid(); it.Next() {
+	it.SeekToFirst()
+	// skip any before start point
+	for i := start; i > 0; i-- {
+		if !it.Valid() {
+			return nil
+		}
+		it.Next()
+	}
+
+	index := 0
+	for ; it.Valid(); it.Next() {
+		if count == 0 {
+			break
+		}
 		if err := it.Err(); err != nil {
 			return err
 		}
 		k := it.Key()
 		v := it.Value()
 		key := k.Data()
-		strs := strings.Split(string(key), "|")
 		payload := v.Data()
-		err := proc(strs[0], strs[1], payload)
+		err := proc(index, string(key), payload)
+		index += 1
 		k.Free()
 		v.Free()
 		if err != nil {
 			return err
 		}
+		count -= 1
 	}
 
 	return nil
 }
 
-func (ts *RocksSortedSet) Size() int64 {
+func (ts *rocksSortedSet) EachElement(proc func(int, string, []byte) error) error {
+	return ts.Page(0, -1, proc)
+}
+
+func (ts *rocksSortedSet) GetElement(key string) ([]byte, error) {
+	slice, err := ts.db.GetCF(ts.ro, ts.cf, []byte(key))
+	if err != nil {
+		return nil, err
+	}
+	defer slice.Free()
+
+	data := slice.Data()
+	return data, nil
+}
+
+// TODO: cache this value
+func (ts *rocksSortedSet) init() *rocksSortedSet {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)
 	defer ro.Destroy()
@@ -70,15 +106,25 @@ func (ts *RocksSortedSet) Size() int64 {
 	if err := it.Err(); err != nil {
 		panic(fmt.Sprintf("%s size: %s", ts.Name, err.Error()))
 	}
-	return count
+	ts.size = count
+	return ts
 }
 
-func (ts *RocksSortedSet) RemoveElement(tstamp string, jid string) error {
+func (ts *rocksSortedSet) Size() int64 {
+	return ts.size
+}
+
+func (ts *rocksSortedSet) RemoveElement(tstamp string, jid string) error {
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
-	return ts.db.DeleteCF(ts.wo, ts.cf, key)
+	err := ts.db.DeleteCF(ts.wo, ts.cf, key)
+	if err != nil {
+		return err
+	}
+	atomic.AddInt64(&ts.size, -1)
+	return nil
 }
 
-func (ts *RocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
+func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
 	count := int64(0)
@@ -104,6 +150,7 @@ func (ts *RocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		atomic.AddInt64(&ts.size, -count)
 	}
 
 	// reverse results since we iterated backwards
@@ -114,8 +161,8 @@ func (ts *RocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	return results, nil
 }
 
-func (ts *RocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
-	other := ots.(*RocksSortedSet)
+func (ts *rocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+	other := ots.(*rocksSortedSet)
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 
 	slice, err := ts.db.GetCF(ts.ro, ts.cf, key)
@@ -138,5 +185,48 @@ func (ts *RocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutat
 	wb := gorocksdb.NewWriteBatch()
 	wb.DeleteCF(ts.cf, key)
 	wb.PutCF(other.cf, newkey, payload)
-	return ts.db.Write(ts.wo, wb)
+	err = ts.db.Write(ts.wo, wb)
+	if err != nil {
+		return err
+	}
+	atomic.AddInt64(&ts.size, -1)
+	atomic.AddInt64(&other.size, 1)
+	return nil
+}
+
+func (ts *rocksSortedSet) Clear() (int64, error) {
+	count := int64(0)
+
+	ro := queueReadOptions(true)
+	ro.SetFillCache(false)
+	defer ro.Destroy()
+
+	it := ts.db.NewIteratorCF(ts.ro, ts.cf)
+	defer it.Close()
+
+	it.SeekToFirst()
+	if it.Err() != nil {
+		return 0, it.Err()
+	}
+
+	if !it.Valid() {
+		return 0, nil
+	}
+
+	wo := queueWriteOptions()
+	defer wo.Destroy()
+
+	for ; it.Valid(); it.Next() {
+		k := it.Key()
+		key := k.Data()
+		err := ts.db.DeleteCF(wo, ts.cf, key)
+		if err != nil {
+			return count, err
+		}
+		k.Free()
+		count += 1
+		atomic.AddInt64(&ts.size, -1)
+	}
+	ts.size = 0
+	return count, nil
 }

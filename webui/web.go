@@ -2,12 +2,15 @@ package webui
 
 import (
 	"crypto/subtle"
+	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/util"
 )
@@ -40,6 +43,8 @@ func init() {
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
 	http.HandleFunc("/queues", Log(GetOnly(queuesHandler)))
 	http.HandleFunc("/queues/", Log(queueHandler))
+	http.HandleFunc("/retries", Log(GetOnly(retriesHandler)))
+	http.HandleFunc("/retries/", Log(retryHandler))
 	server.OnStart(FireItUp)
 }
 
@@ -74,11 +79,11 @@ func queuesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	LAST_WORD = regexp.MustCompile(`/(\w+)\z`)
+	LAST_ELEMENT = regexp.MustCompile(`\/([^\/]+)\z`)
 )
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
-	name := LAST_WORD.FindStringSubmatch(r.RequestURI)
+	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
 	if name == nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
@@ -103,6 +108,60 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	count := int64(25)
 
 	ego_queue(w, r, q, count, currentPage)
+}
+
+func retriesHandler(w http.ResponseWriter, r *http.Request) {
+	set := defaultServer.Store().Retries()
+
+	currentPage := int64(1)
+	p := r.URL.Query()["page"]
+	if p != nil {
+		val, err := strconv.Atoi(p[0])
+		if err != nil {
+			http.Error(w, "Invalid parameter", http.StatusBadRequest)
+			return
+		}
+		currentPage = int64(val)
+	}
+	count := int64(25)
+
+	ego_listRetries(w, r, set, count, currentPage)
+}
+
+func retryHandler(w http.ResponseWriter, r *http.Request) {
+	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
+	if name == nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	key, err := url.QueryUnescape(name[1])
+	if err != nil {
+		http.Error(w, "Invalid URL input", http.StatusBadRequest)
+		return
+	}
+	data, err := defaultServer.Store().Retries().GetElement(key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if data == nil {
+		// retry has disappeared?  possibly requeued while the user was sitting on the /retries page
+		http.Redirect(w, r, "/retries", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var job faktory.Job
+	err = json.Unmarshal(data, &job)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if job.Failure == nil {
+		panic("job is not a retry!" + string(data))
+	}
+	ego_retry(w, r, key, &job)
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {

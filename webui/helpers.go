@@ -88,7 +88,7 @@ func numberWithDelimiter(val int64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int, key []byte, job faktory.Job)) {
+func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int, key []byte, job *faktory.Job)) {
 	err := q.Page((currentPage-1)*count, count, func(idx int, key, data []byte) error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
@@ -96,7 +96,7 @@ func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int,
 			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
 		}
-		fn(idx, key, job)
+		fn(idx, key, &job)
 		return nil
 	})
 	if err != nil {
@@ -118,4 +118,28 @@ func relativeTime(moment string) string {
 		return "invalid timestamp"
 	}
 	return Timeago(tm)
+}
+
+func unfiltered() bool {
+	return true
+}
+
+func filtering(set string) string {
+	return ""
+}
+
+func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx int, key string, job *faktory.Job)) {
+	err := set.Page((currentPage-1)*count, count, func(idx int, key string, data []byte) error {
+		var job faktory.Job
+		err := json.Unmarshal(data, &job)
+		if err != nil {
+			util.Warnf("Error parsing JSON: %s", string(data))
+			return err
+		}
+		fn(idx, key, &job)
+		return nil
+	})
+	if err != nil {
+		util.Warnf("Error iterating sorted set: %s", err.Error())
+	}
 }

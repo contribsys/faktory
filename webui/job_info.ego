@@ -16,9 +16,9 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
   <table class="table table-bordered table-striped">
     <tbody>
       <tr>
-        <th><%= t("Queue") %></th>
+        <th>JID</th>
         <td>
-          <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+          <code><%= job.Jid %></code>
         </td>
       </tr>
       <tr>
@@ -37,12 +37,6 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
         </td>
       </tr>
       <tr>
-        <th>JID</th>
-        <td>
-          <code><%= job.Jid %></code>
-        </td>
-      </tr>
-      <tr>
         <th><%= t("CreatedAt") %></th>
         <td><%= relativeTime(job.CreatedAt) %></td>
       </tr>
@@ -52,6 +46,12 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
           <td><%= relativeTime(job.RunAt) %></td>
         </tr>
       <% } %>
+      <tr>
+        <th><%= t("Queue") %></th>
+        <td>
+          <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+        </td>
+      </tr>
       <tr>
         <th><%= t("Enqueued") %></th>
         <td>

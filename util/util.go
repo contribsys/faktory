@@ -118,7 +118,10 @@ func RandomJid() string {
 }
 
 const (
-	TimestampFormat = "2006-01-02T15:04:05.000000Z"
+	// This is the canonical timestamp format used by Faktory.
+	// Always UTC, lexigraphically sortable.  This is the best
+	// timestamp format, accept no others.
+	TimestampFormat = time.RFC3339Nano
 )
 
 func Thens(tim time.Time) string {

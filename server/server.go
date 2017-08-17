@@ -218,22 +218,51 @@ func push(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
+
+	if job.At != "" {
+		t, err := util.ParseTime(job.At)
+		if err != nil {
+			c.Error(cmd, fmt.Errorf("Invalid timestamp for job.at: %s", job.At))
+			return
+		}
+
+		if t.After(time.Now()) {
+			data, err = json.Marshal(job)
+			if err != nil {
+				c.Error(cmd, err)
+				return
+			}
+			// scheduler for later
+			err = s.store.Scheduled().AddElement(job.At, job.Jid, data)
+			if err != nil {
+				c.Error(cmd, err)
+				return
+			}
+			c.Ok()
+			return
+		}
+	}
+
+	// enqueue immediately
 	q, err := s.store.GetQueue(job.Queue)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
+
 	job.EnqueuedAt = util.Nows()
 	data, err = json.Marshal(job)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
+
 	err = q.Push(data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
 	}
+
 	c.Ok()
 }
 

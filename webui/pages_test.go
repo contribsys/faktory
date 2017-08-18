@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
@@ -105,4 +106,21 @@ func TestScheduled(t *testing.T) {
 	retriesHandler(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), "SomeWorker"), w.Body.String())
+}
+
+func TestScheduledJob(t *testing.T) {
+	str := defaultServer.Store()
+	q := str.Scheduled()
+	q.Clear()
+	jid, data := fakeJob()
+	ts := util.Thens(time.Now().Add(1e6 * time.Second))
+
+	err := q.AddElement(ts, jid, data)
+	assert.Nil(t, err)
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/scheduled/%s|%s", ts, jid), nil)
+	w := httptest.NewRecorder()
+	scheduledJobHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
 }

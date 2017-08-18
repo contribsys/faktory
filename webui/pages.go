@@ -125,3 +125,40 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 
 	ego_listScheduled(w, r, set, count, currentPage)
 }
+
+func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
+	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
+	if name == nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	key, err := url.QueryUnescape(name[1])
+	if err != nil {
+		http.Error(w, "Invalid URL input", http.StatusBadRequest)
+		return
+	}
+
+	data, err := defaultServer.Store().Scheduled().GetElement(key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if data == nil {
+		// retry has disappeared?  possibly requeued while the user was sitting on the /retries page
+		http.Redirect(w, r, "/scheduled", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var job faktory.Job
+	err = json.Unmarshal(data, &job)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if job.At == "" {
+		panic("job is not scheduled: " + string(data))
+	}
+	ego_scheduled_job(w, r, key, &job)
+}

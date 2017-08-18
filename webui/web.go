@@ -38,14 +38,15 @@ var (
 
 func init() {
 	http.Handle("/favicon.ico", http.NotFoundHandler())
-	http.Handle("/static/", http.FileServer(
-		&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	http.Handle("/static/", Cache(http.FileServer(
+		&AssetFS{Asset: Asset, AssetDir: AssetDir})))
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
 	http.HandleFunc("/queues", Log(GetOnly(queuesHandler)))
 	http.HandleFunc("/queues/", Log(queueHandler))
 	http.HandleFunc("/retries", Log(GetOnly(retriesHandler)))
 	http.HandleFunc("/retries/", Log(retryHandler))
 	http.HandleFunc("/scheduled", Log(GetOnly(scheduledHandler)))
+	http.HandleFunc("/scheduled/", Log(scheduledJobHandler))
 	initLocales()
 
 	server.OnStart(FireItUp)
@@ -208,4 +209,11 @@ func PostOnly(h http.HandlerFunc) http.HandlerFunc {
 		}
 		http.Error(w, "post only", http.StatusMethodNotAllowed)
 	}
+}
+
+func Cache(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "public, max-age=86400")
+		h.ServeHTTP(w, r)
+	})
 }

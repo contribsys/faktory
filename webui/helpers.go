@@ -20,10 +20,6 @@ func serverUtcTime() string {
 	return time.Now().UTC().Format(utcFormat)
 }
 
-func productVersion() string {
-	return faktory.Version
-}
-
 func serverLocation() string {
 	return defaultServer.Options.Binding
 }

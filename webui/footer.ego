@@ -1,6 +1,10 @@
 <%
 package webui
 
+import (
+  "github.com/mperham/faktory"
+)
+
 func ego_footer(w io.Writer) {
 %>
 <div class="navbar navbar-fixed-bottom navbar-inverse ltr">
@@ -8,7 +12,7 @@ func ego_footer(w io.Writer) {
     <div class="container text-center">
         <ul class="nav">
           <li>
-            <p class="navbar-text product-version"><%= productVersion() %></p>
+            <p class="navbar-text product-version"><%= faktory.Name %> <%= faktory.Version %></p>
           </li>
           <li>
             <p class="navbar-text faktory-url"><%= serverLocation() %></p>

@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,8 +19,8 @@ func TestParseTime(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, tm.Before(time.Now()))
 
-	now := time.Now()
-	then, err := util.ParseTime(util.Thens(now))
+	now := time.Now().UTC()
+	then, err := ParseTime(Thens(now))
 	assert.Nil(t, err)
 	assert.Equal(t, now, then)
 }

@@ -60,9 +60,9 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("POP default some other\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "$83\r\n", result)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
+		assert.Regexp(t, "12345678901234567890abcd", result)
 
 		hash := make(map[string]interface{})
 		err = json.Unmarshal([]byte(result), &hash)

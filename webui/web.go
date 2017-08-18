@@ -1,16 +1,16 @@
 package webui
 
 import (
+	"bufio"
+	"bytes"
 	"crypto/subtle"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"regexp"
-	"strconv"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/util"
 )
@@ -46,12 +46,65 @@ func init() {
 	http.HandleFunc("/retries", Log(GetOnly(retriesHandler)))
 	http.HandleFunc("/retries/", Log(retryHandler))
 	http.HandleFunc("/scheduled", Log(GetOnly(scheduledHandler)))
+	initLocales()
+
 	server.OnStart(FireItUp)
 }
 
 var (
-	Password = ""
+	Password    = ""
+	locales     = map[string]map[string]string{}
+	localeMutex = sync.Mutex{}
 )
+
+func initLocales() {
+	localeFiles, err := AssetDir("static/locales")
+	if err != nil {
+		panic(err)
+	}
+	for _, filename := range localeFiles {
+		name := strings.Split(filename, ".")[0]
+		locales[name] = nil
+	}
+	translations("en")
+	util.Debugf("Initialized %d locales", len(localeFiles))
+}
+
+func translations(locale string) map[string]string {
+	localeMutex.Lock()
+	strs, ok := locales[locale]
+	localeMutex.Unlock()
+	if strs != nil {
+		return strs
+	}
+
+	if !ok {
+		return nil
+	}
+
+	if ok {
+		util.Debugf("Booting the %s locale", locale)
+		content, err := Asset(fmt.Sprintf("static/locales/%s.yml", locale))
+		if err != nil {
+			panic(err)
+		}
+
+		strs := map[string]string{}
+		scn := bufio.NewScanner(bytes.NewReader(content))
+		for scn.Scan() {
+			kv := strings.Split(scn.Text(), ":")
+			if len(kv) == 2 {
+				strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+			}
+		}
+		localeMutex.Lock()
+		locales[locale] = strs
+		localeMutex.Unlock()
+		return strs
+	}
+
+	panic("Shouldn't get here")
+}
 
 func FireItUp(svr *server.Server) {
 	defaultServer = svr
@@ -67,120 +120,46 @@ func FireItUp(svr *server.Server) {
 	}()
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if defaultServer == nil {
-		http.Error(w, "Server not booted", http.StatusInternalServerError)
-		return
+func acceptableLanguages(header string) []string {
+	langs := []string{}
+	pairs := strings.Split(header, ",")
+	// we ignore the q weighting and just assume the
+	// values are sorted by acceptability
+	for _, pair := range pairs {
+		trimmed := strings.Trim(pair, " ")
+		split := strings.Split(trimmed, ";")
+		langs = append(langs, strings.ToLower(split[0]))
 	}
-	ego_index(w, r)
+	return langs
 }
 
-func queuesHandler(w http.ResponseWriter, r *http.Request) {
-	ego_listQueues(w, r)
-}
-
-var (
-	LAST_ELEMENT = regexp.MustCompile(`\/([^\/]+)\z`)
-)
-
-func queueHandler(w http.ResponseWriter, r *http.Request) {
-	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
-	if name == nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-	queueName := name[1]
-	q, err := defaultServer.Store().GetQueue(queueName)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func localeFromHeader(value string) string {
+	if value == "" {
+		return "en"
 	}
 
-	currentPage := int64(1)
-	p := r.URL.Query()["page"]
-	if p != nil {
-		val, err := strconv.Atoi(p[0])
-		if err != nil {
-			http.Error(w, "Invalid parameter", http.StatusBadRequest)
-			return
+	langs := acceptableLanguages(value)
+	//util.Debugf("A-L: %s %v", value, langs)
+	for _, lang := range langs {
+		strs := translations(lang)
+		if strs != nil {
+			return lang
 		}
-		currentPage = int64(val)
 	}
-	count := int64(25)
 
-	ego_queue(w, r, q, count, currentPage)
-}
-
-func retriesHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Retries()
-
-	currentPage := int64(1)
-	p := r.URL.Query()["page"]
-	if p != nil {
-		val, err := strconv.Atoi(p[0])
-		if err != nil {
-			http.Error(w, "Invalid parameter", http.StatusBadRequest)
-			return
+	// fallback by checking the language component of any dialect pairs, e.g. "sv-se"
+	for _, lang := range langs {
+		pair := strings.Split(lang, "-")
+		if len(pair) == 2 {
+			baselang := pair[0]
+			strs := translations(baselang)
+			if strs != nil {
+				return baselang
+			}
 		}
-		currentPage = int64(val)
-	}
-	count := int64(25)
-
-	ego_listRetries(w, r, set, count, currentPage)
-}
-
-func retryHandler(w http.ResponseWriter, r *http.Request) {
-	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
-	if name == nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-	key, err := url.QueryUnescape(name[1])
-	if err != nil {
-		http.Error(w, "Invalid URL input", http.StatusBadRequest)
-		return
-	}
-	data, err := defaultServer.Store().Retries().GetElement(key)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
-	if data == nil {
-		// retry has disappeared?  possibly requeued while the user was sitting on the /retries page
-		http.Redirect(w, r, "/retries", http.StatusTemporaryRedirect)
-		return
-	}
-
-	var job faktory.Job
-	err = json.Unmarshal(data, &job)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if job.Failure == nil {
-		panic("job is not a retry!" + string(data))
-	}
-	ego_retry(w, r, key, &job)
-}
-
-func scheduledHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Scheduled()
-
-	currentPage := int64(1)
-	p := r.URL.Query()["page"]
-	if p != nil {
-		val, err := strconv.Atoi(p[0])
-		if err != nil {
-			http.Error(w, "Invalid parameter", http.StatusBadRequest)
-			return
-		}
-		currentPage = int64(val)
-	}
-	count := int64(25)
-
-	ego_listScheduled(w, r, set, count, currentPage)
+	return "en"
 }
 
 /////////////////////////////////////
@@ -188,6 +167,9 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 func Log(pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		locale := localeFromHeader(r.Header.Get("Accept-Language"))
+		r.Header.Add("Faktory-Locale", locale)
+
 		pass(w, r)
 		util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
 	}

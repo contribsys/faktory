@@ -1,0 +1,54 @@
+<%
+package webui
+
+import (
+  "net/http"
+
+  "github.com/mperham/faktory"
+)
+
+func ego_dead(w io.Writer, req *http.Request, key string, dead *faktory.Job) {
+%>
+
+<% ego_layout(w, req, func() { %>
+
+<% ego_job_info(w, dead) %>
+
+<h3><%= t("Error") %></h3>
+<div class="table_container">
+  <table class="error table table-bordered table-striped">
+    <tbody>
+      <tr>
+        <th><%= t("ErrorClass") %></th>
+        <td>
+          <code><%= dead.Failure.ErrorType %></code>
+        </td>
+      </tr>
+      <tr>
+        <th><%= t("ErrorMessage") %></th>
+        <td><%= dead.Failure.ErrorMessage %></td>
+      </tr>
+      <% if dead.Failure.Backtrace != nil { %>
+        <tr>
+          <th><%= t("ErrorBacktrace") %></th>
+          <td>
+            <code>
+            <% for _, line := range dead.Failure.Backtrace { %>
+              <%= line %><br/>
+            <% } %>
+            </code>
+          </td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<form class="form-horizontal" action="/morgue/<%= key %>" method="post">
+  <%== csrfTag(req) %>
+  <a class="btn btn-default" href="/morgue"><%= t("GoBack") %></a>
+  <input class="btn btn-primary" type="submit" name="retry" value="<%= t("RetryNow") %>" />
+  <input class="btn btn-danger" type="submit" name="delete" value="<%= t("Delete") %>" />
+</form>
+<% }) %>
+<% } %>

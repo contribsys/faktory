@@ -162,3 +162,54 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ego_scheduled_job(w, r, key, &job)
 }
+
+func morgueHandler(w http.ResponseWriter, r *http.Request) {
+	set := defaultServer.Store().Dead()
+
+	currentPage := int64(1)
+	p := r.URL.Query()["page"]
+	if p != nil {
+		val, err := strconv.Atoi(p[0])
+		if err != nil {
+			http.Error(w, "Invalid parameter", http.StatusBadRequest)
+			return
+		}
+		currentPage = int64(val)
+	}
+	count := int64(25)
+
+	ego_listDead(w, r, set, count, currentPage)
+}
+
+func deadHandler(w http.ResponseWriter, r *http.Request) {
+	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
+	if name == nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	key, err := url.QueryUnescape(name[1])
+	if err != nil {
+		http.Error(w, "Invalid URL input", http.StatusBadRequest)
+		return
+	}
+	data, err := defaultServer.Store().Dead().GetElement(key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if data == nil {
+		// retry has disappeared?  possibly requeued while the user was sitting on the listing page
+		http.Redirect(w, r, "/morgue", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var job faktory.Job
+	err = json.Unmarshal(data, &job)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ego_dead(w, r, key, &job)
+}

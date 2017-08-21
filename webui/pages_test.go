@@ -124,3 +124,38 @@ func TestScheduledJob(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
 }
+
+func TestMorgue(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://localhost:7420/morgue", nil)
+	assert.Nil(t, err)
+
+	str := defaultServer.Store()
+	q := str.Dead()
+	q.Clear()
+	jid, data := fakeJob()
+
+	err = q.AddElement(util.Nows(), jid, data)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	morgueHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}
+
+func TestDead(t *testing.T) {
+	str := defaultServer.Store()
+	q := str.Dead()
+	q.Clear()
+	jid, data := fakeJob()
+	ts := util.Nows()
+
+	err := q.AddElement(ts, jid, data)
+	assert.Nil(t, err)
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/morgue/%s|%s", ts, jid), nil)
+	w := httptest.NewRecorder()
+	deadHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}

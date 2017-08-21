@@ -5,14 +5,22 @@ import "net/http"
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
-<html>
+<html dir="<%= textDir() %>">
   <head>
     <title>Faktory</title>
     <meta charset="utf8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 
     <link href="/static/bootstrap.css" media="screen" rel="stylesheet" type="text/css" />
+    <% if rtl() { %>
+    <link href="/static/bootstrap-rtl.min.css" media="screen" rel="stylesheet" type="text/css"/>
+    <% } %>
+
     <link href="/static/application.css" media="screen" rel="stylesheet" type="text/css" />
+    <% if rtl() { %>
+    <link href="/static/application-rtl.css" media="screen" rel="stylesheet" type="text/css" />
+    <% } %>
+
     <script type="text/javascript" src="/javascripts/application.js"></script>
     <meta name="google" content="notranslate" />
   </head>

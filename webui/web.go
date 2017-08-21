@@ -31,6 +31,19 @@ var (
 	}
 
 	defaultServer *server.Server
+	/*
+	 * Since Go doesn't have thread-local storage,
+	 * there's no way to get the t() function to
+	 * look up request-specific translations without
+	 * passing the request into the method, which is painful.
+	 * Instead store a global variable for the current locale.
+	 * This can cause pages to render with two different
+	 * languages if two people are using the UI at the exact
+	 * same time.
+	 *
+	 * TOOD Integrate context.Context.
+	 */
+	activeTranslations map[string]string
 )
 
 //go:generate ego .
@@ -171,6 +184,7 @@ func Log(pass http.HandlerFunc) http.HandlerFunc {
 		locale := localeFromHeader(r.Header.Get("Accept-Language"))
 		r.Header.Add("Faktory-Locale", locale)
 
+		activeTranslations = translations(locale)
 		pass(w, r)
 		util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
 	}

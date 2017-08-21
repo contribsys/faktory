@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mperham/faktory"
@@ -24,12 +25,33 @@ func serverLocation() string {
 	return defaultServer.Options.Binding
 }
 
+func rtl() bool {
+	dir := activeTranslations["TextDirection"]
+	return dir == "rtl"
+}
+
+func textDir() string {
+	dir := activeTranslations["TextDirection"]
+	if dir == "" {
+		dir = "ltr"
+	}
+	return dir
+}
+
 func t(word string) string {
-	return word
+	value, ok := activeTranslations[word]
+	if !ok {
+		return word
+	}
+	return value
 }
 
 func tf(word string, param string) string {
-	return t(word)
+	value, ok := activeTranslations[word]
+	if !ok {
+		return word
+	}
+	return strings.Replace(value, "%{queue}", param, 1)
 }
 
 func pageparam(req *http.Request, pageValue int64) string {

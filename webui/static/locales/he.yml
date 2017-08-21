@@ -1,5 +1,5 @@
 he:
-  TextDirection: 'rtl'
+  TextDirection: rtl
   Dashboard: לוח מחוונים
   Status: מצב
   Time: שעה

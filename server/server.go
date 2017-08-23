@@ -18,7 +18,6 @@ import (
 
 var (
 	EventHandlers = make([]func(*Server), 0)
-	Heartbeats    = make(map[string]*ClientWorker, 12)
 )
 
 type ClientWorker struct {
@@ -69,15 +68,16 @@ type ServerOptions struct {
 }
 
 type Server struct {
-	Options   *ServerOptions
-	Processed int64
-	Failures  int64
-	pwd       string
-	listener  net.Listener
-	store     storage.Store
-	scheduler *SchedulerSubsystem
-	pending   *sync.WaitGroup
-	mu        sync.Mutex
+	Options    *ServerOptions
+	Processed  int64
+	Failures   int64
+	pwd        string
+	listener   net.Listener
+	store      storage.Store
+	scheduler  *SchedulerSubsystem
+	pending    *sync.WaitGroup
+	mu         sync.Mutex
+	heartbeats map[string]*ClientWorker
 }
 
 // register a global handler to be called when the Server instance
@@ -93,7 +93,17 @@ func NewServer(opts *ServerOptions) *Server {
 	if opts.StoragePath == "" {
 		opts.StoragePath = fmt.Sprintf("%s.db", strings.Replace(opts.Binding, ":", "_", -1))
 	}
-	return &Server{Options: opts, pwd: "123456", pending: &sync.WaitGroup{}, mu: sync.Mutex{}}
+	return &Server{
+		Options:    opts,
+		pwd:        "123456",
+		pending:    &sync.WaitGroup{},
+		mu:         sync.Mutex{},
+		heartbeats: make(map[string]*ClientWorker, 12),
+	}
+}
+
+func (s *Server) Heartbeats() map[string]*ClientWorker {
+	return s.heartbeats
 }
 
 func (s *Server) Store() storage.Store {
@@ -209,11 +219,11 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	val, ok := Heartbeats[client.Wid]
+	val, ok := s.heartbeats[client.Wid]
 	if ok {
 		val.lastHeartbeat = time.Now()
 	} else {
-		Heartbeats[client.Wid] = &client
+		s.heartbeats[client.Wid] = &client
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
 	}
@@ -426,7 +436,7 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	entry, ok := Heartbeats[worker.Wid]
+	entry, ok := s.heartbeats[worker.Wid]
 	if !ok {
 		c.Error(cmd, fmt.Errorf("Unknown client %d", worker.Wid))
 		return
@@ -444,17 +454,17 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 /*
  * Removes any heartbeat records over 1 minute old.
  */
-func reapHeartbeats() {
+func (s *Server) reapHeartbeats() {
 	toDelete := []string{}
 
-	for k, worker := range Heartbeats {
+	for k, worker := range s.heartbeats {
 		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
 			toDelete = append(toDelete, k)
 		}
 	}
 
 	for _, k := range toDelete {
-		delete(Heartbeats, k)
+		delete(s.heartbeats, k)
 	}
 }
 

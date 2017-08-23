@@ -180,7 +180,7 @@ func busyReservations(fn func(worker *server.Reservation)) {
 }
 
 func busyWorkers(fn func(proc *server.ClientWorker)) {
-	for _, worker := range server.Heartbeats {
+	for _, worker := range defaultServer.Heartbeats() {
 		fn(worker)
 	}
 }

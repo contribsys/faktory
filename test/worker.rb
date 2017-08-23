@@ -62,3 +62,10 @@ while !$done
     sleep 1
   end
 end
+
+def heartbeat
+  loop do
+    faktory.beat
+    sleep 5
+  end
+end

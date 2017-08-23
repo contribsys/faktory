@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 )
@@ -159,5 +160,27 @@ func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx 
 	})
 	if err != nil {
 		util.Warnf("Error iterating sorted set: %s", err.Error())
+	}
+}
+
+func busyReservations(fn func(worker *server.Reservation)) {
+	err := defaultServer.Store().Working().EachElement(func(idx int, key string, data []byte) error {
+		var res server.Reservation
+		err := json.Unmarshal(data, &res)
+		if err != nil {
+			util.Error("Cannot unmarshal reservation", err, nil)
+		} else {
+			fn(&res)
+		}
+		return err
+	})
+	if err != nil {
+		util.Error("Error iterating reservations", err, nil)
+	}
+}
+
+func busyWorkers(fn func(proc *server.ClientWorker)) {
+	for _, worker := range server.Heartbeats {
+		fn(worker)
 	}
 }

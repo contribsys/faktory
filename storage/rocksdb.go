@@ -16,6 +16,7 @@ type rocksStore struct {
 	scheduled *rocksSortedSet
 	working   *rocksSortedSet
 	dead      *rocksSortedSet
+	clients   *rocksSortedSet
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
 	queueSet  map[string]*rocksQueue
@@ -32,8 +33,8 @@ func OpenRocks(path string) (Store, error) {
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
-		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, DeadBucket, "default", "queues"},
-		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts})
+		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, DeadBucket, "clients", "default", "queues"},
+		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts})
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +49,9 @@ func OpenRocks(path string) (Store, error) {
 		retries:   (&rocksSortedSet{Name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo}).init(),
 		working:   (&rocksSortedSet{Name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo}).init(),
 		dead:      (&rocksSortedSet{Name: DeadBucket, db: db, cf: handles[3], ro: ro, wo: wo}).init(),
-		defalt:    handles[4],
-		queues:    handles[5],
+		clients:   (&rocksSortedSet{Name: "clients", db: db, cf: handles[4], ro: ro, wo: wo}).init(),
+		defalt:    handles[5],
+		queues:    handles[6],
 		queueSet:  make(map[string]*rocksQueue),
 		mu:        sync.Mutex{},
 	}
@@ -175,4 +177,8 @@ func (store *rocksStore) Working() SortedSet {
 
 func (store *rocksStore) Dead() SortedSet {
 	return store.dead
+}
+
+func (store *rocksStore) Clients() SortedSet {
+	return store.clients
 }

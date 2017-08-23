@@ -213,3 +213,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 
 	ego_dead(w, r, key, &job)
 }
+
+func busyHandler(w http.ResponseWriter, r *http.Request) {
+	ego_busy(w, r)
+}

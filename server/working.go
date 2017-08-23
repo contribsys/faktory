@@ -52,16 +52,21 @@ func (s *Server) ReapWorkingSet() (int, error) {
 		}
 
 		workingMutex.Lock()
-		delete(workingMap, job.Jid)
+		_, ok := workingMap[job.Jid]
+		if ok {
+			delete(workingMap, job.Jid)
+		}
 		workingMutex.Unlock()
 
-		err = q.Push(data)
-		if err != nil {
-			util.Error("Unable to push job", err, nil)
-			continue
-		}
+		if ok {
+			err = q.Push(data)
+			if err != nil {
+				util.Error("Unable to push job", err, nil)
+				continue
+			}
 
-		count += 1
+			count += 1
+		}
 	}
 
 	return count, nil
@@ -71,7 +76,7 @@ type Reservation struct {
 	Job     *faktory.Job `json:"job"`
 	Since   string       `json:"reserved_at"`
 	Expiry  string       `json:"expires_at"`
-	Who     string       `json:"worker"`
+	Wid     string       `json:"wid"`
 	tsince  time.Time
 	texpiry time.Time
 }
@@ -89,7 +94,7 @@ var (
 	workingMutex = &sync.Mutex{}
 )
 
-func (s *Server) Reserve(identity string, job *faktory.Job) error {
+func (s *Server) Reserve(wid string, job *faktory.Job) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {
@@ -101,7 +106,7 @@ func (s *Server) Reserve(identity string, job *faktory.Job) error {
 		Job:     job,
 		Since:   util.Thens(now),
 		Expiry:  util.Thens(exp),
-		Who:     identity,
+		Wid:     wid,
 		tsince:  now,
 		texpiry: exp,
 	}

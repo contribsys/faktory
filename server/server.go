@@ -18,7 +18,49 @@ import (
 
 var (
 	EventHandlers = make([]func(*Server), 0)
+	Heartbeats    = make(map[string]*ClientWorker, 12)
 )
+
+type ClientWorker struct {
+	Hostname  string   `json:"hostname"`
+	Wid       string   `json:"wid"`
+	Pid       int      `json:"pid"`
+	Labels    []string `json:"labels"`
+	Password  string   `json:"password"`
+	StartedAt time.Time
+
+	lastHeartbeat time.Time
+	signal        string
+}
+
+func (worker *ClientWorker) Quiet() bool {
+	for _, lbl := range worker.Labels {
+		if lbl == "quiet" {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+ * Send "quiet" or "terminate" to the given client
+ * worker process.  Other signals are undefined.
+ */
+func (worker *ClientWorker) Signal(sig string) {
+	worker.signal = sig
+}
+
+func (worker *ClientWorker) Busy() int {
+	count := 0
+	workingMutex.Lock()
+	for _, res := range workingMap {
+		if res.Wid == worker.Wid {
+			count += 1
+		}
+	}
+	workingMutex.Unlock()
+	return count
+}
 
 type ServerOptions struct {
 	Binding     string
@@ -136,7 +178,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	valid := strings.HasPrefix(line, "AHOY")
+	valid := strings.HasPrefix(line, "AHOY {")
 	if !valid {
 		util.Info("Invalid preamble", line)
 		util.Info("Need a valid AHOY")
@@ -144,32 +186,36 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	pairs := strings.Split(line, " ")
-	var attrs = make(map[string]string, len(pairs)-1)
-
-	for _, pair := range pairs[1:] {
-		two := strings.Split(pair, ":")
-		if len(two) != 2 {
-			util.Info("Invalid pair", pair)
-			conn.Close()
-			return
-		}
-
-		key := strings.ToLower(two[0])
-		value := two[1]
-		attrs[key] = value
+	data := line[5:]
+	var client ClientWorker
+	err = json.Unmarshal([]byte(data), &client)
+	if err != nil {
+		util.Error("Invalid client data", err, nil)
+		conn.Close()
+		return
 	}
 
-	for key, value := range attrs {
-		switch key {
-		case "pwd":
-			if value != s.pwd {
-				util.Info("Invalid password")
-				conn.Close()
-				return
-			}
-			attrs["pwd"] = "<redacted>"
-		}
+	util.Infof("%+v", client)
+
+	if s.Options.Password != "" && client.Password != s.Options.Password {
+		util.Info("Invalid password")
+		conn.Close()
+		return
+	}
+
+	if client.Wid == "" {
+		util.Error("Invalid client Wid", err, nil)
+		conn.Close()
+		return
+	}
+
+	val, ok := Heartbeats[client.Wid]
+	if ok {
+		val.lastHeartbeat = time.Now()
+	} else {
+		Heartbeats[client.Wid] = &client
+		client.StartedAt = time.Now()
+		client.lastHeartbeat = time.Now()
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -179,17 +225,14 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	id, ok := attrs["id"]
-	if !ok {
-		id = conn.RemoteAddr().String()
-	}
 	// disable deadline
 	conn.SetDeadline(time.Time{})
 
 	c := &Connection{
-		ident: id,
-		conn:  conn,
-		buf:   buf,
+		client: &client,
+		ident:  conn.RemoteAddr().String(),
+		conn:   conn,
+		buf:    buf,
 	}
 
 	processLines(c, s)
@@ -203,6 +246,7 @@ var cmdSet = map[string]command{
 	"POP":   pop,
 	"ACK":   ack,
 	"FAIL":  fail,
+	"BEAT":  heartbeat,
 	"INFO":  info,
 	"STORE": store,
 }
@@ -269,7 +313,7 @@ func push(c *Connection, s *Server, cmd string) {
 func pop(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
 	job, err := s.Pop(func(job *faktory.Job) error {
-		return s.Reserve(c.Identity(), job)
+		return s.Reserve(c.client.Wid, job)
 	}, qs...)
 	if err != nil {
 		c.Error(cmd, err)
@@ -362,6 +406,55 @@ func processLines(conn *Connection, server *Server) {
 		if verb == "END" {
 			break
 		}
+	}
+}
+
+/*
+BEAT {"wid":1238971623}
+*/
+func heartbeat(c *Connection, s *Server, cmd string) {
+	if !strings.HasPrefix(cmd, "BEAT {") {
+		c.Error(cmd, fmt.Errorf("Invalid format %s", cmd))
+		return
+	}
+
+	var worker ClientWorker
+	data := cmd[5:]
+	err := json.Unmarshal([]byte(data), &worker)
+	if err != nil {
+		c.Error(cmd, fmt.Errorf("Invalid format %s", data))
+		return
+	}
+
+	entry, ok := Heartbeats[worker.Wid]
+	if !ok {
+		c.Error(cmd, fmt.Errorf("Unknown client %d", worker.Wid))
+		return
+	}
+
+	entry.lastHeartbeat = time.Now()
+
+	if entry.signal == "" {
+		c.Ok()
+	} else {
+		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, entry.signal)))
+	}
+}
+
+/*
+ * Removes any heartbeat records over 1 minute old.
+ */
+func reapHeartbeats() {
+	toDelete := []string{}
+
+	for k, worker := range Heartbeats {
+		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
+			toDelete = append(toDelete, k)
+		}
+	}
+
+	for _, k := range toDelete {
+		delete(Heartbeats, k)
 	}
 }
 

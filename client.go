@@ -5,27 +5,47 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
+	"os"
 	"reflect"
 	"strconv"
 )
 
-type ClientOptions struct {
-	Hostname string
-	Port     int
-	Pwd      string
-	Format   string
-}
-
-func (opt *ClientOptions) String() string {
-	return fmt.Sprintf("Pwd:%s Format:%s", opt.Pwd, opt.Format)
-}
-
 type Client struct {
-	Options *ClientOptions
+	Options *ClientData
 	rdr     *bufio.Reader
 	wtr     *bufio.Writer
 	conn    net.Conn
+}
+
+type ClientData struct {
+	Hostname    string
+	Wid         string
+	Pid         int
+	Concurrency int
+	Busy        int
+	Labels      []string
+	AppName     string
+	Password    string
+}
+
+var (
+	RandomProcessWid = strconv.FormatInt(rand.Int63(), 10)
+)
+
+func EmptyClientData() *ClientData {
+	client := &ClientData{}
+	hs, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	client.Hostname = hs
+	client.Pid = os.Getpid()
+	client.Wid = RandomProcessWid
+	client.Concurrency = 1
+	client.Labels = []string{}
+	return client
 }
 
 /*
@@ -33,34 +53,25 @@ type Client struct {
  * You must include a 'pwd' parameter if the server is configured to require
  * a password:
  *
- *   faktory.Dial(&faktory.ClientOptions{
- *												 Pwd: "topsecret",
- *												 Hostname: "localhost",
- *		  									 Port: 7419})
+ *   faktory.Dial("localhost:7419", "topsecret")
  *
  */
-func Dial(params *ClientOptions) (*Client, error) {
-	if params == nil {
-		params = &ClientOptions{}
-	}
-	if params.Format == "" {
-		params.Format = "json"
-	}
-	if params.Hostname == "" {
-		params.Hostname = "localhost"
-	}
-	if params.Port == 0 {
-		params.Port = 7419
+func Dial(location string, password string) (*Client, error) {
+	client := EmptyClientData()
+	client.Password = password
+	data, err := json.Marshal(client)
+	if err != nil {
+		return nil, err
 	}
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", params.Hostname, params.Port))
+	conn, err := net.Dial("tcp", location)
 	if err != nil {
 		return nil, err
 	}
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
-	err = writeLine(w, "AHOY", []byte(params.String()))
+	err = writeLine(w, "AHOY", data)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -72,7 +83,7 @@ func Dial(params *ClientOptions) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{Options: params, conn: conn, rdr: r, wtr: w}, nil
+	return &Client{Options: client, conn: conn, rdr: r, wtr: w}, nil
 }
 
 func (c *Client) Close() error {

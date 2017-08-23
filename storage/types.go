@@ -8,6 +8,7 @@ type Store interface {
 	Scheduled() SortedSet
 	Working() SortedSet
 	Dead() SortedSet
+	Clients() SortedSet
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string

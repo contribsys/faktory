@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -42,7 +44,21 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)
 
-		conn.Write([]byte("AHOY pwd:123456 other:thing\n"))
+		var client ClientWorker
+		hs, err := os.Hostname()
+		assert.NoError(t, err)
+		client.Hostname = hs
+		client.Pid = os.Getpid()
+		client.Wid = strconv.FormatInt(rand.Int63(), 10)
+		client.Labels = []string{"blue", "seven"}
+		client.Password = "123456"
+
+		val, err := json.Marshal(client)
+		assert.NoError(t, err)
+
+		conn.Write([]byte("AHOY "))
+		conn.Write(val)
+		conn.Write([]byte("\r\n"))
 		result, err := buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)

@@ -19,9 +19,10 @@ import (
  * https://redis.io/topics/protocol
  */
 type Connection struct {
-	ident string
-	conn  net.Conn
-	buf   *bufio.Reader
+	ident  string
+	client *ClientWorker
+	conn   net.Conn
+	buf    *bufio.Reader
 }
 
 func (c *Connection) Identity() string {

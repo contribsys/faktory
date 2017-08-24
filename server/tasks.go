@@ -56,7 +56,7 @@ func (ts *TaskRunner) Run(waiter *sync.WaitGroup) {
 
 		// add random jitter so the runner goroutine doesn't fire at 000ms
 		time.Sleep(time.Duration(rand.Float64()) * time.Second)
-		timer := time.NewTicker(1)
+		timer := time.NewTicker(1 * time.Second)
 		defer timer.Stop()
 
 		for {

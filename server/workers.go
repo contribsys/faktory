@@ -1,6 +1,10 @@
 package server
 
-import "time"
+import (
+	"time"
+
+	"github.com/mperham/faktory/util"
+)
 
 type ClientWorker struct {
 	Hostname  string   `json:"hostname"`
@@ -55,8 +59,11 @@ func (s *Server) reapHeartbeats() error {
 		}
 	}
 
-	for _, k := range toDelete {
-		delete(s.heartbeats, k)
+	if len(toDelete) > 0 {
+		for _, k := range toDelete {
+			delete(s.heartbeats, k)
+		}
+		util.Debugf("Reaped %d worker heartbeats", len(toDelete))
 	}
 	return nil
 }

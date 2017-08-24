@@ -20,47 +20,6 @@ var (
 	EventHandlers = make([]func(*Server), 0)
 )
 
-type ClientWorker struct {
-	Hostname  string   `json:"hostname"`
-	Wid       string   `json:"wid"`
-	Pid       int      `json:"pid"`
-	Labels    []string `json:"labels"`
-	Password  string   `json:"password"`
-	StartedAt time.Time
-
-	lastHeartbeat time.Time
-	signal        string
-}
-
-func (worker *ClientWorker) Quiet() bool {
-	for _, lbl := range worker.Labels {
-		if lbl == "quiet" {
-			return true
-		}
-	}
-	return false
-}
-
-/*
- * Send "quiet" or "terminate" to the given client
- * worker process.  Other signals are undefined.
- */
-func (worker *ClientWorker) Signal(sig string) {
-	worker.signal = sig
-}
-
-func (worker *ClientWorker) Busy() int {
-	count := 0
-	workingMutex.Lock()
-	for _, res := range workingMap {
-		if res.Wid == worker.Wid {
-			count += 1
-		}
-	}
-	workingMutex.Unlock()
-	return count
-}
-
 type ServerOptions struct {
 	Binding     string
 	StoragePath string
@@ -178,9 +137,6 @@ func (s *Server) processConnection(conn net.Conn) {
 
 	buf := bufio.NewReader(conn)
 
-	// The first line sent upon connection must be:
-	//
-	// AHOY pwd:<password> other:pair more:etc\n
 	line, err := buf.ReadString('\n')
 	if err != nil {
 		util.Error("Closing connection", err, nil)
@@ -205,13 +161,14 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	util.Infof("%+v", client)
-
 	if s.Options.Password != "" && client.Password != s.Options.Password {
 		util.Info("Invalid password")
 		conn.Close()
 		return
 	}
+
+	client.Password = "<secret>"
+	util.Debugf("%+v", client)
 
 	if client.Wid == "" {
 		util.Error("Invalid client Wid", err, nil)

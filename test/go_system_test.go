@@ -39,7 +39,7 @@ func TestSystem(t *testing.T) {
 		go func() {
 			wg.Add(1)
 			defer wg.Done()
-			pushAndPop()
+			pushAndPop(t)
 		}()
 	}
 
@@ -57,7 +57,7 @@ func TestSystem(t *testing.T) {
 	assert.Equal(t, int64(300), s.Failures)
 }
 
-func pushAndPop() {
+func pushAndPop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	client, err := faktory.Dial("localhost:7419", "123456")
 	if err != nil {
@@ -65,6 +65,10 @@ func pushAndPop() {
 		return
 	}
 	defer client.Close()
+
+	sig, err := client.Beat()
+	assert.Equal(t, "", sig)
+	assert.NoError(t, err)
 
 	util.Info("Pushing")
 	for i := 0; i < 10000; i++ {

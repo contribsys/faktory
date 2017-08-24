@@ -13,25 +13,32 @@ import (
 )
 
 type Client struct {
-	Options *ClientData
-	rdr     *bufio.Reader
-	wtr     *bufio.Writer
-	conn    net.Conn
+	Location string
+	Options  *ClientData
+	rdr      *bufio.Reader
+	wtr      *bufio.Writer
+	conn     net.Conn
 }
 
+/*
+ * This data is serialized to JSON and sent
+ * with the AHOY command.  Password is required
+ * if the server is not listening on localhost.
+ * The other elements are needed for display on
+ * the Busy tab but aren't critical.
+ */
 type ClientData struct {
-	Hostname    string
-	Wid         string
-	Pid         int
-	Concurrency int
-	Busy        int
-	Labels      []string
-	AppName     string
-	Password    string
+	Hostname string `json:"hostname"`
+	// wid (worker id) is a random unique string
+	// for each worker process, e.g. a UUID
+	Wid      string   `json:"wid"`
+	Pid      int      `json:"pid"`
+	Labels   []string `json:"labels"`
+	Password string   `json:"password"`
 }
 
 var (
-	RandomProcessWid = strconv.FormatInt(rand.Int63(), 10)
+	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 )
 
 func EmptyClientData() *ClientData {
@@ -43,7 +50,6 @@ func EmptyClientData() *ClientData {
 	client.Hostname = hs
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
-	client.Concurrency = 1
 	client.Labels = []string{}
 	return client
 }
@@ -82,8 +88,9 @@ func Dial(location string, password string) (*Client, error) {
 		conn.Close()
 		return nil, err
 	}
+	client.Password = "<redacted>"
 
-	return &Client{Options: client, conn: conn, rdr: r, wtr: w}, nil
+	return &Client{Options: client, Location: location, conn: conn, rdr: r, wtr: w}, nil
 }
 
 func (c *Client) Close() error {
@@ -175,6 +182,14 @@ func (c *Client) Generic(cmdline string) (string, error) {
 	}
 
 	return readString(c.rdr)
+}
+
+func (c *Client) Beat() (string, error) {
+	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"}`, RandomProcessWid))
+	if val == "OK" {
+		return "", nil
+	}
+	return val, err
 }
 
 //////////////////////////////////////////////////

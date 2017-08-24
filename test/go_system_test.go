@@ -59,7 +59,7 @@ func TestSystem(t *testing.T) {
 
 func pushAndPop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
-	client, err := faktory.Dial("localhost:7419", "123456")
+	client, err := faktory.Dial(faktory.Localhost, "123456")
 	if err != nil {
 		handleError(err)
 		return

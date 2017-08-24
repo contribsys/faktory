@@ -28,7 +28,7 @@ var (
 	defaultDelay = 1 * time.Second
 )
 
-func (s *Scheduler) Cycle() int {
+func (s *Scheduler) cycle() int {
 	count := 0
 	start := time.Now()
 	elms, err := s.ts.RemoveBefore(util.Nows())
@@ -76,7 +76,7 @@ func (s *Scheduler) Run(waiter *sync.WaitGroup) {
 		defer timer.Stop()
 
 		for {
-			s.Cycle()
+			s.cycle()
 			select {
 			case <-timer.C:
 			case <-s.stopping:
@@ -107,7 +107,6 @@ type SchedulerSubsystem struct {
 	Retries   *Scheduler
 	Working   *Scheduler
 	Scheduled *Scheduler
-	waiter    *sync.WaitGroup
 }
 
 func (ss *SchedulerSubsystem) Stop() {
@@ -116,21 +115,20 @@ func (ss *SchedulerSubsystem) Stop() {
 	ss.Retries.Stop()
 	ss.Working.Stop()
 	ss.Scheduled.Stop()
-	ss.waiter.Wait()
 }
 
-func (s *Server) StartScheduler() *SchedulerSubsystem {
+func (s *Server) StartScheduler(waiter *sync.WaitGroup) *SchedulerSubsystem {
 	util.Info("Starting scheduler subsystem")
 
 	ss := &SchedulerSubsystem{
 		Scheduled: NewScheduler("Scheduled", s.store, s.store.Scheduled()),
 		Retries:   NewScheduler("Retries", s.store, s.store.Retries()),
 		Working:   NewScheduler("Working", s.store, s.store.Working()),
-		waiter:    &sync.WaitGroup{},
 	}
 
-	ss.Scheduled.Run(ss.waiter)
-	ss.Retries.Run(ss.waiter)
-	ss.Working.Run(ss.waiter)
+	ss.Scheduled.Run(waiter)
+	ss.Retries.Run(waiter)
+	ss.Working.Run(waiter)
+	s.scheduler = ss
 	return ss
 }

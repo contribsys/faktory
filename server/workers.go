@@ -42,3 +42,21 @@ func (worker *ClientWorker) Busy() int {
 	workingMutex.Unlock()
 	return count
 }
+
+/*
+ * Removes any heartbeat records over 1 minute old.
+ */
+func (s *Server) reapHeartbeats() error {
+	toDelete := []string{}
+
+	for k, worker := range s.heartbeats {
+		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
+			toDelete = append(toDelete, k)
+		}
+	}
+
+	for _, k := range toDelete {
+		delete(s.heartbeats, k)
+	}
+	return nil
+}

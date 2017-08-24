@@ -7,9 +7,11 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"net/url"
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 type Client struct {
@@ -37,8 +39,15 @@ type ClientData struct {
 	Password string   `json:"password"`
 }
 
+type Server struct {
+	Network string
+	Address string
+	Timeout time.Duration
+}
+
 var (
 	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+	Localhost        = &Server{"tcp", "localhost:7419", 1 * time.Second}
 )
 
 func EmptyClientData() *ClientData {
@@ -54,15 +63,37 @@ func EmptyClientData() *ClientData {
 	return client
 }
 
+func Open() (*Client, error) {
+	srv := &Server{"tcp", "localhost:7419", 1 * time.Second}
+
+	val, ok := os.LookupEnv("FAKTORY_PROVIDER")
+	if ok {
+		uval, ok := os.LookupEnv(val)
+		if ok {
+			uri, err := url.Parse(uval)
+			if err != nil {
+				return nil, err
+			}
+			srv.Network = uri.Scheme
+			srv.Address = fmt.Sprintf("%s:%d", uri.Hostname, uri.Port)
+			pwd := ""
+			if uri.User != nil {
+				pwd, _ = uri.User.Password()
+			}
+			return Dial(srv, pwd)
+		}
+		return nil, fmt.Errorf("No value in env for %s", val)
+	}
+	return Dial(srv, "")
+}
+
 /*
  * Open a connection to the remote faktory server.
- * You must include a 'pwd' parameter if the server is configured to require
- * a password:
  *
- *   faktory.Dial("localhost:7419", "topsecret")
+ *   faktory.Dial(faktory.Localhost, "topsecret")
  *
  */
-func Dial(location string, password string) (*Client, error) {
+func Dial(srv *Server, password string) (*Client, error) {
 	client := EmptyClientData()
 	client.Password = password
 	data, err := json.Marshal(client)
@@ -70,7 +101,7 @@ func Dial(location string, password string) (*Client, error) {
 		return nil, err
 	}
 
-	conn, err := net.Dial("tcp", location)
+	conn, err := net.DialTimeout(srv.Network, srv.Address, srv.Timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +121,7 @@ func Dial(location string, password string) (*Client, error) {
 	}
 	client.Password = "<redacted>"
 
-	return &Client{Options: client, Location: location, conn: conn, rdr: r, wtr: w}, nil
+	return &Client{Options: client, Location: srv.Address, conn: conn, rdr: r, wtr: w}, nil
 }
 
 func (c *Client) Close() error {

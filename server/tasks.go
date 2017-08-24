@@ -13,12 +13,11 @@ import (
  * The task runner allows us to run internal tasks on
  * a recurring schedule, e.g. "reap old heartbeats every 30 seconds".
  *
- *
- * tr = &TaskRunner{Server: server}
+ * tr = NewTaskRunner()
  * tr.AddTask("heartbeat reaper", server.reapHeartbeats, 30)
+ * ts.Run(...)
  */
 type TaskRunner struct {
-	server   *Server
 	stopping chan interface{}
 	tasks    []*Task
 
@@ -35,6 +34,13 @@ type Task struct {
 	walltimeNs int64
 }
 
+func NewTaskRunner() *TaskRunner {
+	return &TaskRunner{
+		stopping: make(chan interface{}),
+		tasks:    make([]*Task, 0),
+	}
+}
+
 func (ts *TaskRunner) AddTask(name string, fn func() error, sec int64) {
 	var task Task
 	task.Name = name
@@ -43,7 +49,44 @@ func (ts *TaskRunner) AddTask(name string, fn func() error, sec int64) {
 	ts.tasks = append(ts.tasks, &task)
 }
 
-func (ts *TaskRunner) Cycle() {
+func (ts *TaskRunner) Run(waiter *sync.WaitGroup) {
+	go func() {
+		waiter.Add(1)
+		defer waiter.Done()
+
+		// add random jitter so the runner goroutine doesn't fire at 000ms
+		time.Sleep(time.Duration(rand.Float64()) * time.Second)
+		timer := time.NewTicker(1)
+		defer timer.Stop()
+
+		for {
+			ts.cycle()
+			select {
+			case <-timer.C:
+			case <-ts.stopping:
+				return
+			}
+		}
+	}()
+}
+
+func (ts *TaskRunner) Stats() map[string]map[string]interface{} {
+	data := map[string]map[string]interface{}{}
+
+	for _, task := range ts.tasks {
+		data[task.Name] = map[string]interface{}{
+			"runs":           task.runs,
+			"wall_time_usec": (task.walltimeNs / 1000000),
+		}
+	}
+	return data
+}
+
+func (ts *TaskRunner) Stop() {
+	close(ts.stopping)
+}
+
+func (ts *TaskRunner) cycle() {
 	count := int64(0)
 	start := time.Now()
 	sec := start.Unix()
@@ -67,39 +110,9 @@ func (ts *TaskRunner) Cycle() {
 	atomic.AddInt64(&ts.walltimeNs, end.Sub(start).Nanoseconds())
 }
 
-func (s *TaskRunner) Run(waiter *sync.WaitGroup) {
-	go func() {
-		waiter.Add(1)
-		defer waiter.Done()
-
-		// add random jitter so all scheduler goroutines don't all fire at the same µs
-		time.Sleep(time.Duration(rand.Float64()) * time.Second)
-		timer := time.NewTicker(1)
-		defer timer.Stop()
-
-		for {
-			s.Cycle()
-			select {
-			case <-timer.C:
-			case <-s.stopping:
-				return
-			}
-		}
-	}()
-}
-
-func (ts *TaskRunner) Stats() map[string]map[string]interface{} {
-	data := map[string]map[string]interface{}{}
-
-	for _, task := range ts.tasks {
-		data[task.Name] = map[string]interface{}{
-			"runs":           task.runs,
-			"wall_time_usec": (task.walltimeNs / 1000000),
-		}
-	}
-	return data
-}
-
-func (ts *TaskRunner) Stop() {
-	close(ts.stopping)
+func (s *Server) StartTasks(waiter *sync.WaitGroup) {
+	ts := NewTaskRunner()
+	ts.AddTask("heartbeat reaper", s.reapHeartbeats, 15)
+	ts.Run(waiter)
+	s.taskRunner = ts
 }

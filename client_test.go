@@ -2,6 +2,7 @@ package faktory
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"os"
 	"testing"
@@ -17,6 +18,14 @@ func init() {
 
 func TestClientOperations(t *testing.T) {
 	cl, err := Open()
+	assert.Error(t, err)
+	assert.Nil(t, cl)
+
+	err = os.Setenv("FAKTORY_PROVIDER", "tcp://localhost:7419")
+	assert.NoError(t, err)
+
+	cl, err = Open()
+	fmt.Println(err)
 	assert.Error(t, err)
 	assert.Nil(t, cl)
 

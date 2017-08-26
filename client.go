@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,14 +27,15 @@ type Client struct {
  * This data is serialized to JSON and sent
  * with the AHOY command.  Password is required
  * if the server is not listening on localhost.
- * The other elements are needed for display on
- * the Busy tab but aren't critical.
+ * The WID (worker id) must be random and unique
+ * for each worker process.  It can be a UUID, etc.
+ *
+ * The other elements can be useful for debugging
+ * and are displayed on the Busy tab.
  */
 type ClientData struct {
-	Hostname string `json:"hostname"`
-	// wid (worker id) is a random unique string
-	// for each worker process, e.g. a UUID
 	Wid      string   `json:"wid"`
+	Hostname string   `json:"hostname"`
 	Pid      int      `json:"pid"`
 	Labels   []string `json:"labels"`
 	Password string   `json:"password"`
@@ -47,7 +49,6 @@ type Server struct {
 
 var (
 	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
-	Localhost        = &Server{"tcp", "localhost:7419", 1 * time.Second}
 )
 
 func EmptyClientData() *ClientData {
@@ -63,11 +64,22 @@ func EmptyClientData() *ClientData {
 	return client
 }
 
+func localhost() *Server {
+	return &Server{"tcp", "localhost:7419", 1 * time.Second}
+}
+
 func Open() (*Client, error) {
-	srv := &Server{"tcp", "localhost:7419", 1 * time.Second}
+	srv := localhost()
 
 	val, ok := os.LookupEnv("FAKTORY_PROVIDER")
 	if ok {
+		if strings.Contains(val, ":") {
+			return nil, fmt.Errorf(`Error: FAKTORY_PROVIDER is not a URL. It is the name of the ENV var that contains the URL:
+
+FAKTORY_PROVIDER=FOO_URL
+FOO_URL=tcp://faktory.example.com:7419`)
+		}
+
 		uval, ok := os.LookupEnv(val)
 		if ok {
 			uri, err := url.Parse(uval)

@@ -64,12 +64,12 @@ func EmptyClientData() *ClientData {
 	return client
 }
 
-func localhost() *Server {
+func Localhost() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
 func Open() (*Client, error) {
-	srv := localhost()
+	srv := Localhost()
 
 	val, ok := os.LookupEnv("FAKTORY_PROVIDER")
 	if ok {

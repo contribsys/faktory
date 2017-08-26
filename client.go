@@ -75,7 +75,7 @@ func Open() (*Client, error) {
 				return nil, err
 			}
 			srv.Network = uri.Scheme
-			srv.Address = fmt.Sprintf("%s:%d", uri.Hostname, uri.Port)
+			srv.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 			pwd := ""
 			if uri.User != nil {
 				pwd, _ = uri.User.Password()
@@ -101,6 +101,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 		return nil, err
 	}
 
+	//util.Infof("Opening connection to %s", srv.Address)
 	conn, err := net.DialTimeout(srv.Network, srv.Address, srv.Timeout)
 	if err != nil {
 		return nil, err

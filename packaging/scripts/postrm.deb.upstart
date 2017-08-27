@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+# https://www.debian.org/doc/debian-policy/ch-maintainerscripts.html
+
+rm -f /etc/init/faktory.conf
+
+if [ "$1" = "purge" ] ; then
+  echo "Purging faktory configuration"
+  rm -rf /etc/faktory
+fi

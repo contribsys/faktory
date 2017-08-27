@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+if [ "$1" -eq 0 ] ; then
+  echo Stopping and disabling systemd service
+  # Package removal, not upgrade
+  systemctl --no-reload disable faktory || :
+  systemctl stop faktory || :
+fi

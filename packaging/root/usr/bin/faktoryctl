@@ -1,0 +1,14 @@
+#!/bin/sh
+set -o errexit
+
+# faktoryctl is just a simple wrapper which echoes
+# the arguments to Faktory's command socket.
+
+if [ ! -x /bin/nc ] && [ ! -x /usr/bin/nc ]; then
+  # Some OS's ship with nc in the base, others don't.
+  # What a crock.
+  echo Could not find a working netcat in /bin/nc or /usr/bin/nc.
+  echo Please install your operating system\'s \'netcat\' or \'nc\' package
+else
+  echo "$@" | nc -U ${FAKTORY_SOCK:-/var/run/faktory.sock}
+fi

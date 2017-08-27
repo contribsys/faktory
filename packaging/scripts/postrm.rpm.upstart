@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+# https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch09s04s05.html
+
+if [ "$1" -ge 1 ]; then
+  # Package upgrade, not uninstall
+  echo Restarting faktory
+  initctl restart faktory || :
+else
+  rm -f /etc/init/faktory.conf
+fi

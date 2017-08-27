@@ -18,9 +18,10 @@ all: test
 prepare:
 	#wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
 	#sudo tar -C /usr/local -xzf go1.5.1.linux-amd64.tar.gz
+	go get github.com/benbjohnson/ego/cmd/ego
 	go get github.com/stretchr/testify/...
 	go get github.com/jteeuwen/go-bindata/...
-	go get -u github.com/kardianos/govendor
+	go get github.com/sirupsen/logrus
 	#linters
 	go get github.com/alecthomas/gometalinter
 	#you must have .local.sh with ROCKSDB_HOME set
@@ -28,7 +29,7 @@ prepare:
 	# brew install rocksdb zstd
 	#export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
 	#export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
-	go get github.com/tecbot/gorocksdb
+	go get github.com/mperham/gorocksdb
 	gometalinter --install
 	gem install -N fpm
 	@echo Now you should be ready to run "make"
@@ -43,8 +44,9 @@ test: clean generate
 generate:
 	go generate ./...
 
-build: test
-	@GOOS=linux GOARCH=amd64 go build -o faktory cmd/main.go
+build:
+	@GOOS=linux GOARCH=amd64
+	go build -o faktory cmd/main.go
 
 # goimports produces slightly different formatted code from go fmt
 fmt:
@@ -70,18 +72,18 @@ version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
 purge_deb:
-	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/inspeqtor' || true
+	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true
 
 purge_rpm:
-	ssh -t $(RPM_PRODUCTION) 'sudo rpm -e $(NAME) && sudo rm -f /etc/inspeqtor' || true
+	ssh -t $(RPM_PRODUCTION) 'sudo rpm -e $(NAME) && sudo rm -f /etc/faktory' || true
 
 deploy_deb: clean build_deb purge_deb
 	scp packaging/output/upstart/*.deb $(DEB_PRODUCTION):~
-	ssh $(DEB_PRODUCTION) 'sudo rm -f /etc/inspeqtor && sudo dpkg -i $(NAME)_$(VERSION)-$(ITERATION)_amd64.deb && sudo ./fix && sudo restart inspeqtor || true'
+	ssh $(DEB_PRODUCTION) 'sudo rm -f /etc/faktory && sudo dpkg -i $(NAME)_$(VERSION)-$(ITERATION)_amd64.deb && sudo ./fix && sudo restart faktory || true'
 
 deploy_rpm: clean build_rpm purge_rpm
 	scp packaging/output/systemd/*.rpm $(RPM_PRODUCTION):~
-	ssh -t $(RPM_PRODUCTION) 'sudo rm -f /etc/inspeqtor && sudo yum install -q -y $(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm && sudo ./fix && sudo systemctl restart inspeqtor'
+	ssh -t $(RPM_PRODUCTION) 'sudo rm -f /etc/faktory && sudo yum install -q -y $(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm && sudo ./fix && sudo systemctl restart faktory'
 
 update_deb: clean build_deb
 	scp packaging/output/upstart/*.deb $(DEB_PRODUCTION):~
@@ -109,12 +111,12 @@ build_rpm_upstart: build
 	 	--after-install packaging/scripts/postinst.rpm.upstart \
 	 	--before-remove packaging/scripts/prerm.rpm.upstart \
 		--after-remove packaging/scripts/postrm.rpm.upstart \
-		--url http://contribsys.com/inspeqtor \
+		--url http://contribsys.com/faktory \
 		--description "Application infrastructure monitoring" \
 		-m "Contributed Systems LLC <oss@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
-		inspeqtor=/usr/bin/inspeqtor \
+		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
 build_rpm_systemd: build
@@ -125,15 +127,14 @@ build_rpm_systemd: build
 	 	--after-install packaging/scripts/postinst.rpm.systemd \
 	 	--before-remove packaging/scripts/prerm.rpm.systemd \
 		--after-remove packaging/scripts/postrm.rpm.systemd \
-		--url http://contribsys.com/inspeqtor \
+		--url http://contribsys.com/faktory \
 		--description "Application infrastructure monitoring" \
 		-m "Contributed Systems LLC <oss@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
-		inspeqtor=/usr/bin/inspeqtor \
+		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
-# TODO build_deb_systemd
 build_deb_upstart: build
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/upstart \
@@ -142,12 +143,12 @@ build_deb_upstart: build
 	 	--after-install packaging/scripts/postinst.deb.upstart \
 	 	--before-remove packaging/scripts/prerm.deb.upstart \
 		--after-remove packaging/scripts/postrm.deb.upstart \
-		--url http://contribsys.com/inspeqtor \
+		--url http://contribsys.com/faktory \
 		--description "Application infrastructure monitoring" \
 		-m "Contributed Systems LLC <oss@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
-		inspeqtor=/usr/bin/inspeqtor \
+		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
 build_deb_systemd: build
@@ -158,12 +159,12 @@ build_deb_systemd: build
 	 	--after-install packaging/scripts/postinst.deb.systemd \
 	 	--before-remove packaging/scripts/prerm.deb.systemd \
 		--after-remove packaging/scripts/postrm.deb.systemd \
-		--url http://contribsys.com/inspeqtor \
+		--url http://contribsys.com/faktory \
 		--description "Application infrastructure monitoring" \
 		-m "Contributed Systems LLC <oss@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
-		inspeqtor=/usr/bin/inspeqtor \
+		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
 tag:
@@ -171,10 +172,9 @@ tag:
 
 upload:	package tag
 	# gem install -N package_cloud
-	package_cloud push contribsys/inspeqtor/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/inspeqtor/ubuntu/precise packaging/output/upstart/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/inspeqtor/ubuntu/trusty packaging/output/upstart/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/inspeqtor/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
-	package_cloud push contribsys/inspeqtor/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+	package_cloud push contribsys/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
+	package_cloud push contribsys/faktory/ubuntu/trusty packaging/output/upstart/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
+	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+	package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
 .PHONY: all clean test build package upload

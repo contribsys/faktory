@@ -16,15 +16,11 @@ type ClientWorker struct {
 
 	lastHeartbeat time.Time
 	signal        string
+	state         string
 }
 
 func (worker *ClientWorker) Quiet() bool {
-	for _, lbl := range worker.Labels {
-		if lbl == "quiet" {
-			return true
-		}
-	}
-	return false
+	return worker.state == "quiet"
 }
 
 /*
@@ -33,6 +29,7 @@ func (worker *ClientWorker) Quiet() bool {
  */
 func (worker *ClientWorker) Signal(sig string) {
 	worker.signal = sig
+	worker.state = sig
 }
 
 func (worker *ClientWorker) Busy() int {

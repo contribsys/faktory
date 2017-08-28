@@ -84,6 +84,12 @@ func push(c *Connection, s *Server, cmd string) {
 }
 
 func pop(c *Connection, s *Server, cmd string) {
+	// quiet or terminated clients should not get new jobs
+	if c.client.state != "alive" {
+		c.Result(nil)
+		return
+	}
+
 	qs := strings.Split(cmd, " ")[1:]
 	job, err := s.Pop(func(job *faktory.Job) error {
 		return s.Reserve(c.client.Wid, job)
@@ -181,5 +187,6 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		c.Ok()
 	} else {
 		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, entry.signal)))
+		entry.signal = ""
 	}
 }

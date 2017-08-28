@@ -215,5 +215,22 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func busyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		r.ParseForm()
+		wid := r.FormValue("wid")
+		action := r.FormValue("signal")
+		if wid != "" {
+			for _, client := range defaultServer.Heartbeats() {
+				if wid == "all" {
+					client.Signal(action)
+				} else if wid == client.Wid {
+					client.Signal(action)
+					break
+				}
+			}
+		}
+		http.Redirect(w, r, "/busy", http.StatusFound)
+		return
+	}
 	ego_busy(w, r)
 }

@@ -44,8 +44,13 @@ test: clean generate
 generate:
 	go generate ./...
 
-build:
-	@GOOS=linux GOARCH=amd64
+cover:
+	go test -cover -coverprofile cover.out github.com/mperham/faktory/server
+	go tool cover -html=cover.out
+
+# we can't cross-compile when using cgo <cry>
+#	@GOOS=linux GOARCH=amd64
+build: clean generate
 	go build -o faktory cmd/main.go
 
 # goimports produces slightly different formatted code from go fmt
@@ -66,7 +71,11 @@ clean:
 run: clean generate
 	go run cmd/main.go -l debug -s i.sock -d .
 
-package: clean version_check build_deb build_rpm
+# gem install fpm
+# https://github.com/jordansissel/fpm/issues/576
+# brew install gnu-tar
+# ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
+package: clean version_check build_deb_systemd build_rpm_systemd
 
 version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -96,13 +105,6 @@ update_rpm: clean build_rpm
 deploy: deploy_deb deploy_rpm
 purge: purge_deb purge_rpm
 
-cover:
-	go test -cover -coverprofile cover.out
-	go tool cover -html=cover.out
-
-build_rpm: build_rpm_upstart build_rpm_systemd
-build_deb: build_deb_upstart build_deb_systemd
-
 build_rpm_upstart: build
 	# gem install fpm
 	# brew install rpm
@@ -112,8 +114,8 @@ build_rpm_upstart: build
 	 	--before-remove packaging/scripts/prerm.rpm.upstart \
 		--after-remove packaging/scripts/postrm.rpm.upstart \
 		--url http://contribsys.com/faktory \
-		--description "Application infrastructure monitoring" \
-		-m "Contributed Systems LLC <oss@contribsys.com>" \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
@@ -128,8 +130,8 @@ build_rpm_systemd: build
 	 	--before-remove packaging/scripts/prerm.rpm.systemd \
 		--after-remove packaging/scripts/postrm.rpm.systemd \
 		--url http://contribsys.com/faktory \
-		--description "Application infrastructure monitoring" \
-		-m "Contributed Systems LLC <oss@contribsys.com>" \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
@@ -140,12 +142,13 @@ build_deb_upstart: build
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/upstart \
 		--deb-priority optional --category admin \
 		--deb-compression bzip2 \
+		--no-deb-no-default-config-files \
 	 	--after-install packaging/scripts/postinst.deb.upstart \
 	 	--before-remove packaging/scripts/prerm.deb.upstart \
 		--after-remove packaging/scripts/postrm.deb.upstart \
 		--url http://contribsys.com/faktory \
-		--description "Application infrastructure monitoring" \
-		-m "Contributed Systems LLC <oss@contribsys.com>" \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
@@ -156,12 +159,13 @@ build_deb_systemd: build
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \
 		--deb-compression bzip2 \
+		--no-deb-no-default-config-files \
 	 	--after-install packaging/scripts/postinst.deb.systemd \
 	 	--before-remove packaging/scripts/prerm.deb.systemd \
 		--after-remove packaging/scripts/postrm.deb.systemd \
 		--url http://contribsys.com/faktory \
-		--description "Application infrastructure monitoring" \
-		-m "Contributed Systems LLC <oss@contribsys.com>" \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
@@ -173,8 +177,8 @@ tag:
 upload:	package tag
 	# gem install -N package_cloud
 	package_cloud push contribsys/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/faktory/ubuntu/trusty packaging/output/upstart/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
+	#package_cloud push contribsys/faktory/ubuntu/trusty packaging/output/upstart/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
 	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
-	package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+	#package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
 .PHONY: all clean test build package upload

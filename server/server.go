@@ -170,7 +170,6 @@ func (s *Server) processConnection(conn net.Conn) {
 	}
 
 	client.Password = "<secret>"
-	client.state = "alive"
 	util.Debugf("%+v", client)
 
 	if client.Wid == "" {

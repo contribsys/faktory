@@ -216,7 +216,6 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 
 func busyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		r.ParseForm()
 		wid := r.FormValue("wid")
 		action := r.FormValue("signal")
 		if wid != "" {

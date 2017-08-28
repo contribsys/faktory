@@ -85,7 +85,7 @@ func push(c *Connection, s *Server, cmd string) {
 
 func pop(c *Connection, s *Server, cmd string) {
 	// quiet or terminated clients should not get new jobs
-	if c.client.state != "alive" {
+	if c.client.state != "" {
 		c.Result(nil)
 		return
 	}

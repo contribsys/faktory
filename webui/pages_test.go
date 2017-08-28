@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/mperham/faktory/server"
 	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -158,4 +160,38 @@ func TestDead(t *testing.T) {
 	deadHandler(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+}
+
+func TestBusy(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://localhost:7420/busy", nil)
+	assert.Nil(t, err)
+
+	wid := "1239123oim,bnsad"
+	wrk := &server.ClientWorker{
+		Hostname:  "foobar.local",
+		Pid:       12345,
+		Wid:       wid,
+		Labels:    []string{"bubba"},
+		StartedAt: time.Now(),
+	}
+	defaultServer.Heartbeats()[wid] = wrk
+
+	w := httptest.NewRecorder()
+	busyHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "foobar.local"), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "bubba"), w.Body.String())
+	assert.False(t, wrk.Quiet())
+
+	data := url.Values{
+		"signal": {"quiet"},
+		"wid":    {wid},
+	}
+	req = httptest.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	busyHandler(w, req)
+	assert.Equal(t, 302, w.Code)
+	assert.True(t, wrk.Quiet())
 }

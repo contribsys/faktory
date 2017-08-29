@@ -75,11 +75,11 @@ func (ts *rocksSortedSet) Page(start int64, count int64, proc func(int, string, 
 	return nil
 }
 
-func (ts *rocksSortedSet) EachElement(proc func(int, string, []byte) error) error {
+func (ts *rocksSortedSet) Each(proc func(int, string, []byte) error) error {
 	return ts.Page(0, -1, proc)
 }
 
-func (ts *rocksSortedSet) GetElement(key string) ([]byte, error) {
+func (ts *rocksSortedSet) Get(key string) ([]byte, error) {
 	data, err := ts.db.GetBytesCF(ts.ro, ts.cf, []byte(key))
 	if err != nil {
 		return nil, err
@@ -111,14 +111,17 @@ func (ts *rocksSortedSet) Size() int64 {
 	return ts.size
 }
 
-func (ts *rocksSortedSet) RemoveElement(tstamp string, jid string) error {
-	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
-	err := ts.db.DeleteCF(ts.wo, ts.cf, key)
+func (ts *rocksSortedSet) Remove(key string) error {
+	err := ts.db.DeleteCF(ts.wo, ts.cf, []byte(key))
 	if err != nil {
 		return err
 	}
 	atomic.AddInt64(&ts.size, -1)
 	return nil
+}
+
+func (ts *rocksSortedSet) RemoveElement(tstamp string, jid string) error {
+	return ts.Remove(fmt.Sprintf("%s|%s", tstamp, jid))
 }
 
 func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {

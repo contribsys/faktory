@@ -37,11 +37,12 @@ type SortedSet interface {
 	RemoveElement(timestamp string, jid string) error
 	RemoveBefore(timestamp string) ([][]byte, error)
 	Size() int64
-	EachElement(func(idx int, key string, data []byte) error) error
 	Page(int64, int64, func(index int, key string, data []byte) error) error
 	Clear() (int64, error)
 
-	GetElement(key string) ([]byte, error)
+	Remove(key string) error
+	Get(key string) ([]byte, error)
+	Each(func(idx int, key string, data []byte) error) error
 
 	/*
 		Move the given tstamp/jid pair from this SortedSet to the given

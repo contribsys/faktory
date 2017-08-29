@@ -80,7 +80,7 @@ func TestRocksSortedSet(b *testing.T) {
 
 	amt := int64(0)
 	akey := ""
-	err = retries.EachElement(func(idx int, key string, elm []byte) error {
+	err = retries.Each(func(idx int, key string, elm []byte) error {
 		akey = key
 		assert.True(b, len(key) > 40, key)
 		assert.NotNil(b, elm)

@@ -164,7 +164,7 @@ func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx 
 }
 
 func busyReservations(fn func(worker *server.Reservation)) {
-	err := defaultServer.Store().Working().EachElement(func(idx int, key string, data []byte) error {
+	err := defaultServer.Store().Working().Each(func(idx int, key string, data []byte) error {
 		var res server.Reservation
 		err := json.Unmarshal(data, &res)
 		if err != nil {

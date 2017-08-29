@@ -21,10 +21,8 @@ func ego_busy(w io.Writer, req *http.Request) {
     <form method="POST" class="warning-messages">
       <%== csrfTag(req) %>
       <input type="hidden" name="wid" value="all"/>
-      <div class="btn-group pull-right flip">
-        <button class="btn btn-warn" type="submit" name="signal" value="quiet" data-confirm="<%= t("AreYouSure") %>"><%= t("QuietAll") %></button>
-        <button class="btn btn-danger" type="submit" name="signal" value="terminate" data-confirm="<%= t("AreYouSure") %>"><%= t("StopAll") %></button>
-      </div>
+      <button class="btn btn-warn" type="submit" name="signal" value="quiet" data-confirm="<%= t("AreYouSure") %>"><%= t("QuietAll") %></button>
+      <button class="btn btn-danger" type="submit" name="signal" value="terminate" data-confirm="<%= t("AreYouSure") %>"><%= t("StopAll") %></button>
     </form>
   </div>
 </div>
@@ -59,10 +57,12 @@ func ego_busy(w io.Writer, req *http.Request) {
             <form method="POST">
               <%== csrfTag(req) %>
               <input type="hidden" name="wid" value="<%= worker.Wid %>"/>
-              <% if !worker.Quiet() { %>
-                <button class="btn btn-warn" type="submit" name="signal" value="quiet"><%= t("Quiet") %></button>
-              <% } %>
-              <button class="btn btn-danger" type="submit" name="signal" value="terminate"><%= t("Stop") %></button>
+              <div class="btn-group pull-right flip">
+                <% if !worker.Quiet() { %>
+                  <button class="btn btn-warn" type="submit" name="signal" value="quiet"><%= t("Quiet") %></button>
+                <% } %>
+                <button class="btn btn-danger" type="submit" name="signal" value="terminate"><%= t("Stop") %></button>
+              </div>
             </form>
           </div>
         </td>

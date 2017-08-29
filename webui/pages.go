@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/util"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +41,20 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "POST" {
+		key := r.FormValue("key_val")
+		if key != "" {
+			_, err := base64.RawURLEncoding.DecodeString(key)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			util.Info("TODO Queue element delete not implemented yet")
+		}
+		http.Redirect(w, r, "/queue/"+queueName, http.StatusFound)
+		return
+	}
+
 	currentPage := int64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
@@ -56,6 +72,30 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 func retriesHandler(w http.ResponseWriter, r *http.Request) {
 	set := defaultServer.Store().Retries()
+
+	if r.Method == "POST" {
+		action := r.FormValue("action")
+		keys := r.Form["key"]
+		if len(keys) == 1 && keys[0] == "all" {
+			if action == "delete" {
+				_, err := set.Clear()
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		} else {
+			if action == "delete" {
+				for _, key := range keys {
+					err := set.Remove(key)
+					if err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				}
+			}
+		}
+	}
 
 	currentPage := int64(1)
 	p := r.URL.Query()["page"]

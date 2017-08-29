@@ -14,9 +14,11 @@ func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *faktory.
 
 <form class="form-horizontal" action="/scheduled/<%= key %>" method="post">
   <%== csrfTag(req) %>
-  <a class="btn btn-default" href="/scheduled"><%= t("GoBack") %></a>
-  <input class="btn btn-primary" type="submit" name="add_to_queue" value="<%= t("AddToQueue") %>" />
-  <input class="btn btn-danger" type="submit" name="delete" value="<%= t("Delete") %>" />
+  <div class="btn-group flip">
+    <a class="btn btn-default" href="/scheduled"><%= t("GoBack") %></a>
+    <button class="btn btn-primary" type="submit" name="action" value="add_to_queue"><%= t("AddToQueue") %></button>
+    <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+  </div>
 </form>
 
 <% }) %>

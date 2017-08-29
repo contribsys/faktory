@@ -34,10 +34,10 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
         <td><%= job.Type %></td>
         <td><%= job.Args %></td>
         <td>
-          <form action="/queues/<%= q.Name() %>/delete" method="post">
+          <form action="/queues/<%= q.Name() %>" method="post">
             <%== csrfTag(req) %>
             <input name="key_val" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" type="hidden" />
-            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= t("Delete") %>" data-confirm="<%= t("AreYouSure") %>" />
+            <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t("AreYouSure") %>"><%= t("Delete") %></button>
           </form>
         </td>
       </tr>

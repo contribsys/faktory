@@ -71,18 +71,20 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
         <% }) %>
       </table>
     </div>
-    <input class="btn btn-primary btn-xs pull-left flip" type="submit" name="retry" value="<%= t("RetryNow") %>" />
-    <input class="btn btn-danger btn-xs pull-left flip" type="submit" name="delete" value="<%= t("Delete") %>" />
+    <div class="btn-group pull-left flip">
+      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
+      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+    </div>
   </form>
 
   <% if unfiltered() { %>
-    <form action="/morgue/all/delete" method="post">
+    <form action="/morgue/all" method="post">
       <%== csrfTag(req) %>
-      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="delete" value="<%= t("DeleteAll") %>" data-confirm="<%= t("AreYouSure") %>" />
+      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
     </form>
-    <form action="/morgue/all/retry" method="post">
+    <form action="/morgue/all" method="post">
       <%== csrfTag(req) %>
-      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="retry" value="<%= t("RetryAll") %>" data-confirm="<%= t("AreYouSure") %>" />
+      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
     </form>
   <% } %>
 

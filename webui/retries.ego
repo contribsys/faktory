@@ -72,19 +72,21 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
         <% }) %>
       </table>
     </div>
-    <input class="btn btn-primary btn-xs pull-left flip" type="submit" name="retry" value="<%= t("RetryNow") %>" />
-    <input class="btn btn-danger btn-xs pull-left flip" type="submit" name="delete" value="<%= t("Delete") %>" />
-    <input class="btn btn-danger btn-xs pull-left flip" type="submit" name="kill" value="<%= t("Kill") %>" />
+    <div class="btn-group pull-left flip">
+      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
+      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+      <button class="btn btn-danger btn-xs" type="submit" name="action" value="kill"><%= t("Kill") %></button>
+    </div>
   </form>
 
   <% if unfiltered() { %>
-    <form action="/retries/all/delete" method="post">
+    <form action="/retries" method="post">
       <%== csrfTag(req) %>
-      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="delete" value="<%= t("DeleteAll") %>" data-confirm="<%= t("AreYouSure") %>" />
-    </form>
-    <form action="/retries/all/retry" method="post">
-      <%== csrfTag(req) %>
-      <input class="btn btn-danger btn-xs pull-right flip" type="submit" name="retry" value="<%= t("RetryAll") %>" data-confirm="<%= t("AreYouSure") %>" />
+      <input type="hidden" name="key" value="all" />
+      <div class="btn-group pull-right flip">
+        <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry" data-confirm="<%= t("AreYouSure") %>"><%= t("RetryAll") %></button>
+        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t("AreYouSure") %>"><%= t("DeleteAll") %></button>
+      </div>
     </form>
   <% } %>
 

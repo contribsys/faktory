@@ -46,9 +46,11 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *faktory.Job) {
 
 <form class="form-horizontal" action="/retries/<%= key %>" method="post">
   <%== csrfTag(req) %>
-  <a class="btn btn-default" href="/retries"><%= t("GoBack") %></a>
-  <input class="btn btn-primary" type="submit" name="retry" value="<%= t("RetryNow") %>" />
-  <input class="btn btn-danger" type="submit" name="delete" value="<%= t("Delete") %>" />
+  <div class="btn-group pull-left flip">
+    <a class="btn btn-default" href="/retries"><%= t("GoBack") %></a>
+    <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
+    <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+  </div>
 </form>
 <% }) %>
 <% } %>

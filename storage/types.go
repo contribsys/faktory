@@ -12,6 +12,7 @@ type Store interface {
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string
+	EnqueueAll(SortedSet) error
 }
 
 type Queue interface {

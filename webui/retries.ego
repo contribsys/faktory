@@ -47,11 +47,11 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
             <th><%= t("Error") %></th>
           </tr>
         </thead>
-        <% setJobs(set, count, currentPage, func(idx int, key string, job *faktory.Job) { %>
+        <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
           <tr>
             <td class="table-checkbox">
               <label>
-                <input type='checkbox' name='key[]' value='<%= key %>' />
+                <input type='checkbox' name='key[]' value='<%= string(key) %>' />
               </label>
             </td>
             <td>

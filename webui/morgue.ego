@@ -45,11 +45,11 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
             <th><%= t("Error") %></th>
           </tr>
         </thead>
-        <% setJobs(set, count, currentPage, func(idx int, key string, job *faktory.Job) { %>
+        <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
           <tr>
             <td class="table-checkbox">
               <label>
-                <input type="checkbox" name="key[]" value="<%= key %>" />
+                <input type="checkbox" name="key[]" value="<%= string(key) %>" />
               </label>
             </td>
             <td>
@@ -78,13 +78,13 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
   </form>
 
   <% if unfiltered() { %>
-    <form action="/morgue/all" method="post">
+    <form action="/morgue" method="post">
       <%== csrfTag(req) %>
-      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
-    </form>
-    <form action="/morgue/all" method="post">
-      <%== csrfTag(req) %>
-      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
+      <input type="hidden" name="key" value="all" />
+      <div class="btn-group pull-right flip">
+        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("DeleteAll") %></button>
+        <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryAll") %></button>
+      </div>
     </form>
   <% } %>
 

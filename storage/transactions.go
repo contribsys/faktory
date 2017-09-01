@@ -21,42 +21,46 @@ func (store *rocksStore) newTransaction() *Transaction {
 
 /*
  * Transactional operations
- *
+ */
+
+/*
  * Enqueue all moves all jobs within the given set into the
- * queues associated with those jobs.  We do this 100 jobs
- * per transaction.
+ * queues associated with those jobs.
  */
 func (store *rocksStore) EnqueueAll(set SortedSet) error {
-	count := int(set.Size())
+	return set.Each(func(idx int, key []byte, data []byte) error {
+		return store.EnqueueFrom(set, key)
+	})
+}
 
-	for i := 0; i < count; i++ {
-		store.RunTransaction(func(xa *Transaction) error {
-			ss := set.(*rocksSortedSet)
+func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
+	return store.RunTransaction(func(xa *Transaction) error {
+		ss := set.(*rocksSortedSet)
 
-			return ss.Page(0, 1, func(idx int, key string, data []byte) error {
-				var job faktory.Job
-				err := json.Unmarshal(data, &job)
-				if err != nil {
-					return err
-				}
-				queue, err := store.GetQueue(job.Queue)
-				if err != nil {
-					return err
-				}
-				q := queue.(*rocksQueue)
-				k := q.nextkey()
-				v := data
-				xa.batch.PutCF(q.cf, k, v)
-				xa.batch.DeleteCF(ss.cf, []byte(key))
-				xa.onSuccess = func() {
-					atomic.AddInt64(&q.size, 1)
-					atomic.AddInt64(&ss.size, -1)
-				}
-				return nil
-			})
-		})
-	}
-	return nil
+		data, err := ss.Get(key)
+		if err != nil {
+			return err
+		}
+		var job faktory.Job
+		err = json.Unmarshal(data, &job)
+		if err != nil {
+			return err
+		}
+		queue, err := store.GetQueue(job.Queue)
+		if err != nil {
+			return err
+		}
+		q := queue.(*rocksQueue)
+		k := q.nextkey()
+		v := data
+		xa.batch.PutCF(q.cf, k, v)
+		xa.batch.DeleteCF(ss.cf, key)
+		xa.onSuccess = func() {
+			atomic.AddInt64(&q.size, 1)
+			atomic.AddInt64(&ss.size, -1)
+		}
+		return nil
+	})
 }
 
 func (store *rocksStore) RunTransaction(fn func(xa *Transaction) error) error {

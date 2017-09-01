@@ -76,25 +76,13 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		if len(keys) == 1 && keys[0] == "all" {
-			if action == "delete" {
-				_, err := set.Clear()
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
+		err := actOn(set, action, keys)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			if action == "delete" {
-				for _, key := range keys {
-					err := set.Remove(key)
-					if err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				}
-			}
+			http.Redirect(w, r, "/retries", http.StatusFound)
 		}
+		return
 	}
 
 	currentPage := int64(1)
@@ -123,7 +111,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Retries().Get(key)
+	data, err := defaultServer.Store().Retries().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -150,6 +138,18 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 	set := defaultServer.Store().Scheduled()
+
+	if r.Method == "POST" {
+		action := r.FormValue("action")
+		keys := r.Form["key"]
+		err := actOn(set, action, keys)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Redirect(w, r, "/scheduled", http.StatusFound)
+		}
+		return
+	}
 
 	currentPage := int64(1)
 	p := r.URL.Query()["page"]
@@ -178,7 +178,7 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := defaultServer.Store().Scheduled().Get(key)
+	data, err := defaultServer.Store().Scheduled().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -206,6 +206,18 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 func morgueHandler(w http.ResponseWriter, r *http.Request) {
 	set := defaultServer.Store().Dead()
 
+	if r.Method == "POST" {
+		action := r.FormValue("action")
+		keys := r.Form["key"]
+		err := actOn(set, action, keys)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Redirect(w, r, "/morgue", http.StatusFound)
+		}
+		return
+	}
+
 	currentPage := int64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
@@ -232,7 +244,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Dead().Get(key)
+	data, err := defaultServer.Store().Dead().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

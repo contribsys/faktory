@@ -147,8 +147,8 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx int, key string, job *faktory.Job)) {
-	err := set.Page((currentPage-1)*count, count, func(idx int, key string, data []byte) error {
+func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx int, key []byte, job *faktory.Job)) {
+	err := set.Page((currentPage-1)*count, count, func(idx int, key []byte, data []byte) error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
@@ -164,7 +164,7 @@ func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx 
 }
 
 func busyReservations(fn func(worker *server.Reservation)) {
-	err := defaultServer.Store().Working().Each(func(idx int, key string, data []byte) error {
+	err := defaultServer.Store().Working().Each(func(idx int, key []byte, data []byte) error {
 		var res server.Reservation
 		err := json.Unmarshal(data, &res)
 		if err != nil {
@@ -183,4 +183,54 @@ func busyWorkers(fn func(proc *server.ClientWorker)) {
 	for _, worker := range defaultServer.Heartbeats() {
 		fn(worker)
 	}
+}
+
+func actOn(set storage.SortedSet, action string, keys []string) error {
+	switch action {
+	case "delete":
+		if len(keys) == 1 && keys[0] == "all" {
+			_, err := set.Clear()
+			return err
+		} else {
+			for _, key := range keys {
+				err := set.Remove([]byte(key))
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case "retry":
+		if len(keys) == 1 && keys[0] == "all" {
+			return defaultServer.Store().EnqueueAll(set)
+		} else {
+			for _, key := range keys {
+				err := defaultServer.Store().EnqueueFrom(set, []byte(key))
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case "kill":
+		if len(keys) == 1 && keys[0] == "all" {
+			return defaultServer.Store().EnqueueAll(set)
+		} else {
+			expiry := util.Thens(time.Now().Add(180 * 24 * time.Hour))
+			for _, key := range keys {
+				elms := strings.Split(key, "|")
+				err := set.MoveTo(defaultServer.Store().Dead(), elms[0], elms[1], func(data []byte) (string, []byte, error) {
+					return expiry, data, nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	default:
+		return fmt.Errorf("Oops, how did you get here?")
+	}
+
+	return nil
 }

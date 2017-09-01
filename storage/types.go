@@ -13,6 +13,7 @@ type Store interface {
 	EachQueue(func(Queue))
 	Stats() map[string]string
 	EnqueueAll(SortedSet) error
+	EnqueueFrom(SortedSet, []byte) error
 }
 
 type Queue interface {
@@ -20,9 +21,18 @@ type Queue interface {
 	Size() int64
 	Push([]byte) error
 	Pop() ([]byte, error)
+	Clear() (int, error)
+
+	/*
+	 * Please note that k/vs are NOT safe to use outside of the func.
+	 * You must copy the values if you want to stash them for later use.
+	 *
+	 *	  cpy = make([]byte, len(k))
+	 *	  copy(cpy, k)
+	 *
+	 */
 	Each(func(index int, k, v []byte) error) error
 	Page(int64, int64, func(index int, k, v []byte) error) error
-	Clear() (int, error)
 }
 
 var (
@@ -34,19 +44,21 @@ var (
 )
 
 type SortedSet interface {
-	AddElement(timestamp string, jid string, payload []byte) error
-	RemoveElement(timestamp string, jid string) error
-	RemoveBefore(timestamp string) ([][]byte, error)
 	Size() int64
-	Page(int64, int64, func(index int, key string, data []byte) error) error
 	Clear() (int64, error)
 
-	Remove(key string) error
-	Get(key string) ([]byte, error)
-	Each(func(idx int, key string, data []byte) error) error
+	AddElement(timestamp string, jid string, payload []byte) error
+
+	Get(key []byte) ([]byte, error)
+	Page(int64, int64, func(index int, key []byte, data []byte) error) error
+	Each(func(idx int, key []byte, data []byte) error) error
+
+	Remove(key []byte) error
+	RemoveElement(timestamp string, jid string) error
+	RemoveBefore(timestamp string) ([][]byte, error)
 
 	/*
-		Move the given tstamp/jid pair from this SortedSet to the given
+		Move the given key from this SortedSet to the given
 		SortedSet atomically.  The given func may mutate the payload and
 		return a new tstamp.
 	*/

@@ -114,7 +114,7 @@ func RandomJid() string {
 		mathrand.Read(bytes)
 	}
 
-	return base64.URLEncoding.EncodeToString(bytes)
+	return base64.RawURLEncoding.EncodeToString(bytes)
 }
 
 const (

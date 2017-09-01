@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -66,22 +65,25 @@ func TestRocksSortedSet(b *testing.T) {
 	start := time.Now()
 	for i := int64(0); i < count; i++ {
 		jid, job := fakeJob()
-		err = retries.AddElement(util.Thens(start.Add(time.Duration(rand.Intn(int(10*count)))*time.Second)), jid, job)
+		ts := util.Thens(start.Add(time.Duration(10*i) * time.Second))
+		err = retries.AddElement(ts, jid, job)
 		assert.NoError(b, err)
 	}
 
 	pageSize := 12
 	given := 0
-	err = retries.Page(10, 12, func(idx int, key string, elm []byte) error {
+	err = retries.Page(10, 12, func(idx int, key []byte, elm []byte) error {
 		given += 1
 		return nil
 	})
 	assert.Equal(b, pageSize, given)
 
 	amt := int64(0)
-	akey := ""
-	err = retries.Each(func(idx int, key string, elm []byte) error {
-		akey = key
+	akey := []byte{}
+	err = retries.Each(func(idx int, key []byte, elm []byte) error {
+		akey = make([]byte, len(key))
+		copy(akey, key)
+
 		assert.True(b, len(key) > 40, key)
 		assert.NotNil(b, elm)
 		amt += int64(1)
@@ -90,7 +92,7 @@ func TestRocksSortedSet(b *testing.T) {
 	assert.NoError(b, err)
 	assert.Equal(b, count, amt)
 
-	strs := strings.Split(akey, "|")
+	strs := strings.Split(string(akey), "|")
 	assert.Equal(b, int64(0), db.Working().Size())
 	err = retries.MoveTo(db.Working(), strs[0], strs[1], func(payload []byte) (string, []byte, error) {
 		return util.Nows(), payload, nil
@@ -108,13 +110,14 @@ func TestRocksSortedSet(b *testing.T) {
 	remd := int64(0)
 	start = time.Now()
 	for i := int64(0); i < count; i++ {
-		elms, err := retries.RemoveBefore(util.Thens(start.Add(time.Duration(rand.Intn(int(5*count))) * time.Second)))
+		ts := util.Thens(start.Add(time.Duration(5*i) * time.Second))
+		elms, err := retries.RemoveBefore(ts)
 		assert.NoError(b, err)
 		remd += int64(len(elms))
 		assert.Equal(b, count-remd, retries.Size())
-		//assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
+		assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
 	}
-	assert.True(b, retries.Size() > 0)
+	assert.Equal(b, int64(499), retries.Size())
 	retries.Clear()
 	assert.Equal(b, int64(0), retries.Size())
 }

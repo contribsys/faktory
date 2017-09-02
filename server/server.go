@@ -37,6 +37,7 @@ type Server struct {
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
 	heartbeats map[string]*ClientWorker
+	hbmu       sync.Mutex
 }
 
 // register a global handler to be called when the Server instance
@@ -58,6 +59,7 @@ func NewServer(opts *ServerOptions) *Server {
 		pending:    &sync.WaitGroup{},
 		mu:         sync.Mutex{},
 		heartbeats: make(map[string]*ClientWorker, 12),
+		hbmu:       sync.Mutex{},
 	}
 }
 
@@ -175,6 +177,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
+	s.hbmu.Lock()
 	val, ok := s.heartbeats[client.Wid]
 	if ok {
 		val.lastHeartbeat = time.Now()
@@ -185,6 +188,8 @@ func (s *Server) processConnection(conn net.Conn) {
 		s.heartbeats[client.Wid] = &client
 		val = &client
 	}
+	s.hbmu.Unlock()
+
 	util.Debugf("%+v", val)
 
 	_, err = conn.Write([]byte("+OK\r\n"))

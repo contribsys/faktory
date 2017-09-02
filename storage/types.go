@@ -44,6 +44,7 @@ var (
 )
 
 type SortedSet interface {
+	Name() string
 	Size() int64
 	Clear() (int64, error)
 

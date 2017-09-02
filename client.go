@@ -51,19 +51,6 @@ var (
 	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 )
 
-func EmptyClientData() *ClientData {
-	client := &ClientData{}
-	hs, err := os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-	client.Hostname = hs
-	client.Pid = os.Getpid()
-	client.Wid = RandomProcessWid
-	client.Labels = []string{"golang"}
-	return client
-}
-
 func Localhost() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
@@ -106,7 +93,7 @@ FOO_URL=tcp://faktory.example.com:7419`)
  *
  */
 func Dial(srv *Server, password string) (*Client, error) {
-	client := EmptyClientData()
+	client := emptyClientData()
 	client.Password = password
 	data, err := json.Marshal(client)
 	if err != nil {
@@ -237,6 +224,19 @@ func (c *Client) Beat() (string, error) {
 }
 
 //////////////////////////////////////////////////
+
+func emptyClientData() *ClientData {
+	client := &ClientData{}
+	hs, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	client.Hostname = hs
+	client.Pid = os.Getpid()
+	client.Wid = RandomProcessWid
+	client.Labels = []string{"golang"}
+	return client
+}
 
 func writeLine(io *bufio.Writer, op string, payload []byte) error {
 	//util.Debugf("> %s %s", op, string(payload))

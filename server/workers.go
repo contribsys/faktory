@@ -57,9 +57,11 @@ func (s *Server) reapHeartbeats() error {
 	}
 
 	if len(toDelete) > 0 {
+		s.hbmu.Lock()
 		for _, k := range toDelete {
 			delete(s.heartbeats, k)
 		}
+		s.hbmu.Unlock()
 		util.Debugf("Reaped %d worker heartbeats", len(toDelete))
 	}
 	return nil

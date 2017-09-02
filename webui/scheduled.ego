@@ -46,7 +46,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
         <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
           <tr>
             <td>
-              <input type="checkbox" name="key[]" value="<%= string(key) %>" />
+              <input type="checkbox" name="key" value="<%= string(key) %>" />
             </td>
             <td>
                <a href="/scheduled/<%= key %>"><%= relativeTime(job.At) %></a>

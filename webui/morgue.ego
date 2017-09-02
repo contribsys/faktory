@@ -49,7 +49,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
           <tr>
             <td class="table-checkbox">
               <label>
-                <input type="checkbox" name="key[]" value="<%= string(key) %>" />
+                <input type="checkbox" name="key" value="<%= string(key) %>" />
               </label>
             </td>
             <td>

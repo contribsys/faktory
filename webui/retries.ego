@@ -51,7 +51,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
           <tr>
             <td class="table-checkbox">
               <label>
-                <input type='checkbox' name='key[]' value='<%= string(key) %>' />
+                <input type='checkbox' name='key' value='<%= string(key) %>' />
               </label>
             </td>
             <td>

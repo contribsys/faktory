@@ -11,12 +11,16 @@ import (
  * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
  */
 type rocksSortedSet struct {
-	Name string
+	name string
 	db   *gorocksdb.DB
 	cf   *gorocksdb.ColumnFamilyHandle
 	ro   *gorocksdb.ReadOptions
 	wo   *gorocksdb.WriteOptions
 	size int64
+}
+
+func (ts *rocksSortedSet) Name() string {
+	return ts.name
 }
 
 func (ts *rocksSortedSet) AddElement(tstamp string, jid string, payload []byte) error {
@@ -101,7 +105,7 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 		count += 1
 	}
 	if err := it.Err(); err != nil {
-		panic(fmt.Sprintf("%s size: %s", ts.Name, err.Error()))
+		panic(fmt.Sprintf("%s size: %s", ts.name, err.Error()))
 	}
 	ts.size = count
 	return ts
@@ -173,7 +177,7 @@ func (ts *rocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutat
 
 	data := slice.Data()
 	if len(data) == 0 {
-		return fmt.Errorf("Element not found in %s: %s", ts.Name, jid)
+		return fmt.Errorf("Element not found in %s: %s", ts.name, jid)
 	}
 
 	newtstamp, payload, err := mutator(data)

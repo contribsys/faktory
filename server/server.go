@@ -169,9 +169,6 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	client.Password = "<secret>"
-	util.Debugf("%+v", client)
-
 	if client.Wid == "" {
 		util.Error("Invalid client Wid", err, nil)
 		conn.Close()
@@ -182,10 +179,13 @@ func (s *Server) processConnection(conn net.Conn) {
 	if ok {
 		val.lastHeartbeat = time.Now()
 	} else {
-		s.heartbeats[client.Wid] = &client
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
+		client.Password = "<redacted>"
+		s.heartbeats[client.Wid] = &client
+		val = &client
 	}
+	util.Debugf("%+v", val)
 
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {

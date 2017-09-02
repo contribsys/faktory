@@ -34,12 +34,16 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 
+	each := 20000
+	start := time.Now()
+
 	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {
 		go func() {
 			wg.Add(1)
 			defer wg.Done()
-			pushAndPop(t)
+			pushAndPop(t, each)
+			util.Infof("Processed %d jobs in %v", 3*each, time.Now().Sub(start))
 		}()
 	}
 
@@ -53,11 +57,11 @@ func TestSystem(t *testing.T) {
 		fmt.Println(err)
 		return
 	}
-	assert.Equal(t, int64(30000), s.Processed)
-	assert.Equal(t, int64(300), s.Failures)
+	assert.Equal(t, int64(3*each), s.Processed)
+	assert.Equal(t, int64(3*(each/100)), s.Failures)
 }
 
-func pushAndPop(t *testing.T) {
+func pushAndPop(t *testing.T, count int) {
 	time.Sleep(100 * time.Millisecond)
 	client, err := faktory.Dial(faktory.Localhost(), "123456")
 	if err != nil {
@@ -71,7 +75,7 @@ func pushAndPop(t *testing.T) {
 	assert.NoError(t, err)
 
 	util.Info("Pushing")
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < count; i++ {
 		if err = pushJob(client, i); err != nil {
 			handleError(err)
 			return
@@ -79,7 +83,7 @@ func pushAndPop(t *testing.T) {
 	}
 	util.Info("Popping")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < count; i++ {
 		job, err := client.Pop("default")
 		if err != nil {
 			handleError(err)
@@ -102,12 +106,12 @@ func pushAndPop(t *testing.T) {
 		return
 	}
 	util.Info(hash)
-	res, err := client.Generic("STORE STATS")
+	_, err = client.Generic("STORE STATS")
 	if err != nil {
 		handleError(err)
 		return
 	}
-	util.Info(res)
+	//util.Info(res)
 }
 
 func pushJob(client *faktory.Client, idx int) error {

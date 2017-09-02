@@ -60,7 +60,7 @@ func EmptyClientData() *ClientData {
 	client.Hostname = hs
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
-	client.Labels = []string{}
+	client.Labels = []string{"golang"}
 	return client
 }
 

@@ -160,6 +160,20 @@ func TestDead(t *testing.T) {
 	deadHandler(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+
+	assert.Equal(t, int64(1), q.Size())
+	payload := url.Values{
+		"key":    {"all"},
+		"action": {"delete"},
+	}
+	req = httptest.NewRequest("POST", "http://localhost:7420/morgue", strings.NewReader(payload.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	morgueHandler(w, req)
+
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "", w.Body.String())
+	assert.Equal(t, int64(0), q.Size())
 }
 
 func TestBusy(t *testing.T) {

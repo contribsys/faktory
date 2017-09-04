@@ -34,7 +34,7 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 
-	each := 20000
+	each := 10000
 	start := time.Now()
 
 	var wg sync.WaitGroup

@@ -2,6 +2,8 @@ package server
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -135,6 +137,10 @@ func (s *Server) Stop(f func()) {
 	}
 }
 
+func hash(pwd, salt string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(pwd+salt)))
+}
+
 func (s *Server) processConnection(conn net.Conn) {
 	// AHOY operation must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -165,7 +171,8 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	if s.Options.Password != "" && client.Password != s.Options.Password {
+	if s.Options.Password != "" &&
+		subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, client.Salt))) != 1 {
 		util.Info("Invalid password")
 		conn.Close()
 		return
@@ -184,7 +191,6 @@ func (s *Server) processConnection(conn net.Conn) {
 	} else {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
-		client.Password = "<redacted>"
 		s.heartbeats[client.Wid] = &client
 		val = &client
 	}

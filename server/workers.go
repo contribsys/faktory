@@ -7,12 +7,13 @@ import (
 )
 
 type ClientWorker struct {
-	Hostname  string   `json:"hostname"`
-	Wid       string   `json:"wid"`
-	Pid       int      `json:"pid"`
-	Labels    []string `json:"labels"`
-	Password  string   `json:"password"`
-	StartedAt time.Time
+	Hostname     string   `json:"hostname"`
+	Wid          string   `json:"wid"`
+	Pid          int      `json:"pid"`
+	Labels       []string `json:"labels"`
+	Salt         string   `json:"salt"`
+	PasswordHash string   `json:"pwdhash"`
+	StartedAt    time.Time
 
 	lastHeartbeat time.Time
 	signal        string

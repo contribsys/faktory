@@ -2,6 +2,7 @@ package faktory
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,7 @@ type Client struct {
 
 /*
  * This data is serialized to JSON and sent
- * with the AHOY command.  Password is required
+ * with the AHOY command.  PasswordHash is required
  * if the server is not listening on localhost.
  * The WID (worker id) must be random and unique
  * for each worker process.  It can be a UUID, etc.
@@ -34,11 +35,15 @@ type Client struct {
  * and are displayed on the Busy tab.
  */
 type ClientData struct {
-	Wid      string   `json:"wid"`
 	Hostname string   `json:"hostname"`
+	Wid      string   `json:"wid"`
 	Pid      int      `json:"pid"`
 	Labels   []string `json:"labels"`
-	Password string   `json:"password"`
+	// Salt should be a random string and
+	// must change on every call.
+	Salt string `json:"salt"`
+	// Hash is hex(sha256(password + salt))
+	PasswordHash string `json:"pwdhash"`
 }
 
 type Server struct {
@@ -94,14 +99,18 @@ FOO_URL=tcp://faktory.example.com:7419`)
  */
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
-	client.Password = password
+	if password != "" {
+		client.Salt = strconv.FormatInt(time.Now().UnixNano(), 16)
+		client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+client.Salt)))
+	}
 	data, err := json.Marshal(client)
 	if err != nil {
 		return nil, err
 	}
 
 	//util.Infof("Opening connection to %s", srv.Address)
-	conn, err := net.DialTimeout(srv.Network, srv.Address, srv.Timeout)
+	dial := &net.Dialer{Timeout: srv.Timeout}
+	conn, err := dial.Dial(srv.Network, srv.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +128,6 @@ func Dial(srv *Server, password string) (*Client, error) {
 		conn.Close()
 		return nil, err
 	}
-	client.Password = "<redacted>"
 
 	return &Client{Options: client, Location: srv.Address, conn: conn, rdr: r, wtr: w}, nil
 }

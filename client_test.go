@@ -2,7 +2,6 @@ package faktory
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"testing"
@@ -25,21 +24,22 @@ func TestClientOperations(t *testing.T) {
 	assert.NoError(t, err)
 
 	cl, err = Open()
-	fmt.Println(err)
 	assert.Error(t, err)
 	assert.Nil(t, cl)
 
 	withServer(t, func(req, resp chan string, addr string) {
 		err = os.Setenv("FAKTORY_PROVIDER", "MIKE_URL")
 		assert.NoError(t, err)
-		err = os.Setenv("MIKE_URL", "tcp://"+addr)
+		err = os.Setenv("MIKE_URL", "tcp://:foobar@"+addr)
 		assert.NoError(t, err)
 
 		resp <- "+OK\r\n"
 		cl, err := Open()
 		assert.NoError(t, err)
 		assert.NotNil(t, cl)
-		assert.Contains(t, <-req, "AHOY")
+		s := <-req
+		assert.Contains(t, s, "AHOY")
+		assert.Contains(t, s, "pwdhash")
 
 		resp <- "+OK\r\n"
 		res, err := cl.Beat()

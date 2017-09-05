@@ -20,14 +20,14 @@ language-agnostic, persistent background jobs.
 - Exposes basic usage metrics.
 - Contains a comprehensive Web UI for management and monitoring.
 
-## API
+## Documentation
 
-Under development.
+Please [see the Faktory wiki](https://github.com/mperham/faktory/wiki) for full documentation.
 
 ## License
 
-Worq is licensed GPLv3.
+Faktory is licensed GPLv3.
 
 ## Author
 
-Mike Perham, @mperham and other contributors.
+Mike Perham, @mperham

@@ -41,6 +41,9 @@ func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
 		if err != nil {
 			return err
 		}
+		if data == nil {
+			return nil
+		}
 		var job faktory.Job
 		err = json.Unmarshal(data, &job)
 		if err != nil {

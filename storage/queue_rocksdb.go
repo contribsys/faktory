@@ -79,8 +79,8 @@ func (q *rocksQueue) Each(fn func(index int, k, v []byte) error) error {
 	return q.Page(0, -1, fn)
 }
 
-func (q *rocksQueue) Clear() (int, error) {
-	count := 0
+func (q *rocksQueue) Clear() (int64, error) {
+	count := int64(0)
 	// TODO impl which uses Rocks range deletes?
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -107,18 +107,23 @@ func (q *rocksQueue) Clear() (int, error) {
 	wo := queueWriteOptions()
 	defer wo.Destroy()
 
+	wb := gorocksdb.NewWriteBatch()
+
 	for ; it.Valid(); it.Next() {
 		k := it.Key()
 		key := k.Data()
-		err := q.store.db.DeleteCF(wo, q.cf, key)
-		if err != nil {
-			return count, err
-		}
+		//util.Warnf("Queue#clear: delete %x", key)
+		wb.DeleteCF(q.cf, key)
 		k.Free()
 		count += 1
-		atomic.AddInt64(&q.low, 1)
-		atomic.AddInt64(&q.size, -1)
 	}
+	err := q.store.db.Write(wo, wb)
+	if err != nil {
+		return count, err
+	}
+	atomic.AddInt64(&q.low, count)
+	atomic.AddInt64(&q.size, -count)
+	//util.Warnf("Queue#clear: deleted %d elements from %s, size %d", count, q.name, q.size)
 	return count, nil
 }
 
@@ -144,6 +149,7 @@ func (q *rocksQueue) Init() error {
 	if it.Valid() {
 		k := it.Key()
 		key := k.Data()
+		//util.Warnf("Queue#init: first %x", key)
 		start := len(q.name) + 1
 		end := start + 8
 		q.low = toInt64(key[start:end])
@@ -151,6 +157,10 @@ func (q *rocksQueue) Init() error {
 	}
 
 	for ; it.Valid(); it.Next() {
+		//k := it.Key()
+		//key := k.Data()
+		//util.Warnf("Queue#init: element %x", key)
+		//k.Free()
 		count += 1
 	}
 	it.SeekToLast()
@@ -162,14 +172,15 @@ func (q *rocksQueue) Init() error {
 	if it.Valid() {
 		k := it.Key()
 		key := k.Data()
+		//util.Warnf("Queue#init: last %x", key)
 		start := len(q.name) + 1
 		end := start + 8
-		q.high = toInt64(key[start:end])
+		q.high = toInt64(key[start:end]) + 1
 		k.Free()
 	}
 	q.size = count
 
-	util.Log().Debugf("Queue init: %s %d elements %d/%d", q.name, q.size, q.low, q.high)
+	util.Debugf("Queue init: %s %d elements %d/%d", q.name, q.size, q.low, q.high)
 	return nil
 }
 
@@ -187,6 +198,7 @@ func (q *rocksQueue) Push(payload []byte) error {
 		return err
 	}
 
+	//util.Warnf("Adding element %x to %s", k, q.name)
 	atomic.AddInt64(&q.size, 1)
 	return nil
 }

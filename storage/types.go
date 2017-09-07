@@ -21,7 +21,7 @@ type Queue interface {
 	Size() int64
 	Push([]byte) error
 	Pop() ([]byte, error)
-	Clear() (int, error)
+	Clear() (int64, error)
 
 	/*
 	 * Please note that k/vs are NOT safe to use outside of the func.

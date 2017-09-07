@@ -53,7 +53,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
               </label>
             </td>
             <td>
-              <a href="/morgue/<%= key %>"><%= relativeTime(job.At) %></a>
+              <a href="/morgue/<%= string(key) %>"><%= relativeTime(job.At) %></a>
             </td>
             <td>
               <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>

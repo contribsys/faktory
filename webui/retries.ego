@@ -55,7 +55,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
               </label>
             </td>
             <td>
-              <a href="/retries/<%= key %>"><%= relativeTime(job.Failure.NextAt) %></a>
+              <a href="/retries/<%= string(key) %>"><%= relativeTime(job.Failure.NextAt) %></a>
             </td>
             <td><%= job.Failure.RetryCount %></td>
             <td>

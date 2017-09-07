@@ -49,7 +49,7 @@ func TestBasicQueueOps(t *testing.T) {
 
 	cnt, err := q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, cnt)
+	assert.Equal(t, int64(1), cnt)
 	assert.Equal(t, int64(0), q.Size())
 }
 

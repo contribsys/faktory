@@ -50,9 +50,10 @@ var (
 //go:generate go-bindata -pkg webui -o static.go static/...
 
 func init() {
+	// TODO favicon.ico
 	http.Handle("/favicon.ico", http.NotFoundHandler())
-	http.Handle("/static/", Cache(http.FileServer(
-		&AssetFS{Asset: Asset, AssetDir: AssetDir})))
+	http.Handle("/static/", Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir})))
+
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
 	http.HandleFunc("/queues", Log(queuesHandler))
 	http.HandleFunc("/queues/", Log(queueHandler))
@@ -83,7 +84,7 @@ func initLocales() {
 		name := strings.Split(filename, ".")[0]
 		locales[name] = nil
 	}
-	translations("en")
+	translations("en") // eager load English
 	util.Debugf("Initialized %d locales", len(localeFiles))
 }
 
@@ -128,7 +129,7 @@ func FireItUp(svr *server.Server) {
 	go func() {
 		s := &http.Server{
 			Addr:           ":7420",
-			ReadTimeout:    10 * time.Second,
+			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
 		}
@@ -230,7 +231,7 @@ func PostOnly(h http.HandlerFunc) http.HandlerFunc {
 
 func Cache(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Cache-Control", "public, max-age=86400")
+		w.Header().Add("Cache-Control", "public, max-age=3600")
 		h.ServeHTTP(w, r)
 	})
 }

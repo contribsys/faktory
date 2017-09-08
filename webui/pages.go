@@ -3,6 +3,7 @@ package webui
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -131,7 +132,8 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if job.Failure == nil {
-		panic("job is not a retry!" + string(data))
+		http.Error(w, fmt.Sprintf("Job %s is not a retry", job.Jid), http.StatusInternalServerError)
+		return
 	}
 	ego_retry(w, r, key, &job)
 }
@@ -198,7 +200,8 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if job.At == "" {
-		panic("job is not scheduled: " + string(data))
+		http.Error(w, fmt.Sprintf("Job %s is not scheduled", job.Jid), http.StatusInternalServerError)
+		return
 	}
 	ego_scheduled_job(w, r, key, &job)
 }

@@ -45,8 +45,9 @@ generate:
 	go generate ./...
 
 cover:
-	go test -cover -coverprofile cover.out github.com/mperham/faktory/server
-	go tool cover -html=cover.out
+	go test -cover -coverprofile cover.out github.com/mperham/faktory/webui
+	go tool cover -html=cover.out -o coverage.html
+	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64

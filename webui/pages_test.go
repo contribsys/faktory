@@ -107,6 +107,26 @@ func TestRetries(t *testing.T) {
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, int64(1), q.Size())
 	assert.Equal(t, int64(1), def.Size())
+
+	q.Each(func(idx int, k, v []byte) error {
+		key = make([]byte, len(k))
+		copy(key, k)
+		return nil
+	})
+	keys = string(key)
+	payload = url.Values{
+		"key":    {keys},
+		"action": {"kill"},
+	}
+	assert.Equal(t, int64(0), str.Dead().Size())
+	req = httptest.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	retriesHandler(w, req)
+
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, int64(1), str.Dead().Size())
 }
 
 func TestRetry(t *testing.T) {

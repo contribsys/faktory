@@ -47,14 +47,6 @@ func t(word string) string {
 	return value
 }
 
-func tf(word string, param string) string {
-	value, ok := activeTranslations[word]
-	if !ok {
-		return word
-	}
-	return strings.Replace(value, "%{queue}", param, 1)
-}
-
 func pageparam(req *http.Request, pageValue int64) string {
 	return fmt.Sprintf("page=%d", pageValue)
 }

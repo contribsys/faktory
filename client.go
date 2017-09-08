@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -163,8 +162,16 @@ func (c *Client) Pop(q string) (*Job, error) {
 		return nil, err
 	}
 
+	data, err := readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
+
 	var job Job
-	err = jsonResult(c.rdr, &job)
+	err = json.Unmarshal(data, &job)
 	if err != nil {
 		return nil, err
 	}
@@ -178,14 +185,21 @@ func (c *Client) Pop(q string) (*Job, error) {
  bt := strings.Split(str, "\n")
 */
 
-func (c *Client) Fail(jid string, err error, backtrace []string) error {
+/*
+ * Notify Faktory that a job failed with the given error.
+ * If backtrace is non-nil, it is assumed to be the output from
+ * runtime/debug.Stack().
+ */
+func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	failure := map[string]interface{}{
 		"message": err.Error(),
-		"errtype": reflect.TypeOf(err).Name(),
+		"errtype": "unknown",
 	}
 
 	if backtrace != nil {
-		failure["backtrace"] = backtrace
+		str := string(backtrace)
+		bt := strings.Split(str, "\n")
+		failure["backtrace"] = bt[3:]
 	}
 	failbytes, err := json.Marshal(failure)
 	if err != nil {
@@ -204,9 +218,16 @@ func (c *Client) Info() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var hash map[string]interface{}
+	data, err := readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
 
-	err = jsonResult(c.rdr, &hash)
+	var hash map[string]interface{}
+	err = json.Unmarshal(data, &hash)
 	if err != nil {
 		return nil, err
 	}
@@ -336,17 +357,4 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		//util.Debugf("< %s%s", string(chr), string(line))
 		return line, nil
 	}
-}
-
-func jsonResult(rdr *bufio.Reader, thing interface{}) error {
-	data, err := readResponse(rdr)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(data, thing)
-	if err != nil {
-		return err
-	}
-	return nil
 }

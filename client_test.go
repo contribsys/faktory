@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"os"
+	"runtime/debug"
 	"testing"
 	"time"
 
@@ -13,6 +14,14 @@ import (
 
 func init() {
 	util.LogInfo = true
+}
+
+type specialError struct {
+	Msg string
+}
+
+func (s *specialError) Error() string {
+	return s.Msg
 }
 
 func TestClientOperations(t *testing.T) {
@@ -46,6 +55,36 @@ func TestClientOperations(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
+
+		resp <- "$0\r\n\r\n"
+		job, err := cl.Pop("default")
+		assert.NoError(t, err)
+		assert.Nil(t, job)
+		assert.Contains(t, <-req, "POP")
+
+		// TODO Pop job JSON
+
+		resp <- "+OK\r\n"
+		err = cl.Ack("123456")
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "ACK")
+
+		resp <- "+OK\r\n"
+		err = cl.Fail("123456", &specialError{Msg: "Some error"}, debug.Stack())
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "FAIL")
+
+		// TODO real INFO
+		resp <- "$0\r\n\r\n"
+		hash, err := cl.Info()
+		assert.NoError(t, err)
+		assert.Nil(t, hash)
+		assert.Contains(t, <-req, "INFO")
+
+		err = cl.Close()
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "END")
+
 	})
 }
 

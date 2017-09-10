@@ -24,3 +24,15 @@ func TestParseTime(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, now, then)
 }
+
+func TestBacktrace(t *testing.T) {
+	ex := Backtrace(12)
+	assert.NotNil(t, ex)
+	assert.True(t, len(ex) > 2)
+	assert.True(t, len(ex) < 12)
+	assert.Contains(t, ex[0], "TestBacktrace")
+
+	//for _, str := range ex {
+	//fmt.Println(str)
+	//}
+}

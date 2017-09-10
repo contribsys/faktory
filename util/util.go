@@ -5,9 +5,11 @@ import (
 	"bytes"
 	cryptorand "crypto/rand"
 	"encoding/base64"
+	"fmt"
 	mathrand "math/rand"
 	"os"
 	"reflect"
+	"runtime"
 	"time"
 )
 
@@ -134,4 +136,35 @@ func Nows() string {
 
 func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
+}
+
+/*
+ * Gather a backtrace for the caller.
+ * Return a slice of up to N stack frames.
+ */
+func Backtrace(size int) []string {
+	pc := make([]uintptr, size)
+	n := runtime.Callers(2, pc)
+	if n == 0 {
+		return []string{}
+	}
+
+	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
+	frames := runtime.CallersFrames(pc)
+
+	str := make([]string, size)
+	count := 0
+
+	// Loop to get frames.
+	// A fixed number of pcs can expand to an indefinite number of Frames.
+	for i := 0; i < size; i++ {
+		frame, more := frames.Next()
+		str[i] = fmt.Sprintf("in %s:%d %s", frame.File, frame.Line, frame.Function)
+		count += 1
+		if !more {
+			break
+		}
+	}
+
+	return str[0:count]
 }

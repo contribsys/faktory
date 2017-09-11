@@ -1,12 +1,27 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
 	"github.com/mperham/faktory/util"
 	"github.com/mperham/gorocksdb"
 )
+
+var (
+	DefaultBackpressure = int64(100000)
+)
+
+type Backpressure struct {
+	QueueName   string
+	CurrentSize int64
+	MaxSize     int64
+}
+
+func (bp Backpressure) Error() string {
+	return fmt.Sprintf("%s is too large, currently %d, max size is %d", bp.QueueName, bp.CurrentSize, bp.MaxSize)
+}
 
 type rocksQueue struct {
 	name  string
@@ -16,6 +31,7 @@ type rocksQueue struct {
 	store *rocksStore
 	cf    *gorocksdb.ColumnFamilyHandle
 	mu    sync.Mutex
+	maxsz int64
 }
 
 func (q *rocksQueue) Name() string {
@@ -189,6 +205,13 @@ func (q *rocksQueue) Size() int64 {
 }
 
 func (q *rocksQueue) Push(payload []byte) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if q.size > q.maxsz {
+		return Backpressure{q.name, q.size, q.maxsz}
+	}
+
 	k := q.nextkey()
 	v := payload
 	wo := queueWriteOptions()

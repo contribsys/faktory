@@ -8,14 +8,14 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 
 <% ego_layout(w, req, func() { %>
 
-<h3><%= t("Queues") %></h3>
+<h3><%= t(req, "Queues") %></h3>
 
 <div class="table_container">
   <table class="queues table table-hover table-bordered table-striped table-white">
     <thead>
-      <th><%= t("Queue") %></th>
-      <th><%= t("Size") %></th>
-      <th><%= t("Actions") %></th>
+      <th><%= t(req, "Queue") %></th>
+      <th><%= t(req, "Size") %></th>
+      <th><%= t(req, "Actions") %></th>
     </thead>
     <% for _, queue := range queues() { %>
       <tr>
@@ -26,7 +26,7 @@ func ego_listQueues(w io.Writer, req *http.Request) {
         <td class="delete-confirm">
           <form action="/queues/<%= queue.Name %>" method="post">
             <%== csrfTag(req) %>
-            <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t("AreYouSure") %>"><%= t("Delete") %></button>
+            <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "Delete") %></button>
           </form>
         </td>
       </tr>

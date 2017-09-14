@@ -30,7 +30,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
       <div class="container">
         <div class="row">
           <div class="col-sm-12 summary_bar">
-            <% ego_summary(w) %>
+            <% ego_summary(w, req) %>
           </div>
 
           <div class="col-sm-12">

@@ -25,8 +25,8 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
 <div class="table_container">
   <table class="queue table table-hover table-bordered table-striped">
     <thead>
-      <th><%= t("Job") %></th>
-      <th><%= t("Arguments") %></th>
+      <th><%= t(req, "Job") %></th>
+      <th><%= t(req, "Arguments") %></th>
       <th></th>
     </thead>
     <% queueJobs(q, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
@@ -37,7 +37,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
           <form action="/queues/<%= q.Name() %>" method="post">
             <%== csrfTag(req) %>
             <input name="key_val" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" type="hidden" />
-            <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t("AreYouSure") %>"><%= t("Delete") %></button>
+            <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "Delete") %></button>
           </form>
         </td>
       </tr>

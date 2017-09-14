@@ -12,25 +12,25 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *faktory.Job) {
 
 <% ego_layout(w, req, func() { %>
 
-<% ego_job_info(w, retry) %>
+<% ego_job_info(w, req, retry) %>
 
-<h3><%= t("Error") %></h3>
+<h3><%= t(req, "Error") %></h3>
 <div class="table_container">
   <table class="error table table-bordered table-striped">
     <tbody>
       <tr>
-        <th><%= t("ErrorClass") %></th>
+        <th><%= t(req, "ErrorClass") %></th>
         <td>
           <code><%= retry.Failure.ErrorType %></code>
         </td>
       </tr>
       <tr>
-        <th><%= t("ErrorMessage") %></th>
+        <th><%= t(req, "ErrorMessage") %></th>
         <td><%= retry.Failure.ErrorMessage %></td>
       </tr>
       <% if retry.Failure.Backtrace != nil { %>
         <tr>
-          <th><%= t("ErrorBacktrace") %></th>
+          <th><%= t(req, "ErrorBacktrace") %></th>
           <td>
             <code>
               <% for _, line := range retry.Failure.Backtrace { %>
@@ -47,9 +47,9 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *faktory.Job) {
 <form class="form-horizontal" action="/retries/<%= key %>" method="post">
   <%== csrfTag(req) %>
   <div class="btn-group pull-left flip">
-    <a class="btn btn-default" href="/retries"><%= t("GoBack") %></a>
-    <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
-    <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+    <a class="btn btn-default" href="/retries"><%= t(req, "GoBack") %></a>
+    <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
+    <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
   </div>
 </form>
 <% }) %>

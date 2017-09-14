@@ -20,7 +20,7 @@ func ego_nav(w io.Writer, req *http.Request) {
       </div>
       <a class="navbar-brand" href="/">
         Faktory
-        <% ego_status(w) %>
+        <% ego_status(w, req) %>
       </a>
     </div>
 
@@ -32,7 +32,7 @@ func ego_nav(w io.Writer, req *http.Request) {
           <% } else { %>
             <li class="<% if strings.HasPrefix(req.RequestURI, tab.Path) { %>active<% } %>">
           <% } %>
-            <a href="<%= tab.Path %>"><%= t(tab.Name) %></a>
+            <a href="<%= tab.Path %>"><%= t(req, tab.Name) %></a>
           </li>
         <% } %>
       </ul>

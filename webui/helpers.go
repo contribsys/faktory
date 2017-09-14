@@ -39,12 +39,13 @@ func textDir() string {
 	return dir
 }
 
-func t(word string) string {
-	value, ok := activeTranslations[word]
+func t(req *http.Request, word string) string {
+	dc, ok := req.Context().(*DefaultContext)
 	if !ok {
+		// TODO test suite needs this corner case
 		return word
 	}
-	return value
+	return dc.Translation(word)
 }
 
 func pageparam(req *http.Request, pageValue int64) string {

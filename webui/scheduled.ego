@@ -16,7 +16,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 
 <header class="row">
   <div class="col-sm-5">
-    <h3><%= t("ScheduledJobs") %></h3>
+    <h3><%= t(req, "ScheduledJobs") %></h3>
   </div>
   <% if totalSize > 0 && totalSize > count { %>
     <div class="col-sm-4">
@@ -37,10 +37,10 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
             <th class="checkbox-column">
               <input type="checkbox" class="check_all" />
             </th>
-            <th><%= t("When") %></th>
-            <th><%= t("Queue") %></th>
-            <th><%= t("Job") %></th>
-            <th><%= t("Arguments") %></th>
+            <th><%= t(req, "When") %></th>
+            <th><%= t(req, "Queue") %></th>
+            <th><%= t(req, "Job") %></th>
+            <th><%= t(req, "Arguments") %></th>
           </tr>
         </thead>
         <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
@@ -63,12 +63,12 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
       </table>
     </div>
     <div class="btn-group pull-right flip">
-      <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t("Delete") %></button>
-      <button class="btn btn-danger" type="submit" name="action" value="add_to_queue"><%= t("AddToQueue") %></button>
+      <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
+      <button class="btn btn-danger" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
     </div>
   </form>
 <% } else { %>
-  <div class="alert alert-success"><%= t("NoScheduledFound") %></div>
+  <div class="alert alert-success"><%= t(req, "NoScheduledFound") %></div>
 <% } %>
 <% }) %>
 <% } %>

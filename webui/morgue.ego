@@ -16,7 +16,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
 
 <header class="row">
   <div class="col-sm-5">
-    <h3><%= t("DeadJobs") %></h3>
+    <h3><%= t(req, "DeadJobs") %></h3>
   </div>
   <% if totalSize > count { %>
     <div class="col-sm-4">
@@ -38,11 +38,11 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
                 <input type="checkbox" class="check_all" />
               </label>
             </th>
-            <th><%= t("LastRetry") %></th>
-            <th><%= t("Queue") %></th>
-            <th><%= t("Job") %></th>
-            <th><%= t("Arguments") %></th>
-            <th><%= t("Error") %></th>
+            <th><%= t(req, "LastRetry") %></th>
+            <th><%= t(req, "Queue") %></th>
+            <th><%= t(req, "Job") %></th>
+            <th><%= t(req, "Arguments") %></th>
+            <th><%= t(req, "Error") %></th>
           </tr>
         </thead>
         <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
@@ -72,8 +72,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
       </table>
     </div>
     <div class="btn-group pull-left flip">
-      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryNow") %></button>
-      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("Delete") %></button>
+      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
+      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
     </div>
   </form>
 
@@ -82,14 +82,14 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
       <div class="btn-group pull-right flip">
-        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t("DeleteAll") %></button>
-        <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t("RetryAll") %></button>
+        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
+        <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryAll") %></button>
       </div>
     </form>
   <% } %>
 
 <% } else { %>
-  <div class="alert alert-success"><%= t("NoDeadJobsFound") %></div>
+  <div class="alert alert-success"><%= t(req, "NoDeadJobsFound") %></div>
 <% } %>
 <% }) %>
 <% } %>

@@ -2,14 +2,16 @@
 package webui
 
 import (
+  "net/http"
+
   "github.com/mperham/faktory"
 )
 
-func ego_job_info(w io.Writer, job *faktory.Job) {
+func ego_job_info(w io.Writer, req *http.Request, job *faktory.Job) {
 %>
 
 <header>
-  <h3><%= t("Job") %></h3>
+  <h3><%= t(req, "Job") %></h3>
 </header>
 
 <div class="table_container">
@@ -22,13 +24,13 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
         </td>
       </tr>
       <tr>
-        <th><%= t("Job") %></th>
+        <th><%= t(req, "Job") %></th>
         <td>
           <code><%= job.Type %></code>
         </td>
       </tr>
       <tr>
-        <th><%= t("Arguments") %></th>
+        <th><%= t(req, "Arguments") %></th>
         <td>
           <code class="code-wrap">
             <!-- We don't want to truncate any job arguments when viewing a single job's status page -->
@@ -37,34 +39,34 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
         </td>
       </tr>
       <tr>
-        <th><%= t("CreatedAt") %></th>
+        <th><%= t(req, "CreatedAt") %></th>
         <td><%= relativeTime(job.CreatedAt) %></td>
       </tr>
       <% if job.At != "" { %>
         <tr>
-          <th><%= t("Scheduled") %></th>
+          <th><%= t(req, "Scheduled") %></th>
           <td><%= relativeTime(job.At) %></td>
         </tr>
       <% } %>
       <tr>
-        <th><%= t("Queue") %></th>
+        <th><%= t(req, "Queue") %></th>
         <td>
           <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
         </td>
       </tr>
       <tr>
-        <th><%= t("Enqueued") %></th>
+        <th><%= t(req, "Enqueued") %></th>
         <td>
           <% enq := job.EnqueuedAt; if enq != "" { %>
             <%= relativeTime(enq) %>
           <% } else { %>
-            <%= t("NotYetEnqueued") %>
+            <%= t(req, "NotYetEnqueued") %>
           <% } %>
         </td>
       </tr>
       <% if job.Custom != nil { %>
         <tr>
-          <th><%= t("Extras") %></th>
+          <th><%= t(req, "Extras") %></th>
           <td>
             <code>
               <%= job.Custom %>
@@ -74,15 +76,15 @@ func ego_job_info(w io.Writer, job *faktory.Job) {
       <% } %>
       <% if job.Failure != nil { %>
         <tr>
-          <th><%= t("RetryCount") %></th>
+          <th><%= t(req, "RetryCount") %></th>
           <td><%= job.Failure.RetryCount %></td>
         </tr>
         <tr>
-          <th><%= t("OriginallyFailed") %></th>
+          <th><%= t(req, "OriginallyFailed") %></th>
           <td><%= relativeTime(job.Failure.FailedAt) %></td>
         </tr>
         <tr>
-          <th><%= t("NextRetry") %></th>
+          <th><%= t(req, "NextRetry") %></th>
           <td><%= relativeTime(job.Failure.NextAt) %></td>
         </tr>
       <% } %>

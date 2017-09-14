@@ -184,12 +184,23 @@ func localeFromHeader(value string) string {
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// this is the entry point for every dynamic request
+		// static assets bypass all this hubbub
 		start := time.Now()
-		locale := localeFromHeader(r.Header.Get("Accept-Language"))
-		r.Header.Add("Faktory-Locale", locale)
 
-		activeTranslations = translations(locale)
-		pass(w, r)
+		// negotiate the language to be used for rendering
+		locale := localeFromHeader(r.Header.Get("Accept-Language"))
+		w.Header().Set("Content-Language", locale)
+
+		dctx := &DefaultContext{
+			Context:  r.Context(),
+			response: w,
+			request:  r,
+			locale:   locale,
+			strings:  translations(locale),
+		}
+
+		pass(w, r.WithContext(dctx))
 		util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
 	}
 }

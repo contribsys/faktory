@@ -142,7 +142,7 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 		cf:    store.queues,
 		high:  0,
 		low:   0,
-		maxsz: DefaultBackpressure,
+		maxsz: DefaultMaxSize,
 	}
 	err := q.Init()
 	if err != nil {

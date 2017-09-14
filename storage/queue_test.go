@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -214,4 +216,73 @@ func BenchmarkQueuePerformance(b *testing.B) {
 			q.Pop()
 		}
 	}
+}
+
+func TestBlockingPop(t *testing.T) {
+	t.Parallel()
+
+	defer os.RemoveAll("../tmp/blocking.db")
+	store, err := Open("rocksdb", "blocking.db")
+	assert.NoError(t, err)
+	assert.NotNil(t, store)
+	defer store.Close()
+	q, err := store.GetQueue("default")
+	assert.NoError(t, err)
+
+	data, err := q.Pop()
+	assert.Nil(t, data)
+	assert.Nil(t, err)
+
+	// verify we block for 50ms, fruitlessly waiting for a job
+	c, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	defer cancel()
+
+	a := time.Now()
+	data, err = q.BPop(c)
+	assert.Nil(t, data)
+	assert.Nil(t, err)
+	b := time.Now()
+	assert.True(t, (b.Sub(a) > 5*time.Millisecond))
+
+	var wg sync.WaitGroup
+	wg.Add(5)
+
+	go func() {
+		defer wg.Done()
+		time.Sleep(1 * time.Millisecond)
+		q.Push([]byte("somedata"))
+		time.Sleep(1 * time.Millisecond)
+		q.Push([]byte("somedata"))
+		time.Sleep(1 * time.Millisecond)
+		q.Push([]byte("somedata"))
+		time.Sleep(1200 * time.Microsecond)
+		q.Push([]byte("somedata"))
+	}()
+
+	var count int
+	var timedout int
+
+	for i := 0; i < 4; i++ {
+		go func() {
+			defer wg.Done()
+
+			c, cancel := context.WithTimeout(context.Background(), 4*time.Millisecond)
+			defer cancel()
+			data, err := q.BPop(c)
+			assert.NoError(t, err)
+			if data != nil {
+				count += 1
+			}
+			if data == nil && err == nil {
+				timedout += 1
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	assert.Equal(t, 3, count)
+	assert.Equal(t, 1, timedout)
+	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, 0, q.(*rocksQueue).waiters.Len())
 }

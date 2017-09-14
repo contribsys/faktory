@@ -1,6 +1,9 @@
 package storage
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type Store interface {
 	Close() error
@@ -21,6 +24,7 @@ type Queue interface {
 	Size() int64
 	Push([]byte) error
 	Pop() ([]byte, error)
+	BPop(context.Context) ([]byte, error)
 	Clear() (int64, error)
 
 	/*

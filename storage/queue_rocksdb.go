@@ -1,16 +1,27 @@
 package storage
 
 import (
+	"container/list"
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/mperham/faktory/util"
 	"github.com/mperham/gorocksdb"
 )
 
 var (
-	DefaultBackpressure = int64(100000)
+	/*
+	 * The default maximum size of a queue.
+	 * Further Pushes will result in an error.
+	 *
+	 * This is known as "back pressue" and is important to
+	 * prevent bugs in one component from taking down the
+	 * entire system.
+	 */
+	DefaultMaxSize = int64(100000)
 )
 
 type Backpressure struct {
@@ -24,14 +35,24 @@ func (bp Backpressure) Error() string {
 }
 
 type rocksQueue struct {
-	name  string
-	size  int64
-	low   int64
-	high  int64
-	store *rocksStore
-	cf    *gorocksdb.ColumnFamilyHandle
-	mu    sync.Mutex
-	maxsz int64
+	name    string
+	size    int64
+	low     int64
+	high    int64
+	store   *rocksStore
+	cf      *gorocksdb.ColumnFamilyHandle
+	mu      sync.Mutex
+	maxsz   int64
+	waiters *list.List
+	waitmu  sync.Mutex
+	done    bool
+}
+
+func (q *rocksQueue) Close() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.done = true
+	q.clearWaiters()
 }
 
 func (q *rocksQueue) Name() string {
@@ -195,6 +216,7 @@ func (q *rocksQueue) Init() error {
 		k.Free()
 	}
 	q.size = count
+	q.waiters = list.New()
 
 	util.Debugf("Queue init: %s %d elements %d/%d", q.name, q.size, q.low, q.high)
 	return nil
@@ -223,13 +245,25 @@ func (q *rocksQueue) Push(payload []byte) error {
 
 	//util.Warnf("Adding element %x to %s", k, q.name)
 	atomic.AddInt64(&q.size, 1)
+
+	q.notify()
 	return nil
 }
 
+// non-blocking, returns immediately if there's nothing enqueued
 func (q *rocksQueue) Pop() ([]byte, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
+	if q.size == 0 || q.done {
+		return nil, nil
+	}
+
+	return q._pop()
+}
+
+// caller must hold q.mu or else DOOM!
+func (q *rocksQueue) _pop() ([]byte, error) {
 	ro := queueReadOptions(true)
 	ro.SetIterateUpperBound(keyfor(q.name, q.low))
 	defer ro.Destroy()
@@ -254,6 +288,94 @@ func (q *rocksQueue) Pop() ([]byte, error) {
 	atomic.AddInt64(&q.low, 1)
 	atomic.AddInt64(&q.size, -1)
 	return value, nil
+}
+
+type QueueWaiter struct {
+	ctx      context.Context
+	notifier chan bool
+}
+
+/**
+ * Iterates through our current list of waiters,
+ * finds one whose deadline has not passed and signals
+ * the waiter via its channel.
+ *
+ * This is best effort: it's possible for the waiter's
+ * deadline to pass just as it is selected to wake up.
+ */
+func (q *rocksQueue) notify() {
+	q.waitmu.Lock()
+	defer q.waitmu.Unlock()
+
+	// for loop required to drain old, expired waiters
+	for e := q.waiters.Front(); e != nil; e = e.Next() {
+		qw := e.Value.(*QueueWaiter)
+		q.waiters.Remove(e)
+
+		deadline, _ := qw.ctx.Deadline()
+		if time.Now().Before(deadline) {
+			qw.notifier <- true
+			break
+		}
+	}
+}
+
+func (q *rocksQueue) clearWaiters() {
+	q.waitmu.Lock()
+	defer q.waitmu.Unlock()
+
+	for e := q.waiters.Front(); e != nil; e = e.Next() {
+		qw := e.Value.(*QueueWaiter)
+		qw.notifier <- false
+	}
+	q.waiters = list.New()
+}
+
+/*
+ * Waits for a job to come onto the queue.  The given context
+ * should timeout the blocking.
+ *
+ * Waiter calls this method, blocks on a channel it creates.
+ * Sends that channel to the dispatcher via waiter channel.
+ * Dispatcher is notified of new job on queue, pulls off a waiter
+ * and pushes notification to its channel.
+ */
+func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
+	for {
+		q.mu.Lock()
+		if q.done {
+			q.mu.Unlock()
+			return nil, nil
+		}
+		if q.size > 0 {
+			defer q.mu.Unlock()
+			return q._pop()
+		}
+		q.mu.Unlock()
+
+		waiting := make(chan bool, 1)
+		me := &QueueWaiter{
+			ctx:      ctx,
+			notifier: waiting,
+		}
+		q.waitmu.Lock()
+		e := q.waiters.PushBack(me)
+		q.waitmu.Unlock()
+
+		select {
+		case newjob := <-waiting:
+			if newjob {
+				continue
+			}
+			break
+		case <-ctx.Done():
+			q.waitmu.Lock()
+			q.waiters.Remove(e)
+			q.waitmu.Unlock()
+			return nil, nil
+		}
+	}
+	return nil, nil
 }
 
 func (q *rocksQueue) nextkey() []byte {

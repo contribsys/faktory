@@ -37,8 +37,8 @@ end
 # push a dummy job to Faktory for us to immediately process
 $pool = ConnectionPool.new { Faktory::Client.new(url: "tcp://localhost:7419", debug: true) }
 $pool.with do |faktory|
-  puts faktory.push({ jobtype: 'failer', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"] })
-  puts faktory.push({ jobtype: 'someworker', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"] })
+  puts faktory.push({ queue: :bulk, jobtype: 'failer', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"] })
+  puts faktory.push({ queue: :critical, jobtype: 'someworker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"] })
   puts faktory.push({ jobtype: 'someworker', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"], at: (Time.now.utc + 3600).iso8601 })
 end
 
@@ -77,10 +77,20 @@ def safe_spawn
   end
 end
 
+def inker
+  loop do
+    $pool.with do |faktory|
+      puts faktory.push({ queue: :critical, jobtype: 'someworker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
+    end
+    sleep(1 + rand)
+  end
+end
+
 beater = safe_spawn(&method(:heartbeat))
+inker = safe_spawn(&method(:inker))
 
 while !$done
-  job = $pool.with {|f| f.pop("default") }
+  job = $pool.with {|f| f.fetch(:critical, :default, :bulk) }
   if job
     jid = job["jid"]
     begin

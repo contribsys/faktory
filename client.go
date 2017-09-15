@@ -156,8 +156,8 @@ func (c *Client) Push(job *Job) error {
 	return ok(c.rdr)
 }
 
-func (c *Client) Pop(q string) (*Job, error) {
-	err := writeLine(c.wtr, "POP", []byte(q))
+func (c *Client) Fetch(q ...string) (*Job, error) {
+	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
 	if err != nil {
 		return nil, err
 	}

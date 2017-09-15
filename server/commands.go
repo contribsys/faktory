@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -16,7 +17,7 @@ type command func(c *Connection, s *Server, cmd string)
 var cmdSet = map[string]command{
 	"END":   end,
 	"PUSH":  push,
-	"POP":   pop,
+	"FETCH": fetch,
 	"ACK":   ack,
 	"FAIL":  fail,
 	"BEAT":  heartbeat,
@@ -83,17 +84,20 @@ func push(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
-func pop(c *Connection, s *Server, cmd string) {
+func fetch(c *Connection, s *Server, cmd string) {
 	// quiet or terminated clients should not get new jobs
 	if c.client.state != "" {
 		c.Result(nil)
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := s.Pop(func(job *faktory.Job) error {
+	job, err := s.Fetch(func(job *faktory.Job) error {
 		return s.Reserve(c.client.Wid, job)
-	}, qs...)
+	}, ctx, qs...)
 	if err != nil {
 		c.Error(cmd, err)
 		return

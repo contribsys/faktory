@@ -75,7 +75,7 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
-		conn.Write([]byte("POP default some other\n"))
+		conn.Write([]byte("FETCH default some other\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		result, err = buf.ReadString('\n')

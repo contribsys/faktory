@@ -26,17 +26,23 @@ If all nil, the connection registers itself, blocking for a job.
 package server
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/storage"
+	"github.com/mperham/faktory/util"
 )
 
-func (s *Server) Pop(fn func(*faktory.Job) error, queues ...string) (*faktory.Job, error) {
-	for _, q := range queues {
+func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues ...string) (*faktory.Job, error) {
+	var first storage.Queue
+
+	for idx, q := range queues {
 		que, err := s.store.GetQueue(q)
 		if err != nil {
 			return nil, err
 		}
+		//util.Debugf("Checking %s", que.Name())
 		data, err := que.Pop()
 		if err != nil {
 			return nil, err
@@ -53,6 +59,32 @@ func (s *Server) Pop(fn func(*faktory.Job) error, queues ...string) (*faktory.Jo
 			}
 			return &job, nil
 		}
+		if idx == 0 {
+			first = que
+		}
 	}
+
+	// scanned through our queues, no jobs were available
+	// we should block for a moment, awaiting a job to be
+	// pushed.  this allows us to pick up new jobs in µs
+	// rather than seconds.
+	util.Debugf("Blocking on %s", first.Name())
+	data, err := first.BPop(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if data != nil {
+		var job faktory.Job
+		err = json.Unmarshal(data, &job)
+		if err != nil {
+			return nil, err
+		}
+		err = fn(&job)
+		if err != nil {
+			return nil, err
+		}
+		return &job, nil
+	}
+	//util.Debugf("Done blocking on %s", first.Name())
 	return nil, nil
 }

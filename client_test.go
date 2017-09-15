@@ -57,10 +57,10 @@ func TestClientOperations(t *testing.T) {
 		assert.Contains(t, <-req, "BEAT")
 
 		resp <- "$0\r\n\r\n"
-		job, err := cl.Pop("default")
+		job, err := cl.Fetch("default")
 		assert.NoError(t, err)
 		assert.Nil(t, job)
-		assert.Contains(t, <-req, "POP")
+		assert.Contains(t, <-req, "FETCH")
 
 		// TODO Pop job JSON
 

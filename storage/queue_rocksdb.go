@@ -378,6 +378,41 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 	return nil, nil
 }
 
+func (q *rocksQueue) Delete(keys [][]byte) error {
+	wb := gorocksdb.NewWriteBatch()
+	defer wb.Destroy()
+	db := q.store.db
+	ro := gorocksdb.NewDefaultReadOptions()
+	wo := gorocksdb.NewDefaultWriteOptions()
+	defer ro.Destroy()
+	defer wo.Destroy()
+
+	var count int64
+
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	for _, key := range keys {
+		data, err := db.GetCF(ro, q.cf, key)
+		if err != nil {
+			return err
+		}
+		if data.Size() > 0 {
+			wb.DeleteCF(q.cf, key)
+			count += 1
+		}
+		data.Free()
+	}
+	util.Debugf("Deleting %d elements from queue %s", count, q.name)
+	err := db.Write(wo, wb)
+	if err == nil {
+		atomic.AddInt64(&q.size, -count)
+	}
+	return err
+}
+
+//////////////////////////////////////////////////
+
 func (q *rocksQueue) nextkey() []byte {
 	nxtseq := atomic.AddInt64(&q.high, 1)
 	return keyfor(q.name, nxtseq-1)

@@ -283,6 +283,16 @@ func TestReopening(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(4), b.Size())
 
+	var keys [2][]byte
+	b.Each(func(idx int, k, v []byte) error {
+		keys[0] = k
+		return nil
+	})
+	keys[1] = []byte("somefakekey")
+	err = b.Delete(keys[0:2])
+	assert.NoError(t, err)
+	assert.Equal(t, int64(3), b.Size())
+
 	store.Close()
 }
 

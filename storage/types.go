@@ -37,6 +37,8 @@ type Queue interface {
 	 */
 	Each(func(index int, k, v []byte) error) error
 	Page(int64, int64, func(index int, k, v []byte) error) error
+
+	Delete(keys [][]byte) error
 }
 
 var (

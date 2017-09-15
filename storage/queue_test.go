@@ -285,13 +285,33 @@ func TestReopening(t *testing.T) {
 
 	var keys [2][]byte
 	b.Each(func(idx int, k, v []byte) error {
-		keys[0] = k
+		if keys[0] == nil {
+			cpy := make([]byte, len(k))
+			copy(cpy, k)
+			keys[0] = cpy
+		}
 		return nil
 	})
 	keys[1] = []byte("somefakekey")
 	err = b.Delete(keys[0:2])
 	assert.NoError(t, err)
 	assert.Equal(t, int64(3), b.Size())
+
+	data, err := b.Pop()
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	data, err = b.Pop()
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	data, err = b.Pop()
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Equal(t, int64(0), b.Size())
+
+	data, err = b.Pop()
+	assert.NoError(t, err)
+	assert.Nil(t, data)
+	assert.Equal(t, int64(0), b.Size())
 
 	store.Close()
 }

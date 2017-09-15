@@ -145,6 +145,7 @@ func (q *rocksQueue) Clear() (int64, error) {
 	defer wo.Destroy()
 
 	wb := gorocksdb.NewWriteBatch()
+	defer wb.Destroy()
 
 	for ; it.Valid(); it.Next() {
 		k := it.Key()
@@ -268,26 +269,35 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 	ro.SetIterateUpperBound(keyfor(q.name, q.low))
 	defer ro.Destroy()
 
-	key := keyfor(q.name, q.low)
-	value, err := q.store.db.GetBytesCF(ro, q.cf, key)
-	if err != nil {
-		return nil, err
-	}
-	if value == nil {
-		return nil, nil
-	}
+	for {
+		key := keyfor(q.name, q.low)
+		value, err := q.store.db.GetBytesCF(ro, q.cf, key)
+		if err != nil {
+			return nil, err
+		}
+		if value == nil {
+			if q.low < q.high {
+				// If we delete an element from the queue without processing it,
+				// a "hole" appears in our counting.  We need to iterate past the
+				// hole to find the next valid key.
+				atomic.AddInt64(&q.low, 1)
+				continue
+			}
+			return nil, nil
+		}
 
-	wo := queueWriteOptions()
-	defer wo.Destroy()
+		wo := queueWriteOptions()
+		defer wo.Destroy()
 
-	err = q.store.db.DeleteCF(wo, q.cf, key)
-	if err != nil {
-		return nil, err
+		err = q.store.db.DeleteCF(wo, q.cf, key)
+		if err != nil {
+			return nil, err
+		}
+
+		atomic.AddInt64(&q.low, 1)
+		atomic.AddInt64(&q.size, -1)
+		return value, nil
 	}
-
-	atomic.AddInt64(&q.low, 1)
-	atomic.AddInt64(&q.size, -1)
-	return value, nil
 }
 
 type QueueWaiter struct {
@@ -403,7 +413,7 @@ func (q *rocksQueue) Delete(keys [][]byte) error {
 		}
 		data.Free()
 	}
-	util.Debugf("Deleting %d elements from queue %s", count, q.name)
+	util.Debugf(`Deleting %d elements from queue "%s"`, count, q.name)
 	err := db.Write(wo, wb)
 	if err == nil {
 		atomic.AddInt64(&q.size, -count)

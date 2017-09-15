@@ -154,6 +154,13 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 
 func (store *rocksStore) Close() error {
 	util.Info("Stopping storage")
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	for _, q := range store.queueSet {
+		q.Close()
+	}
+
 	store.dead.Close()
 	store.retries.Close()
 	store.working.Close()

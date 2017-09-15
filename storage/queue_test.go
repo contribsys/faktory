@@ -218,6 +218,74 @@ func BenchmarkQueuePerformance(b *testing.B) {
 	}
 }
 
+func TestReopening(t *testing.T) {
+	t.Parallel()
+
+	defer os.RemoveAll("../tmp/reopening.db")
+	store, err := Open("rocksdb", "reopening.db")
+	assert.NoError(t, err)
+	assert.NotNil(t, store)
+
+	c, err := store.GetQueue("critical")
+	assert.NoError(t, err)
+	d, err := store.GetQueue("default")
+	assert.NoError(t, err)
+	b, err := store.GetQueue("bulk")
+	assert.NoError(t, err)
+	e, err := store.GetQueue("emergency")
+	assert.NoError(t, err)
+	a, err := store.GetQueue("another")
+	assert.NoError(t, err)
+
+	err = c.Push([]byte("critical"))
+	assert.NoError(t, err)
+	err = d.Push([]byte("default"))
+	assert.NoError(t, err)
+	err = d.Push([]byte("default"))
+	assert.NoError(t, err)
+	err = b.Push([]byte("bulk"))
+	assert.NoError(t, err)
+	err = b.Push([]byte("bulk"))
+	assert.NoError(t, err)
+	err = b.Push([]byte("bulk"))
+	assert.NoError(t, err)
+
+	assert.Equal(t, int64(3), b.Size())
+	assert.Equal(t, int64(2), d.Size())
+	assert.Equal(t, int64(1), c.Size())
+	assert.Equal(t, int64(0), e.Size())
+	assert.Equal(t, int64(0), a.Size())
+
+	store.Close()
+
+	store, err = Open("rocksdb", "reopening.db")
+	assert.NoError(t, err)
+	assert.NotNil(t, store)
+
+	c, err = store.GetQueue("critical")
+	assert.NoError(t, err)
+	d, err = store.GetQueue("default")
+	assert.NoError(t, err)
+	b, err = store.GetQueue("bulk")
+	assert.NoError(t, err)
+	e, err = store.GetQueue("emergency")
+	assert.NoError(t, err)
+	a, err = store.GetQueue("another")
+	assert.NoError(t, err)
+
+	assert.Equal(t, int64(3), b.Size())
+	assert.Equal(t, int64(2), d.Size())
+	assert.Equal(t, int64(1), c.Size())
+	assert.Equal(t, int64(0), e.Size())
+	assert.Equal(t, int64(0), a.Size())
+
+	err = b.Push([]byte("bulk"))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(4), b.Size())
+
+	store.Close()
+}
+
 func TestBlockingPop(t *testing.T) {
 	t.Parallel()
 

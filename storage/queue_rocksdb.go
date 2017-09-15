@@ -206,10 +206,10 @@ func (q *rocksQueue) Init() error {
 		return it.Err()
 	}
 
-	if it.Valid() {
+	if it.ValidForPrefix(prefix) {
 		k := it.Key()
 		key := k.Data()
-		//util.Warnf("Queue#init: last %x", key)
+		//util.Warnf("Queue#init: %s last %x", q.name, key)
 		start := len(q.name) + 1
 		end := start + 8
 		q.high = toInt64(key[start:end]) + 1
@@ -218,7 +218,7 @@ func (q *rocksQueue) Init() error {
 	q.size = count
 	q.waiters = list.New()
 
-	util.Debugf("Queue init: %s %d elements %d/%d", q.name, q.size, q.low, q.high)
+	util.Debugf("Queue init: %s %d elements, %d/%d", q.name, q.size, q.low, q.high)
 	return nil
 }
 

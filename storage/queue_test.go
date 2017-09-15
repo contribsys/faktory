@@ -249,13 +249,13 @@ func TestBlockingPop(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		q.Push([]byte("somedata"))
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		q.Push([]byte("somedata"))
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		q.Push([]byte("somedata"))
-		time.Sleep(1200 * time.Microsecond)
+		time.Sleep(20 * time.Millisecond)
 		q.Push([]byte("somedata"))
 	}()
 
@@ -266,7 +266,7 @@ func TestBlockingPop(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			c, cancel := context.WithTimeout(context.Background(), 4*time.Millisecond)
+			c, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 			defer cancel()
 			data, err := q.BPop(c)
 			assert.NoError(t, err)

@@ -385,7 +385,6 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 			return nil, nil
 		}
 	}
-	return nil, nil
 }
 
 func (q *rocksQueue) Delete(keys [][]byte) error {

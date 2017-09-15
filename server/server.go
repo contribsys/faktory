@@ -119,8 +119,6 @@ func (s *Server) Start() error {
 			s.processConnection(conn)
 		}()
 	}
-
-	return nil
 }
 
 func (s *Server) Stop(f func()) {

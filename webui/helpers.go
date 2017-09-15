@@ -224,6 +224,4 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 	default:
 		return fmt.Errorf("invalid action: %v", action)
 	}
-
-	return nil
 }

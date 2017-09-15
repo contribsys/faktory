@@ -3,10 +3,10 @@ package faktory
 type Failure struct {
 	RetryCount   int      `json:"retry_count"`
 	FailedAt     string   `json:"failed_at"`
-	NextAt       string   `json:"next_at",omitempty`
-	ErrorMessage string   `json:"message",omitempty`
-	ErrorType    string   `json:"errtype",omitempty`
-	Backtrace    []string `json:"backtrace",omitempty`
+	NextAt       string   `json:"next_at,omitempty"`
+	ErrorMessage string   `json:"message,omitempty"`
+	ErrorType    string   `json:"errtype,omitempty"`
+	Backtrace    []string `json:"backtrace,omitempty"`
 }
 
 type Job struct {

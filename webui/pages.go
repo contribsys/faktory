@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/mperham/faktory"
-	"github.com/mperham/faktory/util"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -43,16 +42,25 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		key := r.FormValue("key_val")
-		if key != "" {
-			_, err := base64.RawURLEncoding.DecodeString(key)
+		r.ParseForm()
+		keys := r.Form["bkey"]
+		if len(keys) > 0 {
+			bkeys := make([][]byte, len(keys))
+			for idx, key := range keys {
+				bindata, err := base64.RawURLEncoding.DecodeString(key)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				bkeys[idx] = bindata
+			}
+			err := q.Delete(bkeys)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			util.Info("TODO Queue element delete not implemented yet")
 		}
-		http.Redirect(w, r, "/queue/"+queueName, http.StatusFound)
+		http.Redirect(w, r, "/queues/"+queueName, http.StatusFound)
 		return
 	}
 

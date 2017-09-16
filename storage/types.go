@@ -5,6 +5,14 @@ import (
 	"fmt"
 )
 
+var (
+	DefaultPath     = "/var/run/faktory/"
+	ScheduledBucket = "scheduled"
+	RetriesBucket   = "retries"
+	WorkingBucket   = "working"
+	DeadBucket      = "dead"
+)
+
 type Store interface {
 	Close() error
 	Retries() SortedSet
@@ -40,14 +48,6 @@ type Queue interface {
 
 	Delete(keys [][]byte) error
 }
-
-var (
-	DefaultPath     = "/var/run/faktory/"
-	ScheduledBucket = "scheduled"
-	RetriesBucket   = "retries"
-	WorkingBucket   = "working"
-	DeadBucket      = "dead"
-)
 
 type SortedSet interface {
 	Name() string

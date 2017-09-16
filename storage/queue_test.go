@@ -13,7 +13,7 @@ import (
 
 func TestBasicQueueOps(t *testing.T) {
 	t.Parallel()
-	defer os.RemoveAll("../tmp/queues.db")
+	defer os.RemoveAll("/tmp/queues.db")
 
 	store, err := Open("rocksdb", "queues.db")
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestBasicQueueOps(t *testing.T) {
 }
 
 func TestDecentQueueUsage(t *testing.T) {
-	defer os.RemoveAll("../tmp/qbench.db")
+	defer os.RemoveAll("/tmp/qbench.db")
 	store, err := Open("rocksdb", "qbench.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
@@ -106,7 +106,7 @@ func TestDecentQueueUsage(t *testing.T) {
 
 func TestThreadedQueueUsage(t *testing.T) {
 	t.Parallel()
-	defer os.RemoveAll("../tmp/qthreaded.db")
+	defer os.RemoveAll("/tmp/qthreaded.db")
 	store, err := Open("rocksdb", "qthreaded.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
@@ -198,7 +198,7 @@ func TestClearAndPush(t *testing.T) {
 }
 
 func BenchmarkQueuePerformance(b *testing.B) {
-	defer os.RemoveAll("../tmp/qblah.db")
+	defer os.RemoveAll("/tmp/qblah.db")
 	store, err := Open("rocksdb", "qblah.db")
 	assert.NoError(b, err)
 	assert.NotNil(b, store)
@@ -221,7 +221,7 @@ func BenchmarkQueuePerformance(b *testing.B) {
 func TestReopening(t *testing.T) {
 	t.Parallel()
 
-	defer os.RemoveAll("../tmp/reopening.db")
+	defer os.RemoveAll("/tmp/reopening.db")
 	store, err := Open("rocksdb", "reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
@@ -319,7 +319,7 @@ func TestReopening(t *testing.T) {
 func TestBlockingPop(t *testing.T) {
 	t.Parallel()
 
-	defer os.RemoveAll("../tmp/blocking.db")
+	defer os.RemoveAll("/tmp/blocking.db")
 	store, err := Open("rocksdb", "blocking.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)

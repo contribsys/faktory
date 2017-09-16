@@ -16,12 +16,12 @@ import (
 )
 
 func init() {
-	storage.DefaultPath = "../tmp"
-	os.Mkdir("../tmp", os.FileMode(os.ModeDir|0755))
+	storage.DefaultPath = "/tmp"
+	os.Mkdir("/tmp", os.FileMode(os.ModeDir|0755))
 }
 
 func runServer(runner func()) {
-	os.RemoveAll("../tmp/localhost_7420.db")
+	os.RemoveAll("/tmp/localhost_7420.db")
 	opts := &ServerOptions{
 		Binding: "localhost:7420",
 	}
@@ -29,7 +29,7 @@ func runServer(runner func()) {
 	go func() {
 		err := s.Start()
 		if err != nil {
-			fmt.Println(err)
+			panic(err)
 		}
 	}()
 	// rocks takes a few ms to initialize

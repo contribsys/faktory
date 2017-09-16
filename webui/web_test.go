@@ -49,7 +49,7 @@ func TestComputeLocale(t *testing.T) {
 }
 
 func init() {
-	storage.DefaultPath = "../tmp"
+	storage.DefaultPath = "/tmp"
 	bootRuntime()
 }
 

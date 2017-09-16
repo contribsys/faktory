@@ -12,7 +12,7 @@ import (
 func TestEnqueueAll(t *testing.T) {
 	t.Parallel()
 
-	defer os.RemoveAll("../tmp/xa.db")
+	defer os.RemoveAll("/tmp/xa.db")
 	db, err := Open("rocksdb", "xa.db")
 	assert.NoError(t, err)
 	defer db.Close()

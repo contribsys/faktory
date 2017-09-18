@@ -116,8 +116,20 @@ func fetch(c *Connection, s *Server, cmd string) {
 }
 
 func ack(c *Connection, s *Server, cmd string) {
-	jid := cmd[4:]
-	_, err := s.Acknowledge(jid)
+	data := cmd[4:]
+
+	var hash map[string]string
+	err := json.Unmarshal([]byte(data), &hash)
+	if err != nil {
+		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		return
+	}
+	jid, ok := hash["jid"]
+	if !ok {
+		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		return
+	}
+	_, err = s.Acknowledge(jid)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -132,7 +144,6 @@ func info(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
-	fmt.Printf("%+v\n", s)
 	data := map[string]interface{}{
 		"failures":  s.Failures,
 		"processed": s.Processed,

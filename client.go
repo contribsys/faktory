@@ -136,7 +136,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Ack(jid string) error {
-	err := writeLine(c.wtr, "ACK", []byte(jid))
+	err := writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
 	if err != nil {
 		return err
 	}

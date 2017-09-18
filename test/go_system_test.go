@@ -22,13 +22,12 @@ import (
 
 func TestSystem(t *testing.T) {
 	opts := cli.ParseArguments()
-	util.InitLogger("debug")
+	util.InitLogger("info")
 
-	storage.DefaultPath = "../tmp"
-	defer os.RemoveAll("../tmp/system.db")
+	storage.DefaultPath = "/tmp"
+	os.RemoveAll("/tmp/system.db")
 	s := server.NewServer(&server.ServerOptions{Binding: opts.Binding, StoragePath: "system.db"})
 
-	util.LogDebug = true
 	util.LogInfo = true
 
 	go stacks()

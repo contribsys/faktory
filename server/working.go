@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	DefaultTimeout = 600
+	DefaultTimeout = 1800
 )
 
 func (s *Server) Acknowledge(jid string) (*faktory.Job, error) {
@@ -99,6 +99,15 @@ func (s *Server) Reserve(wid string, job *faktory.Job) error {
 	timeout := job.ReserveFor
 	if timeout == 0 {
 		timeout = DefaultTimeout
+	}
+	if timeout < 600 {
+		timeout = DefaultTimeout
+		util.Warnf("Timeout too short %d, 600 seconds minimum", timeout)
+	}
+
+	if timeout > 86400 {
+		timeout = DefaultTimeout
+		util.Warnf("Timeout too long %d, one day maximum", timeout)
 	}
 
 	exp := now.Add(time.Duration(timeout) * time.Second)

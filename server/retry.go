@@ -35,11 +35,20 @@ func fail(c *Connection, s *Server, cmd string) {
 		}
 		if failure.ErrorType != "" {
 			errtype = failure.ErrorType
+			if len(errtype) > 100 {
+				errtype = errtype[0:100]
+			}
 		}
 		if failure.ErrorMessage != "" {
 			msg = failure.ErrorMessage
+			if len(msg) > 1000 {
+				msg = msg[0:1000]
+			}
 		}
 		backtrace = failure.Backtrace
+		if len(backtrace) > 30 {
+			backtrace = backtrace[0:30]
+		}
 	}
 
 	err := s.Fail(jid, msg, errtype, backtrace)

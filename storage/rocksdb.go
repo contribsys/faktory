@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"sync"
@@ -19,8 +20,10 @@ type rocksStore struct {
 	clients   *rocksSortedSet
 	defalt    *gorocksdb.ColumnFamilyHandle
 	queues    *gorocksdb.ColumnFamilyHandle
+	stats     *gorocksdb.ColumnFamilyHandle
 	queueSet  map[string]*rocksQueue
 	mu        sync.Mutex
+	history   *processingHistory
 }
 
 func OpenRocks(path string) (Store, error) {
@@ -29,12 +32,20 @@ func OpenRocks(path string) (Store, error) {
 	}
 	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
 	util.Infof("Initializing storage at %s", fullpath)
+
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
+	opts.IncreaseParallelism(2)
+	// 16MB buffer minimizes the number of jobs we'll write to disk.
+	// Ideally jobs are processed in-memory, before they need to be
+	// flushed to disk.
+	opts.SetWriteBufferSize(16 * 1024 * 1024)
+	opts.SetMergeOperator(&Int64CounterMerge{})
+
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
-		[]string{ScheduledBucket, RetriesBucket, WorkingBucket, DeadBucket, "clients", "default", "queues"},
-		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts})
+		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},
+		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts, opts})
 	if err != nil {
 		return nil, err
 	}
@@ -45,15 +56,17 @@ func OpenRocks(path string) (Store, error) {
 	rs := &rocksStore{
 		Name:      path,
 		db:        db,
-		scheduled: (&rocksSortedSet{name: ScheduledBucket, db: db, cf: handles[0], ro: ro, wo: wo}).init(),
-		retries:   (&rocksSortedSet{name: RetriesBucket, db: db, cf: handles[1], ro: ro, wo: wo}).init(),
-		working:   (&rocksSortedSet{name: WorkingBucket, db: db, cf: handles[2], ro: ro, wo: wo}).init(),
-		dead:      (&rocksSortedSet{name: DeadBucket, db: db, cf: handles[3], ro: ro, wo: wo}).init(),
+		scheduled: (&rocksSortedSet{name: "scheduled", db: db, cf: handles[0], ro: ro, wo: wo}).init(),
+		retries:   (&rocksSortedSet{name: "retries", db: db, cf: handles[1], ro: ro, wo: wo}).init(),
+		working:   (&rocksSortedSet{name: "working", db: db, cf: handles[2], ro: ro, wo: wo}).init(),
+		dead:      (&rocksSortedSet{name: "dead", db: db, cf: handles[3], ro: ro, wo: wo}).init(),
 		clients:   (&rocksSortedSet{name: "clients", db: db, cf: handles[4], ro: ro, wo: wo}).init(),
 		defalt:    handles[5],
 		queues:    handles[6],
+		stats:     handles[7],
 		queueSet:  make(map[string]*rocksQueue),
 		mu:        sync.Mutex{},
+		history:   &processingHistory{},
 	}
 	err = rs.init()
 	if err != nil {
@@ -120,6 +133,24 @@ func (store *rocksStore) init() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	ro = gorocksdb.NewDefaultReadOptions()
+	defer ro.Destroy()
+	value, err := store.db.GetBytesCF(ro, store.stats, []byte("Processed"))
+	if err != nil {
+		return err
+	}
+	if value != nil {
+		store.history.TotalProcessed, _ = binary.Varint(value)
+	}
+
+	value, err = store.db.GetBytesCF(ro, store.stats, []byte("Failures"))
+	if err != nil {
+		return err
+	}
+	if value != nil {
+		store.history.TotalFailures, _ = binary.Varint(value)
 	}
 	return nil
 }

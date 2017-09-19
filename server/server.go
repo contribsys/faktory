@@ -10,6 +10,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mperham/faktory"
@@ -27,10 +28,18 @@ type ServerOptions struct {
 	Password    string
 }
 
+type RuntimeStats struct {
+	Processed   int64
+	Failures    int64
+	Connections int64
+	Commands    int64
+	StartedAt   time.Time
+}
+
 type Server struct {
-	Options    *ServerOptions
-	Processed  int64
-	Failures   int64
+	Options *ServerOptions
+	Stats   *RuntimeStats
+
 	pwd        string
 	listener   net.Listener
 	store      storage.Store
@@ -57,6 +66,7 @@ func NewServer(opts *ServerOptions) *Server {
 	}
 	return &Server{
 		Options:    opts,
+		Stats:      &RuntimeStats{StartedAt: time.Now()},
 		pwd:        "123456",
 		pending:    &sync.WaitGroup{},
 		mu:         sync.Mutex{},
@@ -217,7 +227,11 @@ func (s *Server) processConnection(conn net.Conn) {
 }
 
 func processLines(conn *Connection, server *Server) {
+	atomic.AddInt64(&server.Stats.Connections, 1)
+	defer atomic.AddInt64(&server.Stats.Connections, -1)
+
 	for {
+		atomic.AddInt64(&server.Stats.Commands, 1)
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			if e != io.EOF {

@@ -108,7 +108,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 			c.Error(cmd, err)
 			return
 		}
-		atomic.AddInt64(&s.Processed, 1)
+		atomic.AddInt64(&s.Stats.Processed, 1)
 		c.Result(res)
 	} else {
 		c.Result(nil)
@@ -145,12 +145,16 @@ func info(c *Connection, s *Server, cmd string) {
 		return
 	}
 	data := map[string]interface{}{
-		"failures":  s.Failures,
-		"processed": s.Processed,
-		"working":   s.scheduler.Working.Stats(),
-		"retries":   s.scheduler.Retries.Stats(),
-		"scheduled": s.scheduler.Scheduled.Stats(),
-		"default":   defalt.Size(),
+		"failures":    s.Stats.Failures,
+		"processed":   s.Stats.Processed,
+		"working":     s.scheduler.Working.Stats(),
+		"retries":     s.scheduler.Retries.Stats(),
+		"scheduled":   s.scheduler.Scheduled.Stats(),
+		"default":     defalt.Size(),
+		"uptime":      time.Now().Sub(s.Stats.StartedAt).String(),
+		"version":     faktory.Version,
+		"connections": 0,
+		"memory":      0,
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {

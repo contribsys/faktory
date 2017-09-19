@@ -225,3 +225,30 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 		return fmt.Errorf("invalid action: %v", action)
 	}
 }
+
+func currentMemoryUsage() string {
+	return "123 MB"
+}
+
+func daysMatches(req *http.Request, value string, defalt bool) string {
+	days := req.URL.Query()["days"]
+	daysValue := ""
+	if len(days) > 0 {
+		daysValue = days[0]
+	}
+	if daysValue == value {
+		return "active"
+	}
+	if daysValue == "" && defalt {
+		return "active"
+	}
+	return ""
+}
+
+func processedHistory(req *http.Request) string {
+	return "{}"
+}
+
+func failedHistory(req *http.Request) string {
+	return "{}"
+}

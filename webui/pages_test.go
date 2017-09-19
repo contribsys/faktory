@@ -21,7 +21,7 @@ func TestIndex(t *testing.T) {
 	w := httptest.NewRecorder()
 	indexHandler(w, req)
 	assert.Equal(t, 200, w.Code)
-	assert.True(t, strings.Contains(w.Body.String(), "Hello World"), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "uptime_duration"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "idle"), w.Body.String())
 }
 

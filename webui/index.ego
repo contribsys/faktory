@@ -2,9 +2,76 @@
 package webui
 
 import "net/http"
+import "github.com/mperham/faktory"
+import "time"
 
 func ego_index(w io.Writer, req *http.Request) {
   ego_layout(w, req, func() { %>
-    <p>Hello World!</p>
+<script type="text/javascript" src="/javascripts/dashboard.js"></script>
+<div class= "dashboard clearfix">
+  <h3 >
+    <%= t(req, "Dashboard") %>
+    <span class="beacon">
+      <span class="ring"></span>
+      <span class="dot"></span>
+    </span>
+  </h3>
+  <div class="interval-slider ltr">
+    <span class="interval-slider-label"><%= t(req, "PollingInterval") %>:</span>
+    <span class="current-interval">5 sec</span>
+    <br/>
+    <input type="range" min="2000" max="20000" step="1000" value="5000"/>
+  </div>
+</div>
+
+<div class="row chart">
+  <div id="realtime" data-processed-label="<%= t(req, "Processed") %>" data-failed-label="<%= t(req, "Failed") %>"></div>
+  <div id="realtime-legend"></div>
+</div>
+
+<div class="row chart">
+  <h5>
+    <span class="history-heading"><%= t(req, "History") %></span>
+    <a href="/?days=7" class="history-graph <%= daysMatches(req, "7", false) %>"><%= t(req, "OneWeek") %></a>
+    <a href="/" class="history-graph <%= daysMatches(req, "30", true) %>"><%= t(req, "OneMonth") %></a>
+    <a href="/?days=90" class="history-graph <%= daysMatches(req, "90", false) %>"><%= t(req, "ThreeMonths") %></a>
+    <a href="/?days=180" class="history-graph <%= daysMatches(req, "180", false) %>"><%= t(req, "SixMonths") %></a>
+  </h5>
+
+  <div id="history" data-processed-label="<%= t(req, "Processed") %>" data-failed-label="<%= t(req, "Failed") %>" data-processed="<%= processedHistory(req) %>" data-failed="<%= failedHistory(req) %>" data-update-url="/stats"></div>
+  <div id="history-legend"></div>
+</div>
+
+<br/>
+<h5>Faktory</h5>
+<div class="faktory-wrapper">
+  <div class="stats-container">
+    <div class="stat">
+      <h3 class="faktory_version"><%= faktory.Version %></h3>
+      <p><%= t(req, "Version") %></p>
+    </div>
+
+    <div class="stat">
+      <h3 class="uptime_duration"><%= time.Now().Sub(defaultServer.Stats.StartedAt).Round(1 * time.Second) %></h3>
+      <p><%= t(req, "Uptime") %></p>
+    </div>
+
+    <div class="stat">
+      <h3 class="connections"><%= defaultServer.Stats.Connections %></h3>
+      <p><%= t(req, "Connections") %></p>
+    </div>
+
+    <div class="stat">
+      <h3 class="used_memory_human"><%= currentMemoryUsage() %></h3>
+      <p><%= t(req, "MemoryUsage") %></p>
+    </div>
+
+    <div class="stat">
+      <h3 class="commands"><%= defaultServer.Stats.Commands %></h3>
+      <p><%= t(req, "CommandsExecuted") %></p>
+    </div>
+  </div>
+</div>
   <% }) %>
+<% // vim: set ft=html %>
 <% } %>

@@ -56,8 +56,8 @@ func TestSystem(t *testing.T) {
 		fmt.Println(err)
 		return
 	}
-	assert.Equal(t, int64(3*each), s.Processed)
-	assert.Equal(t, int64(3*(each/100)), s.Failures)
+	assert.Equal(t, int64(3*each), s.Stats.Processed)
+	assert.Equal(t, int64(3*(each/100)), s.Stats.Failures)
 }
 
 func pushAndPop(t *testing.T, count int) {

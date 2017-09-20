@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mperham/gorocksdb"
 	"github.com/stretchr/testify/assert"
@@ -56,4 +57,16 @@ func TestStatsMerge(t *testing.T) {
 	store = db.(*rocksStore)
 	assert.Equal(t, int64(100002), store.history.TotalProcessed)
 	assert.Equal(t, int64(1001), store.history.TotalFailures)
+
+	hash := map[string][2]int64{}
+	store.History(3, func(day string, p, f int64) {
+		hash[day] = [2]int64{p, f}
+	})
+	assert.Equal(t, 3, len(hash))
+
+	daystr := time.Now().Format("2006-01-02")
+	counts := hash[daystr]
+	assert.NotNil(t, counts)
+	assert.Equal(t, int64(100002), counts[0])
+	assert.Equal(t, int64(1001), counts[1])
 }

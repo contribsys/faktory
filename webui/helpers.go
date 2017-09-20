@@ -230,6 +230,22 @@ func currentMemoryUsage() string {
 	return "123 MB"
 }
 
+func days(req *http.Request) int {
+	days := req.URL.Query()["days"]
+	if len(days) == 0 {
+		return 30
+	}
+	daystr := days[0]
+	if daystr == "" {
+		return 30
+	}
+	cnt, err := strconv.Atoi(daystr)
+	if err != nil {
+		return 30
+	}
+	return cnt
+}
+
 func daysMatches(req *http.Request, value string, defalt bool) string {
 	days := req.URL.Query()["days"]
 	daysValue := ""
@@ -246,9 +262,33 @@ func daysMatches(req *http.Request, value string, defalt bool) string {
 }
 
 func processedHistory(req *http.Request) string {
-	return "{}"
+	cnt := days(req)
+	procd := map[string]int64{}
+	//faild := map[string]int64{}
+
+	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+		procd[daystr] = p
+		//faild[daystr] = f
+	})
+	str, err := json.Marshal(procd)
+	if err != nil {
+		return err.Error()
+	}
+	return string(str)
 }
 
 func failedHistory(req *http.Request) string {
-	return "{}"
+	cnt := days(req)
+	//procd := map[string]int64{}
+	faild := map[string]int64{}
+
+	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+		//procd[daystr] = p
+		faild[daystr] = f
+	})
+	str, err := json.Marshal(faild)
+	if err != nil {
+		return err.Error()
+	}
+	return string(str)
 }

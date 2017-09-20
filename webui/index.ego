@@ -7,7 +7,7 @@ import "time"
 
 func ego_index(w io.Writer, req *http.Request) {
   ego_layout(w, req, func() { %>
-<script type="text/javascript" src="/javascripts/dashboard.js"></script>
+<script type="text/javascript" src="/static/dashboard.js"></script>
 <div class= "dashboard clearfix">
   <h3 >
     <%= t(req, "Dashboard") %>

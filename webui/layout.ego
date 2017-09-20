@@ -21,7 +21,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <link href="/static/application-rtl.css" media="screen" rel="stylesheet" type="text/css" />
     <% } %>
 
-    <script type="text/javascript" src="/javascripts/application.js"></script>
+    <script type="text/javascript" src="/static/application.js"></script>
     <meta name="google" content="notranslate" />
   </head>
   <body class="admin">

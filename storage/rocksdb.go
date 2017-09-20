@@ -32,6 +32,7 @@ func OpenRocks(path string) (Store, error) {
 	}
 	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
 	util.Infof("Initializing storage at %s", fullpath)
+	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
 
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
@@ -41,7 +42,7 @@ func OpenRocks(path string) (Store, error) {
 	// Ideally jobs are processed in-memory, before they need to be
 	// flushed to disk.
 	opts.SetWriteBufferSize(16 * 1024 * 1024)
-	opts.SetMergeOperator(&Int64CounterMerge{})
+	opts.SetMergeOperator(&int64CounterMerge{})
 
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
 		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},

@@ -25,6 +25,8 @@ type Store interface {
 	Stats() map[string]string
 	EnqueueAll(SortedSet) error
 	EnqueueFrom(SortedSet, []byte) error
+
+	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
 }
 
 type Queue interface {

@@ -64,6 +64,7 @@ func init() {
 	http.HandleFunc("/morgue", Log(morgueHandler))
 	http.HandleFunc("/morgue/", Log(deadHandler))
 	http.HandleFunc("/busy", Log(busyHandler))
+	http.HandleFunc("/stats", Log(statsHandler))
 	initLocales()
 
 	server.OnStart(FireItUp)

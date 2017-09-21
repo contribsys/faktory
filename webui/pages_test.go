@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -16,13 +17,38 @@ import (
 
 func TestIndex(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://localhost:7420/", nil)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
 	indexHandler(w, req)
 	assert.Equal(t, 200, w.Code)
-	assert.True(t, strings.Contains(w.Body.String(), "uptime_duration"), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "uptime_in_days"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "idle"), w.Body.String())
+}
+
+func TestStats(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://localhost:7420/stats", nil)
+	assert.NoError(t, err)
+
+	defaultServer.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
+	defaultServer.Stats.Processed = 123
+
+	w := httptest.NewRecorder()
+	statsHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+	var content map[string]interface{}
+	err = json.Unmarshal([]byte(w.Body.String()), &content)
+	assert.NoError(t, err)
+
+	s := content["server"].(map[string]interface{})
+	uid := s["uptime_in_days"].(string)
+	assert.Equal(t, "14", uid)
+
+	s = content["faktory"].(map[string]interface{})
+	proc := s["processed"].(float64)
+	assert.Equal(t, float64(123), proc)
 }
 
 func TestQueues(t *testing.T) {

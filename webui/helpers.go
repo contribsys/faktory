@@ -226,8 +226,16 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 	}
 }
 
+func uptimeInDays() string {
+	return fmt.Sprintf("%.0f", time.Now().Sub(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+}
+
 func locale(req *http.Request) string {
-	return req.Context().(Translater).Locale()
+	t, ok := req.Context().(Translater)
+	if ok {
+		return t.Locale()
+	}
+	return "en"
 }
 
 func currentMemoryUsage() string {

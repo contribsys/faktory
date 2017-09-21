@@ -1,9 +1,10 @@
 <%
 package webui
 
-import "net/http"
-import "github.com/mperham/faktory"
-import "time"
+import (
+  "net/http"
+  "github.com/mperham/faktory"
+)
 
 func ego_index(w io.Writer, req *http.Request) {
   ego_layout(w, req, func() { %>
@@ -52,7 +53,7 @@ func ego_index(w io.Writer, req *http.Request) {
     </div>
 
     <div class="stat">
-      <h3 class="uptime_duration"><%= time.Now().Sub(defaultServer.Stats.StartedAt).Round(1 * time.Second) %></h3>
+      <h3 class="uptime_in_days"><%= uptimeInDays() %></h3>
       <p><%= t(req, "Uptime") %></p>
     </div>
 

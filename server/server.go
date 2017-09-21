@@ -36,6 +36,23 @@ type RuntimeStats struct {
 	StartedAt   time.Time
 }
 
+func (s *Server) CurrentStats() map[string]int64 {
+	totalQueued := int64(0)
+	store := s.Store()
+	store.EachQueue(func(q storage.Queue) {
+		totalQueued += q.Size()
+	})
+	return map[string]int64{
+		"processed": s.Stats.Processed,
+		"failed":    s.Stats.Failures,
+		"busy":      store.Working().Size(),
+		"scheduled": store.Scheduled().Size(),
+		"retries":   store.Retries().Size(),
+		"dead":      store.Dead().Size(),
+		"enqueued":  totalQueued,
+	}
+}
+
 type Server struct {
 	Options *ServerOptions
 	Stats   *RuntimeStats

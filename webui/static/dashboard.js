@@ -92,11 +92,11 @@ var realtimeGraph = function(updatePath) {
     $.getJSON($("#history").data("update-url"), function(data) {
 
       if (i === 0) {
-        var processed = data.sidekiq.processed;
-        var failed = data.sidekiq.failed;
+        var processed = data.faktory.processed;
+        var failed = data.faktory.failed;
       } else {
-        var processed = data.sidekiq.processed - Sidekiq.processed;
-        var failed = data.sidekiq.failed - Sidekiq.failed;
+        var processed = data.faktory.processed - Faktory.processed;
+        var failed = data.faktory.failed - Faktory.failed;
       }
 
       dataPoint = {};
@@ -106,11 +106,11 @@ var realtimeGraph = function(updatePath) {
       graph.series.addData(dataPoint);
       graph.render();
 
-      Sidekiq.processed = data.sidekiq.processed;
-      Sidekiq.failed = data.sidekiq.failed;
+      Faktory.processed = data.faktory.processed;
+      Faktory.failed = data.faktory.failed;
 
-      updateStatsSummary(data.sidekiq);
-      updateRedisStats(data.redis);
+      updateStatsSummary(data.faktory);
+      updateServerStats(data.server);
       updateFooterUTCTime(data.server_utc_time)
 
       pulseBeacon();
@@ -219,16 +219,16 @@ var updateStatsSummary = function(data) {
 
 }
 
-var updateRedisStats = function(data) {
-  $('.stat h3.redis_version').html(data.redis_version)
+var updateServerStats = function(data) {
+  $('.stat h3.faktory_version').html(data.faktory_version)
   $('.stat h3.uptime_in_days').html(data.uptime_in_days)
-  $('.stat h3.connected_clients').html(data.connected_clients)
-  $('.stat h3.used_memory_human').html(data.used_memory_human)
-  $('.stat h3.used_memory_peak_human').html(data.used_memory_peak_human)
+  $('.stat h3.connections').html(data.connections)
+  $('.stat h3.used_memory_human').html(data.used_memory_mb)
+  $('.stat h3.commands').html(data.commands)
 }
 
 var updateFooterUTCTime = function(time) {
-  $('.navbar-fixed-bottom .navbar-inner .server-utc-time').html(time)
+  $('.server-utc-time').html(time)
 }
 
 var pulseBeacon = function(){

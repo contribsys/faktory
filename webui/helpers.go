@@ -226,6 +226,10 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 	}
 }
 
+func locale(req *http.Request) string {
+	return req.Context().(Translater).Locale()
+}
+
 func currentMemoryUsage() string {
 	return "123 MB"
 }

@@ -24,7 +24,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <script type="text/javascript" src="/static/application.js"></script>
     <meta name="google" content="notranslate" />
   </head>
-  <body class="admin">
+  <body class="admin" data-locale="<%= locale(req) %>">
     <% ego_nav(w, req) %>
     <div id="page">
       <div class="container">

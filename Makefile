@@ -8,7 +8,7 @@ BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 # contains various secret or machine-specific variables.
 # DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
 # RPM_PRODUCTION: hostname of a redhat-based systemd machine (e.g. CentOS 7)
--include .local.sh
+include $(HOME)/.local.sh
 
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
@@ -16,14 +16,12 @@ BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 all: test
 
 prepare:
-	#wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
-	#sudo tar -C /usr/local -xzf go1.5.1.linux-amd64.tar.gz
 	go get github.com/benbjohnson/ego/cmd/ego
 	go get github.com/stretchr/testify/...
 	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/sirupsen/logrus
 	#linters
-	go get github.com/alecthomas/gometalinter
+	#go get github.com/alecthomas/gometalinter
 	#you must have .local.sh with ROCKSDB_HOME set
 	#export ROCKSDB_HOME=/usr/local/Cellar/rocksdb/5.5.1
 	# brew install rocksdb zstd
@@ -31,12 +29,8 @@ prepare:
 	#export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
 	go get github.com/mperham/gorocksdb
 	gometalinter --install
-	gem install -N fpm
+	#gem install -N fpm
 	@echo Now you should be ready to run "make"
-	# To cross-compile from OSX to Linux, you need to run this:
-	#   cd \$GOROOT/src && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 ./make.bash --no-clean
-	# or ensure your Homebrew'd Go can cross compile:
-	#   brew install go --with-cc-common
 
 test: clean generate
 	go test -parallel 4 ./...

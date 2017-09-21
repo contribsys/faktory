@@ -77,6 +77,7 @@ Vagrant.configure("2") do |config|
 
     cd /vagrant
     make prepare
-    cd ~/src/github.com/mperham && ln -s /vagrant faktory && cd faktory && make
+    cd ~/src/github.com/mperham && ln -s /vagrant faktory && cd faktory
+    make
   SHELL
 end

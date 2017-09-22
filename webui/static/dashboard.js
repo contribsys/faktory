@@ -205,7 +205,9 @@ var createSeries = function(obj) {
     var point = { x: Date.parse(date)/1000, y: value };
     series.unshift(point);
   }
-  return series;
+  return series.sort(function(a, b) {
+    return (a.x - b.x)
+  });
 };
 
 var updateStatsSummary = function(data) {

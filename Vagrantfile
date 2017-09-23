@@ -65,19 +65,6 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    apt install -y --no-install-recommends make g++ ruby zlib1g-dev libbz2-dev libsnappy-dev
-    git clone https://github.com/facebook/rocksdb
-    cd rocksdb
-    git checkout v5.7.3
-    make static_lib
-
-    cd ~
-    curl https://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz | tar xfz -
-    echo "PATH=$HOME/go/bin:\$PATH" >> ~/.profile
-
-    cd /vagrant
-    make prepare
-    cd ~/src/github.com/mperham && ln -s /vagrant faktory && cd faktory
-    make
+    #apt install -y --no-install-recommends make g++ ruby zlib1g-dev libbz2-dev libsnappy-dev
   SHELL
 end

@@ -9,6 +9,9 @@ if [ ! -d rocksdb ]; then
   cd rocksdb
   git checkout v5.7.3
   make static_lib
+  # default binary is 340MB!
+  # stripped is 18MB
+  strip -g librocksdb.a
 fi
 
 # download and install go 1.9

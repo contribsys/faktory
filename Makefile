@@ -56,12 +56,12 @@ lint:
 	gometalinter ./...
 
 clean:
-	rm -f webui/*.ego.go
-	rm -rf tmp
-	rm -f main faktory templates.go
-	rm -rf packaging/output
-	mkdir -p packaging/output/upstart
-	mkdir -p packaging/output/systemd
+	@rm -f webui/*.ego.go
+	@rm -rf tmp
+	@rm -f main faktory templates.go
+	@rm -rf packaging/output
+	@mkdir -p packaging/output/upstart
+	@mkdir -p packaging/output/systemd
 
 run: clean generate
 	go run cmd/main.go -l debug -s i.sock -d .

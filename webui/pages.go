@@ -322,3 +322,7 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ego_busy(w, r)
 }
+
+func debugHandler(w http.ResponseWriter, r *http.Request) {
+	ego_debug(w, r)
+}

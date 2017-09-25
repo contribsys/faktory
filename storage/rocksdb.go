@@ -80,6 +80,7 @@ func OpenRocks(path string) (Store, error) {
 func (store *rocksStore) Stats() map[string]string {
 	return map[string]string{
 		"stats": store.db.GetProperty("rocksdb.stats"),
+		"name":  store.db.Name(),
 	}
 }
 

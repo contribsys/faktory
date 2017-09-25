@@ -20,6 +20,9 @@ func ego_footer(w io.Writer) {
           <li>
             <p class="navbar-text server-utc-time"><%= serverUtcTime() %></p>
           </li>
+          <li>
+            <p class="navbar-text"><a style="color: #666" href="/debug">debug</a></p>
+          </li>
         </ul>
     </div>
   </div>

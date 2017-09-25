@@ -1,0 +1,66 @@
+<%
+package webui
+
+import (
+  "net/http"
+  "runtime"
+
+  "github.com/mperham/faktory"
+  "github.com/mperham/gorocksdb"
+)
+
+func ego_debug(w io.Writer, req *http.Request) {
+  stats := defaultServer.Store().Stats()
+  var m runtime.MemStats
+  runtime.ReadMemStats(&m)
+%>
+
+<% ego_layout(w, req, func() { %>
+
+<h3><%= t(req, "Debugging") %></h3>
+<div class="table_container">
+  <table class="error table table-bordered table-striped">
+    <tbody>
+      <tr>
+        <th><%= t(req, "Version") %></th>
+        <td>Faktory <%= faktory.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
+      </tr>
+      <tr>
+        <th><%= t(req, "Data Location") %></th>
+        <td><%= stats["name"] %></td>
+      </tr>
+      <tr>
+        <th><%= t(req, "Runtime") %></th>
+        <td>Goroutines: <%= runtime.NumGoroutine() %>, CPUs: <%= runtime.NumCPU() %></td>
+      </tr>
+      <tr>
+        <th><%= t(req, "Memory") %></th>
+        <td>
+          Alloc (KB): <%= m.Alloc / 1024 %><br/>
+          Live Objects: <%= m.Mallocs - m.Frees %>
+        </td>
+      </tr>
+      <tr>
+        <th><%= t(req, "GC") %></th>
+        <td>
+          PauseTotal (µs): <%= m.PauseTotalNs / 1000 %><br/>
+          NumGC: <%= m.NumGC %>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3><%= t(req, "Disk Usage") %></h3>
+<pre>
+<code>&gt; df -h</code>
+<%= df_h() %>
+</pre>
+
+<h3><%= t(req, "RocksDB Statistics") %></h3>
+<div class="table_container">
+<pre>
+<%= stats["stats"] %>
+</pre>
+<% }) %>
+<% } %>

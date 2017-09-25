@@ -20,7 +20,6 @@ import (
 type CmdOptions struct {
 	Binding         string
 	Environment     string
-	TestConfig      bool
 	ConfigDirectory string
 	LogLevel        string
 	SocketPath      string
@@ -34,7 +33,7 @@ var (
 )
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", false, "/etc/faktory", "info", "/var/run/faktory.sock", "/var/run/faktory"}
+	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/run/faktory.sock", "/var/run/faktory"}
 
 	log.SetFlags(0)
 	log.Println(faktory.Name, faktory.Version)
@@ -45,7 +44,6 @@ func ParseArguments() CmdOptions {
 	}
 
 	flag.Usage = help
-	flag.BoolVar(&defaults.TestConfig, "tc", false, "Test configuration and exit")
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn*, info, debug)")
 	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development*, staging, production, etc)")
@@ -87,7 +85,6 @@ func help() {
 	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
 	log.Println("-d [dir]\tStorage directory, default: /var/run/faktory")
-	log.Println("-tc\t\tTest configuration and exit")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")
 }

@@ -4,6 +4,7 @@ package webui
 import (
   "net/http"
   "runtime"
+  "time"
 
   "github.com/mperham/faktory"
   "github.com/mperham/faktory/storage"
@@ -68,8 +69,8 @@ func ego_debug(w io.Writer, req *http.Request) {
       <tr>
         <td><%= bi.Id %></td>
         <td><%= bi.FileCount %></td>
-        <td><%= bi.Size %></td>
-        <td><%= bi.Timestamp %></td>
+        <td><%= numberWithDelimiter(bi.Size) %></td>
+        <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
       </tr>
       <% }) %>
       <% if err != nil { %><%= err.Error() %><% } %>

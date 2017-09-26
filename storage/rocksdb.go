@@ -13,6 +13,7 @@ import (
 type rocksStore struct {
 	Name      string
 	db        *gorocksdb.DB
+	opts      *gorocksdb.Options
 	retries   *rocksSortedSet
 	scheduled *rocksSortedSet
 	working   *rocksSortedSet
@@ -43,6 +44,9 @@ func OpenRocks(path string) (Store, error) {
 	// flushed to disk.
 	opts.SetWriteBufferSize(16 * 1024 * 1024)
 	opts.SetMergeOperator(&int64CounterMerge{})
+	// default is 6 hrs, set to 1 hr
+	opts.SetDeleteObsoleteFilesPeriodMicros(1000000 * 3600)
+	opts.SetKeepLogFileNum(10)
 
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
 		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},
@@ -57,6 +61,7 @@ func OpenRocks(path string) (Store, error) {
 	rs := &rocksStore{
 		Name:      path,
 		db:        db,
+		opts:      opts,
 		scheduled: (&rocksSortedSet{name: "scheduled", db: db, cf: handles[0], ro: ro, wo: wo}).init(),
 		retries:   (&rocksSortedSet{name: "retries", db: db, cf: handles[1], ro: ro, wo: wo}).init(),
 		working:   (&rocksSortedSet{name: "working", db: db, cf: handles[2], ro: ro, wo: wo}).init(),
@@ -75,6 +80,57 @@ func OpenRocks(path string) (Store, error) {
 	}
 
 	return rs, nil
+}
+
+func (store *rocksStore) Compact() error {
+	fo := gorocksdb.NewDefaultFlushOptions()
+	defer fo.Destroy()
+
+	err := store.db.Flush(fo)
+	if err != nil {
+		return err
+	}
+
+	store.db.CompactRange(gorocksdb.Range{[]byte{0x00}, []byte{0xFF}})
+	return nil
+}
+
+func (store *rocksStore) Backup() error {
+	fo := gorocksdb.NewDefaultFlushOptions()
+	defer fo.Destroy()
+
+	err := store.db.Flush(fo)
+	if err != nil {
+		return err
+	}
+
+	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name()+"-backups")
+	if err != nil {
+		return err
+	}
+	defer be.Close()
+
+	return be.CreateNewBackup(store.db)
+}
+
+func (store *rocksStore) EachBackup(fn func(BackupInfo)) error {
+	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name()+"-backups")
+	if err != nil {
+		return err
+	}
+	defer be.Close()
+	bei := be.GetInfo()
+	defer bei.Destroy()
+
+	for i := 0; i < bei.GetCount(); i++ {
+		fn(BackupInfo{
+			Id:        bei.GetBackupId(i),
+			FileCount: bei.GetNumFiles(i),
+			Size:      bei.GetSize(i),
+			Timestamp: bei.GetTimestamp(i),
+		})
+	}
+	return nil
 }
 
 func (store *rocksStore) Stats() map[string]string {

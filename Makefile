@@ -55,6 +55,9 @@ fmt:
 lint:
 	gometalinter ./...
 
+work:
+	ruby -I~/src/faktory-ruby/lib test/worker.rb
+
 clean:
 	@rm -f webui/*.ego.go
 	@rm -rf tmp

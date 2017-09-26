@@ -13,6 +13,13 @@ var (
 	DeadBucket      = "dead"
 )
 
+type BackupInfo struct {
+	Id        int64
+	FileCount int32
+	Size      int64
+	Timestamp int64
+}
+
 type Store interface {
 	Close() error
 	Retries() SortedSet
@@ -27,6 +34,11 @@ type Store interface {
 	EnqueueFrom(SortedSet, []byte) error
 
 	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
+
+	// creates a backup of the current database
+	Backup() error
+	Compact() error
+	EachBackup(func(bi BackupInfo)) error
 }
 
 type Queue interface {

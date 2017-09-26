@@ -6,6 +6,7 @@ import (
   "runtime"
 
   "github.com/mperham/faktory"
+  "github.com/mperham/faktory/storage"
   "github.com/mperham/gorocksdb"
 )
 
@@ -49,6 +50,38 @@ func ego_debug(w io.Writer, req *http.Request) {
       </tr>
     </tbody>
   </table>
+</div>
+
+<h3><%= t(req, "Backups") %></h3>
+<div class="table_container">
+  <table class="error table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Files</th>
+        <th>Size</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
+      <tr>
+        <td><%= bi.Id %></td>
+        <td><%= bi.FileCount %></td>
+        <td><%= bi.Size %></td>
+        <td><%= bi.Timestamp %></td>
+      </tr>
+      <% }) %>
+      <% if err != nil { %><%= err.Error() %><% } %>
+    </tbody>
+  </table>
+  <form action="/debug" method="post">
+    <%== csrfTag(req) %>
+    <div class="btn-group pull-left flip">
+      <button class="btn" type="submit" name="action" value="compact"><%= t(req, "Compact") %></button>
+      <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
+    </div>
+  </form>
 </div>
 
 <h3><%= t(req, "Disk Usage") %></h3>

@@ -324,5 +324,23 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func debugHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		var err error
+
+		action := r.FormValue("action")
+		switch action {
+		case "compact":
+			err = defaultServer.Store().Compact()
+		case "backup":
+			err = defaultServer.Store().Backup()
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Redirect(w, r, "/debug", http.StatusFound)
+		}
+		return
+	}
+
 	ego_debug(w, r)
 }

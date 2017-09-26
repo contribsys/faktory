@@ -43,14 +43,16 @@ func OpenRocks(path string) (Store, error) {
 	// Ideally jobs are processed in-memory, before they need to be
 	// flushed to disk.
 	opts.SetWriteBufferSize(16 * 1024 * 1024)
-	opts.SetMergeOperator(&int64CounterMerge{})
 	// default is 6 hrs, set to 1 hr
 	opts.SetDeleteObsoleteFilesPeriodMicros(1000000 * 3600)
 	opts.SetKeepLogFileNum(10)
 
+	sopts := gorocksdb.NewDefaultOptions()
+	sopts.SetMergeOperator(&int64CounterMerge{})
+
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
 		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},
-		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts, opts})
+		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts, sopts})
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func (store *rocksStore) Backup() error {
 		return err
 	}
 
-	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name()+"-backups")
+	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name())
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func (store *rocksStore) Backup() error {
 }
 
 func (store *rocksStore) EachBackup(fn func(BackupInfo)) error {
-	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name()+"-backups")
+	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name())
 	if err != nil {
 		return err
 	}

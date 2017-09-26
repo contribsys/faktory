@@ -102,5 +102,5 @@ func (m *int64CounterMerge) PartialMerge(key, left, right []byte) ([]byte, bool)
 }
 
 func (m *int64CounterMerge) Name() string {
-	return "faktory counter merge"
+	return "faktory stats counters"
 }

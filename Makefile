@@ -46,7 +46,7 @@ cover:
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -o faktory cmd/main.go
+	go build -o faktory cmd/daemon.go
 
 # goimports produces slightly different formatted code from go fmt
 fmt:
@@ -67,7 +67,7 @@ clean:
 	@mkdir -p packaging/output/systemd
 
 run: clean generate
-	go run cmd/main.go -l debug -s i.sock -d .
+	go run cmd/daemon.go -l debug -s i.sock -d .
 
 # gem install fpm
 # https://github.com/jordansissel/fpm/issues/576

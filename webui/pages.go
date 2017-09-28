@@ -329,8 +329,6 @@ func debugHandler(w http.ResponseWriter, r *http.Request) {
 
 		action := r.FormValue("action")
 		switch action {
-		case "compact":
-			err = defaultServer.Store().Compact()
 		case "backup":
 			err = defaultServer.Store().Backup()
 		}

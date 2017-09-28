@@ -91,7 +91,6 @@ func (ts *rocksSortedSet) Get(key []byte) ([]byte, error) {
 	return data, nil
 }
 
-// TODO: cache this value
 func (ts *rocksSortedSet) init() *rocksSortedSet {
 	ro := gorocksdb.NewDefaultReadOptions()
 	ro.SetFillCache(false)

@@ -37,8 +37,9 @@ type Store interface {
 
 	// creates a backup of the current database
 	Backup() error
-	Compact() error
+	//Compact() error
 	EachBackup(func(bi BackupInfo)) error
+	RestoreFromLatest() error
 }
 
 type Queue interface {

@@ -33,7 +33,13 @@ prepare:
 	@echo Now you should be ready to run "make"
 
 test: clean generate
-	go test -parallel 4 ./...
+	go test -parallel 4 \
+		github.com/mperham/faktory \
+		github.com/mperham/faktory/server \
+		github.com/mperham/faktory/storage \
+		github.com/mperham/faktory/test \
+		github.com/mperham/faktory/util \
+		github.com/mperham/faktory/webui
 
 generate:
 	go generate ./...

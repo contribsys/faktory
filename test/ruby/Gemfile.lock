@@ -1,0 +1,19 @@
+PATH
+  remote: ../../../../../faktory-ruby
+  specs:
+    faktory-ruby (0.5.0)
+      connection_pool (~> 2.2, >= 2.2.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    connection_pool (2.2.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  faktory-ruby!
+
+BUNDLED WITH
+   1.15.4

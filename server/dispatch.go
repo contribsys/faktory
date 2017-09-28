@@ -31,7 +31,6 @@ import (
 
 	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/storage"
-	"github.com/mperham/faktory/util"
 )
 
 func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues ...string) (*faktory.Job, error) {
@@ -68,7 +67,6 @@ func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues 
 	// we should block for a moment, awaiting a job to be
 	// pushed.  this allows us to pick up new jobs in µs
 	// rather than seconds.
-	util.Debugf("Blocking on %s", first.Name())
 	data, err := first.BPop(ctx)
 	if err != nil {
 		return nil, err

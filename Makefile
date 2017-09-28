@@ -62,7 +62,7 @@ lint:
 	gometalinter ./...
 
 work:
-	ruby -I~/src/faktory-ruby/lib test/worker.rb
+	pushd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk ; popd
 
 clean:
 	@rm -f webui/*.ego.go

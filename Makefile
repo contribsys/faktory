@@ -72,8 +72,11 @@ clean:
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
+repl: clean generate
+	go run cmd/repl.go -l debug -d .
+
 run: clean generate
-	go run cmd/daemon.go -l debug -s i.sock -d .
+	go run cmd/daemon.go -l debug -d .
 
 # gem install fpm
 # https://github.com/jordansissel/fpm/issues/576

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -43,12 +44,17 @@ func repl(path string, store storage.Store) {
 	fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
 	prompt := fmt.Sprintf("%s/%s> ", storage.DefaultPath, path)
 
+	rdr := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf(prompt)
-		rdr := bufio.NewReader(os.Stdin)
 		line, _, er := rdr.ReadLine()
 		if er != nil {
-			fmt.Println(er.Error())
+			if io.EOF == er {
+				fmt.Println("")
+				store.Close()
+				os.Exit(0)
+			}
+			fmt.Printf("Error: %s\n", er.Error())
 			continue
 		}
 		cmd := string(line)

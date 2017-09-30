@@ -8,7 +8,7 @@ BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 # contains various secret or machine-specific variables.
 # DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
 # RPM_PRODUCTION: hostname of a redhat-based systemd machine (e.g. CentOS 7)
-include $(HOME)/.local.sh
+#include $(HOME)/.local.sh
 
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
@@ -25,10 +25,11 @@ prepare:
 	#you must have .local.sh with ROCKSDB_HOME set
 	#export ROCKSDB_HOME=/usr/local/Cellar/rocksdb/5.5.1
 	# brew install rocksdb zstd
-	#export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-	#export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
+	export ROCKSDB_HOME=/home/ubuntu/rocksdb
+	export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
+	export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy"
 	go get github.com/mperham/gorocksdb
-	gometalinter --install
+	#gometalinter --install
 	#gem install -N fpm
 	@echo Now you should be ready to run "make"
 

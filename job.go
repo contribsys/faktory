@@ -1,5 +1,12 @@
 package faktory
 
+import (
+	cryptorand "crypto/rand"
+	"encoding/base64"
+	mathrand "math/rand"
+	"time"
+)
+
 type Failure struct {
 	RetryCount   int      `json:"retry_count"`
 	FailedAt     string   `json:"failed_at"`
@@ -26,4 +33,25 @@ type Job struct {
 	Backtrace  int                    `json:"backtrace,omitempty"`
 	Failure    *Failure               `json:"failure,omitempty"`
 	Custom     map[string]interface{} `json:"custom,omitempty"`
+}
+
+func NewJob(jobtype string, args ...interface{}) *Job {
+	return &Job{
+		Type:      jobtype,
+		Queue:     "default",
+		Args:      args,
+		Jid:       randomJid(),
+		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+		Retry:     25,
+	}
+}
+
+func randomJid() string {
+	bytes := make([]byte, 12)
+	_, err := cryptorand.Read(bytes)
+	if err != nil {
+		mathrand.Read(bytes)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(bytes)
 }

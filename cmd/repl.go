@@ -30,10 +30,12 @@ func main() {
 	store, err := storage.Open("rocksdb", dir)
 	if err != nil {
 		fmt.Println("Unable to open storage:", err.Error())
-		os.Exit(-1)
+		fmt.Println(`Run "db repair" to attempt repair`)
 	}
 	go handleSignals(func() {
-		store.Close()
+		if store != nil {
+			store.Close()
+		}
 		os.Exit(0)
 	})
 
@@ -41,13 +43,13 @@ func main() {
 }
 
 func repl(path string, store storage.Store) {
-	fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
-	prompt := fmt.Sprintf("%s/%s> ", storage.DefaultPath, path)
+	fullpath := fmt.Sprintf("%s/%s", storage.DefaultPath, path)
+	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), fullpath)
 
 	rdr := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Printf(prompt)
-		line, _, er := rdr.ReadLine()
+		fmt.Printf("> ")
+		bytes, _, er := rdr.ReadLine()
 		if er != nil {
 			if io.EOF == er {
 				fmt.Println("")
@@ -57,30 +59,71 @@ func repl(path string, store storage.Store) {
 			fmt.Printf("Error: %s\n", er.Error())
 			continue
 		}
-		cmd := string(line)
+		line := string(bytes)
+		cmd := strings.Split(line, " ")
+		first := cmd[0]
 		var err error
-		switch cmd {
+		switch first {
 		case "version":
 			fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
-		case "backup":
-			err = store.Backup()
-			if err == nil {
-				fmt.Println("Backup created")
-				store.EachBackup(func(x storage.BackupInfo) {
-					fmt.Printf("%+v\n", x)
-				})
-			}
-		case "restore":
-			err = store.RestoreFromLatest()
-			fmt.Println("Restoration complete, restart required")
-			os.Exit(0)
+		case "db":
+			err = db(store, fullpath, line, cmd[1:])
+		case "help":
+			fmt.Println(`Valid commands:
+
+db backup
+db restore *
+db repair *
+version
+help
+
+* Requires an immediate restart after running command.
+			`)
 		default:
-			fmt.Printf("Unknown command: %s\n", cmd)
+			fmt.Printf("Unknown command: %s\n", line)
 		}
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
+}
+
+func db(store storage.Store, path string, line string, cmd []string) error {
+	if len(cmd) == 0 {
+		return fmt.Errorf("Unknown command: %s", line)
+	}
+	switch cmd[0] {
+	case "backup":
+		err := store.Backup()
+		if err == nil {
+			fmt.Println("Backup created")
+			store.EachBackup(func(x storage.BackupInfo) {
+				fmt.Printf("%+v\n", x)
+			})
+		}
+		return err
+	case "repair":
+		if store != nil {
+			store.Close()
+		}
+		opts := storage.DefaultOptions()
+		err := gorocksdb.RepairDb(path, opts)
+		if err == nil {
+			fmt.Println("Repair complete, restart required")
+			os.Exit(0)
+		}
+		return err
+	case "restore":
+		err := store.RestoreFromLatest()
+		if err == nil {
+			fmt.Println("Restoration complete, restart required")
+			os.Exit(0)
+		}
+		return err
+	default:
+		return fmt.Errorf("Unknown command: %s", line)
+	}
+	return nil
 }
 
 func handleSignals(fn func()) {

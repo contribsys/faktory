@@ -27,14 +27,7 @@ type rocksStore struct {
 	history   *processingHistory
 }
 
-func OpenRocks(path string) (Store, error) {
-	if path == "" {
-		path = "default"
-	}
-	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
-	util.Infof("Initializing storage at %s", fullpath)
-	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
-
+func DefaultOptions() *gorocksdb.Options {
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
@@ -46,7 +39,18 @@ func OpenRocks(path string) (Store, error) {
 	// default is 6 hrs, set to 1 hr
 	opts.SetDeleteObsoleteFilesPeriodMicros(1000000 * 3600)
 	opts.SetKeepLogFileNum(10)
+	return opts
+}
 
+func OpenRocks(path string) (Store, error) {
+	if path == "" {
+		path = "default"
+	}
+	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
+	util.Infof("Initializing storage at %s", fullpath)
+	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
+
+	opts := DefaultOptions()
 	sopts := gorocksdb.NewDefaultOptions()
 	sopts.SetMergeOperator(&int64CounterMerge{})
 

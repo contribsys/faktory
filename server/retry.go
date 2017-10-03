@@ -63,7 +63,7 @@ func fail(c *Connection, s *Server, cmd string) {
 }
 
 func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
-	job, err := s.Acknowledge(jid)
+	job, err := acknowledge(jid, s.store.Working())
 	if err != nil {
 		return err
 	}

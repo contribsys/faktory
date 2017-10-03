@@ -2,7 +2,6 @@ package util
 
 import (
 	"log"
-	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -79,9 +78,7 @@ func NewLogger(level string, takeOverLog bool) Logger {
 	if takeOverLog {
 		log.SetOutput(logg.Writer())
 	}
-	return newLogrusLogger(logg).WithFields(map[string]interface{}{
-		"pid": os.Getpid(),
-	})
+	return newLogrusLogger(logg)
 }
 
 type logrusLogger struct {

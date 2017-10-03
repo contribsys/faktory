@@ -112,7 +112,10 @@ func (ts *TaskRunner) cycle() {
 
 func (s *Server) StartTasks(waiter *sync.WaitGroup) {
 	ts := NewTaskRunner()
-	ts.AddTask("heartbeat reaper", s.reapHeartbeats, 15)
+	ts.AddTask("heartbeat reaper", func() error {
+		reapHeartbeats(s.heartbeats, &s.hbmu)
+		return nil
+	}, 15)
 	ts.Run(waiter)
 	s.taskRunner = ts
 }

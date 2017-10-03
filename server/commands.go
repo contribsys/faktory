@@ -40,7 +40,7 @@ func push(c *Connection, s *Server, cmd string) {
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
 		if err != nil {
-			c.Error(cmd, fmt.Errorf("Invalid timestamp for job.at: %s", job.At))
+			c.Error(cmd, fmt.Errorf("Invalid timestamp for 'at': '%s'", job.At))
 			return
 		}
 
@@ -96,7 +96,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 
 	qs := strings.Split(cmd, " ")[1:]
 	job, err := s.Fetch(func(job *faktory.Job) error {
-		return s.Reserve(c.client.Wid, job)
+		return reserve(c.client.Wid, job, s.store.Working())
 	}, ctx, qs...)
 	if err != nil {
 		c.Error(cmd, err)
@@ -129,7 +129,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
 		return
 	}
-	_, err = s.Acknowledge(jid)
+	_, err = acknowledge(jid, s.store.Working())
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -145,16 +145,17 @@ func info(c *Connection, s *Server, cmd string) {
 		return
 	}
 	data := map[string]interface{}{
-		"failures":    s.Stats.Failures,
-		"processed":   s.Stats.Processed,
-		"working":     s.scheduler.Working.Stats(),
-		"retries":     s.scheduler.Retries.Stats(),
-		"scheduled":   s.scheduler.Scheduled.Stats(),
-		"default":     defalt.Size(),
-		"uptime":      time.Now().Sub(s.Stats.StartedAt).String(),
-		"version":     faktory.Version,
-		"connections": 0,
-		"memory":      0,
+		"total_failures":   s.Stats.Failures,
+		"total_processed":  s.Stats.Processed,
+		"working_size":     s.scheduler.Working.Stats(),
+		"retries_size":     s.scheduler.Retries.Stats(),
+		"scheduled_size":   s.scheduler.Scheduled.Stats(),
+		"default_size":     defalt.Size(),
+		"uptime":           time.Now().Sub(s.Stats.StartedAt).String(),
+		"version":          faktory.Version,
+		"connection_count": s.Stats.Connections,
+		"total_commands":   s.Stats.Commands,
+		"memory":           0,
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {

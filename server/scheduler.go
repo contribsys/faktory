@@ -14,8 +14,7 @@ import (
 
 type Scheduler struct {
 	Name     string
-	store    storage.Store
-	ts       storage.SortedSet
+	adapter  SchedulerAdapter
 	stopping chan interface{}
 	delay    time.Duration
 
@@ -28,10 +27,10 @@ var (
 	defaultDelay = 1 * time.Second
 )
 
-func (s *Scheduler) cycle() int {
-	count := 0
+func (s *Scheduler) cycle() int64 {
+	count := int64(0)
 	start := time.Now()
-	elms, err := s.ts.RemoveBefore(util.Nows())
+	elms, err := s.adapter.Prune(util.Nows())
 	if err == nil {
 		if len(elms) > 0 {
 			util.Infof("%s enqueueing %d jobs", s.Name, len(elms))
@@ -44,14 +43,9 @@ func (s *Scheduler) cycle() int {
 				util.Error("Unable to unmarshal json", err, elm)
 				continue
 			}
-			que, err := s.store.GetQueue(job.Queue)
+			err = s.adapter.Push(job.Queue, elm)
 			if err != nil {
-				util.Warn("Error getting queue", job.Queue, err)
-				continue
-			}
-			err = que.Push(elm)
-			if err != nil {
-				util.Warn("Error pushing job", job.Queue, err)
+				util.Warnf("Error pushing job to '%s': %s", job.Queue, err.Error())
 				continue
 			}
 
@@ -63,6 +57,27 @@ func (s *Scheduler) cycle() int {
 	atomic.AddInt64(&s.jobs, int64(count))
 	atomic.AddInt64(&s.walltime, end.Sub(start).Nanoseconds())
 	return count
+}
+
+type rocksAdapter struct {
+	store storage.Store
+	ts    storage.SortedSet
+}
+
+func (ra *rocksAdapter) Push(name string, elm []byte) error {
+	que, err := ra.store.GetQueue(name)
+	if err != nil {
+		return err
+	}
+	return que.Push(elm)
+}
+func (ra *rocksAdapter) Prune(string) ([][]byte, error) {
+	return ra.ts.RemoveBefore(util.Nows())
+}
+
+type SchedulerAdapter interface {
+	Prune(string) ([][]byte, error)
+	Push(string, []byte) error
 }
 
 func (s *Scheduler) Run(waiter *sync.WaitGroup) {
@@ -88,7 +103,6 @@ func (s *Scheduler) Run(waiter *sync.WaitGroup) {
 
 func (s *Scheduler) Stats() map[string]interface{} {
 	return map[string]interface{}{
-		"size":          s.ts.Size(),
 		"enqueued":      s.jobs,
 		"cycles":        s.cycles,
 		"wall_time_sec": (float64(s.walltime) / 1000000000),
@@ -99,8 +113,13 @@ func (s *Scheduler) Stop() {
 	close(s.stopping)
 }
 
-func NewScheduler(name string, store storage.Store, set storage.SortedSet) *Scheduler {
-	return &Scheduler{Name: name, store: store, ts: set, stopping: make(chan interface{}), delay: defaultDelay}
+func NewScheduler(name string, adapter SchedulerAdapter) *Scheduler {
+	return &Scheduler{
+		Name:     name,
+		adapter:  adapter,
+		stopping: make(chan interface{}),
+		delay:    defaultDelay,
+	}
 }
 
 type SchedulerSubsystem struct {
@@ -121,9 +140,9 @@ func (s *Server) StartScheduler(waiter *sync.WaitGroup) *SchedulerSubsystem {
 	util.Info("Starting scheduler subsystem")
 
 	ss := &SchedulerSubsystem{
-		Scheduled: NewScheduler("Scheduled", s.store, s.store.Scheduled()),
-		Retries:   NewScheduler("Retries", s.store, s.store.Retries()),
-		Working:   NewScheduler("Working", s.store, s.store.Working()),
+		Scheduled: NewScheduler("Scheduled", &rocksAdapter{s.store, s.store.Scheduled()}),
+		Retries:   NewScheduler("Retries", &rocksAdapter{s.store, s.store.Retries()}),
+		Working:   NewScheduler("Working", &rocksAdapter{s.store, s.store.Working()}),
 	}
 
 	ss.Scheduled.Run(waiter)

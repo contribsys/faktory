@@ -11,9 +11,33 @@ import (
 
 var (
 	DefaultTimeout = 1800
+	// Hold the working set in memory so we don't need to burn CPU
+	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
+	// When client ack's JID, we can lookup reservation
+	// and remove Rocks entry quickly.
+	//
+	// TODO Need to hydrate this map into memory when starting up
+	// or a crash can leak reservations into the persistent Working
+	// set.
+	workingMap   = map[string]*Reservation{}
+	workingMutex = &sync.Mutex{}
 )
 
-func (s *Server) Acknowledge(jid string) (*faktory.Job, error) {
+type Reservation struct {
+	Job     *faktory.Job `json:"job"`
+	Since   string       `json:"reserved_at"`
+	Expiry  string       `json:"expires_at"`
+	Wid     string       `json:"wid"`
+	tsince  time.Time
+	texpiry time.Time
+}
+
+type TimedSet interface {
+	AddElement(string, string, []byte) error
+	RemoveElement(string, string) error
+}
+
+func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	workingMutex.Lock()
 	res, ok := workingMap[jid]
 	if !ok {
@@ -25,7 +49,7 @@ func (s *Server) Acknowledge(jid string) (*faktory.Job, error) {
 	delete(workingMap, jid)
 	workingMutex.Unlock()
 
-	err := s.store.Working().RemoveElement(util.Thens(res.texpiry), jid)
+	err := set.RemoveElement(res.Expiry, jid)
 	return res.Job, err
 }
 
@@ -72,29 +96,7 @@ func (s *Server) ReapWorkingSet() (int, error) {
 	return count, nil
 }
 
-type Reservation struct {
-	Job     *faktory.Job `json:"job"`
-	Since   string       `json:"reserved_at"`
-	Expiry  string       `json:"expires_at"`
-	Wid     string       `json:"wid"`
-	tsince  time.Time
-	texpiry time.Time
-}
-
-var (
-	// Hold the working set in memory so we don't need to burn CPU
-	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
-	// When client ack's JID, we can lookup reservation
-	// and remove Rocks entry quickly.
-	//
-	// TODO Need to hydrate this map into memory when starting up
-	// or a crash can leak reservations into the persistent Working
-	// set.
-	workingMap   = map[string]*Reservation{}
-	workingMutex = &sync.Mutex{}
-)
-
-func (s *Server) Reserve(wid string, job *faktory.Job) error {
+func reserve(wid string, job *faktory.Job, set TimedSet) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {
@@ -125,7 +127,7 @@ func (s *Server) Reserve(wid string, job *faktory.Job) error {
 		return err
 	}
 
-	err = s.store.Working().AddElement(util.Thens(res.texpiry), job.Jid, data)
+	err = set.AddElement(res.Expiry, job.Jid, data)
 	if err != nil {
 		return err
 	}
@@ -133,5 +135,6 @@ func (s *Server) Reserve(wid string, job *faktory.Job) error {
 	workingMutex.Lock()
 	workingMap[job.Jid] = res
 	workingMutex.Unlock()
+
 	return nil
 }

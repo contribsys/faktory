@@ -6,11 +6,7 @@ import (
 )
 
 var (
-	DefaultPath     = "/var/run/faktory/"
-	ScheduledBucket = "scheduled"
-	RetriesBucket   = "retries"
-	WorkingBucket   = "working"
-	DeadBucket      = "dead"
+	DefaultPath = "/var/run/faktory/"
 )
 
 type BackupInfo struct {
@@ -26,7 +22,6 @@ type Store interface {
 	Scheduled() SortedSet
 	Working() SortedSet
 	Dead() SortedSet
-	Clients() SortedSet
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string

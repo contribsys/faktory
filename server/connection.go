@@ -2,11 +2,8 @@ package server
 
 import (
 	"bufio"
-	"fmt"
-	"net"
+	"io"
 	"strconv"
-
-	"github.com/mperham/faktory/util"
 )
 
 /*
@@ -21,7 +18,7 @@ import (
 type Connection struct {
 	ident  string
 	client *ClientWorker
-	conn   net.Conn
+	conn   io.WriteCloser
 	buf    *bufio.Reader
 }
 
@@ -35,7 +32,7 @@ func (c *Connection) Close() {
 
 func (c *Connection) Error(cmd string, err error) error {
 	x := internalError(err)
-	util.Error(fmt.Sprintf("Error processing line: %s", cmd), err, x.Stack)
+	//util.Error(fmt.Sprintf("Error processing line: %s", cmd), err, x.Stack)
 	c.conn.Write([]byte("-ERR "))
 	c.conn.Write([]byte(x.Error.Error()))
 	c.conn.Write([]byte("\r\n"))

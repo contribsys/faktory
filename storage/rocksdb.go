@@ -230,7 +230,3 @@ func (store *rocksStore) Working() SortedSet {
 func (store *rocksStore) Dead() SortedSet {
 	return store.dead
 }
-
-func (store *rocksStore) Clients() SortedSet {
-	return store.clients
-}

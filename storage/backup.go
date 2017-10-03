@@ -7,6 +7,9 @@ import (
 	"github.com/mperham/gorocksdb"
 )
 
+/*
+ * I'm unclear what, if any, help this is.  Currently unused.
+ */
 func (store *rocksStore) Compact() error {
 	fo := gorocksdb.NewDefaultFlushOptions()
 	defer fo.Destroy()

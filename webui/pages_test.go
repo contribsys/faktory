@@ -299,7 +299,7 @@ func TestBusy(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "foobar.local"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "bubba"), w.Body.String())
-	assert.False(t, wrk.Quiet())
+	assert.False(t, wrk.IsQuiet())
 
 	data := url.Values{
 		"signal": {"quiet"},
@@ -310,5 +310,5 @@ func TestBusy(t *testing.T) {
 	w = httptest.NewRecorder()
 	busyHandler(w, req)
 	assert.Equal(t, 302, w.Code)
-	assert.True(t, wrk.Quiet())
+	assert.True(t, wrk.IsQuiet())
 }

@@ -187,11 +187,9 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	data := line[5:]
-	var client ClientWorker
-	err = json.Unmarshal([]byte(data), &client)
+	client, err := clientWorkerFromAhoy(line[5:])
 	if err != nil {
-		util.Error("Invalid client data", err, nil)
+		util.Error("Invalid client data in AHOY", err, nil)
 		conn.Close()
 		return
 	}
@@ -203,25 +201,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	if client.Wid == "" {
-		util.Error("Invalid client Wid", err, nil)
-		conn.Close()
-		return
-	}
-
-	s.hbmu.Lock()
-	val, ok := s.heartbeats[client.Wid]
-	if ok {
-		val.lastHeartbeat = time.Now()
-	} else {
-		client.StartedAt = time.Now()
-		client.lastHeartbeat = time.Now()
-		s.heartbeats[client.Wid] = &client
-		val = &client
-	}
-	s.hbmu.Unlock()
-
-	util.Debugf("%+v", val)
+	updateHeartbeat(client, s.heartbeats, &s.hbmu)
 
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
@@ -234,7 +214,7 @@ func (s *Server) processConnection(conn net.Conn) {
 	conn.SetDeadline(time.Time{})
 
 	c := &Connection{
-		client: &client,
+		client: client,
 		ident:  conn.RemoteAddr().String(),
 		conn:   conn,
 		buf:    buf,

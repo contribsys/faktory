@@ -46,19 +46,19 @@ func ego_busy(w io.Writer, req *http.Request) {
           <% for _, label := range worker.Labels { %>
             <span class="label label-info"><%= label %></span>
           <% } %>
-          <% if worker.Quiet() { %>
+          <% if worker.IsQuiet() { %>
             <span class="label label-danger">quiet</span>
           <% } %>
         </td>
         <td><%= Timeago(worker.StartedAt) %></td>
-        <td><%= worker.Busy() %></td>
+        <td><%= worker.BusyCount() %></td>
         <td>
           <div class="btn-group pull-right flip">
             <form method="POST">
               <%== csrfTag(req) %>
               <input type="hidden" name="wid" value="<%= worker.Wid %>"/>
               <div class="btn-group pull-right flip">
-                <% if !worker.Quiet() { %>
+                <% if !worker.IsQuiet() { %>
                   <button class="btn btn-warn" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
                 <% } %>
                 <button class="btn btn-danger" type="submit" name="signal" value="terminate"><%= t(req, "Stop") %></button>

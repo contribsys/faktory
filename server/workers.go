@@ -1,6 +1,9 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/mperham/faktory/util"
@@ -20,8 +23,22 @@ type ClientWorker struct {
 	state         string
 }
 
-func (worker *ClientWorker) Quiet() bool {
-	return worker.state == "quiet"
+func clientWorkerFromAhoy(data string) (*ClientWorker, error) {
+	var client ClientWorker
+	err := json.Unmarshal([]byte(data), &client)
+	if err != nil {
+		return nil, err
+	}
+
+	if client.Wid == "" {
+		return nil, fmt.Errorf("Invalid client Wid")
+	}
+
+	return &client, nil
+}
+
+func (worker *ClientWorker) IsQuiet() bool {
+	return worker.state != ""
 }
 
 /*
@@ -33,37 +50,53 @@ func (worker *ClientWorker) Signal(sig string) {
 	worker.state = sig
 }
 
-func (worker *ClientWorker) Busy() int {
-	count := 0
+func (worker *ClientWorker) BusyCount() int {
 	workingMutex.Lock()
+	defer workingMutex.Unlock()
+
+	count := 0
 	for _, res := range workingMap {
 		if res.Wid == worker.Wid {
 			count += 1
 		}
 	}
-	workingMutex.Unlock()
 	return count
 }
 
 /*
  * Removes any heartbeat records over 1 minute old.
  */
-func (s *Server) reapHeartbeats() error {
+func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.Mutex) error {
 	toDelete := []string{}
 
-	for k, worker := range s.heartbeats {
+	for k, worker := range heartbeats {
 		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
 			toDelete = append(toDelete, k)
 		}
 	}
 
 	if len(toDelete) > 0 {
-		s.hbmu.Lock()
+		mu.Lock()
 		for _, k := range toDelete {
-			delete(s.heartbeats, k)
+			delete(heartbeats, k)
 		}
-		s.hbmu.Unlock()
+		mu.Unlock()
 		util.Debugf("Reaped %d worker heartbeats", len(toDelete))
 	}
 	return nil
+}
+
+func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, mu *sync.Mutex) {
+	mu.Lock()
+	val, ok := heartbeats[client.Wid]
+	if ok {
+		val.lastHeartbeat = time.Now()
+	} else {
+		client.StartedAt = time.Now()
+		client.lastHeartbeat = time.Now()
+		heartbeats[client.Wid] = client
+		val = client
+	}
+	mu.Unlock()
+	util.Debugf("%+v", val)
 }

@@ -130,14 +130,14 @@ func NewScheduler(name string, adapter SchedulerAdapter) *Scheduler {
 	}
 }
 
-type SchedulerSubsystem struct {
+type schedulerSubsystem struct {
 	Retries   *Scheduler
 	Working   *Scheduler
 	Scheduled *Scheduler
 	Dead      *Scheduler
 }
 
-func (ss *SchedulerSubsystem) Stop() {
+func (ss *schedulerSubsystem) Stop() {
 	util.Info("Stopping scheduler subsystem")
 
 	ss.Retries.Stop()
@@ -146,10 +146,10 @@ func (ss *SchedulerSubsystem) Stop() {
 	ss.Dead.Stop()
 }
 
-func (s *Server) StartScheduler(waiter *sync.WaitGroup) *SchedulerSubsystem {
+func (s *Server) startScheduler(waiter *sync.WaitGroup) *schedulerSubsystem {
 	util.Info("Starting scheduler subsystem")
 
-	ss := &SchedulerSubsystem{
+	ss := &schedulerSubsystem{
 		Scheduled: NewScheduler("Scheduled", &rocksAdapter{s.store, s.store.Scheduled(), false}),
 		Retries:   NewScheduler("Retries", &rocksAdapter{s.store, s.store.Retries(), false}),
 		Working:   NewScheduler("Working", &rocksAdapter{s.store, s.store.Working(), false}),

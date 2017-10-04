@@ -11,14 +11,11 @@ import (
 
 var (
 	DefaultTimeout = 1800
+
 	// Hold the working set in memory so we don't need to burn CPU
 	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
 	// When client ack's JID, we can lookup reservation
 	// and remove Rocks entry quickly.
-	//
-	// TODO Need to hydrate this map into memory when starting up
-	// or a crash can leak reservations into the persistent Working
-	// set.
 	workingMap   = map[string]*Reservation{}
 	workingMutex = &sync.Mutex{}
 )
@@ -37,6 +34,39 @@ type TimedSet interface {
 	RemoveElement(string, string) error
 }
 
+/*
+ * When we restart the server, we need to load the
+ * current set of Reservations back into memory so any
+ * outstanding jobs can be Acknowledged successfully.
+ *
+ * The alternative is that a server restart would re-execute
+ * all outstanding jobs, something to be avoided when possible.
+ */
+func (s *Server) loadWorkingSet() error {
+	workingMutex.Lock()
+	defer workingMutex.Unlock()
+
+	addedCount := 0
+	err := s.store.Working().Each(func(_ int, _ []byte, data []byte) error {
+		var res Reservation
+		err := json.Unmarshal(data, &res)
+		if err != nil {
+			return err
+		}
+		workingMap[res.Job.Jid] = &res
+		addedCount += 1
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	reapedCount, err := s.reapWorkingSet()
+	if addedCount > 0 || reapedCount > 0 {
+		util.Debugf("Bootstrap working set, loaded %d, reaped %d", addedCount, reapedCount)
+	}
+	return err
+}
+
 func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	workingMutex.Lock()
 	res, ok := workingMap[jid]
@@ -53,7 +83,7 @@ func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	return res.Job, err
 }
 
-func (s *Server) ReapWorkingSet() (int, error) {
+func (s *Server) reapWorkingSet() (int, error) {
 	count := 0
 
 	jobs, err := s.store.Working().RemoveBefore(util.Nows())

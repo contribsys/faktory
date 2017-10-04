@@ -110,7 +110,7 @@ func (ts *TaskRunner) cycle() {
 	atomic.AddInt64(&ts.walltimeNs, end.Sub(start).Nanoseconds())
 }
 
-func (s *Server) StartTasks(waiter *sync.WaitGroup) {
+func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	ts := NewTaskRunner()
 	ts.AddTask("heartbeat reaper", func() error {
 		reapHeartbeats(s.heartbeats, &s.hbmu)

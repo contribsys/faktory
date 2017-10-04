@@ -43,8 +43,7 @@ type Server struct {
 	pwd        string
 	listener   net.Listener
 	store      storage.Store
-	scheduler  *schedulerSubsystem
-	taskRunner *TaskRunner
+	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
 	heartbeats map[string]*ClientWorker
@@ -103,14 +102,12 @@ func (s *Server) Start() error {
 	s.store = store
 	s.listener = listener
 	s.loadWorkingSet()
-	s.startScheduler(s.pending)
 	s.startTasks(s.pending)
+	s.startScanners(s.pending)
 	s.mu.Unlock()
 
 	// wait for outstanding requests to finish
 	defer s.pending.Wait()
-
-	defer s.scheduler.Stop()
 	defer s.taskRunner.Stop()
 
 	for _, x := range EventHandlers {

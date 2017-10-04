@@ -167,10 +167,7 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 			"total_processed": s.Stats.Processed,
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
-			"working":         s.scheduler.Working.Stats(),
-			"retries":         s.scheduler.Retries.Stats(),
-			"scheduled":       s.scheduler.Scheduled.Stats(),
-			"dead":            s.scheduler.Dead.Stats(),
+			"tasks":           s.taskRunner.Stats(),
 			"default_size":    defalt.Size()},
 		"server": map[string]interface{}{
 			"faktory_version": faktory.Version,

@@ -12,34 +12,32 @@ const (
 	TWO  = int64(2)
 )
 
-func TestScheduler(t *testing.T) {
+func TestScanner(t *testing.T) {
 	fa := &fakeAdapter{}
-	s := NewScheduler("retries", fa)
+	s := &scanner{name: "retries", adapter: fa}
 
 	data := s.Stats()
 	assert.NotNil(t, data)
 	assert.Equal(t, ZERO, data["enqueued"])
 	assert.Equal(t, ZERO, data["cycles"])
 
-	count := s.cycle()
+	err := s.Execute()
+	assert.NoError(t, err)
 
 	data = s.Stats()
 	assert.NotNil(t, data)
-	assert.Equal(t, ZERO, count)
 	assert.Equal(t, ZERO, data["enqueued"])
 	assert.Equal(t, ONE, data["cycles"])
 
 	fa.sorted = [][]byte{[]byte(`{"queue":"default"}`), []byte(`{"queue":"bob"}`)}
-	count = s.cycle()
+	err = s.Execute()
 
 	data = s.Stats()
+	assert.NoError(t, err)
 	assert.NotNil(t, data)
-	assert.Equal(t, TWO, count)
 	assert.Equal(t, TWO, data["enqueued"])
 	assert.Equal(t, TWO, data["cycles"])
 	assert.Equal(t, 2, fa.QueueSize())
-
-	s.Stop()
 }
 
 type fakeAdapter struct {

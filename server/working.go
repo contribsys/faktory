@@ -60,9 +60,8 @@ func (s *Server) loadWorkingSet() error {
 	if err != nil {
 		return err
 	}
-	reapedCount, err := s.reapWorkingSet()
-	if addedCount > 0 || reapedCount > 0 {
-		util.Debugf("Bootstrap working set, loaded %d, reaped %d", addedCount, reapedCount)
+	if addedCount > 0 {
+		util.Debugf("Bootstrap working set, loaded %d", addedCount)
 	}
 	return err
 }
@@ -83,12 +82,21 @@ func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	return res.Job, err
 }
 
-func (s *Server) reapWorkingSet() (int, error) {
+type reaper struct {
+	s     *Server
+	count int
+}
+
+func (r *reaper) Name() string {
+	return "heartbeat reaper"
+}
+
+func (r *reaper) Execute() error {
 	count := 0
 
-	jobs, err := s.store.Working().RemoveBefore(util.Nows())
+	jobs, err := r.s.store.Working().RemoveBefore(util.Nows())
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	for _, data := range jobs {
@@ -99,7 +107,7 @@ func (s *Server) reapWorkingSet() (int, error) {
 			continue
 		}
 
-		q, err := s.store.GetQueue(job.Queue)
+		q, err := r.s.store.GetQueue(job.Queue)
 		if err != nil {
 			util.Error("Unable to retrieve queue", err, nil)
 			continue
@@ -122,8 +130,15 @@ func (s *Server) reapWorkingSet() (int, error) {
 			count += 1
 		}
 	}
+	r.count += count
 
-	return count, nil
+	return nil
+}
+
+func (r *reaper) Stats() map[string]interface{} {
+	return map[string]interface{}{
+		"reaped": r.count,
+	}
 }
 
 func reserve(wid string, job *faktory.Job, set TimedSet) error {

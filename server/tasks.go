@@ -13,43 +13,47 @@ import (
  * The task runner allows us to run internal tasks on
  * a recurring schedule, e.g. "reap old heartbeats every 30 seconds".
  *
- * tr = NewTaskRunner()
+ * tr = newTaskRunner()
  * tr.AddTask("heartbeat reaper", reapHeartbeats, 30)
  * ts.Run(...)
  */
-type TaskRunner struct {
+type taskRunner struct {
 	stopping chan interface{}
-	tasks    []*Task
+	tasks    []*task
 
 	walltimeNs int64
 	cycles     int64
 	executions int64
 }
 
-type Task struct {
-	Name       string
-	fn         func() error
+type task struct {
+	runner     taskable
 	every      int64
 	runs       int64
 	walltimeNs int64
 }
 
-func NewTaskRunner() *TaskRunner {
-	return &TaskRunner{
+type taskable interface {
+	Name() string
+	Execute() error
+	Stats() map[string]interface{}
+}
+
+func newTaskRunner() *taskRunner {
+	return &taskRunner{
 		stopping: make(chan interface{}),
-		tasks:    make([]*Task, 0),
+		tasks:    make([]*task, 0),
 	}
 }
 
-func (ts *TaskRunner) AddTask(name string, fn func() error, sec int64) {
-	var task Task
-	task.Name = name
-	task.fn = fn
-	task.every = sec
-	ts.tasks = append(ts.tasks, &task)
+func (ts *taskRunner) AddTask(sec int64, thing taskable) {
+	var tsk task
+	tsk.runner = thing
+	tsk.every = sec
+	ts.tasks = append(ts.tasks, &tsk)
 }
 
-func (ts *TaskRunner) Run(waiter *sync.WaitGroup) {
+func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
 	go func() {
 		waiter.Add(1)
 		defer waiter.Done()
@@ -70,23 +74,21 @@ func (ts *TaskRunner) Run(waiter *sync.WaitGroup) {
 	}()
 }
 
-func (ts *TaskRunner) Stats() map[string]map[string]interface{} {
+func (ts *taskRunner) Stats() map[string]map[string]interface{} {
 	data := map[string]map[string]interface{}{}
 
 	for _, task := range ts.tasks {
-		data[task.Name] = map[string]interface{}{
-			"runs":           task.runs,
-			"wall_time_usec": (task.walltimeNs / 1000000),
-		}
+		data[task.runner.Name()] = task.runner.Stats()
 	}
 	return data
 }
 
-func (ts *TaskRunner) Stop() {
+func (ts *taskRunner) Stop() {
+	util.Debug("Stopping scheduled tasks")
 	close(ts.stopping)
 }
 
-func (ts *TaskRunner) cycle() {
+func (ts *taskRunner) cycle() {
 	count := int64(0)
 	start := time.Now()
 	sec := start.Unix()
@@ -95,10 +97,11 @@ func (ts *TaskRunner) cycle() {
 			continue
 		}
 		tstart := time.Now()
-		err := t.fn()
+		//util.Debugf("Running task %s", t.runner.Name())
+		err := t.runner.Execute()
 		tend := time.Now()
 		if err != nil {
-			util.Warn("Error running task %s: %v", t.Name, err)
+			util.Warnf("Error running task %s: %v", t.runner.Name(), err)
 		}
 		atomic.AddInt64(&t.runs, 1)
 		atomic.AddInt64(&t.walltimeNs, tend.Sub(tstart).Nanoseconds())
@@ -111,11 +114,8 @@ func (ts *TaskRunner) cycle() {
 }
 
 func (s *Server) startTasks(waiter *sync.WaitGroup) {
-	ts := NewTaskRunner()
-	ts.AddTask("heartbeat reaper", func() error {
-		reapHeartbeats(s.heartbeats, &s.hbmu)
-		return nil
-	}, 15)
+	ts := newTaskRunner()
+	ts.AddTask(15, &reaper{s, 0})
 	ts.Run(waiter)
 	s.taskRunner = ts
 }

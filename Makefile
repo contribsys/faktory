@@ -5,6 +5,11 @@ VERSION=0.0.1
 ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
+# necessary to compile the gorocksdb bindings
+ROCKSDB_HOME=/home/ubuntu/rocksdb
+CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
+CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy"
+
 # contains various secret or machine-specific variables.
 # DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
 # RPM_PRODUCTION: hostname of a redhat-based systemd machine (e.g. CentOS 7)
@@ -20,16 +25,7 @@ prepare:
 	go get github.com/stretchr/testify/...
 	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/sirupsen/logrus
-	#linters
-	#go get github.com/alecthomas/gometalinter
-	#you must have .local.sh with ROCKSDB_HOME set
-	#export ROCKSDB_HOME=/usr/local/Cellar/rocksdb/5.5.1
-	# brew install rocksdb zstd
-	export ROCKSDB_HOME=/home/ubuntu/rocksdb
-	export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-	export CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy"
 	go get github.com/mperham/gorocksdb
-	#gometalinter --install
 	#gem install -N fpm
 	@echo Now you should be ready to run "make"
 

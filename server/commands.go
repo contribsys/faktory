@@ -23,7 +23,6 @@ var cmdSet = map[string]command{
 	"FAIL":  fail,
 	"BEAT":  heartbeat,
 	"INFO":  info,
-	"STORE": store,
 }
 
 func end(c *Connection, s *Server, cmd string) {
@@ -191,18 +190,6 @@ func info(c *Connection, s *Server, cmd string) {
 	}
 
 	c.Result(bytes)
-}
-
-func store(c *Connection, s *Server, cmd string) {
-	subcmd := strings.ToLower(strings.Split(cmd, " ")[1])
-	switch subcmd {
-	case "stats":
-		c.Result([]byte(s.store.Stats()["stats"]))
-	case "backup":
-		// TODO
-	default:
-		c.Error(cmd, fmt.Errorf("Unknown STORE command: %s", subcmd))
-	}
 }
 
 /*

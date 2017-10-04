@@ -36,7 +36,7 @@ func TestClientOperations(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, cl)
 
-	withServer(t, func(req, resp chan string, addr string) {
+	withFakeServer(t, func(req, resp chan string, addr string) {
 		err = os.Setenv("FAKTORY_PROVIDER", "MIKE_URL")
 		assert.NoError(t, err)
 		err = os.Setenv("MIKE_URL", "tcp://:foobar@"+addr)
@@ -62,8 +62,6 @@ func TestClientOperations(t *testing.T) {
 		assert.Nil(t, job)
 		assert.Contains(t, <-req, "FETCH")
 
-		// TODO Pop job JSON
-
 		resp <- "+OK\r\n"
 		err = cl.Ack("123456")
 		assert.NoError(t, err)
@@ -74,11 +72,10 @@ func TestClientOperations(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, <-req, "FAIL")
 
-		// TODO real INFO
-		resp <- "$0\r\n\r\n"
+		resp <- "$2\r\n{}\r\n"
 		hash, err := cl.Info()
 		assert.NoError(t, err)
-		assert.Nil(t, hash)
+		assert.NotNil(t, hash)
 		assert.Contains(t, <-req, "INFO")
 
 		err = cl.Close()
@@ -88,7 +85,7 @@ func TestClientOperations(t *testing.T) {
 	})
 }
 
-func withServer(t *testing.T, fn func(chan string, chan string, string)) {
+func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 	binding := "localhost:44434"
 
 	addr, err := net.ResolveTCPAddr("tcp", binding)

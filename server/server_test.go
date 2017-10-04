@@ -31,6 +31,7 @@ func runServer(runner func()) {
 		if err != nil {
 			panic(err)
 		}
+		s.Stop(func() {})
 	}()
 	// rocks takes a few ms to initialize
 	time.Sleep(100 * time.Millisecond)
@@ -89,10 +90,26 @@ func TestServerStart(t *testing.T) {
 		assert.Equal(t, "12345678901234567890abcd", hash["jid"])
 		//assert.Equal(t, "{\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n", result)
 
+		conn.Write([]byte(fmt.Sprintf("FAIL {\"jid\":\"%s\",\"message\":\"Invalid something\",\"errtype\":\"RuntimeError\"}\n", hash["jid"])))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "+OK\r\n", result)
+
 		conn.Write([]byte(fmt.Sprintf("ACK {\"jid\":\"%s\"}\n", hash["jid"])))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
+
+		conn.Write([]byte(fmt.Sprintf("INFO\n")))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+
+		var stats map[string]interface{}
+		err = json.Unmarshal([]byte(result), &stats)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(stats))
 
 		conn.Write([]byte("END\n"))
 		//result, err = buf.ReadString('\n')

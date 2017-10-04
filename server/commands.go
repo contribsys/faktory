@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 )
 
@@ -138,24 +139,53 @@ func ack(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
-func info(c *Connection, s *Server, cmd string) {
+func uptimeInDays(s *Server) string {
+	return fmt.Sprintf("%.0f", time.Now().Sub(s.Stats.StartedAt).Seconds()/float64(86400))
+}
+
+func currentMemoryUsage(s *Server) string {
+	return "123 MB"
+}
+
+func CurrentState(s *Server) (map[string]interface{}, error) {
 	defalt, err := s.store.GetQueue("default")
+	if err != nil {
+		return nil, err
+	}
+	store := s.Store()
+	totalQueued := 0
+	totalQueues := 0
+	store.EachQueue(func(q storage.Queue) {
+		totalQueued += int(q.Size())
+		totalQueues += 1
+	})
+
+	return map[string]interface{}{
+		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+		"faktory": map[string]interface{}{
+			"total_failures":  s.Stats.Failures,
+			"total_processed": s.Stats.Processed,
+			"total_enqueued":  totalQueued,
+			"total_queues":    totalQueues,
+			"working":         s.scheduler.Working.Stats(),
+			"retries":         s.scheduler.Retries.Stats(),
+			"scheduled":       s.scheduler.Scheduled.Stats(),
+			"dead":            s.scheduler.Dead.Stats(),
+			"default_size":    defalt.Size()},
+		"server": map[string]interface{}{
+			"faktory_version": faktory.Version,
+			"uptime_in_days":  uptimeInDays(s),
+			"connections":     s.Stats.Connections,
+			"command_count":   s.Stats.Commands,
+			"used_memory_mb":  currentMemoryUsage(s)},
+	}, nil
+}
+
+func info(c *Connection, s *Server, cmd string) {
+	data, err := CurrentState(s)
 	if err != nil {
 		c.Error(cmd, err)
 		return
-	}
-	data := map[string]interface{}{
-		"total_failures":   s.Stats.Failures,
-		"total_processed":  s.Stats.Processed,
-		"working_size":     s.scheduler.Working.Stats(),
-		"retries_size":     s.scheduler.Retries.Stats(),
-		"scheduled_size":   s.scheduler.Scheduled.Stats(),
-		"default_size":     defalt.Size(),
-		"uptime":           time.Now().Sub(s.Stats.StartedAt).String(),
-		"version":          faktory.Version,
-		"connection_count": s.Stats.Connections,
-		"total_commands":   s.Stats.Commands,
-		"memory":           0,
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {

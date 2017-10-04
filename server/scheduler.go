@@ -60,11 +60,19 @@ func (s *Scheduler) cycle() int64 {
 }
 
 type rocksAdapter struct {
-	store storage.Store
-	ts    storage.SortedSet
+	store   storage.Store
+	ts      storage.SortedSet
+	goodbye bool
 }
 
 func (ra *rocksAdapter) Push(name string, elm []byte) error {
+	if ra.goodbye {
+		// when the Dead elements come up for "scheduling", they have
+		// expired and are removed forever.  Goodbye!
+		util.Debug("Removing dead element forever.  Goodbye.")
+		return nil
+	}
+
 	que, err := ra.store.GetQueue(name)
 	if err != nil {
 		return err
@@ -126,6 +134,7 @@ type SchedulerSubsystem struct {
 	Retries   *Scheduler
 	Working   *Scheduler
 	Scheduled *Scheduler
+	Dead      *Scheduler
 }
 
 func (ss *SchedulerSubsystem) Stop() {
@@ -134,20 +143,23 @@ func (ss *SchedulerSubsystem) Stop() {
 	ss.Retries.Stop()
 	ss.Working.Stop()
 	ss.Scheduled.Stop()
+	ss.Dead.Stop()
 }
 
 func (s *Server) StartScheduler(waiter *sync.WaitGroup) *SchedulerSubsystem {
 	util.Info("Starting scheduler subsystem")
 
 	ss := &SchedulerSubsystem{
-		Scheduled: NewScheduler("Scheduled", &rocksAdapter{s.store, s.store.Scheduled()}),
-		Retries:   NewScheduler("Retries", &rocksAdapter{s.store, s.store.Retries()}),
-		Working:   NewScheduler("Working", &rocksAdapter{s.store, s.store.Working()}),
+		Scheduled: NewScheduler("Scheduled", &rocksAdapter{s.store, s.store.Scheduled(), false}),
+		Retries:   NewScheduler("Retries", &rocksAdapter{s.store, s.store.Retries(), false}),
+		Working:   NewScheduler("Working", &rocksAdapter{s.store, s.store.Working(), false}),
+		Dead:      NewScheduler("Dead", &rocksAdapter{s.store, s.store.Dead(), true}),
 	}
 
 	ss.Scheduled.Run(waiter)
 	ss.Retries.Run(waiter)
 	ss.Working.Run(waiter)
+	ss.Dead.Run(waiter)
 	s.scheduler = ss
 	return ss
 }

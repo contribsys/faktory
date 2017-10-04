@@ -194,6 +194,7 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	failure := map[string]interface{}{
 		"message": err.Error(),
 		"errtype": "unknown",
+		"jid":     jid,
 	}
 
 	if backtrace != nil {
@@ -205,7 +206,7 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "FAIL "+jid, failbytes)
+	err = writeLine(c.wtr, "FAIL", failbytes)
 	if err != nil {
 		return err
 	}

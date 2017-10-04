@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -17,41 +16,49 @@ var (
 	maxRetryDelay = 720 * time.Hour
 )
 
+type FailPayload struct {
+	Jid          string   `json:"jid"`
+	ErrorMessage string   `json:"message"`
+	ErrorType    string   `json:"errtype"`
+	Backtrace    []string `json:"backtrace"`
+}
+
 func fail(c *Connection, s *Server, cmd string) {
 	raw := cmd[5:]
-	elms := strings.SplitN(raw, " ", 2)
-	jid := elms[0]
 	errtype := "unknown"
 	msg := "unknown"
 	var backtrace []string
 
-	var failure faktory.Failure
-	if len(elms) == 2 {
-		hash := elms[1]
-		err := json.Unmarshal([]byte(hash), &failure)
-		if err != nil {
-			c.Error(cmd, err)
-			return
-		}
-		if failure.ErrorType != "" {
-			errtype = failure.ErrorType
-			if len(errtype) > 100 {
-				errtype = errtype[0:100]
-			}
-		}
-		if failure.ErrorMessage != "" {
-			msg = failure.ErrorMessage
-			if len(msg) > 1000 {
-				msg = msg[0:1000]
-			}
-		}
-		backtrace = failure.Backtrace
-		if len(backtrace) > 30 {
-			backtrace = backtrace[0:30]
-		}
+	var failure FailPayload
+	err := json.Unmarshal([]byte(raw), &failure)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	jid := failure.Jid
+	if jid == "" {
+		c.Error(cmd, fmt.Errorf("Missing JID"))
+		return
 	}
 
-	err := s.Fail(jid, msg, errtype, backtrace)
+	if failure.ErrorType != "" {
+		errtype = failure.ErrorType
+		if len(errtype) > 100 {
+			errtype = errtype[0:100]
+		}
+	}
+	if failure.ErrorMessage != "" {
+		msg = failure.ErrorMessage
+		if len(msg) > 1000 {
+			msg = msg[0:1000]
+		}
+	}
+	backtrace = failure.Backtrace
+	if len(backtrace) > 50 {
+		backtrace = backtrace[0:50]
+	}
+
+	err = s.Fail(jid, msg, errtype, backtrace)
 	if err != nil {
 		c.Error(cmd, err)
 		return

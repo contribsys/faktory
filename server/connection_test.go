@@ -74,7 +74,5 @@ func dummyClientWorker() *ClientWorker {
 		Labels:        []string{"golang", "someapp"},
 		StartedAt:     time.Now(),
 		lastHeartbeat: time.Now(),
-		signal:        "",
-		state:         "",
 	}
 }

@@ -8,24 +8,16 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
-	"time"
 
 	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/server"
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	server := map[string]interface{}{
-		"faktory_version": faktory.Version,
-		"uptime_in_days":  uptimeInDays(),
-		"connections":     defaultServer.Stats.Connections,
-		"used_memory_mb":  currentMemoryUsage(),
-		"command_count":   defaultServer.Stats.Commands,
-	}
-
-	hash := map[string]interface{}{
-		"faktory":         defaultServer.CurrentStats(),
-		"server":          server,
-		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+	hash, err := server.CurrentState(defaultServer)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	data, err := json.Marshal(hash)
 	if err != nil {

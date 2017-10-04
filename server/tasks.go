@@ -14,7 +14,7 @@ import (
  * a recurring schedule, e.g. "reap old heartbeats every 30 seconds".
  *
  * tr = NewTaskRunner()
- * tr.AddTask("heartbeat reaper", server.reapHeartbeats, 30)
+ * tr.AddTask("heartbeat reaper", reapHeartbeats, 30)
  * ts.Run(...)
  */
 type TaskRunner struct {

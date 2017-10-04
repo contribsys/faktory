@@ -47,7 +47,7 @@ func TestStats(t *testing.T) {
 	assert.Equal(t, "14", uid)
 
 	s = content["faktory"].(map[string]interface{})
-	proc := s["processed"].(float64)
+	proc := s["total_processed"].(float64)
 	assert.Equal(t, float64(123), proc)
 }
 

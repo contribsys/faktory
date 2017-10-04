@@ -28,7 +28,6 @@ func TestAcknowledge(t *testing.T) {
 	job, err = acknowledge(jid, set)
 	assert.NoError(t, err)
 	assert.Nil(t, job)
-
 }
 
 type fakeSet struct {

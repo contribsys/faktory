@@ -353,7 +353,7 @@ func TestBlockingPop(t *testing.T) {
 		q.Push([]byte("somedata"))
 		time.Sleep(2 * time.Millisecond)
 		q.Push([]byte("somedata"))
-		time.Sleep(30 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		q.Push([]byte("somedata"))
 	}()
 

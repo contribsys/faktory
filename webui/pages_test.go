@@ -3,6 +3,7 @@ package webui
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestIndex(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/", nil)
+	req, err := NewRequest("GET", "http://localhost:7420/", nil)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -27,7 +28,7 @@ func TestIndex(t *testing.T) {
 }
 
 func TestStats(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/stats", nil)
+	req, err := NewRequest("GET", "http://localhost:7420/stats", nil)
 	assert.NoError(t, err)
 
 	defaultServer.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
@@ -52,8 +53,8 @@ func TestStats(t *testing.T) {
 }
 
 func TestQueues(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/queues", nil)
-	assert.Nil(t, err)
+	req, err := NewRequest("GET", "http://localhost:7420/queues", nil)
+	assert.NoError(t, err)
 
 	str := defaultServer.Store()
 	str.GetQueue("default")
@@ -69,7 +70,8 @@ func TestQueues(t *testing.T) {
 }
 
 func TestQueue(t *testing.T) {
-	req := httptest.NewRequest("GET", "/queues/foobar", nil)
+	req, err := NewRequest("GET", "http://localhost:7420/queues/foobar", nil)
+	assert.NoError(t, err)
 
 	str := defaultServer.Store()
 	q, _ := str.GetQueue("foobar")
@@ -84,8 +86,8 @@ func TestQueue(t *testing.T) {
 }
 
 func TestRetries(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/retries", nil)
-	assert.Nil(t, err)
+	req, err := NewRequest("GET", "http://localhost:7420/retries", nil)
+	assert.NoError(t, err)
 
 	str := defaultServer.Store()
 	q := str.Retries()
@@ -125,7 +127,8 @@ func TestRetries(t *testing.T) {
 		"key":    {keys, "abadone"},
 		"action": {"retry"},
 	}
-	req = httptest.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+	req, err = NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w = httptest.NewRecorder()
 	retriesHandler(w, req)
@@ -145,7 +148,8 @@ func TestRetries(t *testing.T) {
 		"action": {"kill"},
 	}
 	assert.Equal(t, int64(0), str.Dead().Size())
-	req = httptest.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+	req, err = NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w = httptest.NewRecorder()
 	retriesHandler(w, req)
@@ -163,9 +167,10 @@ func TestRetry(t *testing.T) {
 	ts := util.Nows()
 
 	err := q.AddElement(ts, jid, data)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/retries/%s|%s", ts, jid), nil)
+	req, err := NewRequest("GET", fmt.Sprintf("http://localhost:7420/retries/%s|%s", ts, jid), nil)
+	assert.NoError(t, err)
 	w := httptest.NewRecorder()
 	retryHandler(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -173,8 +178,8 @@ func TestRetry(t *testing.T) {
 }
 
 func TestScheduled(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/scheduled", nil)
-	assert.Nil(t, err)
+	req, err := NewRequest("GET", "http://localhost:7420/scheduled", nil)
+	assert.NoError(t, err)
 
 	str := defaultServer.Store()
 	q := str.Scheduled()
@@ -182,7 +187,7 @@ func TestScheduled(t *testing.T) {
 	jid, data := fakeJob()
 
 	err = q.AddElement(util.Nows(), jid, data)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	var key []byte
 	q.Each(func(idx int, k, v []byte) error {
@@ -203,7 +208,8 @@ func TestScheduled(t *testing.T) {
 		"key":    {keys},
 		"action": {"delete"},
 	}
-	req = httptest.NewRequest("POST", "http://localhost:7420/scheduled", strings.NewReader(payload.Encode()))
+	req, err = NewRequest("POST", "http://localhost:7420/scheduled", strings.NewReader(payload.Encode()))
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w = httptest.NewRecorder()
 	scheduledHandler(w, req)
@@ -221,9 +227,10 @@ func TestScheduledJob(t *testing.T) {
 	ts := util.Thens(time.Now().Add(1e6 * time.Second))
 
 	err := q.AddElement(ts, jid, data)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/scheduled/%s|%s", ts, jid), nil)
+	req, err := NewRequest("GET", fmt.Sprintf("http://localhost:7420/scheduled/%s|%s", ts, jid), nil)
+	assert.NoError(t, err)
 	w := httptest.NewRecorder()
 	scheduledJobHandler(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -231,8 +238,8 @@ func TestScheduledJob(t *testing.T) {
 }
 
 func TestMorgue(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/morgue", nil)
-	assert.Nil(t, err)
+	req, err := NewRequest("GET", "http://localhost:7420/morgue", nil)
+	assert.NoError(t, err)
 
 	str := defaultServer.Store()
 	q := str.Dead()
@@ -240,7 +247,7 @@ func TestMorgue(t *testing.T) {
 	jid, data := fakeJob()
 
 	err = q.AddElement(util.Nows(), jid, data)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
 	morgueHandler(w, req)
@@ -256,9 +263,10 @@ func TestDead(t *testing.T) {
 	ts := util.Nows()
 
 	err := q.AddElement(ts, jid, data)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	req := httptest.NewRequest("GET", fmt.Sprintf("http://localhost:7420/morgue/%s|%s", ts, jid), nil)
+	req, err := NewRequest("GET", fmt.Sprintf("http://localhost:7420/morgue/%s|%s", ts, jid), nil)
+	assert.NoError(t, err)
 	w := httptest.NewRecorder()
 	deadHandler(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -269,7 +277,8 @@ func TestDead(t *testing.T) {
 		"key":    {"all"},
 		"action": {"delete"},
 	}
-	req = httptest.NewRequest("POST", "http://localhost:7420/morgue", strings.NewReader(payload.Encode()))
+	req, err = NewRequest("POST", "http://localhost:7420/morgue", strings.NewReader(payload.Encode()))
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w = httptest.NewRecorder()
 	morgueHandler(w, req)
@@ -280,8 +289,8 @@ func TestDead(t *testing.T) {
 }
 
 func TestBusy(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://localhost:7420/busy", nil)
-	assert.Nil(t, err)
+	req, err := NewRequest("GET", "http://localhost:7420/busy", nil)
+	assert.NoError(t, err)
 
 	wid := "1239123oim,bnsad"
 	wrk := &server.ClientWorker{
@@ -305,10 +314,22 @@ func TestBusy(t *testing.T) {
 		"signal": {"quiet"},
 		"wid":    {wid},
 	}
-	req = httptest.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+	req, err = NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w = httptest.NewRecorder()
 	busyHandler(w, req)
 	assert.Equal(t, 302, w.Code)
 	assert.True(t, wrk.IsQuiet())
+}
+
+func NewRequest(method string, url string, body io.Reader) (*http.Request, error) {
+	r := httptest.NewRequest(method, url, body)
+	dctx := &DefaultContext{
+		Context: r.Context(),
+		request: r,
+		locale:  "en",
+		strings: translations("en"),
+	}
+	return r.WithContext(dctx), nil
 }

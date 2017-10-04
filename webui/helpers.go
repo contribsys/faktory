@@ -40,11 +40,7 @@ func textDir() string {
 }
 
 func t(req *http.Request, word string) string {
-	dc, ok := req.Context().(*DefaultContext)
-	if !ok {
-		// TODO test suite needs this corner case
-		return word
-	}
+	dc := req.Context().(*DefaultContext)
 	return dc.Translation(word)
 }
 

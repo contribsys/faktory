@@ -1,14 +1,10 @@
 NAME=faktory
-VERSION=0.0.1
+VERSION=0.5.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
-# necessary to compile the gorocksdb bindings
-ROCKSDB_HOME=/home/ubuntu/rocksdb
-CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-CGO_LDFLAGS="-L${ROCKSDB_HOME} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy"
 
 # contains various secret or machine-specific variables.
 # DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
@@ -25,6 +21,12 @@ prepare:
 	go get github.com/stretchr/testify/...
 	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/sirupsen/logrus
+	# necessary to compile the gorocksdb bindings
+	#ROCKSDB_HOME=/home/ubuntu/rocksdb
+	#CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
+	#CGO_LDFLAGS="-L${ROCKSDB_HOME}"
+	# make won't export these variables so they must be set up outside this Makefile
+	# Use "go get -x" to debug compilation problems.
 	go get github.com/mperham/gorocksdb
 	#gem install -N fpm
 	@echo Now you should be ready to run "make"
@@ -52,11 +54,9 @@ build: clean generate
 	go build -o faktory cmd/daemon.go
 
 # goimports produces slightly different formatted code from go fmt
+# TODO integrate a few useful Golang linters.
 fmt:
 	go fmt ./...
-
-lint:
-	gometalinter ./...
 
 work:
 	pushd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk ; popd

@@ -24,8 +24,13 @@ if [ ! -d /usr/local/go ]; then
 fi
 
 cd /vagrant
+
 # download project dependencies
+export ROCKSDB_HOME="/home/ubuntu/rocksdb"
+export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
+export CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 make prepare
-cd ~/go/src/github.com/mperham && ln -s /vagrant faktory && cd faktory
+
 # build faktory
+cd ~/go/src/github.com/mperham && ln -s /vagrant faktory && cd faktory
 make

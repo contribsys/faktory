@@ -75,11 +75,17 @@ repl: clean generate
 run: clean generate
 	go run cmd/daemon.go -l debug -d .
 
+cssh:
+	pushd build/centos && vagrant up && vagrant ssh
+
+ussh:
+	pushd build/ubuntu && vagrant up && vagrant ssh
+
 # gem install fpm
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: clean version_check build_deb_systemd build_rpm_systemd
+package: version_check build_deb_systemd build_rpm_systemd
 
 version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -109,7 +115,7 @@ update_rpm: clean build_rpm
 deploy: deploy_deb deploy_rpm
 purge: purge_deb purge_rpm
 
-build_rpm_upstart: build
+build_rpm_upstart:
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/upstart \
@@ -125,7 +131,7 @@ build_rpm_upstart: build
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
-build_rpm_systemd: build
+build_rpm_systemd:
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
@@ -141,7 +147,7 @@ build_rpm_systemd: build
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
-build_deb_upstart: build
+build_deb_upstart:
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/upstart \
 		--deb-priority optional --category admin \
@@ -158,7 +164,7 @@ build_deb_upstart: build
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
-build_deb_systemd: build
+build_deb_systemd:
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \

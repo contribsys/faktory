@@ -235,6 +235,7 @@ table .table-checkbox label {
 }
 
 .navbar .navbar-brand {
+  position: absolute;
   color: #666666;
   padding: 10px 13px;
   text-shadow: none;
@@ -346,6 +347,9 @@ img.smallogo {
 }
 
 .status-text {
+  position: absolute;
+  top: 0;
+  right: 13px;
   display: inline-block;
   float: right;
   margin: 11px 0;
@@ -682,7 +686,7 @@ div.interval-slider input {
   .navbar .navbar-brand {
     float: none;
     display: block;
-  }
+  } 
 
   .navbar.navbar-fixed-top ul {
     margin-right: 0;
@@ -720,12 +724,26 @@ div.interval-slider input {
 }
 
 @media (max-width: 767px) {
+  .navbar-default {
+    height: auto;
+  }
+
+  .status-text {
+    right: 73px;
+  }
+
   .navbar-fixed-top, .navbar-fixed-bottom {
     margin: 0 -20px;
   }
 
   .navbar ul.nav li a {
-    padding: 0 8px;
+    padding: 8px;
+  }
+
+  .navbar ul.nav li.active {
+    border: none;
+    background-color: #3C91AA;
+    color: #fff;
   }
 
   .admin #page {

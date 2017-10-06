@@ -1,0 +1,13 @@
+<%
+package webui
+
+import "net/http"
+
+func ego_status_text(w io.Writer, req *http.Request) {
+%>
+<span class="status-text">
+  <% x := currentStatus() %>
+  <i class="status-icon status-<%= x %>"></i>
+  <%= t(req, x) %>
+</span>
+<% } %>

@@ -43,7 +43,7 @@ h1, h2, h3, h4, h5, h6, strong {
 }
 
 .navbar-brand, .navbar .navbar-brand, h5, h4, h3, h2, h1 {
-  font-family: Armata, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 400;
 }
 
@@ -170,7 +170,7 @@ header.row .pagination {
   width: 100%;
 }
 .summary_bar ul .count {
-  color: #b1003e;
+  color: #3C91AA;
   display: block;
   font-size: 1em;
   font-weight: bold;
@@ -215,10 +215,32 @@ table .table-checkbox label {
   line-height: 32px;
 }
 
+.navbar-default {
+  height: 53px;
+}
+
+.navbar .navbar-collapse {
+  text-align: center;
+}
+
+.navbar-nav {
+  display: inline-block;
+  float: none;
+}
+
+.navbar-default .navbar-nav>.active>a {
+  background: none;
+  color: #000000;
+  border-bottom: 2px solid #3C91AA;
+}
+
 .navbar .navbar-brand {
-  color: #b1003e;
-  padding: 13px;
+  color: #666666;
+  padding: 10px 13px;
   text-shadow: none;
+  font-weight: bold;
+  font-size: 21px;
+  letter-spacing: -.03em;
 }
 
 .navbar .navbar-brand .status {
@@ -308,17 +330,39 @@ img.smallogo {
 
 .status-sprite {
   background-image: url(/static/status.png);
-  height: 19px;
-  width: 20px;
+  height: 25px;
+  width: 25px;
   display: inline-block;
-  background-size: 20px;
+  background-size: 25px;
+  background-repeat: no-repeat;
 }
-.status-active {
+
+.status-sprite.status-active {
   background-position: 0 0;
 }
 
-.status-idle {
-  background-position: 0 -54px;
+.status-sprite.status-idle {
+  background-position: 0 bottom;
+}
+
+.status-text {
+  display: inline-block;
+  float: right;
+  margin: 11px 0;
+  padding: 4px 8px;
+  background-color: #eee;
+  border-radius: 3px;
+  text-align: right;
+  text-transform: capitalize;
+}
+
+.status-icon.status-idle {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 3px;
+  border-radius: 5px;
+  background-color: #55D487;
 }
 
 .btn {
@@ -354,14 +398,11 @@ img.smallogo {
 }
 
 .btn-danger {
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #b1003e), color-stop(100%, #980035));
-  background-image: -webkit-linear-gradient(#b1003e, #980035);
-  background-image: -moz-linear-gradient(#b1003e, #980035);
-  background-image: -o-linear-gradient(#b1003e, #980035);
-  background-image: linear-gradient(#b1003e, #980035);
+  background-image: none;
+  background-color: #FF5900;
 }
 .btn-danger:hover {
-  background-color: #980035;
+  background-color: #E65000;
 }
 
 .poll-status {

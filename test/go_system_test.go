@@ -47,6 +47,7 @@ func TestSystem(t *testing.T) {
 	}
 
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		wg.Wait()
 		s.Stop(nil)
 	}()
@@ -105,12 +106,6 @@ func pushAndPop(t *testing.T, count int) {
 		return
 	}
 	util.Info(hash)
-	_, err = client.Generic("STORE STATS")
-	if err != nil {
-		handleError(err)
-		return
-	}
-	//util.Info(res)
 }
 
 func pushJob(client *faktory.Client, idx int) error {

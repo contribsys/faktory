@@ -15,3 +15,5 @@ tmp/
 .glide/
 webui/*.ego.go
 webui/static.go
+.vagrant
+packaging/output/

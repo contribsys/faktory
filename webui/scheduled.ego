@@ -64,7 +64,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
     </div>
     <div class="btn-group pull-right flip">
       <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
-      <button class="btn btn-danger" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
+      <button class="btn btn-warn" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
     </div>
   </form>
 <% } else { %>

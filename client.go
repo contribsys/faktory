@@ -3,6 +3,7 @@ package faktory
 import (
 	"bufio"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -99,7 +101,7 @@ FOO_URL=tcp://faktory.example.com:7419`)
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 	if password != "" {
-		client.Salt = strconv.FormatInt(time.Now().UnixNano(), 16)
+		client.Salt = strconv.FormatInt(rand.Int63(), 16)
 		client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+client.Salt)))
 	}
 	data, err := json.Marshal(client)
@@ -107,11 +109,24 @@ func Dial(srv *Server, password string) (*Client, error) {
 		return nil, err
 	}
 
-	//util.Infof("Opening connection to %s", srv.Address)
-	dial := &net.Dialer{Timeout: srv.Timeout}
-	conn, err := dial.Dial(srv.Network, srv.Address)
+	local, err := regexp.Match("\\Alocalhost:", []byte(srv.Address))
 	if err != nil {
 		return nil, err
+	}
+	//util.Debugf("Connecting to %v TLS:%v", srv, !local)
+
+	var conn net.Conn
+	dial := &net.Dialer{Timeout: srv.Timeout}
+	if local {
+		conn, err = dial.Dial(srv.Network, srv.Address)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)

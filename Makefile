@@ -58,8 +58,13 @@ build: clean generate
 fmt:
 	go fmt ./...
 
+swork:
+	cd test/ruby && FAKTORY_PROVIDER=FURL \
+		FURL=tcp://localhost.contribsys.com:7419 \
+		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
+
 work:
-	pushd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk ; popd
+	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
 clean:
 	@rm -f webui/*.ego.go
@@ -74,6 +79,9 @@ repl: clean generate
 
 run: clean generate
 	go run cmd/daemon.go -l debug -d .
+
+srun: clean generate
+	go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -d .
 
 cssh:
 	pushd build/centos && vagrant up && vagrant ssh

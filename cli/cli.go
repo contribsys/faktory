@@ -106,7 +106,6 @@ func HandleSignals(s *server.Server) {
 		signal.Notify(signals, k)
 	}
 
-	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 	for {
 		sig := <-signals
 		util.Debugf("Received signal: %v", sig)

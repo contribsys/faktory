@@ -126,7 +126,7 @@ func translations(locale string) map[string]string {
 	panic("Shouldn't get here")
 }
 
-func FireItUp(svr *server.Server) {
+func FireItUp(svr *server.Server) error {
 	defaultServer = svr
 	go func() {
 		s := &http.Server{
@@ -134,10 +134,17 @@ func FireItUp(svr *server.Server) {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
+			TLSConfig:      svr.TLSConfig,
 		}
-		util.Info("Web server now listening on port 7420")
-		log.Fatal(s.ListenAndServe())
+		if s.TLSConfig == nil {
+			util.Info("Web server now listening on port 7420")
+			log.Fatal(s.ListenAndServe())
+		} else {
+			util.Info("Web server now listening securely on port 7420")
+			log.Fatal(s.ListenAndServeTLS("", ""))
+		}
 	}()
+	return nil
 }
 
 func acceptableLanguages(header string) []string {

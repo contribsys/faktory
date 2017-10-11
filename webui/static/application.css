@@ -388,7 +388,6 @@ img.smallogo {
   border-radius: 5px;
 }
 
-
 .status-icon.status-idle {
   background-color: #55D487;
 }
@@ -397,19 +396,23 @@ img.smallogo {
   background-color: #F8AC3E;
 }
 
-
 .btn {
-  font-weight: 700;
   border: none;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  background-image: none;
+  font-weight: bold;
 }
 
 .btn:hover {
-  background-color: #ededed;
+  color: #fff;
+}
+
+.btn-success {
+  background-color: #55D487;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background-color: #50BD7B;
 }
 
 .btn-primary:hover {
@@ -417,7 +420,6 @@ img.smallogo {
 }
 
 .btn-warn {
-  background-image: none;
   background-color: #3C91AA;
   color: #fff;
 }
@@ -427,7 +429,6 @@ img.smallogo {
 }
 
 .btn-danger {
-  background-image: none;
   background-color: #FF5900;
 }
 .btn-danger:hover {
@@ -582,9 +583,6 @@ div.interval-slider input {
   margin: -5px 0 0 -5px;
   background-color: #80002d;
   border-radius: 10px;
-/*  box-shadow: 0 0 9px #666;
-  -moz-box-shadow: 0 0 9px #666;
-  -webkit-box-shadow: 0 0 9px #666;*/
   border: 3px solid transparent;
   z-index: 10;
 }
@@ -598,45 +596,36 @@ div.interval-slider input {
 @-webkit-keyframes beacon-dot-pulse {
   from {
     background-color: #80002d;
-    /*-webkit-box-shadow: 0 0 9px #666;*/
   }
   50% {
     background-color: #c90047;
-    /*-webkit-box-shadow: 0 0 18px #666;*/
   }
   to {
     background-color: #80002d;
-    /*-webkit-box-shadow: 0 0 9px #666;*/
   }
 }
 
 @-moz-keyframes beacon-dot-pulse {
   from {
     background-color: #80002d;
-    -moz-box-shadow: 0 0 9px #666;
   }
   50% {
     background-color: #c90047;
-    -moz-box-shadow: 0 0 18px #666;
   }
   to {
     background-color: #80002d;
-    -moz-box-shadow: 0 0 9px #666;
   }
 }
 
 @keyframes beacon-dot-pulse {
   from {
     background-color: #80002d;
-    /*box-shadow: 0 0 9px #666;*/
   }
   50% {
     background-color: #c90047;
-    /*box-shadow: 0 0 18px #666;*/
   }
   to {
     background-color: #80002d;
-    /*box-shadow: 0 0 9px #666;*/
   }
 }
 
@@ -1204,4 +1193,10 @@ div.interval-slider input {
 
 .delete-confirm {
   width: 20%;
+}
+
+.alert-success {
+  background-color: #E6F9ED;
+  border-color: #55D487;
+  color: #50BD7B;
 }

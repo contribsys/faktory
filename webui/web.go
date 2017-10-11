@@ -50,8 +50,6 @@ var (
 //go:generate go-bindata -pkg webui -o static.go static/...
 
 func init() {
-	// TODO favicon.ico
-	http.Handle("/favicon.ico", http.NotFoundHandler())
 	http.Handle("/static/", Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir})))
 
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))

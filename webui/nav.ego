@@ -35,7 +35,7 @@ func ego_nav(w io.Writer, req *http.Request) {
             <a href="<%= tab.Path %>"><%= t(req, tab.Name) %></a>
           </li>
         <% } %>
-      </ul> 
+      </ul>
       <ul class="nav navbar-nav navbar-right navbar-livereload" data-navbar="static">
         <li>
         </li>

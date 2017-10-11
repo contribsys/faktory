@@ -19,8 +19,8 @@ func ego_nav(w io.Writer, req *http.Request) {
       <div class="navbar-toggle collapsed navbar-livereload">
       </div>
       <a class="navbar-brand" href="/">
-        Faktory
         <% ego_status(w, req) %>
+        faktory
       </a>
     </div>
 
@@ -41,6 +41,7 @@ func ego_nav(w io.Writer, req *http.Request) {
         </li>
       </ul>
     </div>
+    <% ego_status_text(w, req) %>
   </div>
 </div>
 <% } %>

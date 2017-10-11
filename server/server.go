@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	EventHandlers = make([]func(*Server), 0)
+	EventHandlers = make([]func(*Server) error, 0)
 )
 
 type ServerOptions struct {
@@ -37,8 +38,9 @@ type RuntimeStats struct {
 }
 
 type Server struct {
-	Options *ServerOptions
-	Stats   *RuntimeStats
+	Options   *ServerOptions
+	Stats     *RuntimeStats
+	TLSConfig *tls.Config
 
 	pwd        string
 	listener   net.Listener
@@ -52,7 +54,7 @@ type Server struct {
 
 // register a global handler to be called when the Server instance
 // has finished booting but before it starts listening.
-func OnStart(x func(*Server)) {
+func OnStart(x func(*Server) error) {
 	EventHandlers = append(EventHandlers, x)
 }
 
@@ -83,22 +85,35 @@ func (s *Server) Store() storage.Store {
 }
 
 func (s *Server) Start() error {
+	tlsC, err := tlsConfig(s.Options.Binding, false)
+	if err != nil {
+		return err
+	}
+
 	store, err := storage.Open("rocksdb", s.Options.StoragePath)
 	if err != nil {
 		return err
 	}
 	defer store.Close()
 
-	addr, err := net.ResolveTCPAddr("tcp", s.Options.Binding)
-	if err != nil {
-		return err
-	}
-	listener, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return err
+	var listener net.Listener
+
+	if tlsC != nil {
+		listener, err = tls.Listen("tcp", s.Options.Binding, tlsC)
+		if err != nil {
+			return err
+		}
+		util.Infof("Now listening securely at %s, press Ctrl-C to stop", s.Options.Binding)
+	} else {
+		listener, err = net.Listen("tcp", s.Options.Binding)
+		if err != nil {
+			return err
+		}
+		util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 	}
 
 	s.mu.Lock()
+	s.TLSConfig = tlsC
 	s.store = store
 	s.listener = listener
 	s.loadWorkingSet()
@@ -111,7 +126,10 @@ func (s *Server) Start() error {
 	defer s.taskRunner.Stop()
 
 	for _, x := range EventHandlers {
-		x(s)
+		err := x(s)
+		if err != nil {
+			return err
+		}
 	}
 
 	// this is the central runtime loop for the main goroutine

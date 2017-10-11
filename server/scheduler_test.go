@@ -37,7 +37,7 @@ func TestScanner(t *testing.T) {
 	assert.NotNil(t, data)
 	assert.Equal(t, TWO, data["enqueued"])
 	assert.Equal(t, TWO, data["cycles"])
-	assert.Equal(t, 2, fa.QueueSize())
+	assert.Equal(t, TWO, fa.Size())
 }
 
 type fakeAdapter struct {
@@ -52,7 +52,6 @@ func (fs *fakeAdapter) Push(name string, data []byte) error {
 	fs.queue = append(fs.queue, data)
 	return nil
 }
-
-func (fs *fakeAdapter) QueueSize() int {
-	return len(fs.queue)
+func (fs *fakeAdapter) Size() int64 {
+	return int64(len(fs.queue))
 }

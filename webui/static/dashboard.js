@@ -92,11 +92,11 @@ var realtimeGraph = function(updatePath) {
     $.getJSON($("#history").data("update-url"), function(data) {
 
       if (i === 0) {
-        var processed = data.faktory.processed;
-        var failed = data.faktory.failed;
+        var processed = data.faktory.total_processed;
+        var failed = data.faktory.total_failed;
       } else {
-        var processed = data.faktory.processed - Faktory.processed;
-        var failed = data.faktory.failed - Faktory.failed;
+        var processed = data.faktory.total_processed - Faktory.processed;
+        var failed = data.faktory.total_failed - Faktory.failed;
       }
 
       dataPoint = {};
@@ -106,8 +106,8 @@ var realtimeGraph = function(updatePath) {
       graph.series.addData(dataPoint);
       graph.render();
 
-      Faktory.processed = data.faktory.processed;
-      Faktory.failed = data.faktory.failed;
+      Faktory.processed = data.faktory.total_processed;
+      Faktory.failed = data.faktory.total_failed;
 
       updateStatsSummary(data.faktory);
       updateServerStats(data.server);
@@ -211,13 +211,13 @@ var createSeries = function(obj) {
 };
 
 var updateStatsSummary = function(data) {
-  $('ul.summary li.processed span.count').html(data.processed.numberWithDelimiter())
-  $('ul.summary li.failed span.count').html(data.failed.numberWithDelimiter())
-  $('ul.summary li.busy span.count').html(data.busy.numberWithDelimiter())
-  $('ul.summary li.scheduled span.count').html(data.scheduled.numberWithDelimiter())
-  $('ul.summary li.retries span.count').html(data.retries.numberWithDelimiter())
-  $('ul.summary li.enqueued span.count').html(data.enqueued.numberWithDelimiter())
-  $('ul.summary li.dead span.count').html(data.dead.numberWithDelimiter())
+  $('ul.summary li.processed span.count').html(data.total_processed.numberWithDelimiter())
+  $('ul.summary li.failed span.count').html(data.total_failures.numberWithDelimiter())
+  $('ul.summary li.busy span.count').html(data.tasks.Busy.size.numberWithDelimiter())
+  $('ul.summary li.scheduled span.count').html(data.tasks.Scheduled.size.numberWithDelimiter())
+  $('ul.summary li.retries span.count').html(data.tasks.Retries.size.numberWithDelimiter())
+  $('ul.summary li.enqueued span.count').html(data.total_enqueued.numberWithDelimiter())
+  $('ul.summary li.dead span.count').html(data.tasks.Dead.size.numberWithDelimiter())
 
 }
 

@@ -143,6 +143,7 @@ func uptimeInDays(s *Server) string {
 }
 
 func currentMemoryUsage(s *Server) string {
+	// TODO maybe remove this and/or offer a better stat?
 	return "123 MB"
 }
 
@@ -154,6 +155,7 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 	store := s.Store()
 	totalQueued := 0
 	totalQueues := 0
+	// queue size is cached so this should be very efficient.
 	store.EachQueue(func(q storage.Queue) {
 		totalQueued += int(q.Size())
 		totalQueues += 1
@@ -162,12 +164,12 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
 		"faktory": map[string]interface{}{
+			"default_size":    defalt.Size(),
 			"total_failures":  s.Stats.Failures,
 			"total_processed": s.Stats.Processed,
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
-			"tasks":           s.taskRunner.Stats(),
-			"default_size":    defalt.Size()},
+			"tasks":           s.taskRunner.Stats()},
 		"server": map[string]interface{}{
 			"faktory_version": faktory.Version,
 			"uptime_in_days":  uptimeInDays(s),

@@ -115,7 +115,7 @@ func (ts *taskRunner) cycle() {
 
 func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	ts := newTaskRunner()
-	ts.AddTask(15, &reaper{s, 0})
+	ts.AddTask(15, &busyReaper{s, 0})
 	ts.Run(waiter)
 	s.taskRunner = ts
 }

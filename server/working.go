@@ -61,7 +61,7 @@ func (s *Server) loadWorkingSet() error {
 		return err
 	}
 	if addedCount > 0 {
-		util.Debugf("Bootstrap working set, loaded %d", addedCount)
+		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
 	}
 	return err
 }
@@ -82,16 +82,16 @@ func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	return res.Job, err
 }
 
-type reaper struct {
+type busyReaper struct {
 	s     *Server
 	count int
 }
 
-func (r *reaper) Name() string {
-	return "heartbeat reaper"
+func (r *busyReaper) Name() string {
+	return "Busy"
 }
 
-func (r *reaper) Execute() error {
+func (r *busyReaper) Execute() error {
 	count := 0
 
 	jobs, err := r.s.store.Working().RemoveBefore(util.Nows())
@@ -135,8 +135,9 @@ func (r *reaper) Execute() error {
 	return nil
 }
 
-func (r *reaper) Stats() map[string]interface{} {
+func (r *busyReaper) Stats() map[string]interface{} {
 	return map[string]interface{}{
+		"size":   len(workingMap),
 		"reaped": r.count,
 	}
 }

@@ -84,16 +84,21 @@ func (ra *rocksAdapter) Push(name string, elm []byte) error {
 func (ra *rocksAdapter) Prune(string) ([][]byte, error) {
 	return ra.ts.RemoveBefore(util.Nows())
 }
+func (ra *rocksAdapter) Size() int64 {
+	return ra.ts.Size()
+}
 
 type scannerAdapter interface {
 	Prune(string) ([][]byte, error)
 	Push(string, []byte) error
+	Size() int64
 }
 
 func (s *scanner) Stats() map[string]interface{} {
 	return map[string]interface{}{
 		"enqueued":      s.jobs,
 		"cycles":        s.cycles,
+		"size":          s.adapter.Size(),
 		"wall_time_sec": (float64(s.walltime) / 1000000000),
 	}
 }

@@ -34,10 +34,21 @@ end
 def enqueuer
   loop do
     $pool.with do |faktory|
-      puts faktory.push({ queue: :critical, jobtype: 'someworker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
+      puts faktory.push({ queue: :critical, jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
     end
     sleep(1 + rand)
   end
 end
 
-#inker = safe_spawn(&method(:enqueuer))
+def safe_spawn
+  Thread.new do
+    begin
+      yield
+    rescue
+      puts $!
+      p $!.backtrace
+    end
+  end
+end
+
+inker = safe_spawn(&method(:enqueuer))

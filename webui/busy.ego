@@ -106,7 +106,7 @@ func ego_busy(w io.Writer, req *http.Request) {
         <td>
           <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
         </td>
-        <td><%= job.Type %></td>
+        <td><code><%= job.Type %></code></td>
         <td>
           <div class="args"><code><%= job.Args %></code></div>
         </td>

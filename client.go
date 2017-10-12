@@ -70,7 +70,7 @@ func Open() (*Client, error) {
 			return nil, fmt.Errorf(`Error: FAKTORY_PROVIDER is not a URL. It is the name of the ENV var that contains the URL:
 
 FAKTORY_PROVIDER=FOO_URL
-FOO_URL=tcp://faktory.example.com:7419`)
+FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 		}
 
 		uval, ok := os.LookupEnv(val)

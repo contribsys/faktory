@@ -24,7 +24,6 @@ type Job struct {
 	Args  []interface{} `json:"args"`
 
 	// optional
-	Gid        string                 `json:"gid,omitempty"`
 	CreatedAt  string                 `json:"created_at,omitempty"`
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
 	At         string                 `json:"at,omitempty"`

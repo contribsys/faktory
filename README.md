@@ -2,7 +2,7 @@
 
 At a high level, Faktory is the central repository for background jobs
 within your application. Jobs have a name and a set of
-arguments and placed into queues.
+arguments and are placed into queues for workers to fetch and execute.
 
 You can use this server to distribute jobs to one or hundreds of
 machines.  Jobs can be executed with any language by clients using
@@ -20,11 +20,22 @@ language-agnostic, persistent background jobs.
 - FAIL'd jobs trigger a retry workflow with exponential backoff.
 - Contains a comprehensive Web UI for management and monitoring.
 
+## Installation
+
+Standard 64-bit Linux builds are distributed via PackageCloud.io.  For Debian and Ubuntu:
+
+```
+curl -s https://packagecloud.io/install/repositories/contribsys/faktory/script.deb.sh | sudo bash
+sudo apt-get install faktory
+```
+
+See the [PackageCloud repository](https://packagecloud.io/contribsys/faktory) for RPM and other options.
+
 ## How it works
 
 Faktory listens on two ports:
 
-* 7419 is the command port, clients AHOY and then PUSH or FETCH jobs.
+* 7419 is the command port, clients connect and then PUSH or FETCH jobs.
 * 7420 is the UI port for web browsers
 
 See the [Security](/contribsys/faktory/wiki/Security) wiki page for
@@ -32,12 +43,8 @@ details about securing Faktory network access.
 
 ## Documentation
 
-Please [see the Faktory wiki](https://github.com/contribsys/faktory/wiki) for full documentation.
-
-## License
-
-Faktory is licensed GPLv3.
+Please [see the Faktory wiki](/contribsys/faktory/wiki) for full documentation.
 
 ## Author
 
-Mike Perham, @mperham
+Mike Perham, @mperham, mike @ contribsys.com

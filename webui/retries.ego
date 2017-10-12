@@ -74,7 +74,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
     </div>
     <div class="btn-group pull-left flip">
       <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
-      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
+      <button class="btn btn-warn btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
       <button class="btn btn-danger btn-xs" type="submit" name="action" value="kill"><%= t(req, "Kill") %></button>
     </div>
   </form>

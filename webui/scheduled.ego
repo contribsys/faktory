@@ -56,15 +56,15 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
             </td>
             <td><%= job.Type %></td>
             <td>
-               <div class="args"><%= job.Args %></div>
+               <div class="args"><code><%= job.Args %></code></div>
             </td>
           </tr>
         <% }) %>
       </table>
     </div>
-    <div class="btn-group pull-right flip">
+    <div class="pull-right flip">
+      <button class="btn btn-primary" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
       <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
-      <button class="btn btn-warn" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
     </div>
   </form>
 <% } else { %>

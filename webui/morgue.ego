@@ -82,8 +82,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count i
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
       <div class="btn-group pull-right flip">
-        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
         <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryAll") %></button>
+        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
       </div>
     </form>
   <% } %>

@@ -21,7 +21,7 @@ func ego_busy(w io.Writer, req *http.Request) {
     <form method="POST" class="warning-messages">
       <%== csrfTag(req) %>
       <input type="hidden" name="wid" value="all"/>
-      <button class="btn btn-warn" type="submit" name="signal" value="quiet" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "QuietAll") %></button>
+      <button class="btn btn-primary" type="submit" name="signal" value="quiet" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "QuietAll") %></button>
       <button class="btn btn-danger" type="submit" name="signal" value="terminate" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "StopAll") %></button>
     </form>
   </div>
@@ -39,10 +39,13 @@ func ego_busy(w io.Writer, req *http.Request) {
     <% busyWorkers(func(worker *server.ClientWorker) { %>
       <tr>
         <td>
-          <%= worker.Wid %>
+          <code>
+            <%= worker.Wid %>
+          </code>
         </td>
         <td>
-          <%= worker.Hostname %>:<%= worker.Pid %>
+          
+          <code><%= worker.Hostname %>:<%= worker.Pid %></code>
           <% for _, label := range worker.Labels { %>
             <span class="label label-info"><%= label %></span>
           <% } %>
@@ -57,11 +60,11 @@ func ego_busy(w io.Writer, req *http.Request) {
             <form method="POST">
               <%== csrfTag(req) %>
               <input type="hidden" name="wid" value="<%= worker.Wid %>"/>
-              <div class="btn-group pull-right flip">
+              <div class="pull-right flip">
                 <% if !worker.IsQuiet() { %>
-                  <button class="btn btn-warn" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
+                  <button class="btn btn-primary btn-xs" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
                 <% } %>
-                <button class="btn btn-danger" type="submit" name="signal" value="terminate"><%= t(req, "Stop") %></button>
+                <button class="btn btn-danger btn-xs" type="submit" name="signal" value="terminate"><%= t(req, "Stop") %></button>
               </div>
             </form>
           </div>
@@ -90,14 +93,22 @@ func ego_busy(w io.Writer, req *http.Request) {
     <% busyReservations(func(res *server.Reservation) { %>
       <% job := res.Job %>
       <tr>
-        <td><%= res.Wid %></td>
-        <td><%= job.Jid %></td>
+        <td>
+          <code>
+            <%= res.Wid %>
+          </code>
+        </td>
+        <td>
+          <code>
+            <%= job.Jid %>
+          </code>
+        </td>
         <td>
           <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
         </td>
         <td><%= job.Type %></td>
         <td>
-          <div class="args"><%= job.Args %></div>
+          <div class="args"><code><%= job.Args %></code></div>
         </td>
         <td><%= relativeTime(res.Since) %></td>
       </tr>

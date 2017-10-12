@@ -23,6 +23,9 @@ func (store *rocksStore) Compact() error {
 	return nil
 }
 
+/*
+ * TODO Purge old backups
+ */
 func (store *rocksStore) Backup() error {
 	fo := gorocksdb.NewDefaultFlushOptions()
 	defer fo.Destroy()

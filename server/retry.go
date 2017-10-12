@@ -64,7 +64,7 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	util.Debugf("%s Failure %v", jid, failure)
+	//util.Debugf("%s Failure %v", jid, failure)
 
 	c.Ok()
 }

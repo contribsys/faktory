@@ -33,8 +33,13 @@ end
 
 def enqueuer
   loop do
-    $pool.with do |faktory|
-      puts faktory.push({ queue: :critical, jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
+    begin
+      $pool.with do |faktory|
+        puts faktory.push({ queue: :critical, jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
+      end
+    rescue => ex
+      # network down, faktory shut down, etc.
+      puts ex
     end
     sleep(1 + rand)
   end

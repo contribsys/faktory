@@ -51,6 +51,7 @@ var (
 
 func init() {
 	http.Handle("/static/", Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir})))
+	http.HandleFunc("/stats", DebugLog(statsHandler))
 
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
 	http.HandleFunc("/queues", Log(queuesHandler))
@@ -62,7 +63,6 @@ func init() {
 	http.HandleFunc("/morgue", Log(morgueHandler))
 	http.HandleFunc("/morgue/", Log(deadHandler))
 	http.HandleFunc("/busy", Log(busyHandler))
-	http.HandleFunc("/stats", Log(statsHandler))
 	http.HandleFunc("/debug", Log(debugHandler))
 	initLocales()
 
@@ -189,7 +189,17 @@ func localeFromHeader(value string) string {
 
 /////////////////////////////////////
 
+// The stats handler is hit a lot and adds much noise to the log,
+// quiet it down.
+func DebugLog(pass http.HandlerFunc) http.HandlerFunc {
+	return Setup(pass, true)
+}
+
 func Log(pass http.HandlerFunc) http.HandlerFunc {
+	return Setup(pass, false)
+}
+
+func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// this is the entry point for every dynamic request
 		// static assets bypass all this hubbub
@@ -208,7 +218,11 @@ func Log(pass http.HandlerFunc) http.HandlerFunc {
 		}
 
 		pass(w, r.WithContext(dctx))
-		util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
+		if debug {
+			util.Debugf("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
+		} else {
+			util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
+		}
 	}
 }
 

@@ -160,27 +160,28 @@ header.row .pagination {
 
   .summary_bar ul li {
     width: 100%;
+    padding: 6px 0;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .summary_bar ul li:last-child {
+    border-bottom: none;
   }
 
   .summary_bar ul li span {
     width: 50% !important;
   }
+
   .summary_bar ul .desc {
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    
   }
   .summary_bar ul .count {
-    padding-bottom: 0px;
     text-align: right;
     font-size: 1em;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .summary_bar ul li:last-child .count,
-  .summary_bar ul li:last-child .desc {
-    border-bottom: none;
   }
 }
+
 @media (max-width: 979px) and (min-width: 768px) {
   .summary_bar ul li.col-sm-2 {
     margin: 0 10px;
@@ -382,9 +383,9 @@ img.smallogo {
 
 .status-icon {
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 3px;
+  width: 10px;
+  height: 10px;
+  margin-right: 2px;
   border-radius: 5px;
 }
 
@@ -400,10 +401,28 @@ img.smallogo {
   border: none;
   background-image: none;
   font-weight: bold;
+  color: #fff;
 }
 
 .btn:hover {
   color: #fff;
+}
+
+.btn-default {
+  color: #585454;
+}
+
+.btn-default:hover {
+  background-color: #fefefe;
+  color: #585454;
+}
+
+.btn-primary {
+  background-color: #3C91AA;
+}
+
+.btn-primary:hover {
+  background-color: #32788D;
 }
 
 .btn-success {
@@ -415,17 +434,12 @@ img.smallogo {
   background-color: #50BD7B;
 }
 
-.btn-primary:hover {
-  background-color: #980035;
-}
-
 .btn-warn {
-  background-color: #3C91AA;
-  color: #fff;
+  background-color: #F5A623;
 }
 
 .btn-warn:hover {
-  background-color: #32788D;
+  background-color: #D79220;
 }
 
 .btn-danger {
@@ -519,7 +533,7 @@ div.interval-slider input {
   width: 580px;
   min-height: 20px;
   margin-top: 5px;
-  float: right;
+  float: left;
   text-align: left;
 }
 #realtime-legend .timestamp,
@@ -566,7 +580,7 @@ div.interval-slider input {
 .beacon {
   position: relative;
   width: 20px;
-  height: 20px;
+  height: 15px;
   display: inline-block;
 }
 
@@ -581,7 +595,7 @@ div.interval-slider input {
   width: 10px;
   height: 10px;
   margin: -5px 0 0 -5px;
-  background-color: #80002d;
+  background-color: #D79220;
   border-radius: 10px;
   border: 3px solid transparent;
   z-index: 10;
@@ -595,37 +609,37 @@ div.interval-slider input {
 
 @-webkit-keyframes beacon-dot-pulse {
   from {
-    background-color: #80002d;
+    background-color: #D79220;
   }
   50% {
-    background-color: #c90047;
+    background-color: #F5A623;
   }
   to {
-    background-color: #80002d;
+    background-color: #D79220;
   }
 }
 
 @-moz-keyframes beacon-dot-pulse {
   from {
-    background-color: #80002d;
+    background-color: #D79220;
   }
   50% {
-    background-color: #c90047;
+    background-color: #F5A623;
   }
   to {
-    background-color: #80002d;
+    background-color: #D79220;
   }
 }
 
 @keyframes beacon-dot-pulse {
   from {
-    background-color: #80002d;
+    background-color: #D79220;
   }
   50% {
-    background-color: #c90047;
+    background-color: #F5A623;
   }
   to {
-    background-color: #80002d;
+    background-color: #D79220;
   }
 }
 
@@ -634,7 +648,7 @@ div.interval-slider input {
   height: 28px;
   margin: -14px 0 0 -14px;
   border-radius: 28px;
-  border: 3px solid #80002d;
+  border: 3px solid #F5A623;
   z-index: 5;
   opacity: 0;
 }
@@ -796,7 +810,6 @@ div.interval-slider input {
     opacity: 1
 }
 .rickshaw_graph .detail .x_label {
-    font-family: Arial, sans-serif;
     border-radius: 3px;
     padding: 6px;
     opacity: .5;
@@ -818,7 +831,6 @@ div.interval-slider input {
     border-radius: 3px;
     padding: .25em;
     font-size: 12px;
-    font-family: Arial, sans-serif;
     opacity: 0;
     background: rgba(0, 0, 0, .4);
     color: #fff;
@@ -897,7 +909,6 @@ div.interval-slider input {
 .rickshaw_graph .x_tick .title {
     position: absolute;
     font-size: 12px;
-    font-family: Arial, sans-serif;
     opacity: .5;
     white-space: nowrap;
     margin-left: 3px;
@@ -1031,7 +1042,6 @@ div.interval-slider input {
     text-shadow: -1px 1px 0 rgba(0, 0, 0, .8), 1px -1px 0 rgba(0, 0, 0, .8), 1px 1px 0 rgba(0, 0, 0, .8), 0 1px 0 rgba(0, 0, 0, .8), 0 -1px 0 rgba(0, 0, 0, .8), 1px 0 0 rgba(0, 0, 0, .8), -1px 0 0 rgba(0, 0, 0, .8), -1px -1px 0 rgba(0, 0, 0, .8)
 }
 .rickshaw_legend {
-    font-family: Arial;
     font-size: 12px;
     color: #fff;
     background: #404040;
@@ -1199,4 +1209,8 @@ div.interval-slider input {
   background-color: #E6F9ED;
   border-color: #55D487;
   color: #50BD7B;
+}
+
+code {
+  color: #585454;
 }

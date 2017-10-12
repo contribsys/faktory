@@ -29,7 +29,7 @@ var realtimeGraph = function(updatePath) {
     renderer: 'line',
     interpolation: 'linear',
 
-    series: new Rickshaw.Series.FixedDuration([{ name: graphElement.dataset.failedLabel, color: '#B1003E' }, { name: graphElement.dataset.processedLabel, color: '#006f68' }], undefined, {
+    series: new Rickshaw.Series.FixedDuration([{ name: graphElement.dataset.failedLabel, color: '#E65000' }, { name: graphElement.dataset.processedLabel, color: '#50BD7B' }], undefined, {
         timeInterval: timeInterval,
         maxDataPoints: 100,
     })
@@ -133,11 +133,11 @@ var historyGraph = function() {
     interpolation: 'linear',
     series: [
       {
-        color: "#B1003E",
+        color: "#E65000",
         data: failed,
         name: graphElement.dataset.failedLabel
       }, {
-        color: "#006f68",
+        color: "#50BD7B",
         data: processed,
         name: graphElement.dataset.processedLabel
       }

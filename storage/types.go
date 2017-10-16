@@ -32,6 +32,10 @@ type Store interface {
 	EachBackup(func(bi BackupInfo)) error
 	RestoreFromLatest() error
 
+	/*
+	 * Clear the database of all job data.
+	 * Equivalent to Redis's FLUSHDB
+	 */
 	Flush() error
 }
 

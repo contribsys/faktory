@@ -23,6 +23,7 @@ func main() {
 	s := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: opts.StorageDirectory,
+		Environment:      opts.Environment,
 	})
 
 	go cli.HandleSignals(s)

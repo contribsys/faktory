@@ -107,7 +107,11 @@ func (store *rocksStore) EachQueue(x func(Queue)) {
 }
 
 func (store *rocksStore) Flush() error {
-	util.Warn("Flushing entire dataset")
+	/*
+	 * This is a very slow implementation.  Are there lower-level
+	 * RocksDB operations we can use to bulk-delete everything
+	 * in a column family or database?
+	 */
 	store.mu.Lock()
 	defer store.mu.Unlock()
 

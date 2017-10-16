@@ -27,6 +27,11 @@ var cmdSet = map[string]command{
 }
 
 func flush(c *Connection, s *Server, cmd string) {
+	if s.Options.Environment == "development" {
+		util.Info("Flushing dataset")
+	} else {
+		util.Warn("Flushing dataset")
+	}
 	err := s.store.Flush()
 	if err != nil {
 		c.Error(cmd, err)
@@ -49,6 +54,14 @@ func push(c *Connection, s *Server, cmd string) {
 	}
 	if job.Jid == "" || len(job.Jid) < 8 {
 		c.Error(cmd, fmt.Errorf("All jobs must have a reasonable jid parameter"))
+		return
+	}
+	if job.Type == "" {
+		c.Error(cmd, fmt.Errorf("All jobs must have a jobtype parameter"))
+		return
+	}
+	if job.Args == nil {
+		c.Error(cmd, fmt.Errorf("All jobs must have an args parameter"))
 		return
 	}
 

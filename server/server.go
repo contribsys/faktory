@@ -27,6 +27,7 @@ type ServerOptions struct {
 	Binding          string
 	StorageDirectory string
 	Password         string
+	Environment      string
 }
 
 type RuntimeStats struct {

@@ -27,7 +27,7 @@ prepare:
 	#CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 	# make won't export these variables so they must be set up outside this Makefile
 	# Use "go get -x" to debug compilation problems.
-	go get github.com/mperham/gorocksdb
+	go get -u github.com/mperham/gorocksdb
 	#gem install -N fpm
 	@echo Now you should be ready to run "make"
 

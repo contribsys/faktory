@@ -31,6 +31,8 @@ type Store interface {
 	//Compact() error
 	EachBackup(func(bi BackupInfo)) error
 	RestoreFromLatest() error
+
+	Flush() error
 }
 
 type Queue interface {

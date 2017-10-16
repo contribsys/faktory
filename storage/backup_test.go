@@ -62,13 +62,37 @@ func TestBackupAndRestore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("f"), elm)
 
-	elm, err = q.Pop()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("fo"), elm)
-
-	elm, err = q.Pop()
-	assert.NoError(t, err)
-	assert.Nil(t, elm)
-
 	assert.Equal(t, int64(1), db.Retries().Size())
+
+	// flush the entire db
+	// backup
+	// add item to queue
+	// restore
+	// verify the queue is empty
+
+	err = db.Flush()
+	assert.NoError(t, err)
+
+	q, err = db.GetQueue("default")
+	assert.Equal(t, int64(0), q.Size())
+
+	err = db.Backup()
+	assert.NoError(t, err)
+
+	q, err = db.GetQueue("default")
+	assert.NoError(t, err)
+
+	err = q.Push([]byte("foo"))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), q.Size())
+
+	err = db.RestoreFromLatest()
+	assert.NoError(t, err)
+
+	db, err = Open("rocksdb", "/tmp/backup.db")
+	assert.NoError(t, err)
+
+	q, err = db.GetQueue("default")
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), q.Size())
 }

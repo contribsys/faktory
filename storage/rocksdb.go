@@ -106,6 +106,48 @@ func (store *rocksStore) EachQueue(x func(Queue)) {
 	}
 }
 
+func (store *rocksStore) Flush() error {
+	util.Warn("Flushing entire dataset")
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	var err error
+	keys := make([]string, 0, len(store.queueSet))
+	for k, q := range store.queueSet {
+		keys = append(keys, k)
+		_, err = q.Clear()
+		if err != nil {
+			return err
+		}
+	}
+	for _, k := range keys {
+		delete(store.queueSet, k)
+	}
+
+	_, err = store.retries.Clear()
+	if err != nil {
+		return err
+	}
+	_, err = store.scheduled.Clear()
+	if err != nil {
+		return err
+	}
+	_, err = store.dead.Clear()
+	if err != nil {
+		return err
+	}
+	_, err = store.working.Clear()
+	if err != nil {
+		return err
+	}
+	_, err = store.clients.Clear()
+	if err != nil {
+		return err
+	}
+	// flush doesn't clear the stats or default space
+	return nil
+}
+
 func (store *rocksStore) init() error {
 	ro := queueReadOptions(false)
 	ro.SetFillCache(false)

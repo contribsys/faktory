@@ -23,6 +23,17 @@ var cmdSet = map[string]command{
 	"FAIL":  fail,
 	"BEAT":  heartbeat,
 	"INFO":  info,
+	"FLUSH": flush,
+}
+
+func flush(c *Connection, s *Server, cmd string) {
+	err := s.store.Flush()
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+
+	c.Ok()
 }
 
 func end(c *Connection, s *Server, cmd string) {

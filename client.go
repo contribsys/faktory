@@ -61,6 +61,13 @@ func Localhost() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
+/*
+ * This function connects to a Faktory server based on the
+ * environment variable conventions:
+ *
+ * - Use FAKTORY_PROVIDER to point to a custom URL variable.
+ * - Use FAKTORY_URL as a catch-all default.
+ */
 func Open() (*Client, error) {
 	srv := Localhost()
 
@@ -87,8 +94,25 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 			}
 			return Dial(srv, pwd)
 		}
-		return nil, fmt.Errorf("No value in env for %s", val)
+		return nil, fmt.Errorf("FAKTORY_PROVIDER set to invalid value: %s", val)
 	}
+
+	uval, ok := os.LookupEnv("FAKTORY_URL")
+	if ok {
+		uri, err := url.Parse(uval)
+		if err != nil {
+			return nil, err
+		}
+		srv.Network = uri.Scheme
+		srv.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
+		pwd := ""
+		if uri.User != nil {
+			pwd, _ = uri.User.Password()
+		}
+		return Dial(srv, pwd)
+	}
+
+	// Connect to default localhost
 	return Dial(srv, "")
 }
 

@@ -36,6 +36,10 @@ func push(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, err)
 		return
 	}
+	if job.Jid == "" || len(job.Jid) < 8 {
+		c.Error(cmd, fmt.Errorf("All jobs must have a reasonable jid parameter"))
+		return
+	}
 
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)

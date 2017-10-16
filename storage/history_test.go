@@ -10,16 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	DefaultPath = "/tmp"
-	os.Mkdir("/tmp", os.FileMode(os.ModeDir|0755))
-}
-
 func TestStatsMerge(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/merge.db")
-	db, err := Open("rocksdb", "merge.db")
+	db, err := Open("rocksdb", "/tmp/merge.db")
 	assert.NoError(t, err)
 
 	store := db.(*rocksStore)
@@ -50,7 +45,7 @@ func TestStatsMerge(t *testing.T) {
 	store.Success()
 	db.Close()
 
-	db, err = Open("rocksdb", "merge.db")
+	db, err = Open("rocksdb", "/tmp/merge.db")
 	assert.NoError(t, err)
 	defer db.Close()
 

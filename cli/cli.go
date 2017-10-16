@@ -13,17 +13,15 @@ import (
 
 	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/server"
-	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 )
 
 type CmdOptions struct {
-	Binding         string
-	Environment     string
-	ConfigDirectory string
-	LogLevel        string
-	SocketPath      string
-	StoragePath     string
+	Binding          string
+	Environment      string
+	ConfigDirectory  string
+	LogLevel         string
+	StorageDirectory string
 }
 
 var (
@@ -33,7 +31,7 @@ var (
 )
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/run/faktory.sock", "/var/run/faktory"}
+	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/run/faktory/db"}
 
 	log.SetFlags(0)
 	log.Println(faktory.Name, faktory.Version)
@@ -47,11 +45,9 @@ func ParseArguments() CmdOptions {
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn*, info, debug)")
 	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development*, staging, production, etc)")
-	flag.StringVar(&defaults.StoragePath, "d", "/var/run/faktory", "Storage directory")
 
-	// undocumented on purpose, for testing only, we don't want people changing these
-	// if possible
-	flag.StringVar(&defaults.SocketPath, "s", "/var/run/faktory.sock", "")
+	// undocumented on purpose, we don't want people changing these if possible
+	flag.StringVar(&defaults.StorageDirectory, "d", "/var/run/faktory/db", "Storage directory")
 	flag.StringVar(&defaults.ConfigDirectory, "c", "/etc/faktory", "")
 	helpPtr := flag.Bool("help", false, "You're looking at it")
 	help2Ptr := flag.Bool("h", false, "You're looking at it")
@@ -67,15 +63,22 @@ func ParseArguments() CmdOptions {
 		os.Exit(0)
 	}
 
-	storage.DefaultPath = defaults.StoragePath
 	if defaults.Environment == "development" {
 		usr, _ := user.Current()
 		dir := usr.HomeDir
-		storage.DefaultPath = filepath.Join(dir, ".faktory")
+		// development defaults to the user's home dir so everything is local and
+		// permissions aren't a problem.
+		if defaults.StorageDirectory == "/var/run/faktory/db" {
+			defaults.StorageDirectory = filepath.Join(dir, ".faktory/db")
+		}
+		if defaults.ConfigDirectory == "/etc/faktory" {
+			defaults.ConfigDirectory = filepath.Join(dir, ".faktory")
+		}
 	}
-	err := os.Mkdir(storage.DefaultPath, os.FileMode(os.ModeDir|0755))
+
+	err := os.Mkdir(defaults.StorageDirectory, os.FileMode(os.ModeDir|0755))
 	if err != nil && !os.IsExist(err) {
-		log.Fatalf("Cannot create faktory's data directory: %v", err)
+		log.Fatalf("Cannot create Faktory's data directory: %v", err)
 	}
 	return defaults
 }
@@ -84,7 +87,6 @@ func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
 	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
-	log.Println("-d [dir]\tStorage directory, default: /var/run/faktory")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")
 }

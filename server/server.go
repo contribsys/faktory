@@ -24,9 +24,9 @@ var (
 )
 
 type ServerOptions struct {
-	Binding     string
-	StoragePath string
-	Password    string
+	Binding          string
+	StorageDirectory string
+	Password         string
 }
 
 type RuntimeStats struct {
@@ -62,8 +62,8 @@ func NewServer(opts *ServerOptions) *Server {
 	if opts.Binding == "" {
 		opts.Binding = "localhost:7419"
 	}
-	if opts.StoragePath == "" {
-		opts.StoragePath = fmt.Sprintf("%s.db", strings.Replace(opts.Binding, ":", "_", -1))
+	if opts.StorageDirectory == "" {
+		panic("empty storage directory")
 	}
 	return &Server{
 		Options:    opts,
@@ -90,7 +90,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	store, err := storage.Open("rocksdb", s.Options.StoragePath)
+	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
 	if err != nil {
 		return err
 	}

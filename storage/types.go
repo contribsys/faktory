@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-var (
-	DefaultPath = "/var/run/faktory/"
-)
-
 type BackupInfo struct {
 	Id        int64
 	FileCount int32

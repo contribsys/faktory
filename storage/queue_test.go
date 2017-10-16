@@ -15,7 +15,7 @@ func TestBasicQueueOps(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/queues.db")
 
-	store, err := Open("rocksdb", "queues.db")
+	store, err := Open("rocksdb", "/tmp/queues.db")
 	assert.NoError(t, err)
 	defer store.Close()
 	q, err := store.GetQueue("default")
@@ -57,7 +57,7 @@ func TestBasicQueueOps(t *testing.T) {
 
 func TestDecentQueueUsage(t *testing.T) {
 	defer os.RemoveAll("/tmp/qbench.db")
-	store, err := Open("rocksdb", "qbench.db")
+	store, err := Open("rocksdb", "/tmp/qbench.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
@@ -78,7 +78,7 @@ func TestDecentQueueUsage(t *testing.T) {
 	// Close DB, reopen
 	store.Close()
 
-	store, err = Open("rocksdb", "qbench.db")
+	store, err = Open("rocksdb", "/tmp/qbench.db")
 	assert.NoError(t, err)
 	q, err = store.GetQueue("default")
 	assert.NoError(t, err)
@@ -107,7 +107,7 @@ func TestDecentQueueUsage(t *testing.T) {
 func TestThreadedQueueUsage(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/qthreaded.db")
-	store, err := Open("rocksdb", "qthreaded.db")
+	store, err := Open("rocksdb", "/tmp/qthreaded.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
@@ -179,7 +179,8 @@ func TestQueueKeys(t *testing.T) {
 }
 
 func TestClearAndPush(t *testing.T) {
-	store, err := Open("rocksdb", "qpush.db")
+	defer os.RemoveAll("/tmp/qpush.db")
+	store, err := Open("rocksdb", "/tmp/qpush.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("lksjadfl")
 	assert.NoError(t, err)
@@ -199,7 +200,7 @@ func TestClearAndPush(t *testing.T) {
 
 func BenchmarkQueuePerformance(b *testing.B) {
 	defer os.RemoveAll("/tmp/qblah.db")
-	store, err := Open("rocksdb", "qblah.db")
+	store, err := Open("rocksdb", "/tmp/qblah.db")
 	assert.NoError(b, err)
 	assert.NotNil(b, store)
 	defer store.Close()
@@ -222,7 +223,7 @@ func TestReopening(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/reopening.db")
-	store, err := Open("rocksdb", "reopening.db")
+	store, err := Open("rocksdb", "/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -258,7 +259,7 @@ func TestReopening(t *testing.T) {
 
 	store.Close()
 
-	store, err = Open("rocksdb", "reopening.db")
+	store, err = Open("rocksdb", "/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -320,7 +321,7 @@ func TestBlockingPop(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/blocking.db")
-	store, err := Open("rocksdb", "blocking.db")
+	store, err := Open("rocksdb", "/tmp/blocking.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer store.Close()
@@ -364,7 +365,7 @@ func TestBlockingPop(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			c, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			c, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 			defer cancel()
 			data, err := q.BPop(c)
 			assert.NoError(t, err)

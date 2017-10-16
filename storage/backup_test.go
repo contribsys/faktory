@@ -8,17 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	DefaultPath = "/tmp"
-	os.Mkdir("/tmp", os.FileMode(os.ModeDir|0755))
-}
-
 func TestBackupAndRestore(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/backup.db")
 	// open db
-	db, err := Open("rocksdb", "backup.db")
+	db, err := Open("rocksdb", "/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// put elements
@@ -55,7 +50,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
 
-	db, err = Open("rocksdb", "backup.db")
+	db, err = Open("rocksdb", "/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// verify elements

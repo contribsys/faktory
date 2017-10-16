@@ -15,7 +15,6 @@ import (
 	"github.com/mperham/faktory"
 	"github.com/mperham/faktory/cli"
 	"github.com/mperham/faktory/server"
-	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,9 +23,11 @@ func TestSystem(t *testing.T) {
 	opts := cli.ParseArguments()
 	util.InitLogger("info")
 
-	storage.DefaultPath = "/tmp"
 	os.RemoveAll("/tmp/system.db")
-	s := server.NewServer(&server.ServerOptions{Binding: opts.Binding, StoragePath: "system.db"})
+	s := server.NewServer(&server.ServerOptions{
+		Binding:          opts.Binding,
+		StorageDirectory: "/tmp/system.db",
+	})
 
 	util.LogInfo = true
 

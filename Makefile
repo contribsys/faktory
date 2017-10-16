@@ -53,16 +53,17 @@ cover:
 build: clean generate
 	go build -o faktory cmd/daemon.go
 
-# goimports produces slightly different formatted code from go fmt
 # TODO integrate a few useful Golang linters.
 fmt:
 	go fmt ./...
 
+# trigger TLS for testing
 swork:
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
+# no TLS, just plain text against localhost
 work:
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
@@ -75,13 +76,13 @@ clean:
 	@mkdir -p packaging/output/systemd
 
 repl: clean generate
-	go run cmd/repl.go -l debug -d .
+	go run cmd/repl.go -l debug -e development
 
 run: clean generate
-	go run cmd/daemon.go -l debug -d .
+	go run cmd/daemon.go -l debug -e development
 
 srun: clean generate
-	go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -d .
+	go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
 
 cssh:
 	pushd build/centos && vagrant up && vagrant ssh

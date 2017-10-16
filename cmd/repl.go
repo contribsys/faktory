@@ -16,6 +16,10 @@ import (
 	"github.com/mperham/gorocksdb"
 )
 
+/*
+ The REPL provides a few admin commands outside of Faktory itself,
+ noteably the backup and restore commands.
+*/
 func main() {
 	opts := cli.ParseArguments()
 
@@ -23,11 +27,7 @@ func main() {
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger("warn")
 
-	storage.DefaultPath = opts.StoragePath
-
-	dir := fmt.Sprintf("%s.db", strings.Replace(opts.Binding, ":", "_", -1))
-
-	store, err := storage.Open("rocksdb", dir)
+	store, err := storage.Open("rocksdb", opts.StoragePath)
 	if err != nil {
 		fmt.Println("Unable to open storage:", err.Error())
 		fmt.Println(`Run "db repair" to attempt repair`)
@@ -39,12 +39,11 @@ func main() {
 		os.Exit(0)
 	})
 
-	repl(dir, store)
+	repl(opts.StoragePath, store)
 }
 
 func repl(path string, store storage.Store) {
-	fullpath := fmt.Sprintf("%s/%s", storage.DefaultPath, path)
-	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), fullpath)
+	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), path)
 
 	rdr := bufio.NewReader(os.Stdin)
 	for {
@@ -67,7 +66,7 @@ func repl(path string, store storage.Store) {
 		case "version":
 			fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
 		case "db":
-			err = db(store, fullpath, line, cmd[1:])
+			err = db(store, path, line, cmd[1:])
 		case "help":
 			fmt.Println(`Valid commands:
 

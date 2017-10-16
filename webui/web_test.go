@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/mperham/faktory/server"
-	"github.com/mperham/faktory/storage"
 	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -48,13 +47,11 @@ func TestComputeLocale(t *testing.T) {
 	assert.Equal(t, "en", lang)
 }
 
-func init() {
-	storage.DefaultPath = "/tmp"
-	bootRuntime()
-}
-
 func bootRuntime() *server.Server {
-	s := server.NewServer(&server.ServerOptions{Binding: "localhost:7418"})
+	s := server.NewServer(&server.ServerOptions{
+		Binding:          "localhost:7418",
+		StorageDirectory: "/tmp/localhost_7418",
+	})
 	go func() {
 		err := s.Start()
 		if err != nil {

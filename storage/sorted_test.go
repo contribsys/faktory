@@ -11,16 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	DefaultPath = "/tmp"
-	os.Mkdir("/tmp", os.FileMode(os.ModeDir|0755))
-}
-
 func TestBasicSortedSet(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/sorted.db")
-	db, err := Open("rocksdb", "sorted.db")
+	db, err := Open("rocksdb", "/tmp/sorted.db")
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -56,7 +51,7 @@ func TestRocksSortedSet(b *testing.T) {
 	b.Parallel()
 	defer os.RemoveAll("/tmp/rocks.db")
 
-	db, err := Open("rocksdb", "rocks.db")
+	db, err := Open("rocksdb", "/tmp/rocks.db")
 	assert.NoError(b, err)
 	defer db.Close()
 

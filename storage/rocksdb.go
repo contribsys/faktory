@@ -43,18 +43,14 @@ func DefaultOptions() *gorocksdb.Options {
 }
 
 func OpenRocks(path string) (Store, error) {
-	if path == "" {
-		path = "default"
-	}
-	fullpath := fmt.Sprintf("%s/%s", DefaultPath, path)
-	util.Infof("Initializing storage at %s", fullpath)
+	util.Infof("Initializing storage at %s", path)
 	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
 
 	opts := DefaultOptions()
 	sopts := gorocksdb.NewDefaultOptions()
 	sopts.SetMergeOperator(&int64CounterMerge{})
 
-	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, fullpath,
+	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, path,
 		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},
 		[]*gorocksdb.Options{opts, opts, opts, opts, opts, opts, opts, sopts})
 	if err != nil {

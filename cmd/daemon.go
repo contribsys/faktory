@@ -20,7 +20,10 @@ func main() {
 	// touch webui so it initializes
 	webui.Password = "123456"
 
-	s := server.NewServer(&server.ServerOptions{Binding: opts.Binding})
+	s := server.NewServer(&server.ServerOptions{
+		Binding:          opts.Binding,
+		StorageDirectory: opts.StorageDirectory,
+	})
 
 	go cli.HandleSignals(s)
 

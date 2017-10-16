@@ -16,6 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	bootRuntime()
+}
+
 func TestIndex(t *testing.T) {
 	req, err := NewRequest("GET", "http://localhost:7420/", nil)
 	assert.NoError(t, err)

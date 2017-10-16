@@ -11,19 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/faktory/storage"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	storage.DefaultPath = "/tmp"
-	os.Mkdir("/tmp", os.FileMode(os.ModeDir|0755))
-}
-
 func runServer(runner func()) {
-	os.RemoveAll("/tmp/localhost_7420.db")
+	os.RemoveAll("/tmp/localhost_7420")
 	opts := &ServerOptions{
-		Binding: "localhost:7420",
+		Binding:          "localhost:7420",
+		StorageDirectory: "/tmp/localhost_7420",
 	}
 	s := NewServer(opts)
 	go func() {

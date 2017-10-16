@@ -25,6 +25,10 @@ body {
   color: #080;
 }
 
+.navbar-inverse .navbar-text {
+  color: #F8AC3E;
+}
+
 a {
   color: #3C91AA;
 }
@@ -174,7 +178,6 @@ header.row .pagination {
 
   .summary_bar ul .desc {
     text-align: left;
-    
   }
   .summary_bar ul .count {
     text-align: right;

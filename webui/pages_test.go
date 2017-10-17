@@ -87,6 +87,19 @@ func TestQueue(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), "1l23j12l3"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
+
+	assert.Equal(t, int64(1), q.Size())
+	payload := url.Values{
+		"action": {"delete"},
+	}
+	req, err = NewRequest("POST", "http://localhost:7420/queue/"+q.Name(), strings.NewReader(payload.Encode()))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	queueHandler(w, req)
+
+	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, 302, w.Code)
 }
 
 func TestRetries(t *testing.T) {

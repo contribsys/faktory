@@ -42,7 +42,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
     <% }) %>
   </table>
   </div>
-  <div class="btn-group pull-left flip">
+  <div class="pull-left flip">
     <button class="btn btn-danger" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "Delete") %></button>
   </div>
 </form>

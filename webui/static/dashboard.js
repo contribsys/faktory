@@ -26,12 +26,13 @@ var realtimeGraph = function(updatePath) {
     element: graphElement,
     width: responsiveWidth(),
     height: 200,
-    renderer: 'line',
-    interpolation: 'linear',
+    renderer: 'area',
+    stroke: true,
+    interpolation: 'step',
 
-    series: new Rickshaw.Series.FixedDuration([{ name: graphElement.dataset.failedLabel, color: '#E65000' }, { name: graphElement.dataset.processedLabel, color: '#50BD7B' }], undefined, {
+    series: new Rickshaw.Series.FixedDuration([{ name: graphElement.dataset.failedLabel, color: 'rgba(255,89,0,0.5)', stroke: '#E65000' }, { name: graphElement.dataset.processedLabel, color: 'rgba(85,212,135,0.5)', stroke: '#55D487' }], undefined, {
         timeInterval: timeInterval,
-        maxDataPoints: 100,
+        maxDataPoints: 100,	
     })
   });
 
@@ -129,15 +130,18 @@ var historyGraph = function() {
     element: graphElement,
     width: responsiveWidth(),
     height: 200,
-    renderer: 'line',
-    interpolation: 'linear',
+    renderer: 'area',
+    stroke: true,
+    interpolation: 'step',
     series: [
       {
-        color: "#E65000",
+        color: 'rgba(255,89,0,0.5)',
+        stroke: '#E65000',
         data: failed,
         name: graphElement.dataset.failedLabel
       }, {
-        color: "#50BD7B",
+        color: 'rgba(85,212,135,0.5)',
+        stroke: '#55D487',
         data: processed,
         name: graphElement.dataset.processedLabel
       }

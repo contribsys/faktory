@@ -55,14 +55,16 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	queueName := name[1]
 	q, err := defaultServer.Store().GetQueue(queueName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if r.Method == "POST" {
 		r.ParseForm()
+
 		keys := r.Form["bkey"]
 		if len(keys) > 0 {
+			// delete specific entries
 			bkeys := make([][]byte, len(keys))
 			for idx, key := range keys {
 				bindata, err := base64.RawURLEncoding.DecodeString(key)
@@ -74,9 +76,18 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			err := q.Delete(bkeys)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+		} else {
+			// clear entire queue
+			_, err := q.Clear()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			http.Redirect(w, r, "/queues", http.StatusFound)
+			return
 		}
 		http.Redirect(w, r, "/queues/"+queueName, http.StatusFound)
 		return

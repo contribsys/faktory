@@ -4,18 +4,14 @@ set -e
 
 if [ ! -d /etc/faktory ]; then
   mkdir /etc/faktory
+  head -5 /dev/urandom | md5sum | cut -c1-16 > /etc/faktory/password
+  chmod 600 /etc/faktory/password
 fi
 
 # CentOS 6.x doesn't have an adm group.
 # CentOS 7.x and Ubuntu do.  Standardize!
 if ! groupadd adm ; then
   true
-fi
-
-if [ ! -f /etc/faktory/faktory.conf ]; then
-  cp /usr/share/faktory/faktory.conf /etc/faktory
-  # passwords in here, root readable only.
-  chmod 600 /etc/faktory/faktory.conf
 fi
 
 if [ -d /etc/init ]; then
@@ -41,9 +37,8 @@ cat <<"TXT"
                               |___/
 
 
-Thank you for installing faktory!
+Thanks for installing faktory!
 
 TXT
 
-echo Please configure your settings in /etc/faktory/faktory.conf and then restart faktory with \"sudo initctl restart faktory\".
 exit 0

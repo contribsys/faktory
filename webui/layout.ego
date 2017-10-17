@@ -10,6 +10,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <title>Faktory</title>
     <meta charset="utf8" />
     <link rel="shortcut icon" href="/static/img/favicon.ico">
+    <link rel="mask-icon" href="/static/img/favicon.svg" color="#000000">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">

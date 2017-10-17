@@ -19,6 +19,9 @@ func TestTlsConfig(t *testing.T) {
 
 	// with CA bundle
 	cfg, err = findTlsConfigIn(":7419", false, []string{"../test/tls/1"})
+	assert.NotNil(t, cfg)
+	assert.NoError(t, err)
+
 	cfg, err = findTlsConfigIn(":7419", false, []string{"../test/tls/2"})
 	assert.NotNil(t, cfg)
 	assert.NoError(t, err)
@@ -36,13 +39,13 @@ func TestTlsConfig(t *testing.T) {
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
 
-	// force, no certs
+	// disable, no certs
 	cfg, err = findTlsConfigIn("localhost:7419", true, []string{"/tmp"})
 	assert.Nil(t, cfg)
-	assert.Error(t, err, "not found")
+	assert.NoError(t, err)
 
-	// force, certs
-	cfg, err = findTlsConfigIn("localhost:7419", true, []string{"../test/tls/1"})
-	assert.NotNil(t, cfg)
+	// disable, certs
+	cfg, err = findTlsConfigIn(":7419", true, []string{"../test/tls/1"})
+	assert.Nil(t, cfg)
 	assert.NoError(t, err)
 }

@@ -32,7 +32,7 @@ var realtimeGraph = function(updatePath) {
 
     series: new Rickshaw.Series.FixedDuration([{ name: graphElement.dataset.failedLabel, color: 'rgba(255,89,0,0.5)', stroke: '#E65000' }, { name: graphElement.dataset.processedLabel, color: 'rgba(85,212,135,0.5)', stroke: '#55D487' }], undefined, {
         timeInterval: timeInterval,
-        maxDataPoints: 100,	
+        maxDataPoints: 100,
     })
   });
 
@@ -215,6 +215,14 @@ var createSeries = function(obj) {
 };
 
 var updateStatsSummary = function(data) {
+  var amt = data.tasks.Busy.size
+  // toggle the "lights" in the factory windows if we are busy or not
+  if (amt == 0) {
+    $("i.status-sprite").removeClass("status-active").addClass("status-idle")
+  } else {
+    $("i.status-sprite").removeClass("status-idle").addClass("status-active")
+  }
+
   $('ul.summary li.processed span.count').html(data.total_processed.numberWithDelimiter())
   $('ul.summary li.failed span.count').html(data.total_failures.numberWithDelimiter())
   $('ul.summary li.busy span.count').html(data.tasks.Busy.size.numberWithDelimiter())

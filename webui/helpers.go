@@ -26,13 +26,12 @@ func serverLocation() string {
 	return defaultServer.Options.Binding
 }
 
-func rtl() bool {
-	dir := activeTranslations["TextDirection"]
-	return dir == "rtl"
+func rtl(req *http.Request) bool {
+	return t(req, "TextDirection") == "rtl"
 }
 
-func textDir() string {
-	dir := activeTranslations["TextDirection"]
+func textDir(req *http.Request) string {
+	dir := t(req, "TextDirection")
 	if dir == "" {
 		dir = "ltr"
 	}

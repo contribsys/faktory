@@ -69,6 +69,28 @@ func init() {
 	server.OnStart(FireItUp)
 }
 
+func FireItUp(svr *server.Server) error {
+	Password = svr.Options.Password
+	defaultServer = svr
+	go func() {
+		s := &http.Server{
+			Addr:           ":7420",
+			ReadTimeout:    1 * time.Second,
+			WriteTimeout:   10 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+			TLSConfig:      svr.TLSConfig,
+		}
+		if s.TLSConfig == nil {
+			util.Info("Web server now listening on port 7420")
+			log.Fatal(s.ListenAndServe())
+		} else {
+			util.Info("Web server now listening securely on port 7420")
+			log.Fatal(s.ListenAndServeTLS("", ""))
+		}
+	}()
+	return nil
+}
+
 var (
 	Password    = ""
 	locales     = map[string]map[string]string{}
@@ -122,27 +144,6 @@ func translations(locale string) map[string]string {
 	}
 
 	panic("Shouldn't get here")
-}
-
-func FireItUp(svr *server.Server) error {
-	defaultServer = svr
-	go func() {
-		s := &http.Server{
-			Addr:           ":7420",
-			ReadTimeout:    1 * time.Second,
-			WriteTimeout:   10 * time.Second,
-			MaxHeaderBytes: 1 << 20,
-			TLSConfig:      svr.TLSConfig,
-		}
-		if s.TLSConfig == nil {
-			util.Info("Web server now listening on port 7420")
-			log.Fatal(s.ListenAndServe())
-		} else {
-			util.Info("Web server now listening securely on port 7420")
-			log.Fatal(s.ListenAndServeTLS("", ""))
-		}
-	}()
-	return nil
 }
 
 func acceptableLanguages(header string) []string {
@@ -230,10 +231,11 @@ func BasicAuth(pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, password, ok := r.BasicAuth()
 		if !ok {
-			w.Header().Set("WWW-Authenticate", `Basic realm="faktory"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			return
 		}
 		if subtle.ConstantTimeCompare([]byte(password), []byte(Password)) == 1 {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			http.Error(w, "authorization failed", http.StatusUnauthorized)
 			return
 		}

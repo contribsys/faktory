@@ -22,16 +22,15 @@ func tlsConfig(binding string, forceTLS bool) (*tls.Config, error) {
 	return findTlsConfigIn(binding, forceTLS, tlsDirectories)
 }
 
-func findTlsConfigIn(binding string, forceTLS bool, dirs []string) (*tls.Config, error) {
+func findTlsConfigIn(binding string, disableTls bool, dirs []string) (*tls.Config, error) {
 	// TLS is optional when binding to something that matches "localhost:"
 	optional, err := regexp.Match("\\Alocalhost:", []byte(binding))
 	if err != nil {
 		return nil, err
 	}
 
-	// allow --force-tls to require TLS even when binding to localhost
-	if forceTLS {
-		optional = false
+	if disableTls {
+		optional = true
 	}
 
 	if optional {

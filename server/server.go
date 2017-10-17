@@ -28,6 +28,7 @@ type ServerOptions struct {
 	StorageDirectory string
 	Password         string
 	Environment      string
+	DisableTls       bool
 }
 
 type RuntimeStats struct {
@@ -86,7 +87,7 @@ func (s *Server) Store() storage.Store {
 }
 
 func (s *Server) Start() error {
-	tlsC, err := tlsConfig(s.Options.Binding, false)
+	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls)
 	if err != nil {
 		return err
 	}

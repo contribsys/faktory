@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mperham/faktory/cli"
 	"github.com/mperham/faktory/server"
@@ -17,13 +18,20 @@ func main() {
 	util.InitLogger(opts.LogLevel)
 	util.Debug("Options", opts)
 
+	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
+	if ok {
+		opts.Password = val
+	}
+
 	// touch webui so it initializes
-	webui.Password = "123456"
+	webui.Password = ""
 
 	s := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: opts.StorageDirectory,
 		Environment:      opts.Environment,
+		Password:         opts.Password,
+		DisableTls:       opts.DisableTls,
 	})
 
 	go cli.HandleSignals(s)

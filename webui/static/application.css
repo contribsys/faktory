@@ -250,6 +250,7 @@ table .table-checkbox label {
 .navbar-nav {
   display: inline-block;
   float: none;
+  font-size: 16px;
 }
 
 .navbar-default .navbar-nav>.active>a {
@@ -261,10 +262,10 @@ table .table-checkbox label {
 .navbar .navbar-brand {
   position: absolute;
   color: #666666;
-  padding: 10px 13px;
+  padding: 6px 13px;
   text-shadow: none;
   font-weight: bold;
-  font-size: 21px;
+  font-size: 28px;
   letter-spacing: -.03em;
 }
 
@@ -354,16 +355,16 @@ img.smallogo {
 }
 
 .status-sprite {
-  background-image: url(/static/status.png);
-  height: 25px;
-  width: 25px;
+  background-image: url(/static/img/status.png);
+  height: 32px; 
+  width: 32px;
   display: inline-block;
-  background-size: 25px;
+  background-size: 32px;
   background-repeat: no-repeat;
 }
 
 .status-sprite.status-active {
-  background-position: 0 4px;
+  background-position: 0 top;
 }
 
 .status-sprite.status-idle {
@@ -720,8 +721,10 @@ div.interval-slider input {
 
 @media (max-width: 767px) {
   .navbar .navbar-brand {
+    padding-top: 10px;
     float: none;
     display: block;
+    font-size: 21px;
   } 
 
   .navbar.navbar-fixed-top ul {
@@ -757,9 +760,7 @@ div.interval-slider input {
     line-height: 30px;
     margin: 15px auto;
   }
-}
 
-@media (max-width: 767px) {
   .navbar-default {
     height: auto;
   }
@@ -784,6 +785,14 @@ div.interval-slider input {
 
   .admin #page {
     padding-top: 10px;
+  }
+
+  .status-sprite {
+    height: 25px;
+    width: 25px;
+    display: inline-block;
+    background-size: 25px;
+    background-repeat: no-repeat;
   }
 }
 

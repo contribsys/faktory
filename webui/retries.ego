@@ -72,7 +72,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
         <% }) %>
       </table>
     </div>
-    <div class="btn-group pull-left flip">
+    <div class="pull-left flip">
       <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
       <button class="btn btn-warn btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
       <button class="btn btn-danger btn-xs" type="submit" name="action" value="kill"><%= t(req, "Kill") %></button>
@@ -83,7 +83,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
     <form action="/retries" method="post">
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
-      <div class="btn-group pull-right flip">
+      <div class="pull-right flip">
         <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "RetryAll") %></button>
         <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "DeleteAll") %></button>
       </div>

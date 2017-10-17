@@ -1,4 +1,4 @@
 # frozen_string_literal: true
 source "https://rubygems.org"
 
-gem 'faktory-ruby', path: '~/src/faktory-ruby'
+gem 'faktory_worker_ruby', path: '~/src/faktory_worker_ruby'

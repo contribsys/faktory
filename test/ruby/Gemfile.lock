@@ -1,7 +1,7 @@
 PATH
-  remote: ../../../../../faktory-ruby
+  remote: ../../../../../faktory_worker_ruby
   specs:
-    faktory-ruby (0.5.0)
+    faktory_worker_ruby (0.5.0)
       connection_pool (~> 2.2, >= 2.2.1)
 
 GEM
@@ -13,7 +13,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  faktory-ruby!
+  faktory_worker_ruby!
 
 BUNDLED WITH
    1.15.4

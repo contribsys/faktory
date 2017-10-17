@@ -124,14 +124,6 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
  */
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
-	if password != "" {
-		client.Salt = strconv.FormatInt(rand.Int63(), 16)
-		client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+client.Salt)))
-	}
-	data, err := json.Marshal(client)
-	if err != nil {
-		return nil, err
-	}
 
 	local, err := regexp.Match("\\Alocalhost:", []byte(srv.Address))
 	if err != nil {
@@ -155,7 +147,26 @@ func Dial(srv *Server, password string) (*Client, error) {
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
-	err = writeLine(w, "AHOY", data)
+	line, err := readString(r)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	if line == "HI" {
+	} else if strings.HasPrefix(line, "HI ") {
+		salt := strings.TrimSpace(line)[3:]
+		client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt)))
+	} else {
+		conn.Close()
+		return nil, fmt.Errorf("Unknown line: %s", line)
+	}
+
+	data, err := json.Marshal(client)
+	if err != nil {
+		return nil, err
+	}
+
+	err = writeLine(w, "HELLO", data)
 	if err != nil {
 		conn.Close()
 		return nil, err

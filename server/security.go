@@ -7,19 +7,35 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/mperham/faktory/util"
 )
 
-var (
-	tlsDirectories = []string{
-		os.ExpandEnv("$HOME") + "/.faktory/tls",
-		"/etc/faktory/tls",
+func fetchPassword(configDir string) (string, error) {
+	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
+	if ok {
+		return val, nil
 	}
-)
 
-func tlsConfig(binding string, forceTLS bool) (*tls.Config, error) {
-	return findTlsConfigIn(binding, forceTLS, tlsDirectories)
+	pwd := configDir + "/password"
+	exists, err := util.FileExists(pwd)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		data, err := ioutil.ReadFile(pwd)
+		if err != nil {
+			util.Warn("Unable to read file %s: %s", pwd, err.Error())
+		}
+		return strings.TrimSpace(string(data)), nil
+	}
+
+	return "", nil
+}
+
+func tlsConfig(binding string, forceTLS bool, configDir string) (*tls.Config, error) {
+	return findTlsConfigIn(binding, forceTLS, []string{configDir + "/tls"})
 }
 
 func findTlsConfigIn(binding string, disableTls bool, dirs []string) (*tls.Config, error) {
@@ -36,9 +52,6 @@ func findTlsConfigIn(binding string, disableTls bool, dirs []string) (*tls.Confi
 	if optional {
 		return nil, nil
 	}
-
-	// Notably, we do not provide a flag to disable TLS.
-	// Infrastructure should never provide footguns.
 
 	var tlscfg *tls.Config
 

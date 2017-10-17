@@ -8,7 +8,7 @@ import (
 
 func TestTlsConfig(t *testing.T) {
 	// no TLS
-	cfg, err := tlsConfig("localhost:7419", false)
+	cfg, err := tlsConfig("localhost:7419", false, "/etc/faktory")
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
 
@@ -48,4 +48,16 @@ func TestTlsConfig(t *testing.T) {
 	cfg, err = findTlsConfigIn(":7419", true, []string{"../test/tls/1"})
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
+}
+
+func TestPasswords(t *testing.T) {
+	//os.SetEnv("FAKTORY_PASSWORD")
+
+	pwd, err := fetchPassword("../test/auth")
+	assert.NoError(t, err)
+	assert.Equal(t, 16, len(pwd))
+
+	pwd, err = fetchPassword("../test/foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "", pwd)
 }

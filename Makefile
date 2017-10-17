@@ -60,7 +60,7 @@ fmt:
 # trigger TLS for testing
 swork:
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
-		FURL=tcp://localhost.contribsys.com:7419 \
+		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
 # no TLS, just plain text against localhost
@@ -82,7 +82,7 @@ run: clean generate
 	go run cmd/daemon.go -l debug -e development
 
 srun: clean generate
-	go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
+	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
 
 cssh:
 	pushd build/centos && vagrant up && vagrant ssh

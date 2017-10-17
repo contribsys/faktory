@@ -47,7 +47,7 @@ func TestClientOperations(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, cl)
 		s := <-req
-		assert.Contains(t, s, "AHOY")
+		assert.Contains(t, s, "HELLO")
 		assert.Contains(t, s, "pwdhash")
 
 		resp <- "+OK\r\n"
@@ -100,6 +100,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 		conn, err := listener.Accept()
 		assert.NoError(t, err)
 		conn.SetDeadline(time.Now().Add(1 * time.Second))
+		conn.Write([]byte("+HI 123\r\n"))
 		for {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')

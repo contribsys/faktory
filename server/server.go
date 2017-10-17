@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -26,7 +28,7 @@ var (
 type ServerOptions struct {
 	Binding          string
 	StorageDirectory string
-	Password         string
+	ConfigDirectory  string
 	Environment      string
 	DisableTls       bool
 }
@@ -43,8 +45,8 @@ type Server struct {
 	Options   *ServerOptions
 	Stats     *RuntimeStats
 	TLSConfig *tls.Config
+	Password  string
 
-	pwd        string
 	listener   net.Listener
 	store      storage.Store
 	taskRunner *taskRunner
@@ -70,7 +72,6 @@ func NewServer(opts *ServerOptions) *Server {
 	return &Server{
 		Options:    opts,
 		Stats:      &RuntimeStats{StartedAt: time.Now()},
-		pwd:        "123456",
 		pending:    &sync.WaitGroup{},
 		mu:         sync.Mutex{},
 		heartbeats: make(map[string]*ClientWorker, 12),
@@ -87,7 +88,7 @@ func (s *Server) Store() storage.Store {
 }
 
 func (s *Server) Start() error {
-	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls)
+	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
 	if err != nil {
 		return err
 	}
@@ -101,6 +102,17 @@ func (s *Server) Start() error {
 	var listener net.Listener
 
 	if tlsC != nil {
+		pwd, err := fetchPassword(s.Options.ConfigDirectory)
+		if err != nil {
+			return err
+		}
+		s.Password = pwd
+
+		// if we need TLS, we need a password too
+		if s.Password == "" {
+			return fmt.Errorf("Cannot enable TLS without a password")
+		}
+
 		listener, err = tls.Listen("tcp", s.Options.Binding, tlsC)
 		if err != nil {
 			return err
@@ -168,8 +180,17 @@ func hash(pwd, salt string) string {
 }
 
 func (s *Server) processConnection(conn net.Conn) {
-	// AHOY operation must complete within 1 second
+	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
+
+	var salt string
+	conn.Write([]byte("+HI"))
+	if s.Password != "" {
+		salt = strconv.FormatInt(rand.Int63(), 16)
+		conn.Write([]byte(" "))
+		conn.Write([]byte(salt))
+	}
+	conn.Write([]byte("\r\n"))
 
 	buf := bufio.NewReader(conn)
 
@@ -180,7 +201,7 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	valid := strings.HasPrefix(line, "AHOY {")
+	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
 		util.Info("Invalid preamble", line)
 		util.Info("Need a valid AHOY")
@@ -195,11 +216,12 @@ func (s *Server) processConnection(conn net.Conn) {
 		return
 	}
 
-	if s.Options.Password != "" &&
-		subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, client.Salt))) != 1 {
-		util.Info("Invalid password")
-		conn.Close()
-		return
+	if s.Password != "" {
+		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt))) != 1 {
+			conn.Write([]byte("-ERR Invalid password\r\n"))
+			conn.Close()
+			return
+		}
 	}
 
 	updateHeartbeat(client, s.heartbeats, &s.hbmu)

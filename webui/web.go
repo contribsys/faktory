@@ -57,7 +57,7 @@ func init() {
 }
 
 func FireItUp(svr *server.Server) error {
-	Password = svr.Options.Password
+	Password = svr.Password
 	defaultServer = svr
 	go func() {
 		s := &http.Server{

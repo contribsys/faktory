@@ -166,8 +166,8 @@ func ack(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
-func uptimeInDays(s *Server) string {
-	return fmt.Sprintf("%.0f", time.Now().Sub(s.Stats.StartedAt).Seconds()/float64(86400))
+func uptimeInSeconds(s *Server) int {
+	return int(time.Now().Sub(s.Stats.StartedAt).Seconds())
 }
 
 func currentMemoryUsage(s *Server) string {
@@ -200,7 +200,7 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 			"tasks":           s.taskRunner.Stats()},
 		"server": map[string]interface{}{
 			"faktory_version": faktory.Version,
-			"uptime_in_days":  uptimeInDays(s),
+			"uptime":          uptimeInSeconds(s),
 			"connections":     s.Stats.Connections,
 			"command_count":   s.Stats.Commands,
 			"used_memory_mb":  currentMemoryUsage(s)},

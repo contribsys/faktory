@@ -48,8 +48,8 @@ func TestStats(t *testing.T) {
 	assert.NoError(t, err)
 
 	s := content["server"].(map[string]interface{})
-	uid := s["uptime_in_days"].(string)
-	assert.Equal(t, "14", uid)
+	uid := s["uptime"].(float64)
+	assert.Equal(t, float64(1234567), uid)
 
 	s = content["faktory"].(map[string]interface{})
 	proc := s["total_processed"].(float64)

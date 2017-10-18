@@ -234,8 +234,6 @@ var updateStatsSummary = function(data) {
 }
 
 var updateServerStats = function(data) {
-  $('.stat h3.faktory_version').html(data.faktory_version)
-  $('.stat h3.uptime_in_days').html(data.uptime_in_days)
   $('.stat h3.connections').html(data.connections)
   $('.stat h3.used_memory_human').html(data.used_memory_mb)
   $('.stat h3.commands').html(data.commands)

@@ -1,15 +1,19 @@
 # Faktory
 
-At a high level, Faktory is the central repository for background jobs
-within your application. Jobs have a name and a set of
+At a high level, Faktory is a work server.  It is the repository for
+background jobs within your application. Jobs have a type and a set of
 arguments and are placed into queues for workers to fetch and execute.
 
 You can use this server to distribute jobs to one or hundreds of
 machines.  Jobs can be executed with any language by clients using
 the Faktory API to fetch a job from a queue.
 
-More specifically, this is a Unix server daemon which provides
-language-agnostic, persistent background jobs.
+## What does it look like?
+
+Here's the Web UI.
+
+![webui](docs/webui.png)
+
 
 ## Basic Features
 

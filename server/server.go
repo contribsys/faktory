@@ -156,7 +156,11 @@ func (s *Server) Start() error {
 			s.pending.Add(1)
 			defer s.pending.Done()
 
-			s.processConnection(conn)
+			c := startConnection(conn, s)
+			if c == nil {
+				return
+			}
+			processLines(c, s)
 		}()
 	}
 }
@@ -179,7 +183,7 @@ func hash(pwd, salt string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(pwd+salt)))
 }
 
-func (s *Server) processConnection(conn net.Conn) {
+func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
@@ -198,7 +202,7 @@ func (s *Server) processConnection(conn net.Conn) {
 	if err != nil {
 		util.Error("Closing connection", err, nil)
 		conn.Close()
-		return
+		return nil
 	}
 
 	valid := strings.HasPrefix(line, "HELLO {")
@@ -206,21 +210,21 @@ func (s *Server) processConnection(conn net.Conn) {
 		util.Info("Invalid preamble", line)
 		util.Info("Need a valid AHOY")
 		conn.Close()
-		return
+		return nil
 	}
 
 	client, err := clientWorkerFromAhoy(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in AHOY", err, nil)
 		conn.Close()
-		return
+		return nil
 	}
 
 	if s.Password != "" {
 		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt))) != 1 {
 			conn.Write([]byte("-ERR Invalid password\r\n"))
 			conn.Close()
-			return
+			return nil
 		}
 	}
 
@@ -230,20 +234,18 @@ func (s *Server) processConnection(conn net.Conn) {
 	if err != nil {
 		util.Error("Closing connection", err, nil)
 		conn.Close()
-		return
+		return nil
 	}
 
 	// disable deadline
 	conn.SetDeadline(time.Time{})
 
-	c := &Connection{
+	return &Connection{
 		client: client,
 		ident:  conn.RemoteAddr().String(),
 		conn:   conn,
 		buf:    buf,
 	}
-
-	processLines(c, s)
 }
 
 func processLines(conn *Connection, server *Server) {

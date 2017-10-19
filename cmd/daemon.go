@@ -17,20 +17,23 @@ func main() {
 	util.InitLogger(opts.LogLevel)
 	util.Debug("Options", opts)
 
-	// touch webui so it initializes
-	webui.Password = ""
-
-	s := server.NewServer(&server.ServerOptions{
+	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: opts.StorageDirectory,
 		ConfigDirectory:  opts.ConfigDirectory,
 		Environment:      opts.Environment,
 		DisableTls:       opts.DisableTls,
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	webui.InitialSetup(s.Password)
 
 	go cli.HandleSignals(s)
 
-	err := s.Start()
+	err = s.Start()
 	if err != nil {
 		fmt.Println(err)
 		return

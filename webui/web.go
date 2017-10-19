@@ -30,14 +30,18 @@ var (
 		Tab{"Dead", "/morgue"},
 	}
 
+	// these are used in testing only
 	defaultServer *server.Server
+	staticHandler http.HandlerFunc
 )
 
 //go:generate ego .
 //go:generate go-bindata -pkg webui -o static.go static/...
 
-func init() {
-	http.Handle("/static/", Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir})))
+func InitialSetup(pwd string) {
+	Password = pwd
+	staticHandler = Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/stats", DebugLog(statsHandler))
 
 	http.HandleFunc("/", Log(GetOnly(indexHandler)))
@@ -57,7 +61,6 @@ func init() {
 }
 
 func FireItUp(svr *server.Server) error {
-	Password = svr.Password
 	defaultServer = svr
 	go func() {
 		s := &http.Server{
@@ -188,7 +191,7 @@ func Log(pass http.HandlerFunc) http.HandlerFunc {
 }
 
 func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	genericSetup := func(w http.ResponseWriter, r *http.Request) {
 		// this is the entry point for every dynamic request
 		// static assets bypass all this hubbub
 		start := time.Now()
@@ -212,6 +215,10 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 			util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
 		}
 	}
+	if Password != "" {
+		return BasicAuth(genericSetup)
+	}
+	return genericSetup
 }
 
 func BasicAuth(pass http.HandlerFunc) http.HandlerFunc {
@@ -219,11 +226,12 @@ func BasicAuth(pass http.HandlerFunc) http.HandlerFunc {
 		_, password, ok := r.BasicAuth()
 		if !ok {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
+			http.Error(w, "Authorization required", http.StatusUnauthorized)
 			return
 		}
 		if subtle.ConstantTimeCompare([]byte(password), []byte(Password)) == 1 {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
-			http.Error(w, "authorization failed", http.StatusUnauthorized)
+			http.Error(w, "Authorization failed", http.StatusUnauthorized)
 			return
 		}
 		pass(w, r)
@@ -250,9 +258,9 @@ func PostOnly(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func Cache(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Cache(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "public, max-age=3600")
 		h.ServeHTTP(w, r)
-	})
+	}
 }

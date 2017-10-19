@@ -62,14 +62,15 @@ func OnStart(x func(*Server) error) {
 	EventHandlers = append(EventHandlers, x)
 }
 
-func NewServer(opts *ServerOptions) *Server {
+func NewServer(opts *ServerOptions) (*Server, error) {
 	if opts.Binding == "" {
 		opts.Binding = "localhost:7419"
 	}
 	if opts.StorageDirectory == "" {
-		panic("empty storage directory")
+		return nil, fmt.Errorf("empty storage directory")
 	}
-	return &Server{
+
+	s := &Server{
 		Options:    opts,
 		Stats:      &RuntimeStats{StartedAt: time.Now()},
 		pending:    &sync.WaitGroup{},
@@ -77,6 +78,26 @@ func NewServer(opts *ServerOptions) *Server {
 		heartbeats: make(map[string]*ClientWorker, 12),
 		hbmu:       sync.Mutex{},
 	}
+
+	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
+	if err != nil {
+		return nil, err
+	}
+	if tlsC != nil {
+		s.TLSConfig = tlsC
+		pwd, err := fetchPassword(s.Options.ConfigDirectory)
+		if err != nil {
+			return nil, err
+		}
+		s.Password = pwd
+
+		// if we need TLS, we need a password too
+		if s.Password == "" {
+			return nil, fmt.Errorf("Cannot enable TLS without a password")
+		}
+	}
+
+	return s, nil
 }
 
 func (s *Server) Heartbeats() map[string]*ClientWorker {
@@ -88,11 +109,6 @@ func (s *Server) Store() storage.Store {
 }
 
 func (s *Server) Start() error {
-	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
-	if err != nil {
-		return err
-	}
-
 	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
 	if err != nil {
 		return err
@@ -101,19 +117,8 @@ func (s *Server) Start() error {
 
 	var listener net.Listener
 
-	if tlsC != nil {
-		pwd, err := fetchPassword(s.Options.ConfigDirectory)
-		if err != nil {
-			return err
-		}
-		s.Password = pwd
-
-		// if we need TLS, we need a password too
-		if s.Password == "" {
-			return fmt.Errorf("Cannot enable TLS without a password")
-		}
-
-		listener, err = tls.Listen("tcp", s.Options.Binding, tlsC)
+	if s.TLSConfig != nil {
+		listener, err = tls.Listen("tcp", s.Options.Binding, s.TLSConfig)
 		if err != nil {
 			return err
 		}
@@ -127,7 +132,6 @@ func (s *Server) Start() error {
 	}
 
 	s.mu.Lock()
-	s.TLSConfig = tlsC
 	s.store = store
 	s.listener = listener
 	s.loadWorkingSet()

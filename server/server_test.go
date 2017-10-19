@@ -21,7 +21,10 @@ func runServer(runner func()) {
 		Binding:          "localhost:7420",
 		StorageDirectory: "/tmp/localhost_7420",
 	}
-	s := NewServer(opts)
+	s, err := NewServer(opts)
+	if err != nil {
+		panic(err)
+	}
 	go func() {
 		err := s.Start()
 		if err != nil {

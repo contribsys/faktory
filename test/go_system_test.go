@@ -24,10 +24,13 @@ func TestSystem(t *testing.T) {
 	util.InitLogger("info")
 
 	os.RemoveAll("/tmp/system.db")
-	s := server.NewServer(&server.ServerOptions{
+	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: "/tmp/system.db",
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	util.LogInfo = true
 
@@ -53,7 +56,7 @@ func TestSystem(t *testing.T) {
 		s.Stop(nil)
 	}()
 
-	err := s.Start()
+	err = s.Start()
 	if err != nil {
 		fmt.Println(err)
 		return

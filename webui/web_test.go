@@ -70,14 +70,19 @@ func TestComputeLocale(t *testing.T) {
 }
 
 func bootRuntime() *server.Server {
-	s := server.NewServer(&server.ServerOptions{
+	InitialSetup("")
+
+	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          "localhost:7418",
 		StorageDirectory: "/tmp/localhost_7418",
 	})
+	if err != nil {
+		panic(err)
+	}
 	go func() {
 		err := s.Start()
 		if err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 	}()
 

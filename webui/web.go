@@ -32,7 +32,7 @@ var (
 
 	// these are used in testing only
 	defaultServer *server.Server
-	staticHandler http.HandlerFunc
+	staticHandler = Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 )
 
 //go:generate ego .
@@ -40,7 +40,6 @@ var (
 
 func InitialSetup(pwd string) {
 	Password = pwd
-	staticHandler = Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/stats", DebugLog(statsHandler))
 

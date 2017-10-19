@@ -51,6 +51,7 @@ cover:
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
+	go build -o faktory-cli cmd/repl.go
 	go build -o faktory cmd/daemon.go
 
 # TODO integrate a few useful Golang linters.

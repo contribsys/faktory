@@ -27,7 +27,7 @@ func main() {
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger("warn")
 
-	store, err := storage.Open("rocksdb", opts.StoragePath)
+	store, err := storage.Open("rocksdb", opts.StorageDirectory)
 	if err != nil {
 		fmt.Println("Unable to open storage:", err.Error())
 		fmt.Println(`Run "db repair" to attempt repair`)
@@ -39,7 +39,11 @@ func main() {
 		os.Exit(0)
 	})
 
-	repl(opts.StoragePath, store)
+	repl(opts.StorageDirectory, store)
+
+	if store != nil {
+		store.Close()
+	}
 }
 
 func repl(path string, store storage.Store) {
@@ -63,23 +67,26 @@ func repl(path string, store storage.Store) {
 		first := cmd[0]
 		var err error
 		switch first {
+		case "exit":
+			return
+		case "quit":
+			return
 		case "version":
 			fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
-		case "db":
-			err = db(store, path, line, cmd[1:])
 		case "help":
 			fmt.Println(`Valid commands:
 
-db backup
-db restore *
-db repair *
+flush
+backup
+restore *
+repair *
 version
 help
 
 * Requires an immediate restart after running command.
 			`)
 		default:
-			fmt.Printf("Unknown command: %s\n", line)
+			err = db(store, path, line, first)
 		}
 		if err != nil {
 			fmt.Println(err)
@@ -87,11 +94,14 @@ help
 	}
 }
 
-func db(store storage.Store, path string, line string, cmd []string) error {
-	if len(cmd) == 0 {
-		return fmt.Errorf("Unknown command: %s", line)
-	}
-	switch cmd[0] {
+func db(store storage.Store, path string, line string, cmd string) error {
+	switch cmd {
+	case "flush":
+		err := store.Flush()
+		if err == nil {
+			fmt.Println("OK")
+		}
+		return err
 	case "backup":
 		err := store.Backup()
 		if err == nil {

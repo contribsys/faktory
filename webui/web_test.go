@@ -2,6 +2,8 @@ package webui
 
 import (
 	"fmt"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +11,26 @@ import (
 	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestStaticAssets(t *testing.T) {
+	req, err := NewRequest("GET", "http://localhost:7420/static/application.js", nil)
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	staticHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), "Fuzzy"), w.Body.String())
+}
+
+func TestDebug(t *testing.T) {
+	req, err := NewRequest("GET", "http://localhost:7420/debug", nil)
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	debugHandler(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, strings.Contains(w.Body.String(), "Disk Usage"), w.Body.String())
+}
 
 func TestComputeLocale(t *testing.T) {
 	lang := localeFromHeader("")

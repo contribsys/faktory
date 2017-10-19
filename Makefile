@@ -71,7 +71,7 @@ work:
 clean:
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
-	@rm -f main faktory templates.go
+	@rm -f main faktory templates.go faktory-cli
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd

@@ -148,9 +148,9 @@ func reserve(wid string, job *faktory.Job, set TimedSet) error {
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
-	if timeout < 600 {
+	if timeout < 60 {
 		timeout = DefaultTimeout
-		util.Warnf("Timeout too short %d, 600 seconds minimum", timeout)
+		util.Warnf("Timeout too short %d, 60 seconds minimum", timeout)
 	}
 
 	if timeout > 86400 {

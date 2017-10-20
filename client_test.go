@@ -2,9 +2,14 @@ package faktory
 
 import (
 	"bufio"
+	"fmt"
+	"log"
 	"net"
 	"os"
+	"os/signal"
+	"runtime"
 	"runtime/debug"
+	"syscall"
 	"testing"
 	"time"
 
@@ -14,6 +19,8 @@ import (
 
 func init() {
 	util.LogInfo = true
+	//util.LogDebug = true
+	go stacks()
 }
 
 type specialError struct {
@@ -100,11 +107,12 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 		conn, err := listener.Accept()
 		assert.NoError(t, err)
 		conn.SetDeadline(time.Now().Add(1 * time.Second))
-		conn.Write([]byte("+HI 123\r\n"))
+		conn.Write([]byte("+HI {\"v\":\"1\",\"s\":\"123\"}\r\n"))
 		for {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')
 			if err != nil {
+				fmt.Println(err)
 				conn.Close()
 				break
 			}
@@ -118,4 +126,14 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 
 	fn(req, resp, binding)
 	listener.Close()
+}
+
+func stacks() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT)
+	buf := make([]byte, 1<<20)
+	<-sigs
+	stacklen := runtime.Stack(buf, true)
+	log.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
+	os.Exit(-10)
 }

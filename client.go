@@ -152,13 +152,22 @@ func Dial(srv *Server, password string) (*Client, error) {
 		conn.Close()
 		return nil, err
 	}
-	if line == "HI" {
-	} else if strings.HasPrefix(line, "HI ") {
-		salt := strings.TrimSpace(line)[3:]
-		client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt)))
+	if strings.HasPrefix(line, "HI ") {
+		str := strings.TrimSpace(line)[3:]
+
+		var hi map[string]string
+		err = json.Unmarshal([]byte(str), &hi)
+		if err != nil {
+			conn.Close()
+			return nil, err
+		}
+		salt, ok := hi["s"]
+		if ok {
+			client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt)))
+		}
 	} else {
 		conn.Close()
-		return nil, fmt.Errorf("Unknown line: %s", line)
+		return nil, fmt.Errorf("Expecting HI but got: %s", line)
 	}
 
 	data, err := json.Marshal(client)

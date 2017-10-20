@@ -192,11 +192,14 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	var salt string
-	conn.Write([]byte("+HI"))
+	conn.Write([]byte(`+HI {"v":"1"`))
 	if s.Password != "" {
 		salt = strconv.FormatInt(rand.Int63(), 16)
-		conn.Write([]byte(" "))
+		conn.Write([]byte(`,"s":"`))
 		conn.Write([]byte(salt))
+		conn.Write([]byte(`"}`))
+	} else {
+		conn.Write([]byte("}"))
 	}
 	conn.Write([]byte("\r\n"))
 

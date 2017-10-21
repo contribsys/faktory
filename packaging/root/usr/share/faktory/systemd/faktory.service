@@ -11,12 +11,9 @@ After=syslog.target network.target
 # http://0pointer.de/public/systemd-man/systemd.exec.html
 [Service]
 Type=simple
-ExecStart=/usr/bin/faktory -c /etc/faktory -s /var/run/faktory.sock
+ExecStart=/usr/bin/faktory -e production -b localhost:7419
 # allow `systemctl reload faktory`
 ExecReload=/bin/kill -HUP $MAINPID
-# ensure our socket is cleaned up, even if we crashed
-ExecStartPre=/bin/rm -f /var/run/faktory.sock
-# Allow any 'adm' user to run faktoryctl without sudo
 Group=adm
 UMask=0002
 

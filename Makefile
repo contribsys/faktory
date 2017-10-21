@@ -95,7 +95,7 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check build_deb_systemd build_rpm_systemd
+package: version_check clean build build_deb_systemd build_rpm_systemd
 
 version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -139,6 +139,7 @@ build_rpm_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
+		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 build_rpm_systemd:
@@ -155,6 +156,7 @@ build_rpm_systemd:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
+		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 build_deb_upstart:
@@ -172,6 +174,7 @@ build_deb_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
+		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 build_deb_systemd:
@@ -189,6 +192,7 @@ build_deb_systemd:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
+		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 tag:

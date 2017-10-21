@@ -23,6 +23,7 @@ func TestBasicSortedSet(t *testing.T) {
 	past := time.Now()
 
 	r := db.Retries()
+	assert.Equal(t, "retries", r.Name())
 	assert.Equal(t, int64(0), r.Size())
 	err = r.AddElement(util.Thens(past), fmt.Sprintf("0%s", jid), j1)
 	assert.NoError(t, err)
@@ -45,6 +46,17 @@ func TestBasicSortedSet(t *testing.T) {
 	assert.Equal(t, 2, len(results))
 	values := [][]byte{j1, j2}
 	assert.Equal(t, values, results)
+
+	var key []byte
+	r.Each(func(idx int, k, v []byte) error {
+		key = k
+		return nil
+	})
+
+	assert.NotNil(t, key)
+	err = r.Remove(key)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), r.Size())
 }
 
 func TestRocksSortedSet(b *testing.T) {

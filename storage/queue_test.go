@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -274,6 +275,10 @@ func TestReopening(t *testing.T) {
 	a, err = store.GetQueue("another")
 	assert.NoError(t, err)
 
+	store.EachQueue(func(q Queue) {
+		fmt.Println(q.Name(), q.Size())
+	})
+
 	assert.Equal(t, int64(3), b.Size())
 	assert.Equal(t, int64(2), d.Size())
 	assert.Equal(t, int64(1), c.Size())
@@ -384,4 +389,36 @@ func TestBlockingPop(t *testing.T) {
 	assert.Equal(t, 1, timedout)
 	assert.Equal(t, int64(1), q.Size())
 	assert.Equal(t, 0, q.(*rocksQueue).waiters.Len())
+
+	q.Clear()
+
+	wg = sync.WaitGroup{}
+	rq := q.(*rocksQueue)
+	var nothing int64
+
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			c, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			data, err := q.BPop(c)
+			if data == nil && err == nil {
+				atomic.AddInt64(&nothing, 1)
+			}
+			assert.NoError(t, err)
+		}()
+	}
+
+	for i := 0; i < 100; i++ {
+		time.Sleep(1 * time.Millisecond)
+		if rq.waiters.Len() == 4 {
+			break
+		}
+	}
+
+	rq.Close()
+	wg.Wait()
+	assert.Equal(t, int64(4), nothing)
 }

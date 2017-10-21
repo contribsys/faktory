@@ -57,7 +57,7 @@ var (
 	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 )
 
-func Localhost() *Server {
+func DefaultServer() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
@@ -69,7 +69,7 @@ func Localhost() *Server {
  * - Use FAKTORY_URL as a catch-all default.
  */
 func Open() (*Client, error) {
-	srv := Localhost()
+	srv := DefaultServer()
 
 	val, ok := os.LookupEnv("FAKTORY_PROVIDER")
 	if ok {
@@ -269,6 +269,15 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	if err != nil {
 		return err
 	}
+	return ok(c.rdr)
+}
+
+func (c *Client) Flush() error {
+	err := writeLine(c.wtr, "FLUSH", nil)
+	if err != nil {
+		return err
+	}
+
 	return ok(c.rdr)
 }
 

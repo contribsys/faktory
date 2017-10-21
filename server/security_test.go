@@ -1,8 +1,12 @@
 package server
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
+	"github.com/mperham/faktory"
+	"github.com/mperham/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,8 +55,6 @@ func TestTlsConfig(t *testing.T) {
 }
 
 func TestPasswords(t *testing.T) {
-	//os.SetEnv("FAKTORY_PASSWORD")
-
 	pwd, err := fetchPassword("../test/auth")
 	assert.NoError(t, err)
 	assert.Equal(t, 16, len(pwd))
@@ -60,4 +62,32 @@ func TestPasswords(t *testing.T) {
 	pwd, err = fetchPassword("../test/foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "", pwd)
+}
+
+func TestFullTLS(t *testing.T) {
+	ok, err := util.FileExists(os.ExpandEnv("$HOME/.faktory/tls/public.crt"))
+	assert.NoError(t, err)
+	if !ok {
+		fmt.Println("Skipping full TLS test, cert not found")
+		return
+	}
+
+	os.Setenv("FAKTORY_PASSWORD", "password123")
+	runServer("localhost.contribsys.com:7520", func() {
+		svr := faktory.DefaultServer()
+		svr.Address = "localhost.contribsys.com:7520"
+
+		client, err := faktory.Dial(svr, "password123")
+		assert.NoError(t, err)
+
+		result, err := client.Info()
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+
+		err = client.Flush()
+		assert.NoError(t, err)
+		x, err := client.Beat()
+		assert.NoError(t, err)
+		assert.Equal(t, "", x)
+	})
 }

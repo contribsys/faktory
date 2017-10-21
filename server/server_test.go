@@ -15,11 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runServer(runner func()) {
-	os.RemoveAll("/tmp/localhost_7420")
+func runServer(binding string, runner func()) {
+	dir := strings.Replace(binding, ":", "_", 1)
+	os.RemoveAll("/tmp/" + dir)
 	opts := &ServerOptions{
-		Binding:          "localhost:7420",
-		StorageDirectory: "/tmp/localhost_7420",
+		Binding:          binding,
+		StorageDirectory: "/tmp/" + dir,
+		ConfigDirectory:  os.ExpandEnv("$HOME/.faktory"),
 	}
 	s, err := NewServer(opts)
 	if err != nil {
@@ -39,7 +41,7 @@ func runServer(runner func()) {
 
 func TestServerStart(t *testing.T) {
 	t.Parallel()
-	runServer(func() {
+	runServer("localhost:7420", func() {
 		conn, err := net.DialTimeout("tcp", "localhost:7420", 1*time.Second)
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)

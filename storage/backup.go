@@ -8,22 +8,6 @@ import (
 )
 
 /*
- * I'm unclear what, if any, help this is.  Currently unused.
- */
-func (store *rocksStore) Compact() error {
-	fo := gorocksdb.NewDefaultFlushOptions()
-	defer fo.Destroy()
-
-	err := store.db.Flush(fo)
-	if err != nil {
-		return err
-	}
-
-	store.db.CompactRange(gorocksdb.Range{[]byte{0x00}, []byte{0xFF}})
-	return nil
-}
-
-/*
  * TODO Purge old backups
  */
 func (store *rocksStore) Backup() error {

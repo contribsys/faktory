@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mperham/faktory/util"
+	"github.com/contribsys/faktory/util"
 )
 
 func fetchPassword(configDir string) (string, error) {

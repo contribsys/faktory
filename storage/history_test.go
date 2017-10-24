@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mperham/gorocksdb"
+	"github.com/contribsys/gorocksdb"
 	"github.com/stretchr/testify/assert"
 )
 

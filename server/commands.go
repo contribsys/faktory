@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mperham/faktory"
-	"github.com/mperham/faktory/storage"
-	"github.com/mperham/faktory/util"
+	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/util"
 )
 
 type command func(c *Connection, s *Server, cmd string)

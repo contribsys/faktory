@@ -27,24 +27,24 @@ prepare:
 	#CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 	# make won't export these variables so they must be set up outside this Makefile
 	# Use "go get -x" to debug compilation problems.
-	go get -u github.com/mperham/gorocksdb
+	go get -u github.com/contribsys/gorocksdb
 	#gem install -N fpm
 	@echo Now you should be ready to run "make"
 
 test: clean generate
 	go test -parallel 4 \
-		github.com/mperham/faktory \
-		github.com/mperham/faktory/server \
-		github.com/mperham/faktory/storage \
-		github.com/mperham/faktory/test \
-		github.com/mperham/faktory/util \
-		github.com/mperham/faktory/webui
+		github.com/contribsys/faktory \
+		github.com/contribsys/faktory/server \
+		github.com/contribsys/faktory/storage \
+		github.com/contribsys/faktory/test \
+		github.com/contribsys/faktory/util \
+		github.com/contribsys/faktory/webui
 
 generate:
 	go generate ./...
 
 cover:
-	go test -cover -coverprofile cover.out github.com/mperham/faktory/webui
+	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 

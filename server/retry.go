@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mperham/faktory"
-	"github.com/mperham/faktory/util"
+	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/util"
 )
 
 var (

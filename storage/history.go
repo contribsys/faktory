@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mperham/gorocksdb"
+	"github.com/contribsys/gorocksdb"
 )
 
 type processingHistory struct {

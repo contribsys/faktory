@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/mperham/gorocksdb"
+	"github.com/contribsys/gorocksdb"
 )
 
 /*

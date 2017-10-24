@@ -4,7 +4,7 @@ package webui
 import (
   "net/http"
 
-  "github.com/mperham/faktory"
+  "github.com/contribsys/faktory"
 )
 
 func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *faktory.Job) {

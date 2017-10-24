@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/mperham/faktory/cli"
-	"github.com/mperham/faktory/server"
-	"github.com/mperham/faktory/util"
-	"github.com/mperham/faktory/webui"
+	"github.com/contribsys/faktory/cli"
+	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/util"
+	"github.com/contribsys/faktory/webui"
 )
 
 func main() {

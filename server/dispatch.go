@@ -29,8 +29,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/mperham/faktory"
-	"github.com/mperham/faktory/storage"
+	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/storage"
 )
 
 func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues ...string) (*faktory.Job, error) {

@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mperham/faktory"
-	"github.com/mperham/faktory/util"
+	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 

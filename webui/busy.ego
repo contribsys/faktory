@@ -4,7 +4,7 @@ package webui
 import (
   "net/http"
 
-  "github.com/mperham/faktory/server"
+  "github.com/contribsys/faktory/server"
 )
 
 func ego_busy(w io.Writer, req *http.Request) {

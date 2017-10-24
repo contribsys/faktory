@@ -45,7 +45,7 @@ echo === Installing dependencies
 make prepare
 
 # build faktory
-cd ~/go/src/github.com/mperham && ln -s /faktory faktory && cd faktory
+cd ~/go/src/github.com/contribsys && ln -s /faktory faktory && cd faktory
 echo === Running Faktory test suite
 make
 make build

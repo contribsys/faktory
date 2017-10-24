@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/mperham/faktory"
+	"github.com/contribsys/faktory"
 	"github.com/stretchr/testify/assert"
 )
 

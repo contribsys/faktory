@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/mperham/faktory/util"
-	"github.com/mperham/gorocksdb"
+	"github.com/contribsys/faktory/util"
+	"github.com/contribsys/gorocksdb"
 )
 
 type rocksStore struct {

@@ -71,11 +71,6 @@ func ParseArguments() CmdOptions {
 			defaults.ConfigDirectory = filepath.Join(dir, ".faktory")
 		}
 	}
-
-	err := os.Mkdir(defaults.StorageDirectory, os.FileMode(os.ModeDir|0755))
-	if err != nil && !os.IsExist(err) {
-		log.Fatalf("Cannot create Faktory's data directory: %v", err)
-	}
 	return defaults
 }
 

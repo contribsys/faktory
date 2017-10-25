@@ -33,7 +33,7 @@ var (
 )
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/run/faktory/db", false, ""}
+	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", false, ""}
 
 	log.SetFlags(0)
 	log.Println(faktory.Name, faktory.Version)
@@ -50,7 +50,7 @@ func ParseArguments() CmdOptions {
 	flag.BoolVar(&defaults.DisableTls, "no-tls", false, "Disable TLS, I don't want encryption")
 
 	// undocumented on purpose, we don't want people changing these if possible
-	flag.StringVar(&defaults.StorageDirectory, "d", "/var/run/faktory/db", "Storage directory")
+	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")
 	flag.StringVar(&defaults.ConfigDirectory, "c", "/etc/faktory", "Config directory")
 	versionPtr := flag.Bool("v", false, "Show version")
 	flag.Parse()
@@ -64,7 +64,7 @@ func ParseArguments() CmdOptions {
 		dir := usr.HomeDir
 		// development defaults to the user's home dir so everything is local and
 		// permissions aren't a problem.
-		if defaults.StorageDirectory == "/var/run/faktory/db" {
+		if defaults.StorageDirectory == "/var/lib/faktory/db" {
 			defaults.StorageDirectory = filepath.Join(dir, ".faktory/db")
 		}
 		if defaults.ConfigDirectory == "/etc/faktory" {

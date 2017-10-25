@@ -2,7 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/contribsys/gorocksdb"
   packages = ["."]
   revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
@@ -46,6 +45,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5cf8ef021bbac3fb5a5735bde71e2745a57655215a52fc8cbbe5357369a87e0e"
+  inputs-digest = "05f7266b432901454c018b4d97c0985ce1fb8d61ce0569a58f758d05a5856c7c"
   solver-name = "gps-cdcl"
   solver-version = 1

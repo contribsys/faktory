@@ -56,7 +56,9 @@ func repl(path string, store storage.Store) {
 		if er != nil {
 			if io.EOF == er {
 				fmt.Println("")
-				store.Close()
+				if store != nil {
+					store.Close()
+				}
 				os.Exit(0)
 			}
 			fmt.Printf("Error: %s\n", er.Error())

@@ -28,5 +28,6 @@ COPY --from=build /root/go/src/github.com/contribsys/faktory/faktory \
                   /
 RUN apk add --no-cache libstdc++ libgcc
 RUN mkdir -p /root/.faktory/db
+
 EXPOSE 7419 7420
 ENTRYPOINT ["/faktory"]

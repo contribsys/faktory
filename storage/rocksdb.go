@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
 	"sort"
 	"sync"
 
@@ -46,6 +47,10 @@ func OpenRocks(path string) (Store, error) {
 	util.Infof("Initializing storage at %s", path)
 	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
 
+	err := os.MkdirAll(path, os.ModeDir|0755)
+	if err != nil {
+		return nil, err
+	}
 	opts := DefaultOptions()
 	sopts := gorocksdb.NewDefaultOptions()
 	sopts.SetMergeOperator(&int64CounterMerge{})

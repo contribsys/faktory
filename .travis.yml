@@ -16,10 +16,9 @@ env:
     - CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 
 before_script:
-  - sudo apt-get remove -y libbz2-dev zlib1g-dev
   - mkdir -p $HOME/faktory
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/faktory/
-  - if [ ! -f "$HOME/rocksdb/librocksdb.a" ]; then rm -rf $HOME/rocksdb && cd $HOME && git clone https://github.com/facebook/rocksdb.git --depth 1 --branch v5.7.3 && cd rocksdb && PORTABLE=1 make static_lib -j4 && strip -g librocksdb.a; fi
+  - if [ ! -f "$HOME/rocksdb/librocksdb.a" ]; then sudo apt-get remove -y libbz2-dev zlib1g-dev && rm -rf $HOME/rocksdb && cd $HOME && git clone https://github.com/facebook/rocksdb.git --depth 1 --branch v5.7.3 && cd rocksdb && PORTABLE=1 make static_lib -j4 && strip -g librocksdb.a; fi
   - mkdir -p $GOPATH/src/github.com/contribsys && ln -s $HOME/faktory $GOPATH/src/github.com/contribsys/faktory
   - cd $GOPATH/src/github.com/contribsys/faktory && make prepare
 

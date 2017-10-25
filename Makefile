@@ -34,7 +34,7 @@ test: clean generate
 		github.com/contribsys/faktory/webui
 
 generate:
-	go generate $(shell go list ./... | grep -v /vendor/)
+	go generate github.com/contribsys/faktory/webui
 
 cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server

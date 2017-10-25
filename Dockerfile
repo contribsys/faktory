@@ -2,11 +2,11 @@ FROM ubuntu:16.04 AS build
 
 ARG ROCKSDB_VERSION
 RUN apt-get update -y
-RUN apt-get install -y liblz4-dev libbz2-dev libzstd-dev libsnappy-dev \
-    libz-dev libjemalloc-dev build-essential git curl
+RUN apt-get install -y build-essential git curl
 RUN git clone --depth 1 --single-branch --branch v${ROCKSDB_VERSION} \
     https://github.com/facebook/rocksdb /rocksdb
 WORKDIR /rocksdb
+RUN DEBUG_LEVEL=0 PORTABLE=1 make libsnappy.a
 RUN PORTABLE=1 make static_lib
 RUN strip -g librocksdb.a
 ENV ROCKSDB_HOME /rocksdb
@@ -18,19 +18,20 @@ ENV PATH ${PATH}:/usr/local/go/bin
 
 ARG FAKTORY_VERSION
 ENV CGO_CFLAGS -I${ROCKSDB_HOME}/include
-ENV CGO_LDFLAGS -L${ROCKSDB_HOME} -lrocksdb -llz4 -lbz2 -lzstd -lsnappy -lz -ljemalloc
-ADD . /faktory
-RUN cd /faktory && make prepare
-RUN ln -s /faktory ${HOME}/go/src/github.com/contribsys/faktory
+ENV CGO_LDFLAGS -L${ROCKSDB_HOME} -lrocksdb
 ENV PATH ${PATH}:/root/go/bin
+
+RUN mkdir -p /root/go/src/github.com/contribsys
+ADD . /root/go/src/github.com/contribsys/faktory
+RUN cd /root/go/src/github.com/contribsys/faktory && make prepare
+
 WORKDIR /root/go/src/github.com/contribsys/faktory
 RUN make test
 RUN make build
 
 FROM ubuntu:16.04
-COPY --from=build /faktory/faktory /faktory/faktory-cli /
-RUN apt-get update && apt-get install -y liblz4-dev libbz2-dev libzstd-dev \
-    libsnappy-dev libz-dev libjemalloc-dev
+COPY --from=build /root/go/src/github.com/contribsys/faktory/faktory /root/go/src/github.com/contribsys/faktory/faktory-cli /
+RUN apt-get update
 RUN mkdir -p /root/.faktory/db
 
 EXPOSE 7419 7420

@@ -8,7 +8,7 @@ go:
 cache:
   directories:
     - $HOME/rocksdb
-    - $GOPATH/src/github.com/contribsys/faktory/vendor
+    - $HOME/faktory/vendor
 
 env:
   global:

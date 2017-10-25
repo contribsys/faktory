@@ -15,7 +15,7 @@ the Faktory API to fetch a job from a queue.
 - Jobs are represented as JSON hashes.
 - Jobs are pushed to and fetched from queues.
 - Jobs are reserved with a timeout, 30 min by default.
-- Jobs not ACK'd or FAIL'd within the reservation timeout are requeued.
+- Jobs `FAIL`'d or not `ACK`'d within the reservation timeout are requeued.
 - FAIL'd jobs trigger a retry workflow with exponential backoff.
 - Contains a comprehensive Web UI for management and monitoring.
 

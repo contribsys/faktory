@@ -17,3 +17,6 @@ webui/*.ego.go
 webui/static.go
 .vagrant
 packaging/output/
+vendor/
+
+.DS_Store

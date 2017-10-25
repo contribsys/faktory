@@ -33,6 +33,10 @@ test: clean generate
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
 
+d:
+	#eval $(shell docker-machine env default)
+	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
+
 generate:
 	go generate github.com/contribsys/faktory/webui
 

@@ -35,7 +35,7 @@ func runServer(binding string, runner func()) {
 		s.Stop(func() {})
 	}()
 	// rocks takes a few ms to initialize
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	runner()
 }
 

@@ -44,7 +44,7 @@ func TestClientWorker(t *testing.T) {
 
 func TestHeartbeats(t *testing.T) {
 	beatsByMe := map[string]*ClientWorker{}
-	mu := sync.Mutex{}
+	var mu sync.RWMutex
 
 	assert.Equal(t, 0, len(beatsByMe))
 	reapHeartbeats(beatsByMe, nil)

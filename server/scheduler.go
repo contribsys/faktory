@@ -96,10 +96,10 @@ type scannerAdapter interface {
 
 func (s *scanner) Stats() map[string]interface{} {
 	return map[string]interface{}{
-		"enqueued":      s.jobs,
-		"cycles":        s.cycles,
+		"enqueued":      atomic.LoadInt64(&s.jobs),
+		"cycles":        atomic.LoadInt64(&s.cycles),
 		"size":          s.adapter.Size(),
-		"wall_time_sec": (float64(s.walltime) / 1000000000),
+		"wall_time_sec": (float64(atomic.LoadInt64(&s.walltime)) / 1000000000),
 	}
 }
 

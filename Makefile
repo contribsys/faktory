@@ -25,7 +25,7 @@ prepare:
 	@echo Now you should be ready to run "make"
 
 test: clean generate
-	go test -parallel 4 \
+	go test -race -parallel 4 \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \

@@ -365,6 +365,7 @@ func TestBlockingPop(t *testing.T) {
 
 	var count int
 	var timedout int
+	var waitMutex sync.Mutex
 
 	for i := 0; i < 4; i++ {
 		go func() {
@@ -374,6 +375,8 @@ func TestBlockingPop(t *testing.T) {
 			defer cancel()
 			data, err := q.BPop(c)
 			assert.NoError(t, err)
+			waitMutex.Lock()
+			defer waitMutex.Unlock()
 			if data != nil {
 				count += 1
 			}
@@ -413,9 +416,12 @@ func TestBlockingPop(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		time.Sleep(1 * time.Millisecond)
+		rq.waitmu.RLock()
 		if rq.waiters.Len() == 4 {
+			rq.waitmu.RUnlock()
 			break
 		}
+		rq.waitmu.RUnlock()
 	}
 
 	rq.Close()

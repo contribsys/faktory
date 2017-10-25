@@ -106,12 +106,12 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 	if err := it.Err(); err != nil {
 		panic(fmt.Sprintf("%s size: %s", ts.name, err.Error()))
 	}
-	ts.size = count
+	atomic.StoreInt64(&ts.size, count)
 	return ts
 }
 
 func (ts *rocksSortedSet) Size() int64 {
-	return ts.size
+	return atomic.LoadInt64(&ts.size)
 }
 
 func (ts *rocksSortedSet) Remove(key []byte) error {
@@ -230,6 +230,6 @@ func (ts *rocksSortedSet) Clear() (int64, error) {
 		count += 1
 		atomic.AddInt64(&ts.size, -1)
 	}
-	ts.size = 0
+	atomic.StoreInt64(&ts.size, 0)
 	return count, nil
 }

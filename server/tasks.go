@@ -24,6 +24,7 @@ type taskRunner struct {
 	walltimeNs int64
 	cycles     int64
 	executions int64
+	mutex      sync.RWMutex
 }
 
 type task struct {
@@ -50,6 +51,8 @@ func (ts *taskRunner) AddTask(sec int64, thing taskable) {
 	var tsk task
 	tsk.runner = thing
 	tsk.every = sec
+	ts.mutex.Lock()
+	defer ts.mutex.Unlock()
 	ts.tasks = append(ts.tasks, &tsk)
 }
 
@@ -77,6 +80,8 @@ func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
 func (ts *taskRunner) Stats() map[string]map[string]interface{} {
 	data := map[string]map[string]interface{}{}
 
+	ts.mutex.RLock()
+	defer ts.mutex.RUnlock()
 	for _, task := range ts.tasks {
 		data[task.runner.Name()] = task.runner.Stats()
 	}
@@ -92,6 +97,8 @@ func (ts *taskRunner) cycle() {
 	count := int64(0)
 	start := time.Now()
 	sec := start.Unix()
+	ts.mutex.RLock()
+	defer ts.mutex.RUnlock()
 	for _, t := range ts.tasks {
 		if sec%t.every != 0 {
 			continue

@@ -53,7 +53,9 @@ type Server struct {
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
 	heartbeats map[string]*ClientWorker
-	hbmu       sync.Mutex
+	hbmu       sync.RWMutex
+
+	initialized chan bool
 }
 
 // register a global handler to be called when the Server instance
@@ -71,12 +73,11 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 	}
 
 	s := &Server{
-		Options:    opts,
-		Stats:      &RuntimeStats{StartedAt: time.Now()},
-		pending:    &sync.WaitGroup{},
-		mu:         sync.Mutex{},
-		heartbeats: make(map[string]*ClientWorker, 12),
-		hbmu:       sync.Mutex{},
+		Options:     opts,
+		Stats:       &RuntimeStats{StartedAt: time.Now()},
+		pending:     &sync.WaitGroup{},
+		heartbeats:  make(map[string]*ClientWorker, 12),
+		initialized: make(chan bool, 1),
 	}
 
 	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
@@ -139,6 +140,8 @@ func (s *Server) Start() error {
 	s.startScanners(s.pending)
 	s.mu.Unlock()
 
+	s.initialized <- true
+
 	// wait for outstanding requests to finish
 	defer s.pending.Wait()
 	defer s.taskRunner.Stop()
@@ -167,6 +170,10 @@ func (s *Server) Start() error {
 			processLines(c, s)
 		}()
 	}
+}
+
+func (s *Server) WaitUntilInitialized() {
+	<-s.initialized
 }
 
 func (s *Server) Stop(f func()) {

@@ -193,16 +193,16 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"default_size":    defalt.Size(),
-			"total_failures":  s.Stats.Failures,
-			"total_processed": s.Stats.Processed,
+			"total_failures":  atomic.LoadInt64(&s.Stats.Failures),
+			"total_processed": atomic.LoadInt64(&s.Stats.Processed),
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
 			"tasks":           s.taskRunner.Stats()},
 		"server": map[string]interface{}{
 			"faktory_version": faktory.Version,
 			"uptime":          uptimeInSeconds(s),
-			"connections":     s.Stats.Connections,
-			"command_count":   s.Stats.Commands,
+			"connections":     atomic.LoadInt64(&s.Stats.Connections),
+			"command_count":   atomic.LoadInt64(&s.Stats.Commands),
 			"used_memory_mb":  currentMemoryUsage(s)},
 	}, nil
 }
@@ -239,6 +239,8 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	s.hbmu.Lock()
+	defer s.hbmu.Unlock()
 	entry, ok := s.heartbeats[worker.Wid]
 	if !ok {
 		c.Error(cmd, fmt.Errorf("Unknown client %s", worker.Wid))

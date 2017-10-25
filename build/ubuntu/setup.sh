@@ -26,7 +26,8 @@ if [ ! -d /usr/local/go ]; then
   export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
 fi
 
-cd /faktory
+mkdir -p ~/go/src/github.com/contribsys
+cd ~/go/src/github.com/contribsys && ln -s /faktory faktory && cd faktory
 
 # download project dependencies
 export ROCKSDB_HOME="$HOME/rocksdb"
@@ -35,7 +36,6 @@ export CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 echo === Installing dependencies
 make prepare
 
-# build faktory
-cd ~/go/src/github.com/contribsys && ln -s /faktory faktory && cd faktory
 echo === Running Faktory test suite
 make
+make build

@@ -5,6 +5,10 @@ VERSION=0.5.0
 ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
+TEST_FLAGS=-parallel 4
+ifdef DETECT_RACES
+	TEST_FLAGS += -race
+endif
 
 # contains various secret or machine-specific variables.
 # DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
@@ -25,7 +29,7 @@ prepare:
 	@echo Now you should be ready to run "make"
 
 test: clean generate
-	go test -race -parallel 4 \
+	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \

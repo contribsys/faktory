@@ -4,6 +4,10 @@ sudo: required
 language: go
 go:
   - 1.9
+  
+cache:
+  directories:
+    - $HOME/rocksdb
 
 env:
   global:
@@ -15,8 +19,7 @@ before_script:
   - sudo apt-get remove -y libbz2-dev zlib1g-dev
   - mkdir -p $HOME/faktory
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/faktory/
-  - cd $HOME && git clone https://github.com/facebook/rocksdb.git --depth 1 --branch v5.7.3 && cd rocksdb
-  - PORTABLE=1 make static_lib -j4 && strip -g librocksdb.a
+  - if [ ! -d "$HOME/rocksdb" ]; then cd $HOME && git clone https://github.com/facebook/rocksdb.git --depth 1 --branch v5.7.3 && cd rocksdb && PORTABLE=1 make static_lib -j4 && strip -g librocksdb.a; fi
   - mkdir -p $GOPATH/src/github.com/contribsys && ln -s $HOME/faktory $GOPATH/src/github.com/contribsys/faktory
   - cd $GOPATH/src/github.com/contribsys/faktory && make prepare
 

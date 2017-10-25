@@ -1,4 +1,4 @@
-# Faktory
+# Faktory [![Travis Build Status](https://travis-ci.org/contribsys/faktory.svg?branch=master)](https://travis-ci.org/contribsys/faktory?branch=master)
 
 At a high level, Faktory is a work server.  It is the repository for
 background jobs within your application. Jobs have a type and a set of

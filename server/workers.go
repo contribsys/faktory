@@ -66,7 +66,7 @@ func (worker *ClientWorker) BusyCount() int {
 /*
  * Removes any heartbeat records over 1 minute old.
  */
-func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.Mutex) error {
+func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.RWMutex) error {
 	toDelete := []string{}
 
 	for k, worker := range heartbeats {
@@ -86,7 +86,7 @@ func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.Mutex) error {
 	return nil
 }
 
-func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, mu *sync.Mutex) {
+func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, mu *sync.RWMutex) {
 	mu.Lock()
 	val, ok := heartbeats[client.Wid]
 	if ok {

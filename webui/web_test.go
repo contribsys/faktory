@@ -86,6 +86,10 @@ func bootRuntime() *server.Server {
 		}
 	}()
 
+	s.WaitUntilInitialized()
+
+	mutex.Lock()
+	defer mutex.Unlock()
 	defaultServer = s
 	for {
 		if defaultServer.Store() != nil {

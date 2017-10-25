@@ -43,7 +43,10 @@ func DefaultOptions() *gorocksdb.Options {
 	return opts
 }
 
+var registerMutex sync.Mutex
+
 func OpenRocks(path string) (Store, error) {
+
 	util.Infof("Initializing storage at %s", path)
 	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
 
@@ -53,7 +56,11 @@ func OpenRocks(path string) (Store, error) {
 	}
 	opts := DefaultOptions()
 	sopts := gorocksdb.NewDefaultOptions()
+
+	// the global registration function in gorocksdb, registerMergeOperator seems to be racy
+	registerMutex.Lock()
 	sopts.SetMergeOperator(&int64CounterMerge{})
+	registerMutex.Unlock()
 
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, path,
 		[]string{"scheduled", "retries", "working", "dead", "clients", "default", "queues", "stats"},
@@ -69,11 +76,11 @@ func OpenRocks(path string) (Store, error) {
 		Name:      path,
 		db:        db,
 		opts:      opts,
-		scheduled: (&rocksSortedSet{name: "scheduled", db: db, cf: handles[0], ro: ro, wo: wo}).init(),
-		retries:   (&rocksSortedSet{name: "retries", db: db, cf: handles[1], ro: ro, wo: wo}).init(),
-		working:   (&rocksSortedSet{name: "working", db: db, cf: handles[2], ro: ro, wo: wo}).init(),
-		dead:      (&rocksSortedSet{name: "dead", db: db, cf: handles[3], ro: ro, wo: wo}).init(),
-		clients:   (&rocksSortedSet{name: "clients", db: db, cf: handles[4], ro: ro, wo: wo}).init(),
+		scheduled: (&rocksSortedSet{name: "scheduled", db: db, cf: handles[0], ro: ro, wo: wo, size: 0}).init(),
+		retries:   (&rocksSortedSet{name: "retries", db: db, cf: handles[1], ro: ro, wo: wo, size: 0}).init(),
+		working:   (&rocksSortedSet{name: "working", db: db, cf: handles[2], ro: ro, wo: wo, size: 0}).init(),
+		dead:      (&rocksSortedSet{name: "dead", db: db, cf: handles[3], ro: ro, wo: wo, size: 0}).init(),
+		clients:   (&rocksSortedSet{name: "clients", db: db, cf: handles[4], ro: ro, wo: wo, size: 0}).init(),
 		defalt:    handles[5],
 		queues:    handles[6],
 		stats:     handles[7],

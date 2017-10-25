@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -37,32 +38,33 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 
+	go func() {
+		err = s.Start()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	s.WaitUntilInitialized()
+
 	each := 10000
 	start := time.Now()
 
 	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			pushAndPop(t, each)
 			util.Infof("Processed %d jobs in %v", 3*each, time.Now().Sub(start))
 		}()
 	}
 
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		wg.Wait()
-		s.Stop(nil)
-	}()
+	wg.Wait()
+	s.Stop(nil)
 
-	err = s.Start()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	assert.Equal(t, int64(3*each), s.Stats.Processed)
-	assert.Equal(t, int64(3*(each/100)), s.Stats.Failures)
+	assert.Equal(t, int64(3*each), atomic.LoadInt64(&s.Stats.Processed))
+	assert.Equal(t, int64(3*(each/100)), atomic.LoadInt64(&s.Stats.Failures))
 }
 
 func pushAndPop(t *testing.T, count int) {

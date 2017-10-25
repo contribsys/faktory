@@ -44,7 +44,7 @@ type rocksQueue struct {
 	mu      sync.Mutex
 	maxsz   int64
 	waiters *list.List
-	waitmu  sync.Mutex
+	waitmu  sync.RWMutex
 	done    bool
 }
 
@@ -216,23 +216,23 @@ func (q *rocksQueue) Init() error {
 		q.high = toInt64(key[start:end]) + 1
 		k.Free()
 	}
-	q.size = count
+	atomic.StoreInt64(&q.size, count)
 	q.waiters = list.New()
 
-	util.Debugf("Queue init: %s %d elements, %d/%d", q.name, q.size, q.low, q.high)
+	util.Debugf("Queue init: %s %d elements, %d/%d", q.name, atomic.LoadInt64(&q.size), q.low, q.high)
 	return nil
 }
 
 func (q *rocksQueue) Size() int64 {
-	return q.size
+	return atomic.LoadInt64(&q.size)
 }
 
 func (q *rocksQueue) Push(payload []byte) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if q.size > q.maxsz {
-		return Backpressure{q.name, q.size, q.maxsz}
+	if atomic.LoadInt64(&q.size) > q.maxsz {
+		return Backpressure{q.name, atomic.LoadInt64(&q.size), q.maxsz}
 	}
 
 	k := q.nextkey()
@@ -256,7 +256,7 @@ func (q *rocksQueue) Pop() ([]byte, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if q.size == 0 || q.done {
+	if atomic.LoadInt64(&q.size) == 0 || q.done {
 		return nil, nil
 	}
 
@@ -357,7 +357,7 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 			q.mu.Unlock()
 			return nil, nil
 		}
-		if q.size > 0 {
+		if atomic.LoadInt64(&q.size) > 0 {
 			defer q.mu.Unlock()
 			return q._pop()
 		}

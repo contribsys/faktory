@@ -31,6 +31,7 @@ var (
 	}
 
 	// these are used in testing only
+	mutex         sync.Mutex
 	defaultServer *server.Server
 	staticHandler = Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 )
@@ -60,6 +61,8 @@ func InitialSetup(pwd string) {
 }
 
 func FireItUp(svr *server.Server) error {
+	mutex.Lock()
+	defer mutex.Unlock()
 	defaultServer = svr
 	go func() {
 		s := &http.Server{

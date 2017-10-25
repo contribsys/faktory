@@ -17,7 +17,7 @@ var (
 	// When client ack's JID, we can lookup reservation
 	// and remove Rocks entry quickly.
 	workingMap   = map[string]*Reservation{}
-	workingMutex = &sync.Mutex{}
+	workingMutex = &sync.RWMutex{}
 )
 
 type Reservation struct {
@@ -136,6 +136,8 @@ func (r *busyReaper) Execute() error {
 }
 
 func (r *busyReaper) Stats() map[string]interface{} {
+	workingMutex.RLock()
+	defer workingMutex.RUnlock()
 	return map[string]interface{}{
 		"size":   len(workingMap),
 		"reaped": r.count,

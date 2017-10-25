@@ -41,6 +41,9 @@ d:
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
+drun:
+	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
+
 generate:
 	go generate github.com/contribsys/faktory/webui
 

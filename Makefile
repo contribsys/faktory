@@ -16,19 +16,12 @@ BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
 all: test
 
+# install dependencies and cli tools
 prepare:
-	go get github.com/benbjohnson/ego/cmd/ego
-	go get github.com/stretchr/testify/...
-	go get github.com/jteeuwen/go-bindata/...
-	go get github.com/sirupsen/logrus
-	# necessary to compile the gorocksdb bindings
-	#ROCKSDB_HOME=/home/ubuntu/rocksdb
-	#CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-	#CGO_LDFLAGS="-L${ROCKSDB_HOME}"
-	# make won't export these variables so they must be set up outside this Makefile
-	# Use "go get -x" to debug compilation problems.
-	go get -u github.com/contribsys/gorocksdb
-	#gem install -N fpm
+	@go get github.com/golang/dep/cmd/dep
+	@dep ensure
+	@go get github.com/benbjohnson/ego/cmd/ego
+	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
 test: clean generate
@@ -41,7 +34,7 @@ test: clean generate
 		github.com/contribsys/faktory/webui
 
 generate:
-	go generate ./...
+	go generate $(shell go list ./... | grep -v /vendor/)
 
 cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server

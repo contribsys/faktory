@@ -1,0 +1,17 @@
+# Ex:
+#   git clone https://github.com/contribsys/faktory.git
+#   cd faktory && git checkout v0.5.0
+#   GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=0.5.0 docker-compose build
+# That will build an image and tag it like:
+#   contribsys/faktory:0.5.0
+
+version: "3"
+
+services:
+  faktory:
+    image: contribsys/faktory:${TAG}
+    build:
+      context: .
+      args:
+        GOLANG_VERSION: ${GOLANG_VERSION}
+        ROCKSDB_VERSION: ${ROCKSDB_VERSION}

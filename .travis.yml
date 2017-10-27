@@ -3,7 +3,7 @@ dist: trusty
 sudo: required
 language: go
 go:
-  - 1.9
+  - 1.9.x
 
 cache:
   directories:

@@ -23,17 +23,13 @@ the Faktory API to fetch a job from a queue.
 
 See the [Installation wiki page](https://github.com/contribsys/faktory/wiki/Installation) for current installation methods.
 
-**We need help getting Faktory running easily on OSX.**  Today you have to
-git clone this repo and [build manually](https://github.com/contribsys/faktory/wiki/Development) but we hope to get it into
-Homebrew soon.
-
 ## Documentation
 
 Please [see the Faktory wiki](https://github.com/contribsys/faktory/wiki) for full documentation.
 
 ## Support
 
-You can also find help in the [contribsys/faktory](https://gitter.im/contribsys/faktory) chat channel. Stop by and say hi!
+You can find help in the [contribsys/faktory](https://gitter.im/contribsys/faktory) chat channel. Stop by and say hi!
 
 ## Author
 

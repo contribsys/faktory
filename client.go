@@ -27,7 +27,7 @@ type Client struct {
 
 /*
  * This data is serialized to JSON and sent
- * with the AHOY command.  PasswordHash is required
+ * with the HELLO command.  PasswordHash is required
  * if the server is not listening on localhost.
  * The WID (worker id) must be random and unique
  * for each worker process.  It can be a UUID, etc.

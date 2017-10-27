@@ -222,14 +222,14 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
 		util.Info("Invalid preamble", line)
-		util.Info("Need a valid AHOY")
+		util.Info("Need a valid HELLO")
 		conn.Close()
 		return nil
 	}
 
 	client, err := clientWorkerFromAhoy(line[5:])
 	if err != nil {
-		util.Error("Invalid client data in AHOY", err, nil)
+		util.Error("Invalid client data in HELLO", err, nil)
 		conn.Close()
 		return nil
 	}

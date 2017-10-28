@@ -82,16 +82,16 @@ func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
 	return res.Job, err
 }
 
-type busyReaper struct {
+type reservationReaper struct {
 	s     *Server
 	count int
 }
 
-func (r *busyReaper) Name() string {
+func (r *reservationReaper) Name() string {
 	return "Busy"
 }
 
-func (r *busyReaper) Execute() error {
+func (r *reservationReaper) Execute() error {
 	count := 0
 
 	jobs, err := r.s.store.Working().RemoveBefore(util.Nows())
@@ -135,7 +135,7 @@ func (r *busyReaper) Execute() error {
 	return nil
 }
 
-func (r *busyReaper) Stats() map[string]interface{} {
+func (r *reservationReaper) Stats() map[string]interface{} {
 	workingMutex.RLock()
 	defer workingMutex.RUnlock()
 	return map[string]interface{}{

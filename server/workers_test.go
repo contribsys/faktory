@@ -48,11 +48,13 @@ func TestClientWorker(t *testing.T) {
 }
 
 func TestHeartbeats(t *testing.T) {
+	t.Parallel()
+
 	beatsByMe := map[string]*ClientWorker{}
 	var mu sync.RWMutex
 
 	assert.Equal(t, 0, len(beatsByMe))
-	reapHeartbeats(beatsByMe, nil)
+	reapHeartbeats(beatsByMe, &mu)
 
 	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
 	client, err := clientWorkerFromHello(ahoy)
@@ -65,7 +67,7 @@ func TestHeartbeats(t *testing.T) {
 	assert.True(t, client.lastHeartbeat.Before(after))
 
 	assert.Equal(t, 1, len(beatsByMe))
-	reapHeartbeats(beatsByMe, nil)
+	reapHeartbeats(beatsByMe, &mu)
 	assert.Equal(t, 1, len(beatsByMe))
 
 	updateHeartbeat(client, beatsByMe, &mu)

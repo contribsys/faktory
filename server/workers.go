@@ -125,40 +125,69 @@ func (worker *ClientWorker) BusyCount() int {
 	return count
 }
 
+type beatReaper struct {
+	s     *Server
+	count int
+}
+
+func (r *beatReaper) Name() string {
+	return "Busy"
+}
+
+func (r *beatReaper) Stats() map[string]interface{} {
+	r.s.hbmu.RLock()
+	defer r.s.hbmu.RUnlock()
+	return map[string]interface{}{
+		"size":   len(r.s.heartbeats),
+		"reaped": r.count,
+	}
+}
+
 /*
  * Removes any heartbeat records over 1 minute old.
  */
-func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.RWMutex) error {
+func (r *beatReaper) Execute() error {
+	r.count += reapHeartbeats(r.s.heartbeats, &r.s.hbmu)
+	return nil
+}
+
+func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.RWMutex) int {
 	toDelete := []string{}
 
+	mu.RLock()
 	for k, worker := range heartbeats {
 		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
 			toDelete = append(toDelete, k)
 		}
 	}
+	mu.RUnlock()
 
-	if len(toDelete) > 0 {
+	count := len(toDelete)
+	if count > 0 {
 		mu.Lock()
 		for _, k := range toDelete {
 			delete(heartbeats, k)
 		}
 		mu.Unlock()
-		util.Debugf("Reaped %d worker heartbeats", len(toDelete))
+
+		util.Debugf("Reaped %d worker heartbeats", count)
 	}
-	return nil
+	return count
 }
 
 func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, mu *sync.RWMutex) {
-	mu.Lock()
+	mu.RLock()
 	val, ok := heartbeats[client.Wid]
+	mu.RUnlock()
+
 	if ok {
 		val.lastHeartbeat = time.Now()
 	} else {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
+		mu.Lock()
 		heartbeats[client.Wid] = client
+		mu.Unlock()
 		val = client
 	}
-	mu.Unlock()
-	util.Debugf("%+v", val)
 }

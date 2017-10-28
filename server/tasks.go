@@ -122,7 +122,10 @@ func (ts *taskRunner) cycle() {
 
 func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	ts := newTaskRunner()
-	ts.AddTask(15, &busyReaper{s, 0})
+	// reaps job reservations which have expired
+	ts.AddTask(15, &reservationReaper{s, 0})
+	// reaps workers who have not heartbeated
+	ts.AddTask(15, &beatReaper{s, 0})
 	ts.Run(waiter)
 	s.taskRunner = ts
 }

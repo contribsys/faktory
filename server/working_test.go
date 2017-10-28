@@ -8,6 +8,8 @@ import (
 )
 
 func TestAcknowledge(t *testing.T) {
+	t.Parallel()
+
 	set := &fakeSet{}
 
 	job, err := acknowledge("", &fakeSet{})

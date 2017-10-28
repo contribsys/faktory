@@ -22,33 +22,31 @@ func TestTlsConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// with CA bundle
-	cfg, err = findTlsConfigIn(":7419", false, []string{"../test/tls/1"})
-	assert.NotNil(t, cfg)
-	assert.NoError(t, err)
-
 	cfg, err = findTlsConfigIn(":7419", false, []string{"../test/tls/2"})
 	assert.NotNil(t, cfg)
 	assert.NoError(t, err)
 
+	// the certs are self-signed for "acme.example.com"
 	cfg.BuildNameToCertificate()
 	assert.Equal(t, 1, len(cfg.NameToCertificate))
 	assert.NotNil(t, cfg.NameToCertificate["acme.example.com"])
 
-	// no required certs
+	// requires certs, but not there
 	cfg, err = findTlsConfigIn(":7419", false, []string{"/tmp"})
 	assert.Nil(t, cfg)
 	assert.Error(t, err, "not found")
 
+	// does not require certs, and not there
 	cfg, err = findTlsConfigIn("localhost:7419", false, []string{"/tmp"})
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
 
-	// disable, no certs
+	// disable TLS, no certs
 	cfg, err = findTlsConfigIn("localhost:7419", true, []string{"/tmp"})
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
 
-	// disable, certs
+	// disable TLS, certs
 	cfg, err = findTlsConfigIn(":7419", true, []string{"../test/tls/1"})
 	assert.Nil(t, cfg)
 	assert.NoError(t, err)
@@ -64,6 +62,10 @@ func TestPasswords(t *testing.T) {
 	assert.Equal(t, "", pwd)
 }
 
+/*
+ * This sets up a full server running TLS+password, connects to it with a client
+ * and tries to run a few commands.  A basic integration test.
+ */
 func TestFullTLS(t *testing.T) {
 	ok, err := util.FileExists(os.ExpandEnv("$HOME/.faktory/tls/public.crt"))
 	assert.NoError(t, err)

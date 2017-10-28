@@ -113,8 +113,9 @@ func push(c *Connection, s *Server, cmd string) {
 }
 
 func fetch(c *Connection, s *Server, cmd string) {
-	// quiet or terminated clients should not get new jobs
 	if c.client.state != "" {
+		// quiet or terminated clients should not get new jobs
+		time.Sleep(2 * time.Second)
 		c.Result(nil)
 		return
 	}

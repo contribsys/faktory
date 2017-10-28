@@ -9,6 +9,7 @@ import (
 
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
+	"strings"
 )
 
 type rocksStore struct {
@@ -224,8 +225,15 @@ func (store *rocksStore) init() error {
 
 func (store *rocksStore) GetQueue(name string) (Queue, error) {
 	if name == "" {
-		return nil, fmt.Errorf("Queue name cannot be blank")
+		return nil, fmt.Errorf("queue name cannot be blank")
 	}
+	
+	valid := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
+	invalid := strings.Trim(name, valid)  // strip the valid chars, leaving just the bad ones
+	if len(invalid) > 0 {
+		return nil, fmt.Errorf("queue names can only contain A-Za-z0-9_.-")
+	}
+
 	store.mu.Lock()
 	defer store.mu.Unlock()
 

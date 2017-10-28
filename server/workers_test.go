@@ -11,20 +11,20 @@ import (
 func TestClientWorker(t *testing.T) {
 	t.Parallel()
 
-	cw, err := clientWorkerFromAhoy("")
+	cw, err := clientWorkerFromHello("")
 	assert.Error(t, err)
 	assert.Nil(t, cw)
 
-	cw, err = clientWorkerFromAhoy("{")
+	cw, err = clientWorkerFromHello("{")
 	assert.Error(t, err)
 	assert.Nil(t, cw)
 
-	cw, err = clientWorkerFromAhoy("{}")
+	cw, err = clientWorkerFromHello("{}")
 	assert.Error(t, err)
 	assert.Nil(t, cw)
 
 	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
-	cw, err = clientWorkerFromAhoy(ahoy)
+	cw, err = clientWorkerFromHello(ahoy)
 	assert.NoError(t, err)
 	assert.NotNil(t, cw)
 
@@ -55,7 +55,7 @@ func TestHeartbeats(t *testing.T) {
 	reapHeartbeats(beatsByMe, nil)
 
 	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
-	client, err := clientWorkerFromAhoy(ahoy)
+	client, err := clientWorkerFromHello(ahoy)
 	assert.NoError(t, err)
 
 	before := time.Now()

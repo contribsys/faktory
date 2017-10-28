@@ -227,7 +227,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	client, err := clientWorkerFromAhoy(line[5:])
+	client, err := clientWorkerFromHello(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in HELLO", err, nil)
 		conn.Close()

@@ -58,6 +58,12 @@ func TestBasicQueueOps(t *testing.T) {
 	// valid names:
 	_, err = store.GetQueue("A-Za-z0-9_.-")
 	assert.NoError(t, err)
+	_, err = store.GetQueue("-")
+	assert.NoError(t, err)
+	_, err = store.GetQueue("A")
+	assert.NoError(t, err)
+	_, err = store.GetQueue("a")
+	assert.NoError(t, err)
 
 	// invalid names:
 	_, err = store.GetQueue("default?page=1")

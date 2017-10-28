@@ -7,9 +7,10 @@ import (
 	"sort"
 	"sync"
 
+	"regexp"
+
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
-	"regexp"
 )
 
 type rocksStore struct {
@@ -224,7 +225,7 @@ func (store *rocksStore) init() error {
 }
 
 var (
-	VALID_QUEUE_NAME = regexp.MustCompile(`^[a-zA-Z0-9._-]*$`)
+	ValidQueueName = regexp.MustCompile(`\A[a-zA-Z0-9._-]+\z`)
 )
 
 func (store *rocksStore) GetQueue(name string) (Queue, error) {
@@ -240,8 +241,8 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 		return q, nil
 	}
 
-	if ! VALID_QUEUE_NAME.MatchString(name) {
-		return nil, fmt.Errorf("queue names can only contain A-Za-z0-9_.-")
+	if !ValidQueueName.MatchString(name) {
+		return nil, fmt.Errorf("queue names must match %v", ValidQueueName)
 	}
 
 	q = &rocksQueue{

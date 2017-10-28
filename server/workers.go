@@ -25,7 +25,7 @@ import (
  *
  * running -> quiet -> terminate
  *
- * - Running means the worker is alive and sending BEATs.
+ * - Running means the worker is alive and processing jobs.
  * - Quiet means the worker should stop FETCHing new jobs but continue working on existing jobs.
  *   It should not exit, even if no jobs are processing.
  * - Terminate means the worker should exit within N seconds, where N is recommended to be
@@ -33,10 +33,12 @@ import (
  *   threads that are still busy are forcefully killed and their associated jobs reported
  *   as FAILed so they will be retried shortly.
  *
- * A worker process should never sending BEAT.  Even after "quiet" or "terminate", the BEAT
+ * A worker process should never stop sending BEAT.  Even after "quiet" or "terminate", the BEAT
  * should continue, only stopping due to process exit().
  * Workers should never move backward in state - you cannot "unquiet" a worker, it must be restarted.
- * faktory_worker_ruby uses TSTP as the quiet signal and TERM as the terminate signal.
+ *
+ * Workers will typically also respond to standard Unix signals.
+ * faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
  */
 type ClientWorker struct {
 	Hostname     string   `json:"hostname"`

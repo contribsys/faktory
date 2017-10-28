@@ -9,7 +9,7 @@ import (
 
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
-	"strings"
+	"regexp"
 )
 
 type rocksStore struct {
@@ -223,15 +223,13 @@ func (store *rocksStore) init() error {
 	return nil
 }
 
+var (
+	VALID_QUEUE_NAME = regexp.MustCompile(`^[a-zA-Z0-9._-]*$`)
+)
+
 func (store *rocksStore) GetQueue(name string) (Queue, error) {
 	if name == "" {
 		return nil, fmt.Errorf("queue name cannot be blank")
-	}
-	
-	valid := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
-	invalid := strings.Trim(name, valid)  // strip the valid chars, leaving just the bad ones
-	if len(invalid) > 0 {
-		return nil, fmt.Errorf("queue names can only contain A-Za-z0-9_.-")
 	}
 
 	store.mu.Lock()
@@ -241,6 +239,11 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 	if ok {
 		return q, nil
 	}
+
+	if ! VALID_QUEUE_NAME.MatchString(name) {
+		return nil, fmt.Errorf("queue names can only contain A-Za-z0-9_.-")
+	}
+
 	q = &rocksQueue{
 		name:  name,
 		size:  -1,

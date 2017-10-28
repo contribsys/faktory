@@ -54,6 +54,21 @@ func TestBasicQueueOps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), cnt)
 	assert.Equal(t, int64(0), q.Size())
+
+	// valid names:
+	_, err = store.GetQueue("A-Za-z0-9_.-")
+
+	// invalid names:
+	_, err = store.GetQueue("default?page=1")
+	assert.Error(t, err)
+	_, err = store.GetQueue("user@example.com")
+	assert.Error(t, err)
+	_, err = store.GetQueue("c&c")
+	assert.Error(t, err)
+	_, err = store.GetQueue("priority|high")
+	assert.Error(t, err)
+	_, err = store.GetQueue("")
+	assert.Error(t, err)
 }
 
 func TestDecentQueueUsage(t *testing.T) {

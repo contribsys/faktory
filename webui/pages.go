@@ -47,7 +47,7 @@ var (
 )
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
-	name := LAST_ELEMENT.FindStringSubmatch(r.RequestURI)
+	name := LAST_ELEMENT.FindStringSubmatch(r.URL.Path)
 	if name == nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return

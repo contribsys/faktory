@@ -131,7 +131,7 @@ type beatReaper struct {
 }
 
 func (r *beatReaper) Name() string {
-	return "Busy"
+	return "Workers"
 }
 
 func (r *beatReaper) Stats() map[string]interface{} {

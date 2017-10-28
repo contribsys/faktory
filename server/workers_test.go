@@ -28,15 +28,20 @@ func TestClientWorker(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, cw)
 
-	assert.Equal(t, "", cw.state)
+	assert.Equal(t, Running, cw.state)
 	assert.False(t, cw.IsQuiet())
 
-	cw.Signal("quiet")
-	assert.Equal(t, "quiet", cw.state)
+	cw.Signal(Quiet)
+	assert.Equal(t, Quiet, cw.state)
 	assert.True(t, cw.IsQuiet())
 
-	cw.Signal("terminate")
-	assert.Equal(t, "terminate", cw.state)
+	cw.Signal(Terminate)
+	assert.Equal(t, Terminate, cw.state)
+	assert.True(t, cw.IsQuiet())
+
+	// can't go back to quiet
+	cw.Signal(Quiet)
+	assert.Equal(t, Terminate, cw.state)
 	assert.True(t, cw.IsQuiet())
 
 	assert.Equal(t, 0, cw.BusyCount())

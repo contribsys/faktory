@@ -113,8 +113,8 @@ func push(c *Connection, s *Server, cmd string) {
 }
 
 func fetch(c *Connection, s *Server, cmd string) {
-	if c.client.state != "" {
-		// quiet or terminated clients should not get new jobs
+	if c.client.state != Running {
+		// quiet or terminated workers should not get new jobs
 		time.Sleep(2 * time.Second)
 		c.Result(nil)
 		return
@@ -250,10 +250,9 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 
 	entry.lastHeartbeat = time.Now()
 
-	if entry.signal == "" {
+	if entry.state == Running {
 		c.Ok()
 	} else {
-		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, entry.signal)))
-		entry.signal = ""
+		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, stateSignal(entry.state))))
 	}
 }

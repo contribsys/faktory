@@ -311,12 +311,19 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 		wid := r.FormValue("wid")
 		action := r.FormValue("signal")
 		if wid != "" {
+			var signal server.WorkerState
+			if action == "quiet" {
+				signal = server.Quiet
+			} else if action == "terminate" {
+				signal = server.Terminate
+			} else {
+				http.Error(w, fmt.Sprintf("Invalid signal: %s", action), http.StatusInternalServerError)
+				return
+			}
+
 			for _, client := range defaultServer.Heartbeats() {
-				if wid == "all" {
-					client.Signal(action)
-				} else if wid == client.Wid {
-					client.Signal(action)
-					break
+				if wid == "all" || wid == client.Wid {
+					client.Signal(signal)
 				}
 			}
 		}

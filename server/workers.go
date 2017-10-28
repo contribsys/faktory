@@ -9,6 +9,35 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
+/*
+ * This represents a single worker process.  It may have many network
+ * connections open to Faktory.  Each worker process should send a BEAT
+ * command every 15 seconds.  If Faktory does not receive a BEAT from a
+ * worker process within 60 seconds, it expires and is removed from the
+ * Busy page.
+ *
+ * From Faktory's POV, the process can BEAT again and resume normal operations, e.g.
+ * due to a network partition.
+ * If a process dies, it will be removed after 1 minute and its jobs recovered after the
+ * job reservation timeout has passed (typically 30 minutes).
+ *
+ * A worker process has a simple three-state lifecycle:
+ *
+ * running -> quiet -> terminate
+ *
+ * - Running means the worker is alive and sending BEATs.
+ * - Quiet means the worker should stop FETCHing new jobs but continue working on existing jobs.
+ *   It should not exit, even if no jobs are processing.
+ * - Terminate means the worker should exit within N seconds, where N is recommended to be
+ *   30 seconds.  In practice, faktory_worker_ruby waits up to 25 seconds and any
+ *   threads that are still busy are forcefully killed and their associated jobs reported
+ *   as FAILed so they will be retried shortly.
+ *
+ * A worker process should never sending BEAT.  Even after "quiet" or "terminate", the BEAT
+ * should continue, only stopping due to process exit().
+ * Workers should never move backward in state - you cannot "unquiet" a worker, it must be restarted.
+ * faktory_worker_ruby uses TSTP as the quiet signal and TERM as the terminate signal.
+ */
 type ClientWorker struct {
 	Hostname     string   `json:"hostname"`
 	Wid          string   `json:"wid"`
@@ -19,11 +48,29 @@ type ClientWorker struct {
 	StartedAt    time.Time
 
 	lastHeartbeat time.Time
-	signal        string
-	state         string
+	state         WorkerState
 }
 
-func clientWorkerFromAhoy(data string) (*ClientWorker, error) {
+type WorkerState int
+
+const (
+	Running WorkerState = iota
+	Quiet
+	Terminate
+)
+
+func stateSignal(state WorkerState) string {
+	switch state {
+	case Quiet:
+		return "quiet"
+	case Terminate:
+		return "terminate"
+	default:
+		return ""
+	}
+}
+
+func clientWorkerFromHello(data string) (*ClientWorker, error) {
 	var client ClientWorker
 	err := json.Unmarshal([]byte(data), &client)
 	if err != nil {
@@ -38,16 +85,29 @@ func clientWorkerFromAhoy(data string) (*ClientWorker, error) {
 }
 
 func (worker *ClientWorker) IsQuiet() bool {
-	return worker.state != ""
+	return worker.state != Running
 }
 
 /*
  * Send "quiet" or "terminate" to the given client
  * worker process.  Other signals are undefined.
  */
-func (worker *ClientWorker) Signal(sig string) {
-	worker.signal = sig
-	worker.state = sig
+func (worker *ClientWorker) Signal(newstate WorkerState) {
+	if worker.state == Running {
+		worker.state = newstate
+		return
+	}
+
+	// only allow running -> quiet -> terminate
+	// can't go from quiet -> running, terminate -> quiet, etc.
+	if worker.state == Quiet && newstate == Terminate {
+		worker.state = newstate
+		return
+	}
+
+	if worker.state == Terminate {
+		return
+	}
 }
 
 func (worker *ClientWorker) BusyCount() int {

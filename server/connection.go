@@ -33,31 +33,31 @@ func (c *Connection) Close() {
 func (c *Connection) Error(cmd string, err error) error {
 	x := internalError(err)
 	//util.Error(fmt.Sprintf("Error processing line: %s", cmd), err, x.Stack)
-	c.conn.Write([]byte("-ERR "))
-	c.conn.Write([]byte(x.Error.Error()))
-	c.conn.Write([]byte("\r\n"))
-	return nil
+	_, err = c.conn.Write([]byte("-ERR " + x.Error.Error() + "\r\n"))
+	return err
 }
 
 func (c *Connection) Ok() error {
-	c.conn.Write([]byte("+OK\r\n"))
-	return nil
+	_, err := c.conn.Write([]byte("+OK\r\n"))
+	return err
 }
 
 func (c *Connection) Number(val int) error {
-	c.conn.Write([]byte(":"))
-	c.conn.Write([]byte(strconv.Itoa(val)))
-	c.conn.Write([]byte("\r\n"))
-	return nil
+	_, err := c.conn.Write([]byte(":" + strconv.Itoa(val) + "\r\n"))
+	return err
 }
 
 func (c *Connection) Result(msg []byte) error {
-	c.conn.Write([]byte("$"))
-	c.conn.Write([]byte(strconv.Itoa(len(msg))))
-	c.conn.Write([]byte("\r\n"))
-	if msg != nil {
-		c.conn.Write(msg)
+	_, err := c.conn.Write([]byte("$" + strconv.Itoa(len(msg)) + "\r\n"))
+	if err != nil {
+		return err
 	}
-	c.conn.Write([]byte("\r\n"))
-	return nil
+	if msg != nil {
+		_, err = c.conn.Write(msg)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = c.conn.Write([]byte("\r\n"))
+	return err
 }

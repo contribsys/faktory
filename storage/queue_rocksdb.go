@@ -13,14 +13,12 @@ import (
 )
 
 var (
-	/*
-	 * The default maximum size of a queue.
-	 * Further Pushes will result in an error.
-	 *
-	 * This is known as "back pressue" and is important to
-	 * prevent bugs in one component from taking down the
-	 * entire system.
-	 */
+	// The default maximum size of a queue.
+	// Further Pushes will result in an error.
+	//
+	// This is known as "back pressue" and is important to
+	// prevent bugs in one component from taking down the
+	// entire system.
 	DefaultMaxSize = int64(100000)
 )
 
@@ -305,14 +303,12 @@ type QueueWaiter struct {
 	notifier chan bool
 }
 
-/**
- * Iterates through our current list of waiters,
- * finds one whose deadline has not passed and signals
- * the waiter via its channel.
- *
- * This is best effort: it's possible for the waiter's
- * deadline to pass just as it is selected to wake up.
- */
+// Iterates through our current list of waiters,
+// finds one whose deadline has not passed and signals
+// the waiter via its channel.
+//
+// This is best effort: it's possible for the waiter's
+// deadline to pass just as it is selected to wake up.
 func (q *rocksQueue) notify() {
 	q.waitmu.Lock()
 	defer q.waitmu.Unlock()
@@ -341,15 +337,13 @@ func (q *rocksQueue) clearWaiters() {
 	q.waiters = list.New()
 }
 
-/*
- * Waits for a job to come onto the queue.  The given context
- * should timeout the blocking.
- *
- * Waiter calls this method, blocks on a channel it creates.
- * Sends that channel to the dispatcher via waiter channel.
- * Dispatcher is notified of new job on queue, pulls off a waiter
- * and pushes notification to its channel.
- */
+// Waits for a job to come onto the queue.  The given context
+// should timeout the blocking.
+//
+// Waiter calls this method, blocks on a channel it creates.
+// Sends that channel to the dispatcher via waiter channel.
+// Dispatcher is notified of new job on queue, pulls off a waiter
+// and pushes notification to its channel.
 func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 	for {
 		q.mu.Lock()
@@ -427,11 +421,9 @@ func (q *rocksQueue) nextkey() []byte {
 	return keyfor(q.name, nxtseq-1)
 }
 
-/*
-Each entry has a key of the form:
-  [queue_name] ["|"] [8 byte seq_id]
-We can scan the queue by iterating over the "queue_name" prefix
-*/
+// Each entry has a key of the form:
+//   [queue_name] ["|"] [8 byte seq_id]
+// We can scan the queue by iterating over the "queue_name" prefix
 func keyfor(name string, seq int64) []byte {
 	bytes := make([]byte, len(name)+1+8)
 	copy(bytes, name)

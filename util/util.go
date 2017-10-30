@@ -24,6 +24,7 @@ func Darwin() bool {
 	return b
 }
 
+// FileExists checks if given file exists
 func FileExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -34,7 +35,7 @@ func FileExists(path string) (bool, error) {
 	return true, nil
 }
 
-// readLines reads a whole file into memory
+// ReadLines reads a whole file into memory
 // and returns a slice of its lines.
 func ReadLines(data []byte) ([]string, error) {
 	var lines []string
@@ -95,14 +96,16 @@ func Infof(msg string, args ...interface{}) {
 	}
 }
 
-// -l debug: Verbosity level which helps track down production issues
+// Verbosity level helps track down production issues:
+//  -l debug
 func Debug(args ...interface{}) {
 	if LogDebug {
 		logg.Debug(args...)
 	}
 }
 
-// -l debug: Verbosity level which helps track down production issues
+// Verbosity level helps track down production issues:
+//  -l debug
 func Debugf(msg string, args ...interface{}) {
 	if LogDebug {
 		logg.Debugf(msg, args...)
@@ -138,10 +141,8 @@ func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
 }
 
-/*
- * Gather a backtrace for the caller.
- * Return a slice of up to N stack frames.
- */
+// Backtrace gathers a backtrace for the caller.
+// Return a slice of up to N stack frames.
 func Backtrace(size int) []string {
 	pc := make([]uintptr, size)
 	n := runtime.Callers(2, pc)

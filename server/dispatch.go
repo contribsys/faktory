@@ -1,28 +1,3 @@
-/*
-Dispatch operations:
-
- - Basic dequeue
-   - Connection sends POP q1, q2
-	 - Job moved from Queue into Working
- - Scheduled
- 	 - Job Pushed into Queue
-	 - Job moved from Queue into Working
- - Failure
-   - Job Pushed into Retries
- - Push
-   - Job Pushed into Queue
- - Ack
-   - Job removed from Working
-
-How are jobs passed to waiting workers?
-
-Socket sends "POP q1, q2, q3"
-Connection pops each queue:
-  store.GetQueue("q1").Pop()
-and returns if it gets any non-nil data.
-
-If all nil, the connection registers itself, blocking for a job.
-*/
 package server
 
 import (
@@ -32,6 +7,30 @@ import (
 	"github.com/contribsys/faktory"
 	"github.com/contribsys/faktory/storage"
 )
+
+// Dispatch operations:
+//
+//  - Basic dequeue
+//    - Connection sends POP q1, q2
+// 	 - Job moved from Queue into Working
+//  - Scheduled
+//  	 - Job Pushed into Queue
+// 	 - Job moved from Queue into Working
+//  - Failure
+//    - Job Pushed into Retries
+//  - Push
+//    - Job Pushed into Queue
+//  - Ack
+//    - Job removed from Working
+//
+// How are jobs passed to waiting workers?
+//
+// Socket sends "POP q1, q2, q3"
+// Connection pops each queue:
+//   store.GetQueue("q1").Pop()
+// and returns if it gets any non-nil data.
+//
+// If all nil, the connection registers itself, blocking for a job.
 
 func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues ...string) (*faktory.Job, error) {
 	var first storage.Queue

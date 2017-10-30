@@ -19,14 +19,10 @@ func (store *rocksStore) newTransaction() *Transaction {
 	}
 }
 
-/*
- * Transactional operations
- */
+// Transactional operations
 
-/*
- * Enqueue all moves all jobs within the given set into the
- * queues associated with those jobs.
- */
+// Enqueue all moves all jobs within the given set into the
+// queues associated with those jobs.
 func (store *rocksStore) EnqueueAll(set SortedSet) error {
 	return set.Each(func(idx int, key []byte, data []byte) error {
 		return store.EnqueueFrom(set, key)

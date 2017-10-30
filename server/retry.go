@@ -102,6 +102,9 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 	}
 
 	err = s.store.Retries().AddElement(when, job.Jid, bytes)
+	if err != nil {
+		return err
+	}
 	atomic.AddInt64(&s.Stats.Failures, 1)
 	return nil
 }

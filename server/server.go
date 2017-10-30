@@ -194,12 +194,17 @@ func hash(pwd, salt string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(pwd+salt)))
 }
 
+var (
+	ProtocolVersion = []byte(`"1"`)
+)
+
 func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	var salt string
-	conn.Write([]byte(`+HI {"v":"1"`))
+	conn.Write([]byte(`+HI {"v":`))
+	conn.Write(ProtocolVersion)
 	if s.Password != "" {
 		salt = strconv.FormatInt(rand.Int63(), 16)
 		conn.Write([]byte(`,"s":"`))
@@ -242,7 +247,11 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		}
 	}
 
-	updateHeartbeat(client, s.heartbeats, &s.hbmu)
+	if client.Wid == "" {
+		// a producer, not a consumer connection
+	} else {
+		updateHeartbeat(client, s.heartbeats, &s.hbmu)
+	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
@@ -256,7 +265,6 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	return &Connection{
 		client: client,
-		ident:  conn.RemoteAddr().String(),
 		conn:   conn,
 		buf:    buf,
 	}

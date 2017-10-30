@@ -6,24 +6,16 @@ import (
 	"strconv"
 )
 
-/*
- * Represents a connection to a faktory client.
- *
- * faktory reuses the same wire protocol as Redis: RESP.
- * It's a nice trade-off between human-readable and efficient.
- * Shout out to antirez for his nice design document on it.
- *
- * https://redis.io/topics/protocol
- */
+// Represents a connection to a faktory client.
+//
+// faktory reuses the same wire protocol as Redis: RESP.
+// It's a nice trade-off between human-readable and efficient.
+// Shout out to antirez for his nice design document on it.
+// https://redis.io/topics/protocol
 type Connection struct {
-	ident  string
 	client *ClientWorker
 	conn   io.WriteCloser
 	buf    *bufio.Reader
-}
-
-func (c *Connection) Identity() string {
-	return c.ident
 }
 
 func (c *Connection) Close() {

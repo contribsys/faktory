@@ -25,17 +25,15 @@ type Client struct {
 	conn     net.Conn
 }
 
-/*
- * This data is serialized to JSON and sent
- * with the HELLO command.  PasswordHash is required
- * if the server is not listening on localhost.
- * The WID (worker id) must be random and unique
- * for each worker process.  It can be a UUID, etc.
- * Non-worker processes should leave WID empty.
- *
- * The other elements can be useful for debugging
- * and are displayed on the Busy tab.
- */
+// ClientData is serialized to JSON and sent
+// with the HELLO command.  PasswordHash is required
+// if the server is not listening on localhost.
+// The WID (worker id) must be random and unique
+// for each worker process.  It can be a UUID, etc.
+// Non-worker processes should leave WID empty.
+//
+// The other elements can be useful for debugging
+// and are displayed on the Busy tab.
 type ClientData struct {
 	Hostname string   `json:"hostname"`
 	Wid      string   `json:"wid"`
@@ -59,13 +57,12 @@ func DefaultServer() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
-/*
- * This function connects to a Faktory server based on the
- * environment variable conventions:
- *
- * - Use FAKTORY_PROVIDER to point to a custom URL variable.
- * - Use FAKTORY_URL as a catch-all default.
- */
+// Open connects to a Faktory server based on the
+// environment variable conventions:
+//
+// • Use FAKTORY_PROVIDER to point to a custom URL variable.
+//
+// • Use FAKTORY_URL as a catch-all default.
 func Open() (*Client, error) {
 	srv := DefaultServer()
 
@@ -114,12 +111,10 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 	return Dial(srv, "")
 }
 
-/*
- * Open a connection to the remote faktory server.
- *
- *   faktory.Dial(faktory.Localhost, "topsecret")
- *
- */
+// Dial connects to the remote faktory server.
+//
+//   faktory.Dial(faktory.Localhost, "topsecret")
+//
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
@@ -242,11 +237,9 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
  bt := strings.Split(str, "\n")
 */
 
-/*
- * Notify Faktory that a job failed with the given error.
- * If backtrace is non-nil, it is assumed to be the output from
- * runtime/debug.Stack().
- */
+// Fail notifies Faktory that a job failed with the given error.
+// If backtrace is non-nil, it is assumed to be the output from
+// runtime/debug.Stack().
 func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	failure := map[string]interface{}{
 		"message": err.Error(),

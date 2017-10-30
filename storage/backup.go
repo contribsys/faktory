@@ -7,9 +7,7 @@ import (
 	"github.com/contribsys/gorocksdb"
 )
 
-/*
- * TODO Purge old backups
- */
+// TODO Purge old backups
 func (store *rocksStore) Backup() error {
 	fo := gorocksdb.NewDefaultFlushOptions()
 	defer fo.Destroy()

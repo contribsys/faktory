@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"os/exec"
 	"strings"
 	"syscall"
 
@@ -18,7 +19,7 @@ import (
 
 /*
  The REPL provides a few admin commands outside of Faktory itself,
- noteably the backup and restore commands.
+ notably the backup and restore commands.
 */
 func main() {
 	opts := cli.ParseArguments()
@@ -82,11 +83,18 @@ flush
 backup
 restore *
 repair *
+generate-certificate <hostname>
 version
 help
 
 * Requires an immediate restart after running command.
 			`)
+		case "generate-certificate":
+			hostname := "*" // default to wildcard
+			if len(cmd) > 1 {
+				hostname = cmd[1]
+			}
+			err = cert(os.ExpandEnv("$HOME/.faktory/tls"), hostname)
 		default:
 			err = db(store, path, line, first)
 		}
@@ -134,6 +142,42 @@ func db(store storage.Store, path string, line string, cmd string) error {
 	default:
 		return fmt.Errorf("Unknown command: %s", line)
 	}
+	return nil
+}
+
+func cert(path, hostname string) error {
+	cert := path + "/public.crt"
+	private := path + "/private.key"
+
+	ok, _ := util.FileExists(cert)
+	if ok {
+		return fmt.Errorf("certificate already exists at ~/.faktory/tls/public.crt, will not create a new one")
+	}
+
+	ok, _ = util.FileExists(private)
+	if ok {
+		return fmt.Errorf("private key already exists at ~/.faktory/tls/private.key, will not create a new one")
+	}
+
+	err := os.MkdirAll(path, os.ModeDir|0755)
+	if err != nil {
+		return fmt.Errorf("unable to create folder %v: %v", path, err)
+	}
+
+	if hostname == "*" {
+		fmt.Printf("Generating certificate...\n")
+	} else {
+		fmt.Printf("Generating certificate for hostname %v...\n", hostname)
+	}
+
+	subj := "/CN=" + hostname
+	args := []string{"req", "-x509", "-nodes", "-sha256", "-days", "3650", "-newkey", "rsa:2048", "-subj", subj, "-keyout", private, "-out", cert}
+	if op, err := exec.Command("openssl", args...).Output(); err != nil {
+		return fmt.Errorf("failed to create certificate: %v", op)
+	}
+
+	fmt.Printf("Done! A self signed certificate and private key have been generated in: %s\n", path)
+
 	return nil
 }
 

@@ -109,7 +109,7 @@ func (store *rocksStore) Stats() map[string]string {
 func (store *rocksStore) EachQueue(x func(Queue)) {
 	store.mu.Lock()
 	keys := make([]string, 0, len(store.queueSet))
-	for k, _ := range store.queueSet {
+	for k := range store.queueSet {
 		keys = append(keys, k)
 	}
 	store.mu.Unlock()

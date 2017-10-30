@@ -22,12 +22,12 @@ type Tab struct {
 
 var (
 	DefaultTabs = []Tab{
-		Tab{"Home", "/"},
-		Tab{"Busy", "/busy"},
-		Tab{"Queues", "/queues"},
-		Tab{"Retries", "/retries"},
-		Tab{"Scheduled", "/scheduled"},
-		Tab{"Dead", "/morgue"},
+		{"Home", "/"},
+		{"Busy", "/busy"},
+		{"Queues", "/queues"},
+		{"Retries", "/retries"},
+		{"Scheduled", "/scheduled"},
+		{"Dead", "/morgue"},
 	}
 
 	// these are used in testing only

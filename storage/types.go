@@ -28,9 +28,9 @@ type Store interface {
 
 	// creates a backup of the current database
 	Backup() error
-	//Compact() error
 	EachBackup(func(bi BackupInfo)) error
 	RestoreFromLatest() error
+	PurgeOldBackups(int) error
 
 	/*
 	 * Clear the database of all job data.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -16,12 +17,13 @@ import (
 	"github.com/contribsys/gorocksdb"
 )
 
-/*
- The REPL provides a few admin commands outside of Faktory itself,
- noteably the backup and restore commands.
-*/
+// The REPL provides a few admin commands outside of Faktory itself,
+// notably the backup and restore commands.
+// TODO Refactor this file, it's a mess.
 func main() {
 	opts := cli.ParseArguments()
+	args := flag.Args()
+	interactive := len(args) == 0
 
 	// This takes over the default logger in `log` and gives us
 	// extra powers for adding fields, errors to log output.
@@ -32,17 +34,32 @@ func main() {
 		fmt.Println("Unable to open storage:", err.Error())
 		fmt.Println(`Run "db repair" to attempt repair`)
 	}
-	go handleSignals(func() {
+
+	if !interactive {
+		go handleSignals(func() {
+			if store != nil {
+				store.Close()
+			}
+			os.Exit(0)
+		})
+	}
+
+	if interactive {
+		repl(opts.StorageDirectory, store)
 		if store != nil {
 			store.Close()
 		}
-		os.Exit(0)
-	})
-
-	repl(opts.StorageDirectory, store)
-
-	if store != nil {
-		store.Close()
+	} else {
+		err := execute(args, store, opts.StorageDirectory)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if store != nil {
+			store.Close()
+		}
+		if err != nil {
+			os.Exit(-1)
+		}
 	}
 }
 
@@ -66,17 +83,24 @@ func repl(path string, store storage.Store) {
 		}
 		line := string(bytes)
 		cmd := strings.Split(line, " ")
-		first := cmd[0]
-		var err error
-		switch first {
-		case "exit":
-			return
-		case "quit":
-			return
-		case "version":
-			fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
-		case "help":
-			fmt.Println(`Valid commands:
+		err := execute(cmd, store, path)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+
+func execute(cmd []string, store storage.Store, path string) error {
+	first := cmd[0]
+	switch first {
+	case "exit":
+		return nil
+	case "quit":
+		return nil
+	case "version":
+		fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
+	case "help":
+		fmt.Println(`Valid commands:
 
 flush
 backup
@@ -87,17 +111,6 @@ help
 
 * Requires an immediate restart after running command.
 			`)
-		default:
-			err = db(store, path, line, first)
-		}
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-}
-
-func db(store storage.Store, path string, line string, cmd string) error {
-	switch cmd {
 	case "flush":
 		err := store.Flush()
 		if err == nil {
@@ -124,6 +137,12 @@ func db(store storage.Store, path string, line string, cmd string) error {
 			os.Exit(0)
 		}
 		return err
+	case "purge":
+		err := store.PurgeOldBackups(storage.DefaultKeepBackupsCount)
+		if err == nil {
+			fmt.Println("OK")
+		}
+		return err
 	case "restore":
 		err := store.RestoreFromLatest()
 		if err == nil {
@@ -132,7 +151,7 @@ func db(store storage.Store, path string, line string, cmd string) error {
 		}
 		return err
 	default:
-		return fmt.Errorf("Unknown command: %s", line)
+		return fmt.Errorf("Unknown command: %v", cmd)
 	}
 	return nil
 }

@@ -31,6 +31,7 @@ type Client struct {
  * if the server is not listening on localhost.
  * The WID (worker id) must be random and unique
  * for each worker process.  It can be a UUID, etc.
+ * Non-worker processes should leave WID empty.
  *
  * The other elements can be useful for debugging
  * and are displayed on the Busy tab.
@@ -40,10 +41,7 @@ type ClientData struct {
 	Wid      string   `json:"wid"`
 	Pid      int      `json:"pid"`
 	Labels   []string `json:"labels"`
-	// Salt should be a random string and
-	// must change on every call.
-	Salt string `json:"salt"`
-	// Hash is hex(sha256(password + salt))
+	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
 }
 

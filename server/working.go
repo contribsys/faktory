@@ -103,13 +103,13 @@ func (r *reservationReaper) Execute() error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
-			util.Error("Unable to unmarshal job", err, nil)
+			util.Error("Unable to unmarshal job", err)
 			continue
 		}
 
 		q, err := r.s.store.GetQueue(job.Queue)
 		if err != nil {
-			util.Error("Unable to retrieve queue", err, nil)
+			util.Error("Unable to retrieve queue", err)
 			continue
 		}
 
@@ -123,7 +123,7 @@ func (r *reservationReaper) Execute() error {
 		if ok {
 			err = q.Push(data)
 			if err != nil {
-				util.Error("Unable to push job", err, nil)
+				util.Error("Unable to push job", err)
 				continue
 			}
 

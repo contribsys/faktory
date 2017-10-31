@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/apex/log"
+  packages = ["."]
+  revision = "0296d6eb16bb28f8a0c55668affcf4876dc269be"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/contribsys/gorocksdb"
   packages = ["."]
   revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
@@ -13,16 +19,16 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
-  version = "v1.0.3"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -30,21 +36,9 @@
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  revision = "2509b142fb2b797aa7587dad548f113b2c0f20ce"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "a1a1f1746d156bbc9954f29134b20ed4ce2752f1"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05f7266b432901454c018b4d97c0985ce1fb8d61ce0569a58f758d05a5856c7c"
+  inputs-digest = "fd74b45ceff28bf452c9a049dbef830eeddc8ec4a97e430c7b3e33abd81b60cd"
   solver-name = "gps-cdcl"
   solver-version = 1

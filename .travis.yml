@@ -24,4 +24,4 @@ before_script:
   - mkdir -p $GOPATH/src/github.com/contribsys && ln -s $HOME/faktory $GOPATH/src/github.com/contribsys/faktory
   - cd $GOPATH/src/github.com/contribsys/faktory && make prepare
 
-script: cd $GOPATH/src/github.com/contribsys/faktory && make
+script: cd $GOPATH/src/github.com/contribsys/faktory && make all

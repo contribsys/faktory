@@ -39,7 +39,7 @@ func (s *scanner) Execute() error {
 		var job faktory.Job
 		err := json.Unmarshal(elm, &job)
 		if err != nil {
-			util.Error("Unable to unmarshal json", err, elm)
+			util.Error("Unable to unmarshal json", err)
 			continue
 		}
 		err = s.adapter.Push(job.Queue, elm)

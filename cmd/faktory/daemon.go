@@ -15,7 +15,7 @@ func main() {
 	// This takes over the default logger in `log` and gives us
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger(opts.LogLevel)
-	util.Debug("Options", opts)
+	util.Debugf("Options: %v", opts)
 
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,

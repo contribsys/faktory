@@ -22,7 +22,6 @@ endif
 
 all: test
 
-# install dependencies and cli tools
 prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure
@@ -64,17 +63,16 @@ build: clean generate ## Build the project
 fmt: ## Format the code, make it look nice
 	go fmt ./...
 
-# trigger TLS for testing
-swork:
+swork: ## Trigger TLS for testing
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-# no TLS, just plain text against localhost
-work:
+
+work: ## No TLS, just plain text against localhost
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean:
+clean: ## Clean up the project, set it up for new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go faktory-cli
@@ -101,15 +99,15 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check clean build build_deb_systemd build_rpm_systemd
+package: version_check clean build build_deb_systemd build_rpm_systemd ## Package the app
 
-version_check:
+version_check: ## Check version
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
-purge_deb:
+purge_deb: ## Purge dependencies
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true
 
-purge_rpm:
+purge_rpm: ## Purge RPM
 	ssh -t $(RPM_PRODUCTION) 'sudo rpm -e $(NAME) && sudo rm -f /etc/faktory' || true
 
 deploy_deb: clean build_deb purge_deb
@@ -201,7 +199,7 @@ build_deb_systemd:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-tag:
+tag: ## Tag the proejct in Github
 	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
 
 upload:	package tag

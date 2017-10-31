@@ -19,10 +19,6 @@ type scanner struct {
 	cycles   int64
 }
 
-var (
-	defaultDelay = 1 * time.Second
-)
-
 func (s *scanner) Name() string {
 	return s.name
 }

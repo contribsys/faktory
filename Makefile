@@ -18,17 +18,19 @@ endif
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
 
+.DEFAULT_GOAL := help
+
 all: test
 
 # install dependencies and cli tools
-prepare:
+prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure
 	@go get github.com/benbjohnson/ego/cmd/ego
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
-test: clean generate
+test: clean generate ## Run all the tests
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
@@ -41,25 +43,25 @@ d:
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
-drun:
+drun: ## Set up faktory in Docker
 	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
 
-generate:
+generate: ## Generate webui
 	go generate github.com/contribsys/faktory/webui
 
-cover:
+cover: ## Run tests with coverage report
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
-build: clean generate
+build: clean generate ## Build the project
 	go build -o faktory-cli cmd/repl.go
 	go build -o faktory cmd/daemon.go
 
 # TODO integrate a few useful Golang linters.
-fmt:
+fmt: ## Format the code, make it look nice
 	go fmt ./...
 
 # trigger TLS for testing
@@ -80,10 +82,10 @@ clean:
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
-repl: clean generate
+repl: clean generate ## Run the repl
 	go run cmd/repl.go -l debug -e development
 
-run: clean generate
+run: clean generate ## Run the project
 	go run cmd/daemon.go -l debug -e development
 
 srun: clean generate
@@ -209,4 +211,9 @@ upload:	package tag
 	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 	#package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
-.PHONY: all clean test build package upload
+# .PHONY: all clean test build package upload
+
+.PHONY: help
+
+help:
+		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

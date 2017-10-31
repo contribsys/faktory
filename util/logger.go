@@ -31,41 +31,51 @@ var Colors = [...]int{
 
 // Strings mapping.
 var Strings = [...]string{
-	alog.DebugLevel: "DEBUG",
-	alog.InfoLevel:  "INFO",
-	alog.WarnLevel:  "WARN",
-	alog.ErrorLevel: "ERROR",
-	alog.FatalLevel: "FATAL",
+	alog.DebugLevel: "D",
+	alog.InfoLevel:  "I",
+	alog.WarnLevel:  "W",
+	alog.ErrorLevel: "E",
+	alog.FatalLevel: "F",
 }
 
 type LogHandler struct {
 	mu     sync.Mutex
-	Writer io.Writer
+	writer io.Writer
+	tty    bool
 }
+
+const (
+	TimeFormat = "2006-01-02T15:04:05.000Z"
+)
 
 func (h *LogHandler) HandleLog(e *alog.Entry) error {
 	color := Colors[e.Level]
 	level := Strings[e.Level]
 	names := e.Fields.Names()
-	ts := time.Now().UTC().Format(time.RFC3339Nano)
+	ts := time.Now().UTC().Format(TimeFormat)
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %s %-25s", color, level, ts, e.Message)
-
-	for _, name := range names {
-		fmt.Fprintf(h.Writer, " \033[%dm%s\033[0m=%v", color, name, e.Fields.Get(name))
+	if h.tty {
+		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s %-25s", color, level, ts, e.Message)
+		for _, name := range names {
+			fmt.Fprintf(h.writer, " \033[%dm%s\033[0m=%v", color, name, e.Fields.Get(name))
+		}
+	} else {
+		fmt.Fprintf(h.writer, "%s %s %-25s", level, ts, e.Message)
+		for _, name := range names {
+			fmt.Fprintf(h.writer, " %s=%v", name, e.Fields.Get(name))
+		}
 	}
 
-	fmt.Fprintln(h.Writer)
+	fmt.Fprintln(h.writer)
 
 	return nil
 }
 
-func NewLogger(level string, takeOverLog bool) Logger {
-
-	alog.SetHandler(&LogHandler{Writer: os.Stdout})
+func NewLogger(level string, production bool) Logger {
+	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd()))})
 	alog.SetLevelFromString(level)
 	return alog.Log
 }

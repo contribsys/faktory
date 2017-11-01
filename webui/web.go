@@ -231,7 +231,7 @@ func BasicAuth(pass http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Authorization required", http.StatusUnauthorized)
 			return
 		}
-		if subtle.ConstantTimeCompare([]byte(password), []byte(Password)) == 0 {
+		if subtle.ConstantTimeCompare([]byte(password), []byte(Password)) != 1 {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			http.Error(w, "Authorization failed", http.StatusUnauthorized)
 			return

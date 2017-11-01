@@ -29,7 +29,7 @@ prepare: ## Download all dependencies
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
-test: clean generate ## Run all the tests
+test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
@@ -38,17 +38,17 @@ test: clean generate ## Run all the tests
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
 
-d:
+dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
-drun: ## Set up faktory in Docker
+drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
 
-generate: ## Generate webui
+generate:
 	go generate github.com/contribsys/faktory/webui
 
-cover: ## Run tests with coverage report
+cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
@@ -60,19 +60,19 @@ build: clean generate ## Build the project
 	go build -o faktory cmd/daemon.go
 
 # TODO integrate a few useful Golang linters.
-fmt: ## Format the code, make it look nice
+fmt: ## Format the code
 	go fmt ./...
 
-swork: ## Trigger TLS for testing
+swork: ## Run a simple Ruby worker with TLS, see also "make srun"
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
 
-work: ## No TLS, just plain text against localhost
+work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean: ## Clean up the project, set it up for new build
+clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go faktory-cli
@@ -80,13 +80,13 @@ clean: ## Clean up the project, set it up for new build
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
-repl: clean generate ## Run the repl
+repl: clean generate ## Run the Faktory CLI
 	go run cmd/repl.go -l debug -e development
 
-run: clean generate ## Run the project
+run: clean generate ## Run Faktory daemon locally
 	go run cmd/daemon.go -l debug -e development
 
-srun: clean generate
+srun: clean generate ## Run Faktory daemon locally with TLS
 	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
 
 cssh:
@@ -99,15 +99,15 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check clean build build_deb_systemd build_rpm_systemd ## Package the app
+package: version_check clean build build_deb_systemd build_rpm_systemd
 
-version_check: ## Check version
+version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
-purge_deb: ## Purge dependencies
+purge_deb:
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true
 
-purge_rpm: ## Purge RPM
+purge_rpm:
 	ssh -t $(RPM_PRODUCTION) 'sudo rpm -e $(NAME) && sudo rm -f /etc/faktory' || true
 
 deploy_deb: clean build_deb purge_deb
@@ -199,7 +199,7 @@ build_deb_systemd:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-tag: ## Tag the proejct in Github
+tag:
 	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
 
 upload:	package tag

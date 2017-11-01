@@ -18,17 +18,18 @@ endif
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
 
+.DEFAULT_GOAL := help
+
 all: test
 
-# install dependencies and cli tools
-prepare:
+prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure
 	@go get github.com/benbjohnson/ego/cmd/ego
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
-test: clean generate
+test: clean generate ## Run all the tests
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
@@ -41,38 +42,37 @@ d:
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
-drun:
+drun: ## Set up faktory in Docker
 	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
 
-generate:
+generate: ## Generate webui
 	go generate github.com/contribsys/faktory/webui
 
-cover:
+cover: ## Run tests with coverage report
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
-build: clean generate
+build: clean generate ## Build the project
 	go build -o faktory-cli cmd/repl.go
 	go build -o faktory cmd/daemon.go
 
 # TODO integrate a few useful Golang linters.
-fmt:
+fmt: ## Format the code, make it look nice
 	go fmt ./...
 
-# trigger TLS for testing
-swork:
+swork: ## Trigger TLS for testing
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-# no TLS, just plain text against localhost
-work:
+
+work: ## No TLS, just plain text against localhost
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean:
+clean: ## Clean up the project, set it up for new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go faktory-cli
@@ -80,10 +80,10 @@ clean:
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
-repl: clean generate
+repl: clean generate ## Run the repl
 	go run cmd/repl.go -l debug -e development
 
-run: clean generate
+run: clean generate ## Run the project
 	go run cmd/daemon.go -l debug -e development
 
 srun: clean generate
@@ -99,15 +99,15 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check clean build build_deb_systemd build_rpm_systemd
+package: version_check clean build build_deb_systemd build_rpm_systemd ## Package the app
 
-version_check:
+version_check: ## Check version
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
-purge_deb:
+purge_deb: ## Purge dependencies
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true
 
-purge_rpm:
+purge_rpm: ## Purge RPM
 	ssh -t $(RPM_PRODUCTION) 'sudo rpm -e $(NAME) && sudo rm -f /etc/faktory' || true
 
 deploy_deb: clean build_deb purge_deb
@@ -199,7 +199,7 @@ build_deb_systemd:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-tag:
+tag: ## Tag the proejct in Github
 	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
 
 upload:	package tag
@@ -209,4 +209,8 @@ upload:	package tag
 	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 	#package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
-.PHONY: all clean test build package upload
+.PHONY: help all clean test build package upload
+
+
+help:
+		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

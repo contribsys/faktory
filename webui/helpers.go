@@ -226,7 +226,7 @@ func uptimeInDays() string {
 }
 
 func locale(req *http.Request) string {
-	t, ok := req.Context().(Translater)
+	t, ok := req.Context().(Translator)
 	if ok {
 		return t.Locale()
 	}

@@ -131,6 +131,9 @@ func Dial(srv *Server, password string) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		if x, ok := conn.(*net.TCPConn); ok {
+			x.SetKeepAlive(true)
+		}
 	} else {
 		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
 		if err != nil {

@@ -159,8 +159,8 @@ func (s *Server) Start() error {
 		if err != nil {
 			return nil
 		}
+		s.pending.Add(1)
 		go func() {
-			s.pending.Add(1)
 			defer s.pending.Done()
 
 			c := startConnection(conn, s)

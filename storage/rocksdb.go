@@ -157,11 +157,8 @@ func (store *rocksStore) Flush() error {
 		return err
 	}
 	_, err = store.clients.Clear()
-	if err != nil {
-		return err
-	}
 	// flush doesn't clear the stats or default space
-	return nil
+	return err
 }
 
 func (store *rocksStore) init() error {

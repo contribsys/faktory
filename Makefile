@@ -55,9 +55,12 @@ cover:
 
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
-build: clean generate ## Build the project
-	go build -o faktory-cli cmd/repl.go
-	go build -o faktory cmd/daemon.go
+build: clean generate
+	go build -o faktory-cli cmd/faktory-cli/repl.go
+	go build -o faktory cmd/faktory/daemon.go
+
+megacheck:
+	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 
 # TODO integrate a few useful Golang linters.
 fmt: ## Format the code

@@ -31,12 +31,11 @@ import (
 )
 
 const (
-	minute  = 1
-	hour    = minute * 60
-	day     = hour * 24
-	month   = day * 30
-	year    = day * 365
-	quarter = year / 4
+	minute = 1
+	hour   = minute * 60
+	day    = hour * 24
+	month  = day * 30
+	year   = day * 365
 )
 
 func Timeago(t time.Time) string {

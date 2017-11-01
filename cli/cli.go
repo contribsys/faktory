@@ -95,7 +95,7 @@ var (
 )
 
 func HandleSignals(s *server.Server) {
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	for k := range SignalHandlers {
 		signal.Notify(signals, k)
 	}

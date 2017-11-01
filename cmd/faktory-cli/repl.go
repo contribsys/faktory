@@ -157,7 +157,7 @@ help
 }
 
 func handleSignals(fn func()) {
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM)
 	signal.Notify(signals, os.Interrupt)
 

@@ -46,12 +46,12 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)
 
-		result, err := buf.ReadString('\n')
+		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		salt := strings.TrimSpace(result)
-		if salt != "HI" {
-			// needs password
-		}
+		// salt := strings.TrimSpace(result)
+		// if salt != "HI" {
+		// 	// needs password
+		// }
 
 		var client ClientWorker
 		hs, err := os.Hostname()
@@ -69,7 +69,7 @@ func TestServerStart(t *testing.T) {
 		conn.Write([]byte("HELLO "))
 		conn.Write(val)
 		conn.Write([]byte("\r\n"))
-		result, err = buf.ReadString('\n')
+		result, err := buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
@@ -84,7 +84,7 @@ func TestServerStart(t *testing.T) {
 		assert.Equal(t, "+OK\r\n", result)
 
 		conn.Write([]byte("FETCH default some other\n"))
-		result, err = buf.ReadString('\n')
+		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestServerStart(t *testing.T) {
 		assert.Equal(t, "+OK\r\n", result)
 
 		conn.Write([]byte(fmt.Sprintf("INFO\n")))
-		result, err = buf.ReadString('\n')
+		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)

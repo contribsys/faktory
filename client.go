@@ -221,7 +221,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 
@@ -285,7 +285,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 

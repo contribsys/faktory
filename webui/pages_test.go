@@ -44,7 +44,7 @@ func TestStats(t *testing.T) {
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
 	var content map[string]interface{}
-	err = json.Unmarshal([]byte(w.Body.String()), &content)
+	err = json.Unmarshal(w.Body.Bytes(), &content)
 	assert.NoError(t, err)
 
 	s := content["server"].(map[string]interface{})

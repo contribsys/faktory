@@ -222,7 +222,7 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 }
 
 func uptimeInDays() string {
-	return fmt.Sprintf("%.0f", time.Now().Sub(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
 }
 
 func locale(req *http.Request) string {

@@ -50,12 +50,12 @@ func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
 			return err
 		}
 		q := queue.(*rocksQueue)
-		k := q.nextkey()
+		k := q.nextkey(job.Priority)
 		v := data
 		xa.batch.PutCF(q.cf, k, v)
 		xa.batch.DeleteCF(ss.cf, key)
 		xa.onSuccess = func() {
-			atomic.AddInt64(&q.size, 1)
+			atomic.AddUint64(&q.size, 1)
 			atomic.AddInt64(&ss.size, -1)
 		}
 		return nil

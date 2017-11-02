@@ -3,6 +3,7 @@ package webui
 import (
 	"fmt"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -76,6 +77,9 @@ func bootRuntime() *server.Server {
 		Binding:          "localhost:7418",
 		StorageDirectory: "/tmp/localhost_7418",
 	})
+
+	defer os.RemoveAll("/tmp/localhost_7418")
+
 	if err != nil {
 		panic(err)
 	}

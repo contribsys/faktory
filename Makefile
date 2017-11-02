@@ -84,10 +84,10 @@ clean: ## Clean the project, set it up for a new build
 	@mkdir -p packaging/output/systemd
 
 repl: clean generate ## Run the Faktory CLI
-	go run cmd/repl.go -l debug -e development
+	go run cmd/faktory-cli/repl.go -l debug -e development
 
 run: clean generate ## Run Faktory daemon locally
-	go run cmd/daemon.go -l debug -e development
+	go run cmd/faktory/daemon.go -l debug -e development
 
 srun: clean generate ## Run Faktory daemon locally with TLS
 	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development

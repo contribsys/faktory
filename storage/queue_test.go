@@ -87,6 +87,7 @@ func TestDecentQueueUsage(t *testing.T) {
 
 	assert.Equal(t, int64(0), q.Size())
 	err = q.Push([]byte("first"))
+	assert.NoError(t, err)
 	n := 50000
 	// Push N jobs to queue
 	// Get Size() each time
@@ -97,6 +98,7 @@ func TestDecentQueueUsage(t *testing.T) {
 		assert.Equal(t, int64(i+2), q.Size())
 	}
 	err = q.Push([]byte("last"))
+	assert.NoError(t, err)
 	assert.Equal(t, int64(n+2), q.Size())
 	// Close DB, reopen
 	store.Close()

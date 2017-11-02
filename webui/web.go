@@ -212,9 +212,9 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 
 		pass(w, r.WithContext(dctx))
 		if debug {
-			util.Debugf("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
+			util.Debugf("%s %s %v", r.Method, r.RequestURI, time.Since(start))
 		} else {
-			util.Infof("%s %s %v", r.Method, r.RequestURI, time.Now().Sub(start))
+			util.Infof("%s %s %v", r.Method, r.RequestURI, time.Since(start))
 		}
 	}
 	if Password != "" {

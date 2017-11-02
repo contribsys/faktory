@@ -168,7 +168,7 @@ func ack(c *Connection, s *Server, cmd string) {
 }
 
 func uptimeInSeconds(s *Server) int {
-	return int(time.Now().Sub(s.Stats.StartedAt).Seconds())
+	return int(time.Since(s.Stats.StartedAt).Seconds())
 }
 
 func currentMemoryUsage(s *Server) string {

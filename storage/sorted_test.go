@@ -83,6 +83,7 @@ func TestRocksSortedSet(b *testing.T) {
 		given += 1
 		return nil
 	})
+	assert.NoError(b, err)
 	assert.Equal(b, pageSize, given)
 
 	amt := int64(0)

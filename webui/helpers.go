@@ -43,7 +43,7 @@ func t(req *http.Request, word string) string {
 	return dc.Translation(word)
 }
 
-func pageparam(req *http.Request, pageValue int64) string {
+func pageparam(req *http.Request, pageValue uint64) string {
 	return fmt.Sprintf("page=%d", pageValue)
 }
 
@@ -56,7 +56,7 @@ func currentStatus() string {
 
 type Queue struct {
 	Name string
-	Size int64
+	Size uint64
 }
 
 func queues() []Queue {
@@ -95,8 +95,8 @@ func numberWithDelimiter(val int64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int, key []byte, job *faktory.Job)) {
-	err := q.Page((currentPage-1)*count, count, func(idx int, key, data []byte) error {
+func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
+	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, key, data []byte) error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
@@ -111,8 +111,8 @@ func queueJobs(q storage.Queue, count int64, currentPage int64, fn func(idx int,
 	}
 }
 
-func enqueuedSize() int64 {
-	var total int64
+func enqueuedSize() uint64 {
+	var total uint64
 	defaultServer.Store().EachQueue(func(q storage.Queue) {
 		total += q.Size()
 	})
@@ -135,8 +135,8 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx int, key []byte, job *faktory.Job)) {
-	err := set.Page((currentPage-1)*count, count, func(idx int, key []byte, data []byte) error {
+func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
+	err := set.Page(int64((currentPage-1)*count), int64(count), func(idx int, key []byte, data []byte) error {
 		var job faktory.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {

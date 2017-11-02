@@ -8,8 +8,8 @@ import (
   "github.com/contribsys/faktory/storage"
 )
 
-func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count int64, currentPage int64) {
-  totalSize := set.Size()
+func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
+  totalSize := uint64(set.Size())
 %>
 
 <% ego_layout(w, req, func() { %>

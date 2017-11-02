@@ -9,6 +9,7 @@ import (
 
 	"regexp"
 
+	"github.com/contribsys/faktory/storage/brodal"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
 )
@@ -242,12 +243,13 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 
 	q = &rocksQueue{
 		name:  name,
-		size:  -1,
+		size:  0,
 		store: store,
 		cf:    store.queues,
-		high:  0,
-		low:   0,
 		maxsz: DefaultMaxSize,
+
+		pointers:        make(map[uint64]*queuePointer),
+		orderedPointers: brodal.NewHeap(),
 	}
 	err := q.Init()
 	if err != nil {

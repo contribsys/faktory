@@ -48,7 +48,7 @@ type fakeAdapter struct {
 func (fs *fakeAdapter) Prune(ts string) ([][]byte, error) {
 	return fs.sorted, nil
 }
-func (fs *fakeAdapter) Push(name string, data []byte) error {
+func (fs *fakeAdapter) Push(name string, _ uint64, data []byte) error {
 	fs.queue = append(fs.queue, data)
 	return nil
 }

@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   name = "github.com/contribsys/gorocksdb"
   packages = ["."]
   revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
@@ -45,6 +51,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05f7266b432901454c018b4d97c0985ce1fb8d61ce0569a58f758d05a5856c7c"
+  inputs-digest = "917548a6b431183edb1ac31df2e01aeeebe75a31c9452116617f9078e10f42f9"
   solver-name = "gps-cdcl"
   solver-version = 1

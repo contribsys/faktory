@@ -31,6 +31,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	DisableTls       bool
+	GlobalConfig     map[string]interface{}
 }
 
 type RuntimeStats struct {

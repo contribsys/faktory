@@ -45,6 +45,7 @@ type ClientWorker struct {
 	Pid          int      `json:"pid"`
 	Labels       []string `json:"labels"`
 	PasswordHash string   `json:"pwdhash"`
+	Version      uint8    `json:"v"`
 	StartedAt    time.Time
 
 	lastHeartbeat time.Time

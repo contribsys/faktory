@@ -107,7 +107,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 		conn, err := listener.Accept()
 		assert.NoError(t, err)
 		conn.SetDeadline(time.Now().Add(1 * time.Second))
-		conn.Write([]byte("+HI {\"v\":\"1\",\"s\":\"123\"}\r\n"))
+		conn.Write([]byte("+HI {\"v\":2,\"s\":\"123\",\"i\":123}\r\n"))
 		for {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')

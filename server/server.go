@@ -190,12 +190,22 @@ func (s *Server) Stop(f func()) {
 	}
 }
 
-func hash(pwd, salt string) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(pwd+salt)))
+func hash(pwd, salt string, iterations int) string {
+	bytes := []byte(pwd + salt)
+	var hash [32]byte
+
+	hash = sha256.Sum256(bytes)
+	if iterations > 1 {
+		for i := 1; i < iterations; i++ {
+			hash = sha256.Sum256(hash[:])
+		}
+	}
+	return fmt.Sprintf("%x", hash)
 }
 
 var (
-	ProtocolVersion = []byte(`"1"`)
+	ProtocolVersion = []byte("2")
+	HashIterations  = rand.Intn(4096) + 1000
 )
 
 func startConnection(conn net.Conn, s *Server) *Connection {
@@ -206,6 +216,9 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	conn.Write([]byte(`+HI {"v":`))
 	conn.Write(ProtocolVersion)
 	if s.Password != "" {
+		conn.Write([]byte(`,"i":`))
+		iter := strconv.FormatInt(int64(HashIterations), 10)
+		conn.Write([]byte(iter))
 		salt = strconv.FormatInt(rand.Int63(), 16)
 		conn.Write([]byte(`,"s":"`))
 		conn.Write([]byte(salt))
@@ -240,7 +253,12 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	if s.Password != "" {
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt))) != 1 {
+		iter := HashIterations
+		if client.Version < 2 {
+			iter = 1
+		}
+
+		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt, iter))) != 1 {
 			conn.Write([]byte("-ERR Invalid password\r\n"))
 			conn.Close()
 			return nil

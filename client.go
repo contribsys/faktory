@@ -40,6 +40,10 @@ type ClientData struct {
 	Labels   []string `json:"labels"`
 	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
+	// The protocol version used by this client.
+	// The server can reject this connection if the version will not work
+	// The server advertises its protocol version in the HI.
+	Version int `json:"v"`
 }
 
 type Server struct {
@@ -146,15 +150,22 @@ func Dial(srv *Server, password string) (*Client, error) {
 	if strings.HasPrefix(line, "HI ") {
 		str := strings.TrimSpace(line)[3:]
 
-		var hi map[string]string
+		var hi map[string]interface{}
 		err = json.Unmarshal([]byte(str), &hi)
 		if err != nil {
 			conn.Close()
 			return nil, err
 		}
-		salt, ok := hi["s"]
+
+		salt, ok := hi["s"].(string)
 		if ok {
-			client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt)))
+			iter := 1
+			iterVal, ok := hi["i"]
+			if ok {
+				iter = int(iterVal.(float64))
+			}
+
+			client.PasswordHash = hash(password, salt, iter)
 		}
 	} else {
 		conn.Close()
@@ -322,6 +333,7 @@ func emptyClientData() *ClientData {
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
 	client.Labels = []string{"golang"}
+	client.Version = 2
 	return client
 }
 
@@ -421,4 +433,17 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		//util.Debugf("< %s%s", string(chr), string(line))
 		return line, nil
 	}
+}
+
+func hash(pwd, salt string, iterations int) string {
+	bytes := []byte(pwd + salt)
+	var hash [32]byte
+
+	hash = sha256.Sum256(bytes)
+	if iterations > 1 {
+		for i := 1; i < iterations; i++ {
+			hash = sha256.Sum256(hash[:])
+		}
+	}
+	return fmt.Sprintf("%x", hash)
 }

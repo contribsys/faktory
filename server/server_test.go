@@ -48,10 +48,6 @@ func TestServerStart(t *testing.T) {
 
 		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		// salt := strings.TrimSpace(result)
-		// if salt != "HI" {
-		// 	// needs password
-		// }
 
 		var client ClientWorker
 		hs, err := os.Hostname()
@@ -60,8 +56,6 @@ func TestServerStart(t *testing.T) {
 		client.Pid = os.Getpid()
 		client.Wid = strconv.FormatInt(rand.Int63(), 10)
 		client.Labels = []string{"blue", "seven"}
-		// password is "123456" also
-		client.PasswordHash = "958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"
 
 		val, err := json.Marshal(client)
 		assert.NoError(t, err)

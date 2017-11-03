@@ -78,6 +78,67 @@ func TestBasicQueueOps(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestQueuePrioritization(t *testing.T) {
+	os.RemoveAll("/tmp/qpriority.db")
+	defer os.RemoveAll("/tmp/qpriority.db")
+	store, err := Open("rocksdb", "/tmp/qpriority.db")
+	assert.NoError(t, err)
+	q, err := store.GetQueue("default")
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint64(0), q.Size())
+
+	n := 100
+	// Push N jobs to queue with low priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(1, []byte("1"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1), q.Size())
+	}
+
+	// Push N jobs to queue with high priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(3, []byte("3"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1+n), q.Size())
+	}
+
+	// Push N jobs to queue with medium priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(2, []byte("2"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1+2*n), q.Size())
+	}
+
+	if !assert.Equal(t, uint64(3*n), q.Size()) {
+		return
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("3"), data)
+		assert.Equal(t, uint64(3*n-(i+1)), q.Size())
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("2"), data)
+		assert.Equal(t, uint64(2*n-(i+1)), q.Size())
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("1"), data)
+		assert.Equal(t, uint64(n-(i+1)), q.Size())
+	}
+}
+
 func TestDecentQueueUsage(t *testing.T) {
 	defer os.RemoveAll("/tmp/qbench.db")
 	store, err := Open("rocksdb", "/tmp/qbench.db")

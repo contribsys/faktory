@@ -25,6 +25,7 @@ func TestSystem(t *testing.T) {
 	util.InitLogger("info")
 
 	os.RemoveAll("/tmp/system.db")
+	defer os.RemoveAll("/tmp/system.db")
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: "/tmp/system.db",

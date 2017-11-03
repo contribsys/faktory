@@ -22,6 +22,11 @@ var (
 	DefaultMaxSize = int64(100000)
 )
 
+const (
+	NEW_JOB = iota
+	CLOSE
+)
+
 type Backpressure struct {
 	QueueName   string
 	CurrentSize int64
@@ -300,7 +305,7 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 
 type QueueWaiter struct {
 	ctx      context.Context
-	notifier chan bool
+	notifier chan int
 }
 
 // Iterates through our current list of waiters,
@@ -320,7 +325,7 @@ func (q *rocksQueue) notify() {
 
 		deadline, _ := qw.ctx.Deadline()
 		if time.Now().Before(deadline) {
-			qw.notifier <- true
+			qw.notifier <- NEW_JOB
 			break
 		}
 	}
@@ -332,7 +337,7 @@ func (q *rocksQueue) clearWaiters() {
 
 	for e := q.waiters.Front(); e != nil; e = e.Next() {
 		qw := e.Value.(*QueueWaiter)
-		qw.notifier <- false
+		qw.notifier <- CLOSE
 	}
 	q.waiters = list.New()
 }
@@ -357,7 +362,7 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 		}
 		q.mu.Unlock()
 
-		waiting := make(chan bool, 1)
+		waiting := make(chan int, 1)
 		me := &QueueWaiter{
 			ctx:      ctx,
 			notifier: waiting,
@@ -366,12 +371,13 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 		e := q.waiters.PushBack(me)
 		q.waitmu.Unlock()
 
+	Loop:
 		select {
-		case newjob := <-waiting:
-			if newjob {
+		case status := <-waiting:
+			if status == NEW_JOB {
 				continue
 			}
-			break
+			break Loop
 		case <-ctx.Done():
 			q.waitmu.Lock()
 			q.waiters.Remove(e)

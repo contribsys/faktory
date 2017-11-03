@@ -148,7 +148,7 @@ func setJobs(set storage.SortedSet, count int64, currentPage int64, fn func(idx 
 		return nil
 	})
 	if err != nil {
-		util.Warnf("Error iterating sorted set: %s", err.Error())
+		util.Error("Error iterating sorted set", err)
 	}
 }
 
@@ -157,14 +157,14 @@ func busyReservations(fn func(worker *server.Reservation)) {
 		var res server.Reservation
 		err := json.Unmarshal(data, &res)
 		if err != nil {
-			util.Error("Cannot unmarshal reservation", err, nil)
+			util.Error("Cannot unmarshal reservation", err)
 		} else {
 			fn(&res)
 		}
 		return err
 	})
 	if err != nil {
-		util.Error("Error iterating reservations", err, nil)
+		util.Error("Error iterating reservations", err)
 	}
 }
 
@@ -223,11 +223,11 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 }
 
 func uptimeInDays() string {
-	return fmt.Sprintf("%.0f", time.Now().Sub(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
 }
 
 func locale(req *http.Request) string {
-	t, ok := req.Context().(Translater)
+	t, ok := req.Context().(Translator)
 	if ok {
 		return t.Locale()
 	}

@@ -131,6 +131,9 @@ func Dial(srv *Server, password string) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		if x, ok := conn.(*net.TCPConn); ok {
+			x.SetKeepAlive(true)
+		}
 	} else {
 		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
 		if err != nil {
@@ -218,7 +221,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 
@@ -282,7 +285,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 

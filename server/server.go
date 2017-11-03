@@ -159,8 +159,8 @@ func (s *Server) Start() error {
 		if err != nil {
 			return nil
 		}
+		s.pending.Add(1)
 		go func() {
-			s.pending.Add(1)
 			defer s.pending.Done()
 
 			c := startConnection(conn, s)
@@ -219,14 +219,14 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		util.Error("Closing connection", err, nil)
+		util.Error("Closing connection", err)
 		conn.Close()
 		return nil
 	}
 
 	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
-		util.Info("Invalid preamble", line)
+		util.Infof("Invalid preamble: %s", line)
 		util.Info("Need a valid HELLO")
 		conn.Close()
 		return nil
@@ -234,7 +234,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	client, err := clientWorkerFromHello(line[5:])
 	if err != nil {
-		util.Error("Invalid client data in HELLO", err, nil)
+		util.Error("Invalid client data in HELLO", err)
 		conn.Close()
 		return nil
 	}
@@ -255,7 +255,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
-		util.Error("Closing connection", err, nil)
+		util.Error("Closing connection", err)
 		conn.Close()
 		return nil
 	}
@@ -279,7 +279,7 @@ func processLines(conn *Connection, server *Server) {
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			if e != io.EOF {
-				util.Error("Unexpected socket error", e, nil)
+				util.Error("Unexpected socket error", e)
 			}
 			conn.Close()
 			return

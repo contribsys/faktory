@@ -22,7 +22,6 @@ endif
 
 all: test
 
-# install dependencies and cli tools
 prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure
@@ -30,51 +29,55 @@ prepare: ## Download all dependencies
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
-test: clean generate ## Run all the tests
+test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui
+		github.com/contribsys/faktory/webui \
+		github.com/contribsys/faktory/cmd/faktory-cli
 
-d:
+dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
-drun: ## Set up faktory in Docker
+drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
 
-generate: ## Generate webui
+generate:
 	go generate github.com/contribsys/faktory/webui
 
-cover: ## Run tests with coverage report
+cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
+# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
-build: clean generate ## Build the project
-	go build -o faktory-cli cmd/repl.go
-	go build -o faktory cmd/daemon.go
+build: clean generate
+	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
+	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+
+megacheck:
+	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 
 # TODO integrate a few useful Golang linters.
-fmt: ## Format the code, make it look nice
+fmt: ## Format the code
 	go fmt ./...
 
-# trigger TLS for testing
-swork:
+swork: ## Run a simple Ruby worker with TLS, see also "make srun"
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-# no TLS, just plain text against localhost
-work:
+
+work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean:
+clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go faktory-cli
@@ -82,13 +85,13 @@ clean:
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
-repl: clean generate ## Run the repl
-	go run cmd/repl.go -l debug -e development
+repl: clean generate ## Run the Faktory CLI
+	go run cmd/faktory-cli/repl.go -l debug -e development
 
-run: clean generate ## Run the project
-	go run cmd/daemon.go -l debug -e development
+run: clean generate ## Run Faktory daemon locally
+	go run cmd/faktory/daemon.go -l debug -e development
 
-srun: clean generate
+srun: clean generate ## Run Faktory daemon locally with TLS
 	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
 
 cssh:

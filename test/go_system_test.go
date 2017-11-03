@@ -56,7 +56,7 @@ func TestSystem(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			pushAndPop(t, each)
-			util.Infof("Processed %d jobs in %v", 3*each, time.Now().Sub(start))
+			util.Infof("Processed %d jobs in %v", 3*each, time.Since(start))
 		}()
 	}
 
@@ -111,7 +111,7 @@ func pushAndPop(t *testing.T, count int) {
 		handleError(err)
 		return
 	}
-	util.Info(hash)
+	util.Infof("%v", hash)
 }
 
 func pushJob(client *faktory.Client, idx int) error {

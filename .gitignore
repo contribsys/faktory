@@ -20,3 +20,6 @@ packaging/output/
 vendor/
 
 .DS_Store
+
+/faktory
+/faktory-cli

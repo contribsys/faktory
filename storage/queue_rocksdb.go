@@ -42,7 +42,7 @@ func (bp Backpressure) Error() string {
 type queuePointer struct {
 	high     uint64
 	low      uint64
-	priority uint64
+	priority uint8
 }
 
 func (p *queuePointer) Value() int {
@@ -62,7 +62,7 @@ type rocksQueue struct {
 	done    bool
 
 	orderedPointers *brodal.Heap
-	pointers        map[uint64]*queuePointer
+	pointers        map[uint8]*queuePointer
 }
 
 func (q *rocksQueue) Close() {
@@ -179,7 +179,7 @@ func (q *rocksQueue) Clear() (uint64, error) {
 
 	// reset the pointer references since we iterated over all keys
 	q.orderedPointers = brodal.NewHeap()
-	q.pointers = make(map[uint64]*queuePointer)
+	q.pointers = make(map[uint8]*queuePointer)
 	atomic.StoreUint64(&q.size, 0)
 
 	//util.Warnf("Queue#clear: deleted %d elements from %s, size %d", count, q.name, q.size)
@@ -247,7 +247,7 @@ func (q *rocksQueue) Size() uint64 {
 	return atomic.LoadUint64(&q.size)
 }
 
-func (q *rocksQueue) Push(priority uint64, payload []byte) error {
+func (q *rocksQueue) Push(priority uint8, payload []byte) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -461,7 +461,7 @@ func (q *rocksQueue) Delete(keys [][]byte) error {
 
 //////////////////////////////////////////////////
 
-func (q *rocksQueue) nextkey(priority uint64) []byte {
+func (q *rocksQueue) nextkey(priority uint8) []byte {
 	p, ok := q.pointers[priority]
 	if !ok {
 		p = &queuePointer{
@@ -477,7 +477,7 @@ func (q *rocksQueue) nextkey(priority uint64) []byte {
 	return makeKey(q.name, priority, high)
 }
 
-func makeKey(name string, priority, seq uint64) []byte {
+func makeKey(name string, priority uint8, seq uint64) []byte {
 	bytes := make([]byte, len(name)+1+1+8)
 	copy(bytes, name)
 	length := len(name) + 1
@@ -491,9 +491,9 @@ func makeKey(name string, priority, seq uint64) []byte {
 	return bytes
 }
 
-func decodeKey(name string, key []byte) (string, uint64, uint64) {
+func decodeKey(name string, key []byte) (string, uint8, uint64) {
 	length := len(name) + 1
-	return name, uint64(^key[length]), binary.BigEndian.Uint64(key[length+1:])
+	return name, uint8(^key[length]), binary.BigEndian.Uint64(key[length+1:])
 }
 
 func upperBound(name string) []byte {

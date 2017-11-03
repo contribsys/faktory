@@ -63,7 +63,7 @@ type rocksAdapter struct {
 	goodbye bool
 }
 
-func (ra *rocksAdapter) Push(name string, priority uint64, elm []byte) error {
+func (ra *rocksAdapter) Push(name string, priority uint8, elm []byte) error {
 	if ra.goodbye {
 		// when the Dead elements come up for "scheduling", they have
 		// expired and are removed forever.  Goodbye!
@@ -86,7 +86,7 @@ func (ra *rocksAdapter) Size() int64 {
 
 type scannerAdapter interface {
 	Prune(string) ([][]byte, error)
-	Push(string, uint64, []byte) error
+	Push(string, uint8, []byte) error
 	Size() int64
 }
 

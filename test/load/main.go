@@ -111,7 +111,7 @@ func pushJob(client *faktory.Client, idx int) error {
 		Jid:      util.RandomJid(),
 		Queue:    "default",
 		Type:     "SomeJob",
-		Priority: uint64(rand.Intn(9) + 1),
+		Priority: uint8(rand.Intn(9) + 1),
 		Args:     []interface{}{1, "string", 3},
 	}
 	return client.Push(j)

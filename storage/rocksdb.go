@@ -248,7 +248,7 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 		cf:    store.queues,
 		maxsz: DefaultMaxSize,
 
-		pointers:        make(map[uint64]*queuePointer),
+		pointers:        make(map[uint8]*queuePointer),
 		orderedPointers: brodal.NewHeap(),
 	}
 	err := q.Init()

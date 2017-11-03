@@ -17,16 +17,66 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "./load [num_jobs]\n")
+	if len(os.Args) != 3 {
+		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
 		os.Exit(1)
 	}
-	count, err := strconv.ParseInt(os.Args[1], 10, 32)
+	if os.Args[1] != "push" && os.Args[1] != "pop" {
+		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
+		os.Exit(1)
+	}
+	count, err := strconv.ParseInt(os.Args[2], 10, 32)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "./load [num_jobs]\n")
+		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
 		os.Exit(1)
 	}
-	push(int(count))
+
+	if os.Args[1] == "push" {
+		push(int(count))
+		return
+	}
+	pop(int(count))
+}
+
+func pop(count int) {
+	time.Sleep(300 * time.Millisecond)
+	client, err := faktory.Dial(faktory.DefaultServer(), "123456")
+	if err != nil {
+		handleError(err)
+		return
+	}
+	defer client.Close()
+
+	client.Beat()
+
+	start := time.Now()
+	util.Info("Popping")
+	for i := 0; i < count; i++ {
+		job, err := client.Fetch("default")
+		if err != nil {
+			handleError(err)
+			return
+		}
+		if i%100 == 99 {
+			err = client.Fail(job.Jid, os.ErrClosed, nil)
+		} else {
+			err = client.Ack(job.Jid)
+		}
+		if err != nil {
+			handleError(err)
+			return
+		}
+	}
+	util.Info("Done")
+	stop := time.Since(start)
+	hash, err := client.Info()
+	if err != nil {
+		handleError(err)
+		return
+	}
+	util.Info(hash)
+
+	fmt.Printf("Processed %d jobs in %2f seconds, rate: %f jobs/s", count, stop.Seconds(), float64(count)/stop.Seconds())
 }
 
 func push(count int) {

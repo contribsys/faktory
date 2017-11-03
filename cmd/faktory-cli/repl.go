@@ -17,9 +17,21 @@ import (
 	"github.com/contribsys/gorocksdb"
 )
 
+const helpMsg = `Valid commands:
+
+flush
+backup
+restore *
+repair *
+version
+help
+
+* Requires an immediate restart after running command.`
+
+var versionMsg = fmt.Sprintf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
+
 // The REPL provides a few admin commands outside of Faktory itself,
 // notably the backup and restore commands.
-// TODO Refactor this file, it's a mess.
 func main() {
 	opts := cli.ParseArguments()
 	args := flag.Args()
@@ -35,21 +47,19 @@ func main() {
 		fmt.Println(`Run "db repair" to attempt repair`)
 	}
 
-	if !interactive {
-		go handleSignals(func() {
-			if store != nil {
-				store.Close()
-			}
-			os.Exit(0)
-		})
-	}
-
 	if interactive {
 		repl(opts.StorageDirectory, store)
 		if store != nil {
 			store.Close()
 		}
 	} else {
+		go handleSignals(func() {
+			if store != nil {
+				store.Close()
+			}
+			os.Exit(0)
+		})
+
 		err := execute(args, store, opts.StorageDirectory)
 		if err != nil {
 			fmt.Println(err)
@@ -98,61 +108,73 @@ func execute(cmd []string, store storage.Store, path string) error {
 	case "quit":
 		return nil
 	case "version":
-		fmt.Printf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
+		fmt.Printf(versionMsg)
 	case "help":
-		fmt.Println(`Valid commands:
-
-flush
-backup
-restore *
-repair *
-version
-help
-
-* Requires an immediate restart after running command.
-			`)
+		fmt.Println(helpMsg)
 	case "flush":
-		err := store.Flush()
-		if err == nil {
-			fmt.Println("OK")
-		}
-		return err
+		return flush(store)
 	case "backup":
-		err := store.Backup()
-		if err == nil {
-			fmt.Println("Backup created")
-			store.EachBackup(func(x storage.BackupInfo) {
-				fmt.Printf("%+v\n", x)
-			})
-		}
-		return err
+		return backup(store)
 	case "repair":
-		if store != nil {
-			store.Close()
-		}
-		opts := storage.DefaultOptions()
-		err := gorocksdb.RepairDb(path, opts)
-		if err == nil {
-			fmt.Println("Repair complete, restart required")
-			os.Exit(0)
-		}
-		return err
+		return repair(store, path)
 	case "purge":
-		err := store.PurgeOldBackups(storage.DefaultKeepBackupsCount)
-		if err == nil {
-			fmt.Println("OK")
-		}
-		return err
+		return purge(store)
 	case "restore":
-		err := store.RestoreFromLatest()
-		if err == nil {
-			fmt.Println("Restoration complete, restart required")
-			os.Exit(0)
-		}
-		return err
+		return restore(store)
 	default:
 		return fmt.Errorf("Unknown command: %v", cmd)
 	}
+	return nil
+}
+
+func flush(store storage.Store) error {
+	if err := store.Flush(); err != nil {
+		return err
+	}
+	fmt.Println("OK")
+	return nil
+}
+
+func backup(store storage.Store) error {
+	if err := store.Backup(); err != nil {
+		return err
+	}
+	fmt.Println("Backup created")
+	store.EachBackup(func(x storage.BackupInfo) {
+		fmt.Printf("%+v\n", x)
+	})
+	return nil
+}
+
+func repair(store storage.Store, path string) error {
+	if store != nil {
+		store.Close()
+	}
+	opts := storage.DefaultOptions()
+	if err := gorocksdb.RepairDb(path, opts); err != nil {
+		return err
+	}
+
+	fmt.Println("Repair complete, restart required")
+	os.Exit(0)
+	return nil
+}
+
+func purge(store storage.Store) error {
+	if err := store.PurgeOldBackups(storage.DefaultKeepBackupsCount); err != nil {
+		return err
+	}
+	fmt.Println("OK")
+	return nil
+}
+
+func restore(store storage.Store) error {
+	if err := store.RestoreFromLatest(); err != nil {
+		return err
+	}
+
+	fmt.Println("Restoration complete, restart required")
+	os.Exit(0)
 	return nil
 }
 

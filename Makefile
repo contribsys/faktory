@@ -36,7 +36,8 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui
+		github.com/contribsys/faktory/webui \
+		github.com/contribsys/faktory/cmd/faktory-cli
 
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)

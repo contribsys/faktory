@@ -131,7 +131,11 @@ func TestRocksSortedSet(b *testing.T) {
 }
 
 func fakeJob() (string, []byte) {
+	return fakeJobWithPriority(5)
+}
+
+func fakeJobWithPriority(priority uint64) (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":5,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows))
+	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":%d,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, priority))
 }

@@ -478,34 +478,28 @@ func (q *rocksQueue) nextkey(priority uint64) []byte {
 }
 
 func makeKey(name string, priority, seq uint64) []byte {
-	bytes := make([]byte, len(name)+1+8+1+8)
+	bytes := make([]byte, len(name)+1+1+1+8)
 	copy(bytes, name)
 	length := len(name) + 1
 	bytes[length-1] = 0xFF
-	binary.BigEndian.PutUint64(bytes[length+0:length+8], priority)
-	bytes[length+8] = 0xFF
-	binary.BigEndian.PutUint64(bytes[length+9:], seq)
+	bytes[length+0] = byte(priority)
+	bytes[length+1] = 0xFF
+	binary.BigEndian.PutUint64(bytes[length+2:], seq)
 	return bytes
 }
 
 func decodeKey(name string, key []byte) (string, uint64, uint64) {
 	length := len(name) + 1
-	return name, binary.BigEndian.Uint64(key[length+0 : length+8]), binary.BigEndian.Uint64(key[length+9:])
+	return name, uint64(key[length]), binary.BigEndian.Uint64(key[length+2:])
 }
 
 func upperBound(name string) []byte {
-	bytes := make([]byte, 8+len(name)+1+8+1+8)
+	bytes := make([]byte, 8+len(name)+1+1+1+8)
 	copy(bytes, name)
 	len := len(name) + 1
 	bytes[len-1] = 0xFF
 	bytes[len+0] = 0x7F
 	bytes[len+1] = 0xFF
-	bytes[len+2] = 0xFF
-	bytes[len+3] = 0xFF
-	bytes[len+4] = 0xFF
-	bytes[len+5] = 0xFF
-	bytes[len+6] = 0xFF
-	bytes[len+7] = 0xFF
 	bytes[len+8] = 0x7F
 	bytes[len+9] = 0xFF
 	bytes[len+10] = 0xFF

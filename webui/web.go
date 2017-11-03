@@ -199,7 +199,20 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 		start := time.Now()
 
 		// negotiate the language to be used for rendering
-		locale := localeFromHeader(r.Header.Get("Accept-Language"))
+
+		// set locale via cookie
+		localeCookie, _ := r.Cookie("faktory_locale")
+
+		var locale string
+		if localeCookie != nil {
+			locale = localeCookie.Value
+		}
+
+		if locale == "" {
+			// fall back to browser language
+			locale = localeFromHeader(r.Header.Get("Accept-Language"))
+		}
+
 		w.Header().Set("Content-Language", locale)
 
 		dctx := &DefaultContext{

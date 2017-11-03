@@ -179,7 +179,9 @@ func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, 
 	mu.RUnlock()
 
 	if ok {
+		mu.Lock()
 		val.lastHeartbeat = time.Now()
+		mu.Unlock()
 	} else {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()

@@ -2,14 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
-	"os/signal"
-	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/contribsys/faktory"
@@ -119,17 +115,6 @@ func pushJob(client *faktory.Client, idx int) error {
 		Args:     []interface{}{1, "string", 3},
 	}
 	return client.Push(j)
-}
-
-func stacks() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGQUIT)
-	buf := make([]byte, 1<<20)
-	for {
-		<-sigs
-		stacklen := runtime.Stack(buf, true)
-		log.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
-	}
 }
 
 func handleError(err error) {

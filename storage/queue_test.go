@@ -137,6 +137,38 @@ func TestQueuePrioritization(t *testing.T) {
 		assert.Equal(t, []byte("1"), data)
 		assert.Equal(t, uint64(n-(i+1)), q.Size())
 	}
+
+	// paging starting with empty queue
+
+	err = q.Push(1, []byte("a"))
+	assert.NoError(t, err)
+	err = q.Push(2, []byte("b"))
+	assert.NoError(t, err)
+	err = q.Push(3, []byte("c"))
+	assert.NoError(t, err)
+
+	// make sure we're paging with priority in mind
+	expectations := []struct {
+		value    []byte
+		index    int
+		sequence uint64
+		priority uint64
+	}{
+		{[]byte("c"), 0, 1, 3},
+		{[]byte("b"), 1, 1, 2},
+		{[]byte("a"), 2, 1, 1},
+	}
+	count := 0
+	err = q.Page(0, 3, func(index int, k, v []byte) error {
+		assert.Equal(t, expectations[count].index, index)
+		_, priority, seq := decodeKey(q.Name(), k)
+		assert.Equal(t, expectations[count].priority, priority)
+		assert.Equal(t, expectations[count].sequence, seq)
+		assert.Equal(t, expectations[count].value, v)
+		count++
+		return nil
+	})
+	assert.NoError(t, err)
 }
 
 func TestDecentQueueUsage(t *testing.T) {

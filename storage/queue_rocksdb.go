@@ -236,8 +236,7 @@ func (q *rocksQueue) Init() error {
 		return err
 	}
 
-	q.size = count
-	// atomic.StoreUint64(&q.size, count)
+	atomic.StoreUint64(&q.size, count)
 	q.waiters = list.New()
 
 	util.Debugf("Queue init: %s %d elements", q.name, atomic.LoadUint64(&q.size))

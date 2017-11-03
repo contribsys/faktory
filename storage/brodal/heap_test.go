@@ -450,7 +450,7 @@ func insert_mult(bq *Heap, values []int) {
 }
 
 func shuffle(slice []int) []int {
-	shuffled := make([]int, len(slice), len(slice))
+	shuffled := make([]int, len(slice))
 	copy(shuffled, slice)
 
 	for i := 0; i < len(shuffled); i++ {

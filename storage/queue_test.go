@@ -152,7 +152,7 @@ func TestQueuePrioritization(t *testing.T) {
 		value    []byte
 		index    int
 		sequence uint64
-		priority uint64
+		priority uint8
 	}{
 		{[]byte("c"), 0, 1, 3},
 		{[]byte("b"), 1, 1, 2},
@@ -283,7 +283,7 @@ func TestQueueKeys(t *testing.T) {
 
 	q := &rocksQueue{
 		name: "foo",
-		pointers: map[uint64]*queuePointer{
+		pointers: map[uint8]*queuePointer{
 			5: &queuePointer{
 				priority: 5,
 				high:     1293712938,

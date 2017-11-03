@@ -40,7 +40,7 @@ type Store interface {
 type Queue interface {
 	Name() string
 	Size() uint64
-	Push(uint64, []byte) error
+	Push(uint8, []byte) error
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
 	Clear() (uint64, error)

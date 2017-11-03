@@ -53,11 +53,12 @@ cover:
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
+# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -o faktory-cli cmd/faktory-cli/repl.go
-	go build -o faktory cmd/faktory/daemon.go
+	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
+	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
 
 megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true

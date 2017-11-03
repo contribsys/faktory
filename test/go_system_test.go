@@ -111,7 +111,7 @@ func pushAndPop(t *testing.T, count int) {
 		handleError(err)
 		return
 	}
-	util.Info(fmt.Sprintf("%v", hash))
+	util.Infof("%v", hash)
 }
 
 func pushJob(client *faktory.Client, idx int) error {

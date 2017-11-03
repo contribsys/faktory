@@ -312,7 +312,6 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 			// If we delete an element from the queue without processing it,
 			// a "hole" appears in our counting.  We need to iterate past the
 			// hole to find the next valid key.
-			// atomic.StoreUint64(&q.size, q.size-1)
 			atomic.AddUint64(&p.low, 1)
 			continue
 		}
@@ -337,7 +336,8 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 		delete(q.pointers, p.priority)
 	}
 
-	atomic.StoreUint64(&q.size, atomic.LoadUint64(&q.size)-1)
+	// decrement
+	atomic.AddUint64(&q.size, ^uint64(0))
 	return value, nil
 }
 
@@ -453,7 +453,8 @@ func (q *rocksQueue) Delete(keys [][]byte) error {
 	util.Debugf(`Deleting %d elements from queue "%s"`, count, q.name)
 	err := db.Write(wo, wb)
 	if err == nil {
-		atomic.StoreUint64(&q.size, atomic.LoadUint64(&q.size)-count)
+		// decrement count
+		atomic.AddUint64(&q.size, ^uint64(count-1))
 	}
 	return err
 }

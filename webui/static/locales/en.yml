@@ -78,3 +78,4 @@ en: # <---- change this to your locale code
   NotYetEnqueued: Not yet enqueued
   CreatedAt: Created At
   BackToApp: Back to App
+  Priority: Priority

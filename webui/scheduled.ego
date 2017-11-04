@@ -56,7 +56,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
               <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
             </td>
             <td><code><%= job.Type %></code></td>
-            <td><code><%= job.Priority %></code></td>
+            <td><code><%= job.GetPriority() %></code></td>
             <td>
                <div class="args"><code><%= job.Args %></code></div>
             </td>

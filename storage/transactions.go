@@ -50,7 +50,7 @@ func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
 			return err
 		}
 		q := queue.(*rocksQueue)
-		k := q.nextkey(job.Priority)
+		k := q.nextkey(job.GetPriority())
 		v := data
 		xa.batch.PutCF(q.cf, k, v)
 		xa.batch.DeleteCF(ss.cf, key)

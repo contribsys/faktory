@@ -38,7 +38,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
       <tr>
         <td><input type="checkbox" name="bkey" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" /></td>
         <td><%= job.Type %></td>
-        <td><%= job.Priority %></td>
+        <td><%= job.GetPriority() %></td>
         <td><code><%= job.Args %></code></td>
       </tr>
     <% }) %>

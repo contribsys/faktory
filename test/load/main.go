@@ -72,7 +72,7 @@ func pop(count int) {
 	}
 	util.Info(hash)
 
-	fmt.Printf("Processed %d jobs in %2f seconds, rate: %f jobs/s", count, stop.Seconds(), float64(count)/stop.Seconds())
+	fmt.Printf("Processed %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
 }
 
 func push(count int) {
@@ -103,7 +103,7 @@ func push(count int) {
 	}
 	util.Info(hash)
 
-	fmt.Printf("Enqueued %d jobs in %2f seconds, rate: %f jobs/s", count, stop.Seconds(), float64(count)/stop.Seconds())
+	fmt.Printf("Enqueued %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
 }
 
 func pushJob(client *faktory.Client, idx int) error {

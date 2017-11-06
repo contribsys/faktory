@@ -137,6 +137,13 @@ func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
 }
 
+func MemoryUsage() string {
+	m := runtime.MemStats{}
+	runtime.ReadMemStats(&m)
+	mb := m.Sys / 1024 / 1024
+	return fmt.Sprintf("%v MB", mb)
+}
+
 // Backtrace gathers a backtrace for the caller.
 // Return a slice of up to N stack frames.
 func Backtrace(size int) []string {

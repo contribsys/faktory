@@ -3,6 +3,7 @@ package faktory
 import (
 	"bufio"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -116,15 +117,24 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
+	var err error
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
-	conn, err := dial.Dial(srv.Network, srv.Address)
-	if err != nil {
-		return nil, err
+	if srv.Network == "tcp" {
+		conn, err = dial.Dial(srv.Network, srv.Address)
+		if err != nil {
+			return nil, err
+		}
+		if x, ok := conn.(*net.TCPConn); ok {
+			x.SetKeepAlive(true)
+		}
+	} else {
+		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
+		if err != nil {
+			return nil, err
+		}
 	}
-	if x, ok := conn.(*net.TCPConn); ok {
-		x.SetKeepAlive(true)
-	}
+
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 

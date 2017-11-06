@@ -9,6 +9,16 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
+	"net"
+	"math/big"
+
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"crypto/rand"
+	"encoding/pem"
 
 	"github.com/contribsys/faktory"
 	"github.com/contribsys/faktory/cli"
@@ -23,6 +33,7 @@ flush
 backup
 restore *
 repair *
+generate-certificate <hostname, ..>
 version
 help
 
@@ -48,7 +59,7 @@ func main() {
 	}
 
 	if interactive {
-		repl(opts.StorageDirectory, store)
+		repl(opts, store)
 		if store != nil {
 			store.Close()
 		}
@@ -60,7 +71,7 @@ func main() {
 			os.Exit(0)
 		})
 
-		err := execute(args, store, opts.StorageDirectory)
+		err := execute(args, store, opts)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -73,8 +84,8 @@ func main() {
 	}
 }
 
-func repl(path string, store storage.Store) {
-	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), path)
+func repl(opts cli.CmdOptions, store storage.Store) {
+	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), opts.StorageDirectory)
 
 	rdr := bufio.NewReader(os.Stdin)
 	for {
@@ -93,14 +104,14 @@ func repl(path string, store storage.Store) {
 		}
 		line := string(bytes)
 		cmd := strings.Split(line, " ")
-		err := execute(cmd, store, path)
+		err := execute(cmd, store, opts)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func execute(cmd []string, store storage.Store, path string) error {
+func execute(cmd []string, store storage.Store, opts cli.CmdOptions) error {
 	first := cmd[0]
 	switch first {
 	case "exit":
@@ -116,11 +127,18 @@ func execute(cmd []string, store storage.Store, path string) error {
 	case "backup":
 		return backup(store)
 	case "repair":
-		return repair(store, path)
+		return repair(store, opts.StorageDirectory)
 	case "purge":
 		return purge(store)
 	case "restore":
 		return restore(store)
+	case "generate-certificate":
+		hostnames := cmd[1:]
+		tlspath := opts.ConfigDirectory + "/tls"
+		if len(hostnames) == 0 {
+			hostnames = []string{"*"}
+		}
+		return generate(tlspath, hostnames)
 	default:
 		return fmt.Errorf("Unknown command: %v", cmd)
 	}
@@ -175,6 +193,96 @@ func restore(store storage.Store) error {
 
 	fmt.Println("Restoration complete, restart required")
 	os.Exit(0)
+	return nil
+}
+
+func generate(path string, hostnames []string) error {
+	cert := path + "/public.crt"
+	private := path + "/private.key"
+
+	ok, _ := util.FileExists(cert)
+	if ok {
+		return fmt.Errorf("public.crt already exists in %v, will not create a new one", path)
+	}
+
+	ok, _ = util.FileExists(private)
+	if ok {
+		return fmt.Errorf("private.key already exists in %v, will not create a new one", path)
+	}
+
+	if len(hostnames) == 0 {
+		return fmt.Errorf("no hostnames supplied")
+	}
+
+	// make sure the tls folder exists
+	err := os.MkdirAll(path, os.ModeDir|0755)
+	if err != nil {
+		return fmt.Errorf("unable to create folder %v: %v", path, err)
+	}
+	fmt.Printf("Generating a certificate and key in: %v\n", path)
+
+	// generate a private key
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	// generate a certificate
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return fmt.Errorf("failed to generate serial number: %v", err)
+	}
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"Faktory"},
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().Add(10 * 365 * 24 * time.Hour),
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA: true,
+	}
+
+	// add all the user requested hostnames to the certificate
+	for _, h := range hostnames {
+		if ip := net.ParseIP(h); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, h)
+		}
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate: %v", err)
+	}
+
+	f, err := os.Create(cert)
+	if err != nil {
+		return fmt.Errorf("failed to open file for writing: %v", err)
+	}
+
+	pem.Encode(f, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	f.Close()
+
+	f, err = os.OpenFile(private, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open key.pem for writing: %v", err)
+	}
+	b, err := x509.MarshalECPrivateKey(priv)
+	if err != nil {
+		return fmt.Errorf("unable to marshal ECDSA private key: %v", err)
+	}
+
+	pem.Encode(f, &pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
+	f.Close()
+
+	fmt.Printf("A self signed certificate and private key have been generated in: %s\n", path)
+
 	return nil
 }
 

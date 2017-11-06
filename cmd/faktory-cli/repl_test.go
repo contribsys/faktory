@@ -33,11 +33,12 @@ func setupTests() func(t *testing.T) {
 
 func teardown(storageName string) {
 	os.RemoveAll("./" + storageName + "-data")
+	os.RemoveAll("./" + storageName + "-config")
 }
 
 func runFaktory(storageName string, inputChan, cmdOutputChan chan string) {
 	binaryPath := "./faktory-cli-test"
-	cmd := exec.Command(binaryPath, "-d", "./"+storageName+"-data")
+	cmd := exec.Command(binaryPath, "-d", "./"+storageName+"-data", "-c", "./"+storageName+"-config")
 
 	cmdWriter, err := cmd.StdinPipe()
 	if err != nil {
@@ -87,7 +88,7 @@ func TestInteractiveOutputs(t *testing.T) {
 		{"flush", "> OK> "},
 		{"purge", "> OK> "},
 		{"version", "> Faktory " + faktory.Version + ", RocksDB " + gorocksdb.RocksDBVersion() + "> "},
-		{"help", ">" + " Valid commands:flushbackuprestore *repair *versionhelp* Requires an immediate restart after running command." + "> "},
+		{"help", ">" + " Valid commands:flushbackuprestore *repair *generate-certificate <hostname, ..>versionhelp* Requires an immediate restart after running command." + "> "},
 	}
 
 	for _, ts := range tests {
@@ -157,5 +158,18 @@ func TestInteractiveOutputs(t *testing.T) {
 		output := <-cmdOutputChan
 
 		assert.Contains(t, output, "Repair complete, restart required")
+	})
+
+	t.Run("generate-certificate", func(t *testing.T) {
+		storageName := "generate-cert"
+		defer teardown(storageName)
+
+		inputChan := make(chan string)
+		cmdOutputChan := make(chan string)
+		go runFaktory(storageName, inputChan, cmdOutputChan)
+		inputChan <- "generate-certificate test.example.com"
+		output := <-cmdOutputChan
+
+		assert.Contains(t, output, "A self signed certificate and private key have been generated in")
 	})
 }

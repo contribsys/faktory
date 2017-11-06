@@ -4,6 +4,7 @@ package webui
 import (
   "net/http"
   "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/util"
 )
 
 func ego_index(w io.Writer, req *http.Request) {
@@ -63,7 +64,7 @@ func ego_index(w io.Writer, req *http.Request) {
     </div>
 
     <div class="stat">
-      <h3 class="used_memory_human"><%= currentMemoryUsage() %></h3>
+      <h3 class="used_memory_human"><%= util.MemoryUsage() %></h3>
       <p><%= t(req, "MemoryUsage") %></p>
     </div>
 

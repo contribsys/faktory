@@ -233,10 +233,6 @@ func locale(req *http.Request) string {
 	return "en"
 }
 
-func currentMemoryUsage() string {
-	return "123 MB"
-}
-
 func days(req *http.Request) int {
 	days := req.URL.Query()["days"]
 	if len(days) == 0 {

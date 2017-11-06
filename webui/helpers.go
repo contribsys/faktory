@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -233,10 +234,6 @@ func locale(req *http.Request) string {
 	return "en"
 }
 
-func currentMemoryUsage() string {
-	return "123 MB"
-}
-
 func days(req *http.Request) int {
 	days := req.URL.Query()["days"]
 	if len(days) == 0 {
@@ -298,4 +295,15 @@ func failedHistory(req *http.Request) string {
 		return err.Error()
 	}
 	return string(str)
+}
+
+func sortedLocaleNames(locales map[string]map[string]string) []string {
+	names := make(sort.StringSlice, len(locales))
+	i := 0
+	for locale, _ := range locales {
+		names[i] = locale
+		i++
+	}
+	names.Sort()
+	return names
 }

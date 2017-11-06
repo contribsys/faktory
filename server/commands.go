@@ -174,8 +174,7 @@ func uptimeInSeconds(s *Server) int {
 }
 
 func currentMemoryUsage(s *Server) string {
-	// TODO maybe remove this and/or offer a better stat?
-	return "123 MB"
+	return util.MemoryUsage()
 }
 
 func CurrentState(s *Server) (map[string]interface{}, error) {

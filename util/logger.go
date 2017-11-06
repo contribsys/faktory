@@ -42,6 +42,7 @@ type LogHandler struct {
 	mu     sync.Mutex
 	writer io.Writer
 	tty    bool
+	pid    int
 }
 
 const (
@@ -58,24 +59,21 @@ func (h *LogHandler) HandleLog(e *alog.Entry) error {
 	defer h.mu.Unlock()
 
 	if h.tty {
-		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s %-25s", color, level, ts, e.Message)
-		for _, name := range names {
-			fmt.Fprintf(h.writer, " \033[%dm%s\033[0m=%v", color, name, e.Fields.Get(name))
-		}
+		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s %d ", color, level, ts, h.pid)
 	} else {
-		fmt.Fprintf(h.writer, "%s %s %-25s", level, ts, e.Message)
-		for _, name := range names {
-			fmt.Fprintf(h.writer, " %s=%v", name, e.Fields.Get(name))
-		}
+		fmt.Fprintf(h.writer, "%s %s %d ", level, ts, h.pid)
 	}
 
-	fmt.Fprintln(h.writer)
+	for _, name := range names {
+		fmt.Fprintf(h.writer, "%s=%v ", name, e.Fields.Get(name))
+	}
+	fmt.Fprintln(h.writer, e.Message)
 
 	return nil
 }
 
 func NewLogger(level string, production bool) Logger {
-	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd()))})
+	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd())), pid: os.Getpid()})
 	alog.SetLevelFromString(level)
 	return alog.Log
 }

@@ -368,6 +368,9 @@ func readString(rdr *bufio.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if val == nil {
+		return "", nil
+	}
 
 	return string(val), nil
 }
@@ -398,6 +401,9 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		count, err := strconv.Atoi(string(line))
 		if err != nil {
 			return nil, err
+		}
+		if count == -1 {
+			return nil, nil
 		}
 		var buff []byte
 		if count > 0 {

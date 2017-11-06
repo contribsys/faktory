@@ -70,15 +70,9 @@ func FireItUp(svr *server.Server) error {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
-			TLSConfig:      svr.TLSConfig,
 		}
-		if s.TLSConfig == nil {
-			util.Info("Web server now listening on port 7420")
-			log.Fatal(s.ListenAndServe())
-		} else {
-			util.Info("Web server now listening securely on port 7420")
-			log.Fatal(s.ListenAndServeTLS("", ""))
-		}
+		util.Info("Web server now listening on port 7420")
+		log.Fatal(s.ListenAndServe())
 	}()
 	return nil
 }

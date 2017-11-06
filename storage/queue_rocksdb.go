@@ -493,6 +493,10 @@ func makeKey(name string, priority uint8, seq uint64) []byte {
 
 func decodeKey(name string, key []byte) (string, uint8, uint64) {
 	length := len(name) + 1
+	// TODO backwards compatibililty, remove after 0.6.0
+	if len(key)-len(name) == 9 {
+		return name, 5, binary.BigEndian.Uint64(key[length:])
+	}
 	return name, uint8(^key[length]), binary.BigEndian.Uint64(key[length+1:])
 }
 

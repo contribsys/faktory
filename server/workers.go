@@ -2,50 +2,48 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/contribsys/faktory/util"
 )
 
-/*
- * This represents a single worker process.  It may have many network
- * connections open to Faktory.  Each worker process should send a BEAT
- * command every 15 seconds.  If Faktory does not receive a BEAT from a
- * worker process within 60 seconds, it expires and is removed from the
- * Busy page.
- *
- * From Faktory's POV, the process can BEAT again and resume normal operations, e.g.
- * due to a network partition.
- * If a process dies, it will be removed after 1 minute and its jobs recovered after the
- * job reservation timeout has passed (typically 30 minutes).
- *
- * A worker process has a simple three-state lifecycle:
- *
- * running -> quiet -> terminate
- *
- * - Running means the worker is alive and processing jobs.
- * - Quiet means the worker should stop FETCHing new jobs but continue working on existing jobs.
- *   It should not exit, even if no jobs are processing.
- * - Terminate means the worker should exit within N seconds, where N is recommended to be
- *   30 seconds.  In practice, faktory_worker_ruby waits up to 25 seconds and any
- *   threads that are still busy are forcefully killed and their associated jobs reported
- *   as FAILed so they will be retried shortly.
- *
- * A worker process should never stop sending BEAT.  Even after "quiet" or "terminate", the BEAT
- * should continue, only stopping due to process exit().
- * Workers should never move backward in state - you cannot "unquiet" a worker, it must be restarted.
- *
- * Workers will typically also respond to standard Unix signals.
- * faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
- */
+//
+// This represents a single worker process.  It may have many network
+// connections open to Faktory.  Each worker process should send a BEAT
+// command every 15 seconds.  If Faktory does not receive a BEAT from a
+// worker process within 60 seconds, it expires and is removed from the
+// Busy page.
+//
+// From Faktory's POV, the process can BEAT again and resume normal operations, e.g.
+// due to a network partition.
+// If a process dies, it will be removed after 1 minute and its jobs recovered after the
+// job reservation timeout has passed (typically 30 minutes).
+//
+// A worker process has a simple three-state lifecycle:
+//
+//  running -> quiet -> terminate
+//
+// - Running means the worker is alive and processing jobs.
+// - Quiet means the worker should stop FETCHing new jobs but continue working on existing jobs.
+// It should not exit, even if no jobs are processing.
+// - Terminate means the worker should exit within N seconds, where N is recommended to be
+// 30 seconds.  In practice, faktory_worker_ruby waits up to 25 seconds and any
+// threads that are still busy are forcefully killed and their associated jobs reported
+// as FAILed so they will be retried shortly.
+//
+// A worker process should never stop sending BEAT.  Even after "quiet" or "terminate", the BEAT
+// should continue, only stopping due to process exit().
+// Workers should never move backward in state - you cannot "unquiet" a worker, it must be restarted.
+//
+// Workers will typically also respond to standard Unix signals.
+// faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
+//
 type ClientWorker struct {
 	Hostname     string   `json:"hostname"`
 	Wid          string   `json:"wid"`
 	Pid          int      `json:"pid"`
 	Labels       []string `json:"labels"`
-	Salt         string   `json:"salt"`
 	PasswordHash string   `json:"pwdhash"`
 	StartedAt    time.Time
 
@@ -79,10 +77,6 @@ func clientWorkerFromHello(data string) (*ClientWorker, error) {
 		return nil, err
 	}
 
-	if client.Wid == "" {
-		return nil, fmt.Errorf("Invalid client Wid")
-	}
-
 	return &client, nil
 }
 
@@ -110,6 +104,10 @@ func (worker *ClientWorker) Signal(newstate WorkerState) {
 	if worker.state == Terminate {
 		return
 	}
+}
+
+func (worker *ClientWorker) IsConsumer() bool {
+	return worker.Wid != ""
 }
 
 func (worker *ClientWorker) BusyCount() int {
@@ -181,7 +179,9 @@ func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, 
 	mu.RUnlock()
 
 	if ok {
+		mu.Lock()
 		val.lastHeartbeat = time.Now()
+		mu.Unlock()
 	} else {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()

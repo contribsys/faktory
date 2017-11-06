@@ -29,7 +29,7 @@ func (d *DefaultContext) Request() *http.Request {
 	return d.request
 }
 
-type Translater interface {
+type Translator interface {
 	Locale() string
 	Translation(string) string
 }

@@ -22,7 +22,7 @@ func ego_summary(w io.Writer, req *http.Request) {
   </li>
   <li class="enqueued col-sm-1">
     <a href="/queues">
-      <span class="count"><%= numberWithDelimiter(enqueuedSize()) %></span>
+      <span class="count"><%= numberWithDelimiter(int64(enqueuedSize())) %></span>
       <span class="desc"><%= t(req, "Enqueued") %></span>
     </a>
   </li>

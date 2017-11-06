@@ -15,7 +15,6 @@ func TestConnectionBasics(t *testing.T) {
 	dc := dummyConnection()
 
 	assert.NotNil(t, dc)
-	assert.Equal(t, dc.ident, dc.Identity())
 
 	dc.Ok()
 	assert.Equal(t, "+OK\r\n", output(dc))
@@ -59,7 +58,6 @@ func dummyConnection() *Connection {
 	wc := &TestingWriteCloser{output: writeBuffer, Writer: bufio.NewWriter(writeBuffer)}
 
 	return &Connection{
-		ident:  "some string",
 		client: dummyClientWorker(),
 		conn:   wc,
 		buf:    bufio.NewReader(strings.NewReader("")),

@@ -19,10 +19,6 @@ type scanner struct {
 	cycles   int64
 }
 
-var (
-	defaultDelay = 1 * time.Second
-)
-
 func (s *scanner) Name() string {
 	return s.name
 }
@@ -43,10 +39,10 @@ func (s *scanner) Execute() error {
 		var job faktory.Job
 		err := json.Unmarshal(elm, &job)
 		if err != nil {
-			util.Error("Unable to unmarshal json", err, elm)
+			util.Error("Unable to unmarshal json", err)
 			continue
 		}
-		err = s.adapter.Push(job.Queue, elm)
+		err = s.adapter.Push(job.Queue, job.GetPriority(), elm)
 		if err != nil {
 			util.Warnf("Error pushing job to '%s': %s", job.Queue, err.Error())
 			continue
@@ -67,7 +63,7 @@ type rocksAdapter struct {
 	goodbye bool
 }
 
-func (ra *rocksAdapter) Push(name string, elm []byte) error {
+func (ra *rocksAdapter) Push(name string, priority uint8, elm []byte) error {
 	if ra.goodbye {
 		// when the Dead elements come up for "scheduling", they have
 		// expired and are removed forever.  Goodbye!
@@ -79,7 +75,7 @@ func (ra *rocksAdapter) Push(name string, elm []byte) error {
 	if err != nil {
 		return err
 	}
-	return que.Push(elm)
+	return que.Push(priority, elm)
 }
 func (ra *rocksAdapter) Prune(string) ([][]byte, error) {
 	return ra.ts.RemoveBefore(util.Nows())
@@ -90,7 +86,7 @@ func (ra *rocksAdapter) Size() int64 {
 
 type scannerAdapter interface {
 	Prune(string) ([][]byte, error)
-	Push(string, []byte) error
+	Push(string, uint8, []byte) error
 	Size() int64
 }
 

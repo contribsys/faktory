@@ -28,33 +28,28 @@ type Store interface {
 
 	// creates a backup of the current database
 	Backup() error
-	//Compact() error
 	EachBackup(func(bi BackupInfo)) error
 	RestoreFromLatest() error
+	PurgeOldBackups(int) error
 
-	/*
-	 * Clear the database of all job data.
-	 * Equivalent to Redis's FLUSHDB
-	 */
+	// Clear the database of all job data.
+	// Equivalent to Redis's FLUSHDB
 	Flush() error
 }
 
 type Queue interface {
 	Name() string
-	Size() int64
-	Push([]byte) error
+	Size() uint64
+	Push(uint8, []byte) error
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
-	Clear() (int64, error)
+	Clear() (uint64, error)
 
-	/*
-	 * Please note that k/vs are NOT safe to use outside of the func.
-	 * You must copy the values if you want to stash them for later use.
-	 *
-	 *	  cpy = make([]byte, len(k))
-	 *	  copy(cpy, k)
-	 *
-	 */
+	// Please note that k/vs are NOT safe to use outside of the func.
+	// You must copy the values if you want to stash them for later use.
+	//
+	//	  cpy = make([]byte, len(k))
+	//	  copy(cpy, k)
 	Each(func(index int, k, v []byte) error) error
 	Page(int64, int64, func(index int, k, v []byte) error) error
 
@@ -76,11 +71,9 @@ type SortedSet interface {
 	RemoveElement(timestamp string, jid string) error
 	RemoveBefore(timestamp string) ([][]byte, error)
 
-	/*
-		Move the given key from this SortedSet to the given
-		SortedSet atomically.  The given func may mutate the payload and
-		return a new tstamp.
-	*/
+	// Move the given key from this SortedSet to the given
+	// SortedSet atomically.  The given func may mutate the payload and
+	// return a new tstamp.
 	MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error
 }
 

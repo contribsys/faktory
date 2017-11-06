@@ -34,7 +34,7 @@ func TestEnqueueAll(t *testing.T) {
 
 	q, err := db.GetQueue("default")
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2), q.Size())
+	assert.Equal(t, uint64(2), q.Size())
 
 	job, err := q.Pop()
 	assert.NoError(t, err)

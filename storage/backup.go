@@ -7,9 +7,23 @@ import (
 	"github.com/contribsys/gorocksdb"
 )
 
-/*
- * TODO Purge old backups
- */
+const (
+	// Assume hourly backups and keep a day's worth.
+	// If we take backups every 5 minutes, this will keep
+	// two hours worth.
+	DefaultKeepBackupsCount int = 24
+)
+
+func (store *rocksStore) PurgeOldBackups(keepCount int) error {
+	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name())
+	if err != nil {
+		return err
+	}
+	defer be.Close()
+
+	return be.PurgeOldBackups(keepCount)
+}
+
 func (store *rocksStore) Backup() error {
 	fo := gorocksdb.NewDefaultFlushOptions()
 	defer fo.Destroy()

@@ -25,25 +25,21 @@ type Client struct {
 	conn     net.Conn
 }
 
-/*
- * This data is serialized to JSON and sent
- * with the HELLO command.  PasswordHash is required
- * if the server is not listening on localhost.
- * The WID (worker id) must be random and unique
- * for each worker process.  It can be a UUID, etc.
- *
- * The other elements can be useful for debugging
- * and are displayed on the Busy tab.
- */
+// ClientData is serialized to JSON and sent
+// with the HELLO command.  PasswordHash is required
+// if the server is not listening on localhost.
+// The WID (worker id) must be random and unique
+// for each worker process.  It can be a UUID, etc.
+// Non-worker processes should leave WID empty.
+//
+// The other elements can be useful for debugging
+// and are displayed on the Busy tab.
 type ClientData struct {
 	Hostname string   `json:"hostname"`
 	Wid      string   `json:"wid"`
 	Pid      int      `json:"pid"`
 	Labels   []string `json:"labels"`
-	// Salt should be a random string and
-	// must change on every call.
-	Salt string `json:"salt"`
-	// Hash is hex(sha256(password + salt))
+	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
 }
 
@@ -61,13 +57,12 @@ func DefaultServer() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
-/*
- * This function connects to a Faktory server based on the
- * environment variable conventions:
- *
- * - Use FAKTORY_PROVIDER to point to a custom URL variable.
- * - Use FAKTORY_URL as a catch-all default.
- */
+// Open connects to a Faktory server based on the
+// environment variable conventions:
+//
+// • Use FAKTORY_PROVIDER to point to a custom URL variable.
+//
+// • Use FAKTORY_URL as a catch-all default.
 func Open() (*Client, error) {
 	srv := DefaultServer()
 
@@ -116,12 +111,10 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 	return Dial(srv, "")
 }
 
-/*
- * Open a connection to the remote faktory server.
- *
- *   faktory.Dial(faktory.Localhost, "topsecret")
- *
- */
+// Dial connects to the remote faktory server.
+//
+//   faktory.Dial(faktory.Localhost, "topsecret")
+//
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
@@ -137,6 +130,9 @@ func Dial(srv *Server, password string) (*Client, error) {
 		conn, err = dial.Dial(srv.Network, srv.Address)
 		if err != nil {
 			return nil, err
+		}
+		if x, ok := conn.(*net.TCPConn); ok {
+			x.SetKeepAlive(true)
 		}
 	} else {
 		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
@@ -225,7 +221,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 
@@ -244,11 +240,9 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
  bt := strings.Split(str, "\n")
 */
 
-/*
- * Notify Faktory that a job failed with the given error.
- * If backtrace is non-nil, it is assumed to be the output from
- * runtime/debug.Stack().
- */
+// Fail notifies Faktory that a job failed with the given error.
+// If backtrace is non-nil, it is assumed to be the output from
+// runtime/debug.Stack().
 func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	failure := map[string]interface{}{
 		"message": err.Error(),
@@ -291,7 +285,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
 

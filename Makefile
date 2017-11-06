@@ -18,30 +18,32 @@ endif
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
 
+.DEFAULT_GOAL := help
+
 all: test
 
-# install dependencies and cli tools
-prepare:
+prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure
 	@go get github.com/benbjohnson/ego/cmd/ego
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
-test: clean generate
+test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui
+		github.com/contribsys/faktory/webui \
+		github.com/contribsys/faktory/cmd/faktory-cli
 
-d:
+dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
-drun:
+drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
 
 generate:
@@ -52,27 +54,30 @@ cover:
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
+# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -o faktory-cli cmd/repl.go
-	go build -o faktory cmd/daemon.go
+	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
+	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+
+megacheck:
+	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 
 # TODO integrate a few useful Golang linters.
-fmt:
+fmt: ## Format the code
 	go fmt ./...
 
-# trigger TLS for testing
-swork:
+swork: ## Run a simple Ruby worker with TLS, see also "make srun"
 	cd test/ruby && FAKTORY_PROVIDER=FURL \
 		FURL=tcp://:password123@localhost.contribsys.com:7419 \
 		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-# no TLS, just plain text against localhost
-work:
+
+work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean:
+clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go faktory-cli
@@ -80,13 +85,13 @@ clean:
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 
-repl: clean generate
-	go run cmd/repl.go -l debug -e development
+repl: clean generate ## Run the Faktory CLI
+	go run cmd/faktory-cli/repl.go -l debug -e development
 
-run: clean generate
-	go run cmd/daemon.go -l debug -e development
+run: clean generate ## Run Faktory daemon locally
+	go run cmd/faktory/daemon.go -l debug -e development
 
-srun: clean generate
+srun: clean generate ## Run Faktory daemon locally with TLS
 	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
 
 cssh:
@@ -209,4 +214,8 @@ upload:	package tag
 	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 	#package_cloud push contribsys/faktory/el/6 packaging/output/upstart/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
-.PHONY: all clean test build package upload
+.PHONY: help all clean test build package upload
+
+
+help:
+		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

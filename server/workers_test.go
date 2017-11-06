@@ -20,8 +20,8 @@ func TestClientWorker(t *testing.T) {
 	assert.Nil(t, cw)
 
 	cw, err = clientWorkerFromHello("{}")
-	assert.Error(t, err)
-	assert.Nil(t, cw)
+	assert.NoError(t, err)
+	assert.NotNil(t, cw)
 
 	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
 	cw, err = clientWorkerFromHello(ahoy)

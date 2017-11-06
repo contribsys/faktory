@@ -9,6 +9,7 @@ import (
 
 	"regexp"
 
+	"github.com/contribsys/faktory/storage/brodal"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
 )
@@ -121,11 +122,9 @@ func (store *rocksStore) EachQueue(x func(Queue)) {
 }
 
 func (store *rocksStore) Flush() error {
-	/*
-	 * This is a very slow implementation.  Are there lower-level
-	 * RocksDB operations we can use to bulk-delete everything
-	 * in a column family or database?
-	 */
+	// This is a very slow implementation.  Are there lower-level
+	// RocksDB operations we can use to bulk-delete everything
+	// in a column family or database?
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
@@ -159,11 +158,8 @@ func (store *rocksStore) Flush() error {
 		return err
 	}
 	_, err = store.clients.Clear()
-	if err != nil {
-		return err
-	}
 	// flush doesn't clear the stats or default space
-	return nil
+	return err
 }
 
 func (store *rocksStore) init() error {
@@ -247,12 +243,13 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 
 	q = &rocksQueue{
 		name:  name,
-		size:  -1,
+		size:  0,
 		store: store,
 		cf:    store.queues,
-		high:  0,
-		low:   0,
 		maxsz: DefaultMaxSize,
+
+		pointers:        make(map[uint8]*queuePointer),
+		orderedPointers: brodal.NewHeap(),
 	}
 	err := q.Init()
 	if err != nil {

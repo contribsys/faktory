@@ -22,19 +22,19 @@ func TestBasicQueueOps(t *testing.T) {
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
 
 	data, err := q.Pop()
 	assert.NoError(t, err)
 	assert.Nil(t, data)
 
-	err = q.Push([]byte("hello"))
+	err = q.Push(5, []byte("hello"))
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, uint64(1), q.Size())
 
-	err = q.Push([]byte("world"))
+	err = q.Push(5, []byte("world"))
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2), q.Size())
+	assert.Equal(t, uint64(2), q.Size())
 
 	values := [][]byte{
 		[]byte("hello"),
@@ -48,12 +48,12 @@ func TestBasicQueueOps(t *testing.T) {
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("hello"), data)
-	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, uint64(1), q.Size())
 
 	cnt, err := q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), cnt)
-	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, uint64(1), cnt)
+	assert.Equal(t, uint64(0), q.Size())
 
 	// valid names:
 	_, err = store.GetQueue("A-Za-z0-9_.-")
@@ -78,6 +78,99 @@ func TestBasicQueueOps(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestQueuePrioritization(t *testing.T) {
+	os.RemoveAll("/tmp/qpriority.db")
+	defer os.RemoveAll("/tmp/qpriority.db")
+	store, err := Open("rocksdb", "/tmp/qpriority.db")
+	assert.NoError(t, err)
+	q, err := store.GetQueue("default")
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint64(0), q.Size())
+
+	n := 100
+	// Push N jobs to queue with low priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(1, []byte("1"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1), q.Size())
+	}
+
+	// Push N jobs to queue with high priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(3, []byte("3"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1+n), q.Size())
+	}
+
+	// Push N jobs to queue with medium priority
+	// Get Size() each time
+	for i := 0; i < n; i++ {
+		err = q.Push(2, []byte("2"))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(i+1+2*n), q.Size())
+	}
+
+	if !assert.Equal(t, uint64(3*n), q.Size()) {
+		return
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("3"), data)
+		assert.Equal(t, uint64(3*n-(i+1)), q.Size())
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("2"), data)
+		assert.Equal(t, uint64(2*n-(i+1)), q.Size())
+	}
+
+	for i := 0; i < n; i++ {
+		data, err := q.Pop()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("1"), data)
+		assert.Equal(t, uint64(n-(i+1)), q.Size())
+	}
+
+	// paging starting with empty queue
+
+	err = q.Push(1, []byte("a"))
+	assert.NoError(t, err)
+	err = q.Push(2, []byte("b"))
+	assert.NoError(t, err)
+	err = q.Push(3, []byte("c"))
+	assert.NoError(t, err)
+
+	// make sure we're paging with priority in mind
+	expectations := []struct {
+		value    []byte
+		index    int
+		sequence uint64
+		priority uint8
+	}{
+		{[]byte("c"), 0, 1, 3},
+		{[]byte("b"), 1, 1, 2},
+		{[]byte("a"), 2, 1, 1},
+	}
+	count := 0
+	err = q.Page(0, 3, func(index int, k, v []byte) error {
+		assert.Equal(t, expectations[count].index, index)
+		_, priority, seq := decodeKey(q.Name(), k)
+		assert.Equal(t, expectations[count].priority, priority)
+		assert.Equal(t, expectations[count].sequence, seq)
+		assert.Equal(t, expectations[count].value, v)
+		count++
+		return nil
+	})
+	assert.NoError(t, err)
+}
+
 func TestDecentQueueUsage(t *testing.T) {
 	defer os.RemoveAll("/tmp/qbench.db")
 	store, err := Open("rocksdb", "/tmp/qbench.db")
@@ -85,42 +178,47 @@ func TestDecentQueueUsage(t *testing.T) {
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(0), q.Size())
-	err = q.Push([]byte("first"))
+	assert.Equal(t, uint64(0), q.Size())
+	err = q.Push(5, []byte("first"))
+	assert.NoError(t, err)
 	n := 50000
 	// Push N jobs to queue
 	// Get Size() each time
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
-		err = q.Push(data)
+		err = q.Push(5, data)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(i+2), q.Size())
+		assert.Equal(t, uint64(i+2), q.Size())
 	}
-	err = q.Push([]byte("last"))
-	assert.Equal(t, int64(n+2), q.Size())
+
+	err = q.Push(5, []byte("last"))
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(n+2), q.Size())
+
 	// Close DB, reopen
 	store.Close()
 
 	store, err = Open("rocksdb", "/tmp/qbench.db")
 	assert.NoError(t, err)
+
 	q, err = store.GetQueue("default")
 	assert.NoError(t, err)
 
 	// Pop N jobs from queue
 	// Get Size() each time
-	assert.Equal(t, int64(n+2), q.Size())
+	assert.Equal(t, uint64(n+2), q.Size())
 	data, err := q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("first"), data)
 	for i := 0; i < n; i++ {
 		_, err := q.Pop()
 		assert.NoError(t, err)
-		assert.Equal(t, int64(n-i), q.Size())
+		assert.Equal(t, uint64(n-i), q.Size())
 	}
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("last"), data)
-	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
 
 	data, err = q.Pop()
 	assert.NoError(t, err)
@@ -149,7 +247,7 @@ func TestThreadedQueueUsage(t *testing.T) {
 
 	wg.Wait()
 	assert.Equal(t, int64(0), counter)
-	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
 
 	q.Each(func(idx int, k, v []byte) error {
 		atomic.AddInt64(&counter, 1)
@@ -167,7 +265,7 @@ var (
 func pushAndPop(t *testing.T, n int, q Queue) {
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
-		err := q.Push(data)
+		err := q.Push(5, data)
 		assert.NoError(t, err)
 		atomic.AddInt64(&counter, 1)
 	}
@@ -185,20 +283,26 @@ func TestQueueKeys(t *testing.T) {
 
 	q := &rocksQueue{
 		name: "foo",
-		high: 1293712938,
+		pointers: map[uint8]*queuePointer{
+			5: &queuePointer{
+				priority: 5,
+				high:     1293712938,
+			},
+		},
 	}
-	x := q.nextkey()
-	y := q.nextkey()
-	z := q.nextkey()
-	assert.Equal(t, x[0:3], []byte("foo"))
-	assert.Equal(t, x[3], byte(255))
-	assert.Equal(t, int64(1293712938), toInt64(x[4:12]))
-	assert.Equal(t, int64(1293712939), toInt64(y[4:12]))
-	assert.Equal(t, int64(1293712940), toInt64(z[4:12]))
+	x := q.nextkey(5)
+	y := q.nextkey(5)
+	z := q.nextkey(5)
+	_, _, seqX := decodeKey("foo", x)
+	_, _, seqY := decodeKey("foo", y)
+	_, _, seqZ := decodeKey("foo", z)
+	assert.Equal(t, uint64(1293712939), seqX)
+	assert.Equal(t, uint64(1293712940), seqY)
+	assert.Equal(t, uint64(1293712941), seqZ)
 
-	x = q.nextkey()
-	assert.Equal(t, x[0:3], []byte("foo"))
-	assert.Equal(t, int64(1293712941), toInt64(x[4:12]))
+	x = q.nextkey(5)
+	_, _, seqX = decodeKey("foo", x)
+	assert.Equal(t, uint64(1293712942), seqX)
 }
 
 func TestClearAndPush(t *testing.T) {
@@ -210,15 +314,15 @@ func TestClearAndPush(t *testing.T) {
 
 	_, err = q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), q.Size())
-	q.Push([]byte("123o8123"))
-	q.Push([]byte("123o8123"))
-	assert.Equal(t, int64(2), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
+	q.Push(5, []byte("123o8123"))
+	q.Push(5, []byte("123o8123"))
+	assert.Equal(t, uint64(2), q.Size())
 	_, err = q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), q.Size())
-	q.Push([]byte("123o8123"))
-	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
+	q.Push(5, []byte("123o8123"))
+	assert.Equal(t, uint64(1), q.Size())
 }
 
 func BenchmarkQueuePerformance(b *testing.B) {
@@ -235,7 +339,7 @@ func BenchmarkQueuePerformance(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		switch i % 2 {
 		case 0:
-			q.Push(data)
+			q.Push(5, data)
 		case 1:
 			q.Pop()
 		}
@@ -261,24 +365,24 @@ func TestReopening(t *testing.T) {
 	a, err := store.GetQueue("another")
 	assert.NoError(t, err)
 
-	err = c.Push([]byte("critical"))
+	err = c.Push(5, []byte("critical"))
 	assert.NoError(t, err)
-	err = d.Push([]byte("default"))
+	err = d.Push(5, []byte("default"))
 	assert.NoError(t, err)
-	err = d.Push([]byte("default"))
+	err = d.Push(5, []byte("default"))
 	assert.NoError(t, err)
-	err = b.Push([]byte("bulk"))
+	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
-	err = b.Push([]byte("bulk"))
+	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
-	err = b.Push([]byte("bulk"))
+	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(3), b.Size())
-	assert.Equal(t, int64(2), d.Size())
-	assert.Equal(t, int64(1), c.Size())
-	assert.Equal(t, int64(0), e.Size())
-	assert.Equal(t, int64(0), a.Size())
+	assert.Equal(t, uint64(3), b.Size())
+	assert.Equal(t, uint64(2), d.Size())
+	assert.Equal(t, uint64(1), c.Size())
+	assert.Equal(t, uint64(0), e.Size())
+	assert.Equal(t, uint64(0), a.Size())
 
 	store.Close()
 
@@ -301,15 +405,15 @@ func TestReopening(t *testing.T) {
 		fmt.Println(q.Name(), q.Size())
 	})
 
-	assert.Equal(t, int64(3), b.Size())
-	assert.Equal(t, int64(2), d.Size())
-	assert.Equal(t, int64(1), c.Size())
-	assert.Equal(t, int64(0), e.Size())
-	assert.Equal(t, int64(0), a.Size())
+	assert.Equal(t, uint64(3), b.Size())
+	assert.Equal(t, uint64(2), d.Size())
+	assert.Equal(t, uint64(1), c.Size())
+	assert.Equal(t, uint64(0), e.Size())
+	assert.Equal(t, uint64(0), a.Size())
 
-	err = b.Push([]byte("bulk"))
+	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
-	assert.Equal(t, int64(4), b.Size())
+	assert.Equal(t, uint64(4), b.Size())
 
 	var keys [2][]byte
 	b.Each(func(idx int, k, v []byte) error {
@@ -323,7 +427,7 @@ func TestReopening(t *testing.T) {
 	keys[1] = []byte("somefakekey")
 	err = b.Delete(keys[0:2])
 	assert.NoError(t, err)
-	assert.Equal(t, int64(3), b.Size())
+	assert.Equal(t, uint64(3), b.Size())
 
 	data, err := b.Pop()
 	assert.NoError(t, err)
@@ -334,12 +438,12 @@ func TestReopening(t *testing.T) {
 	data, err = b.Pop()
 	assert.NoError(t, err)
 	assert.NotNil(t, data)
-	assert.Equal(t, int64(0), b.Size())
+	assert.Equal(t, uint64(0), b.Size())
 
 	data, err = b.Pop()
 	assert.NoError(t, err)
 	assert.Nil(t, data)
-	assert.Equal(t, int64(0), b.Size())
+	assert.Equal(t, uint64(0), b.Size())
 
 	store.Close()
 }
@@ -376,13 +480,13 @@ func TestBlockingPop(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		time.Sleep(2 * time.Millisecond)
-		q.Push([]byte("somedata"))
+		q.Push(5, []byte("somedata"))
 		time.Sleep(2 * time.Millisecond)
-		q.Push([]byte("somedata"))
+		q.Push(5, []byte("somedata"))
 		time.Sleep(2 * time.Millisecond)
-		q.Push([]byte("somedata"))
+		q.Push(5, []byte("somedata"))
 		time.Sleep(50 * time.Millisecond)
-		q.Push([]byte("somedata"))
+		q.Push(5, []byte("somedata"))
 	}()
 
 	var count int
@@ -412,7 +516,7 @@ func TestBlockingPop(t *testing.T) {
 
 	assert.Equal(t, 3, count)
 	assert.Equal(t, 1, timedout)
-	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, uint64(1), q.Size())
 	assert.Equal(t, 0, q.(*rocksQueue).waiters.Len())
 
 	q.Clear()

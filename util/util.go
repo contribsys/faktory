@@ -8,7 +8,6 @@ import (
 	"fmt"
 	mathrand "math/rand"
 	"os"
-	"reflect"
 	"runtime"
 	"time"
 )
@@ -24,6 +23,7 @@ func Darwin() bool {
 	return b
 }
 
+// FileExists checks if given file exists
 func FileExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -34,7 +34,7 @@ func FileExists(path string) (bool, error) {
 	return true, nil
 }
 
-// readLines reads a whole file into memory
+// ReadLines reads a whole file into memory
 // and returns a slice of its lines.
 func ReadLines(data []byte) ([]string, error) {
 	var lines []string
@@ -65,16 +65,13 @@ func Log() Logger {
 	return logg
 }
 
-func Error(msg string, err error, stack []byte) {
-	logg.Error(msg, reflect.TypeOf(err).Name(), err.Error())
-	if stack != nil {
-		logg.Error(string(stack))
-	}
+func Error(msg string, err error) {
+	logg.WithError(err).Error(msg)
 }
 
 // Uh oh, not good but not worthy of process death
-func Warn(args ...interface{}) {
-	logg.Warn(args...)
+func Warn(arg string) {
+	logg.Warn(arg)
 }
 
 func Warnf(msg string, args ...interface{}) {
@@ -82,9 +79,9 @@ func Warnf(msg string, args ...interface{}) {
 }
 
 // Typical logging output, the default level
-func Info(args ...interface{}) {
+func Info(arg string) {
 	if LogInfo {
-		logg.Info(args...)
+		logg.Info(arg)
 	}
 }
 
@@ -95,14 +92,16 @@ func Infof(msg string, args ...interface{}) {
 	}
 }
 
-// -l debug: Verbosity level which helps track down production issues
-func Debug(args ...interface{}) {
+// Verbosity level helps track down production issues:
+//  -l debug
+func Debug(arg string) {
 	if LogDebug {
-		logg.Debug(args...)
+		logg.Debug(arg)
 	}
 }
 
-// -l debug: Verbosity level which helps track down production issues
+// Verbosity level helps track down production issues:
+//  -l debug
 func Debugf(msg string, args ...interface{}) {
 	if LogDebug {
 		logg.Debugf(msg, args...)
@@ -138,10 +137,8 @@ func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
 }
 
-/*
- * Gather a backtrace for the caller.
- * Return a slice of up to N stack frames.
- */
+// Backtrace gathers a backtrace for the caller.
+// Return a slice of up to N stack frames.
 func Backtrace(size int) []string {
 	pc := make([]uintptr, size)
 	n := runtime.Callers(2, pc)

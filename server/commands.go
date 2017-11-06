@@ -65,6 +65,8 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	job.EnsureValidPriority()
+
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
 		if err != nil {
@@ -103,7 +105,7 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = q.Push(data)
+	err = q.Push(job.GetPriority(), data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -168,7 +170,7 @@ func ack(c *Connection, s *Server, cmd string) {
 }
 
 func uptimeInSeconds(s *Server) int {
-	return int(time.Now().Sub(s.Stats.StartedAt).Seconds())
+	return int(time.Since(s.Stats.StartedAt).Seconds())
 }
 
 func currentMemoryUsage(s *Server) string {

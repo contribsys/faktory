@@ -11,10 +11,8 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-var (
-	// about one month
-	maxRetryDelay = 720 * time.Hour
-)
+// about one month
+// var maxRetryDelay = 720 * time.Hour
 
 type FailPayload struct {
 	Jid          string   `json:"jid"`
@@ -102,8 +100,10 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 	}
 
 	err = s.store.Retries().AddElement(when, job.Jid, bytes)
-	atomic.AddInt64(&s.Stats.Failures, 1)
-	return nil
+	if err == nil {
+		atomic.AddInt64(&s.Stats.Failures, 1)
+	}
+	return err
 }
 
 func nextRetry(job *faktory.Job) time.Time {

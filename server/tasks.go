@@ -57,8 +57,8 @@ func (ts *taskRunner) AddTask(sec int64, thing taskable) {
 }
 
 func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
+	waiter.Add(1)
 	go func() {
-		waiter.Add(1)
 		defer waiter.Done()
 
 		// add random jitter so the runner goroutine doesn't fire at 000ms

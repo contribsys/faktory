@@ -26,7 +26,7 @@ func fetchPassword(configDir string) (string, error) {
 	if exists {
 		data, err := ioutil.ReadFile(pwd)
 		if err != nil {
-			util.Warn("Unable to read file %s: %s", pwd, err.Error())
+			util.Error("Unable to read file "+pwd, err)
 		}
 		return strings.TrimSpace(string(data)), nil
 	}

@@ -7,9 +7,7 @@ import (
 	"github.com/contribsys/gorocksdb"
 )
 
-/*
- * Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
- */
+// Retries and Scheduled jobs are held in a bucket, sorted based on their timestamp.
 type rocksSortedSet struct {
 	name string
 	db   *gorocksdb.DB

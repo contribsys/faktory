@@ -20,7 +20,6 @@ func main() {
 		StorageDirectory: opts.StorageDirectory,
 		ConfigDirectory:  opts.ConfigDirectory,
 		Environment:      opts.Environment,
-		DisableTls:       opts.DisableTls,
 	})
 	if err != nil {
 		util.Error("Unable to create a new server", err)

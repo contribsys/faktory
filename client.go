@@ -3,7 +3,6 @@ package faktory
 import (
 	"bufio"
 	"crypto/sha256"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +10,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -118,27 +116,14 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
-	local, err := regexp.Match("\\Alocalhost:", []byte(srv.Address))
+	var conn net.Conn
+	dial := &net.Dialer{Timeout: srv.Timeout}
+	conn, err := dial.Dial(srv.Network, srv.Address)
 	if err != nil {
 		return nil, err
 	}
-	//util.Debugf("Connecting to %v TLS:%v", srv, !local)
-
-	var conn net.Conn
-	dial := &net.Dialer{Timeout: srv.Timeout}
-	if local {
-		conn, err = dial.Dial(srv.Network, srv.Address)
-		if err != nil {
-			return nil, err
-		}
-		if x, ok := conn.(*net.TCPConn); ok {
-			x.SetKeepAlive(true)
-		}
-	} else {
-		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
-		if err != nil {
-			return nil, err
-		}
+	if x, ok := conn.(*net.TCPConn); ok {
+		x.SetKeepAlive(true)
 	}
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)

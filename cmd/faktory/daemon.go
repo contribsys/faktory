@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
@@ -25,7 +23,7 @@ func main() {
 		DisableTls:       opts.DisableTls,
 	})
 	if err != nil {
-		fmt.Println(err)
+		util.Error("Unable to create a new server", err)
 		return
 	}
 
@@ -35,7 +33,7 @@ func main() {
 
 	err = s.Start()
 	if err != nil {
-		fmt.Println(err)
+		util.Error("Unable to start the server", err)
 		return
 	}
 }

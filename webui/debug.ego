@@ -31,6 +31,10 @@ func ego_debug(w io.Writer, req *http.Request) {
               <option name="<%= locale %>" <% if locale == req.Context().(*DefaultContext).locale { %> selected <% } %> > <%= locale %> </option>
             <% } %>
           </select>
+          <span style="font-size: small">
+            Want to help us improve the translations?
+            <a href="https://github.com/contribsys/faktory/tree/master/webui/static/locales">Submit a PR</a>.
+          </span>
         </td>
     </tr>
     <tr>

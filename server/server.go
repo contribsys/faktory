@@ -160,7 +160,7 @@ func (s *Server) Start() error {
 			return nil
 		}
 		s.pending.Add(1)
-		go func() {
+		go func(conn net.Conn) {
 			defer s.pending.Done()
 
 			c := startConnection(conn, s)
@@ -168,7 +168,7 @@ func (s *Server) Start() error {
 				return
 			}
 			processLines(c, s)
-		}()
+		}(conn)
 	}
 }
 

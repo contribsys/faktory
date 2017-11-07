@@ -4,7 +4,8 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	mathrand "math/rand"
-	"time"
+
+	"github.com/contribsys/faktory/util"
 )
 
 type Failure struct {
@@ -41,7 +42,7 @@ func NewJob(jobtype string, args ...interface{}) *Job {
 		Queue:     "default",
 		Args:      args,
 		Jid:       randomJid(),
-		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+		CreatedAt: util.Nows(),
 		Retry:     25,
 	}
 }

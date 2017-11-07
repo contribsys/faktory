@@ -9,16 +9,23 @@ import (
 )
 
 //
-// This represents a single worker process.  It may have many network
-// connections open to Faktory.  Each worker process should send a BEAT
-// command every 15 seconds.  If Faktory does not receive a BEAT from a
-// worker process within 60 seconds, it expires and is removed from the
-// Busy page.
+// This represents a single client process.  It may have many network
+// connections open to Faktory.
 //
-// From Faktory's POV, the process can BEAT again and resume normal operations, e.g.
-// due to a network partition.
-// If a process dies, it will be removed after 1 minute and its jobs recovered after the
-// job reservation timeout has passed (typically 30 minutes).
+// A client can be a producer AND/OR consumer of jobs.  Typically a process will
+// either only produce jobs (like a webapp pushing jobs) or produce/consume jobs
+// (like a faktory worker process where a job can create other jobs while
+// executing another job).
+//
+// Each Faktory worker process should send a BEAT command every 15 seconds.
+// Only consumers should send a BEAT.  If Faktory does not receive a BEAT from a
+// worker process within 60 seconds, it expires and is removed from the Busy
+// page.
+//
+// From Faktory's POV, the worker can BEAT again and resume normal operations,
+// e.g.  due to a network partition.  If a process dies, it will be removed
+// after 1 minute and its jobs recovered after the job reservation timeout has
+// passed (typically 30 minutes).
 //
 // A worker process has a simple three-state lifecycle:
 //
@@ -32,14 +39,15 @@ import (
 // threads that are still busy are forcefully killed and their associated jobs reported
 // as FAILed so they will be retried shortly.
 //
-// A worker process should never stop sending BEAT.  Even after "quiet" or "terminate", the BEAT
-// should continue, only stopping due to process exit().
-// Workers should never move backward in state - you cannot "unquiet" a worker, it must be restarted.
+// A worker process should never stop sending BEAT.  Even after "quiet" or
+// "terminate", the BEAT should continue, only stopping due to process exit().
+// Workers should never move backward in state - you cannot "unquiet" a worker,
+// it must be restarted.
 //
 // Workers will typically also respond to standard Unix signals.
 // faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
 //
-type ClientWorker struct {
+type ClientData struct {
 	Hostname     string   `json:"hostname"`
 	Wid          string   `json:"wid"`
 	Pid          int      `json:"pid"`
@@ -48,6 +56,8 @@ type ClientWorker struct {
 	Version      uint8    `json:"v"`
 	StartedAt    time.Time
 
+	// this only applies to clients that are workers and
+	// are sending BEAT
 	lastHeartbeat time.Time
 	state         WorkerState
 }
@@ -60,7 +70,7 @@ const (
 	Terminate
 )
 
-func stateSignal(state WorkerState) string {
+func stateString(state WorkerState) string {
 	switch state {
 	case Quiet:
 		return "quiet"
@@ -71,8 +81,8 @@ func stateSignal(state WorkerState) string {
 	}
 }
 
-func clientWorkerFromHello(data string) (*ClientWorker, error) {
-	var client ClientWorker
+func clientDataFromHello(data string) (*ClientData, error) {
+	var client ClientData
 	err := json.Unmarshal([]byte(data), &client)
 	if err != nil {
 		return nil, err
@@ -81,7 +91,7 @@ func clientWorkerFromHello(data string) (*ClientWorker, error) {
 	return &client, nil
 }
 
-func (worker *ClientWorker) IsQuiet() bool {
+func (worker *ClientData) IsQuiet() bool {
 	return worker.state != Running
 }
 
@@ -89,7 +99,7 @@ func (worker *ClientWorker) IsQuiet() bool {
  * Send "quiet" or "terminate" to the given client
  * worker process.  Other signals are undefined.
  */
-func (worker *ClientWorker) Signal(newstate WorkerState) {
+func (worker *ClientData) Signal(newstate WorkerState) {
 	if worker.state == Running {
 		worker.state = newstate
 		return
@@ -107,11 +117,11 @@ func (worker *ClientWorker) Signal(newstate WorkerState) {
 	}
 }
 
-func (worker *ClientWorker) IsConsumer() bool {
+func (worker *ClientData) IsConsumer() bool {
 	return worker.Wid != ""
 }
 
-func (worker *ClientWorker) BusyCount() int {
+func (worker *ClientData) BusyCount() int {
 	workingMutex.Lock()
 	defer workingMutex.Unlock()
 
@@ -150,7 +160,7 @@ func (r *beatReaper) Execute() error {
 	return nil
 }
 
-func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.RWMutex) int {
+func reapHeartbeats(heartbeats map[string]*ClientData, mu *sync.RWMutex) int {
 	toDelete := []string{}
 
 	mu.RLock()
@@ -174,7 +184,7 @@ func reapHeartbeats(heartbeats map[string]*ClientWorker, mu *sync.RWMutex) int {
 	return count
 }
 
-func updateHeartbeat(client *ClientWorker, heartbeats map[string]*ClientWorker, mu *sync.RWMutex) {
+func updateHeartbeat(client *ClientData, heartbeats map[string]*ClientData, mu *sync.RWMutex) {
 	mu.RLock()
 	val, ok := heartbeats[client.Wid]
 	mu.RUnlock()

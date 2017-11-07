@@ -3,9 +3,11 @@ package tester
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -47,6 +49,9 @@ func TestSystem(t *testing.T) {
 	}()
 
 	s.WaitUntilInitialized()
+
+	// this is a worker process so we need to set the global WID before connecting
+	faktory.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 
 	each := 10000
 	start := time.Now()

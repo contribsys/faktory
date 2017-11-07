@@ -13,7 +13,7 @@ import (
 // Shout out to antirez for his nice design document on it.
 // https://redis.io/topics/protocol
 type Connection struct {
-	client *ClientWorker
+	client *ClientData
 	conn   io.WriteCloser
 	buf    *bufio.Reader
 }

@@ -7,13 +7,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	// This is the protocol version supported by this client.
+	// The server might be running an older or newer version.
+	ExpectedProtocolVersion = 2
 )
 
 type Client struct {
@@ -53,7 +58,8 @@ type Server struct {
 }
 
 var (
-	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+	// Set this to a non-empty value in a consumer process
+	RandomProcessWid = ""
 )
 
 func DefaultServer() *Server {
@@ -155,6 +161,12 @@ func Dial(srv *Server, password string) (*Client, error) {
 		if err != nil {
 			conn.Close()
 			return nil, err
+		}
+		v, ok := hi["v"].(float64)
+		if ok {
+			if ExpectedProtocolVersion != int(v) {
+				fmt.Println("Warning: server and client protocol versions out of sync:", v, ExpectedProtocolVersion)
+			}
 		}
 
 		salt, ok := hi["s"].(string)
@@ -333,7 +345,7 @@ func emptyClientData() *ClientData {
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
 	client.Labels = []string{"golang"}
-	client.Version = 2
+	client.Version = ExpectedProtocolVersion
 	return client
 }
 

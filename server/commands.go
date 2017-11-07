@@ -233,7 +233,7 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	var worker ClientWorker
+	var worker ClientData
 	data := cmd[5:]
 	err := json.Unmarshal([]byte(data), &worker)
 	if err != nil {
@@ -254,6 +254,6 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	if entry.state == Running {
 		c.Ok()
 	} else {
-		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, stateSignal(entry.state))))
+		c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(entry.state))))
 	}
 }

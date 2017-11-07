@@ -58,14 +58,14 @@ func dummyConnection() *Connection {
 	wc := &TestingWriteCloser{output: writeBuffer, Writer: bufio.NewWriter(writeBuffer)}
 
 	return &Connection{
-		client: dummyClientWorker(),
+		client: dummyClientData(),
 		conn:   wc,
 		buf:    bufio.NewReader(strings.NewReader("")),
 	}
 }
 
-func dummyClientWorker() *ClientWorker {
-	return &ClientWorker{
+func dummyClientData() *ClientData {
+	return &ClientData{
 		Hostname:      "foobar.example.com",
 		Wid:           "123k1h23kh",
 		Pid:           70086,

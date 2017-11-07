@@ -36,7 +36,7 @@ func ego_busy(w io.Writer, req *http.Request) {
       <th><%= t(req, "Busy") %></th>
       <th>&nbsp;</th>
     </thead>
-    <% busyWorkers(func(worker *server.ClientWorker) { %>
+    <% busyWorkers(func(worker *server.ClientData) { %>
       <tr>
         <td>
           <code>
@@ -44,7 +44,6 @@ func ego_busy(w io.Writer, req *http.Request) {
           </code>
         </td>
         <td>
-          
           <code><%= worker.Hostname %>:<%= worker.Pid %></code>
           <% for _, label := range worker.Labels { %>
             <span class="label label-info"><%= label %></span>

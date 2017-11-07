@@ -49,13 +49,14 @@ func TestServerStart(t *testing.T) {
 		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 
-		var client ClientWorker
+		var client ClientData
 		hs, err := os.Hostname()
 		assert.NoError(t, err)
 		client.Hostname = hs
 		client.Pid = os.Getpid()
 		client.Wid = strconv.FormatInt(rand.Int63(), 10)
 		client.Labels = []string{"blue", "seven"}
+		client.Version = 2
 
 		val, err := json.Marshal(client)
 		assert.NoError(t, err)

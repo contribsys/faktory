@@ -310,12 +310,13 @@ func TestBusy(t *testing.T) {
 	assert.NoError(t, err)
 
 	wid := "1239123oim,bnsad"
-	wrk := &server.ClientWorker{
+	wrk := &server.ClientData{
 		Hostname:  "foobar.local",
 		Pid:       12345,
 		Wid:       wid,
 		Labels:    []string{"bubba"},
 		StartedAt: time.Now(),
+		Version:   2,
 	}
 	defaultServer.Heartbeats()[wid] = wrk
 

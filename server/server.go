@@ -49,7 +49,7 @@ type Server struct {
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-	heartbeats map[string]*ClientWorker
+	heartbeats map[string]*ClientData
 	hbmu       sync.RWMutex
 
 	initialized chan bool
@@ -73,7 +73,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Options:     opts,
 		Stats:       &RuntimeStats{StartedAt: time.Now()},
 		pending:     &sync.WaitGroup{},
-		heartbeats:  make(map[string]*ClientWorker, 12),
+		heartbeats:  make(map[string]*ClientData, 12),
 		initialized: make(chan bool, 1),
 	}
 
@@ -86,7 +86,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 	return s, nil
 }
 
-func (s *Server) Heartbeats() map[string]*ClientWorker {
+func (s *Server) Heartbeats() map[string]*ClientData {
 	return s.heartbeats
 }
 
@@ -179,8 +179,7 @@ func hash(pwd, salt string, iterations int) string {
 }
 
 var (
-	ProtocolVersion = []byte("2")
-	HashIterations  = rand.Intn(4096) + 1000
+	HashIterations = rand.Intn(4096) + 1000
 )
 
 func startConnection(conn net.Conn, s *Server) *Connection {
@@ -188,8 +187,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	var salt string
-	conn.Write([]byte(`+HI {"v":`))
-	conn.Write(ProtocolVersion)
+	conn.Write([]byte(`+HI {"v":2`))
 	if s.Password != "" {
 		conn.Write([]byte(`,"i":`))
 		iter := strconv.FormatInt(int64(HashIterations), 10)
@@ -220,7 +218,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	client, err := clientWorkerFromHello(line[5:])
+	client, err := clientDataFromHello(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in HELLO", err)
 		conn.Close()

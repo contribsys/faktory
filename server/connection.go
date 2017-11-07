@@ -40,6 +40,11 @@ func (c *Connection) Number(val int) error {
 }
 
 func (c *Connection) Result(msg []byte) error {
+	if msg == nil {
+		_, err := c.conn.Write([]byte("$-1\r\n"))
+		return err
+	}
+
 	_, err := c.conn.Write([]byte("$" + strconv.Itoa(len(msg)) + "\r\n"))
 	if err != nil {
 		return err

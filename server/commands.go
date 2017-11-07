@@ -65,6 +65,8 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	job.EnsureValidPriority()
+
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
 		if err != nil {
@@ -103,7 +105,7 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = q.Push(data)
+	err = q.Push(job.GetPriority(), data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -172,8 +174,7 @@ func uptimeInSeconds(s *Server) int {
 }
 
 func currentMemoryUsage(s *Server) string {
-	// TODO maybe remove this and/or offer a better stat?
-	return "123 MB"
+	return util.MemoryUsage()
 }
 
 func CurrentState(s *Server) (map[string]interface{}, error) {

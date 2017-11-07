@@ -39,11 +39,11 @@ type Store interface {
 
 type Queue interface {
 	Name() string
-	Size() int64
-	Push([]byte) error
+	Size() uint64
+	Push(uint8, []byte) error
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
-	Clear() (int64, error)
+	Clear() (uint64, error)
 
 	// Please note that k/vs are NOT safe to use outside of the func.
 	// You must copy the values if you want to stash them for later use.

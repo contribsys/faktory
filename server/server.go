@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,7 +29,6 @@ type ServerOptions struct {
 	StorageDirectory string
 	ConfigDirectory  string
 	Environment      string
-	DisableTls       bool
 }
 
 type RuntimeStats struct {
@@ -42,10 +40,9 @@ type RuntimeStats struct {
 }
 
 type Server struct {
-	Options   *ServerOptions
-	Stats     *RuntimeStats
-	TLSConfig *tls.Config
-	Password  string
+	Options  *ServerOptions
+	Stats    *RuntimeStats
+	Password string
 
 	listener   net.Listener
 	store      storage.Store
@@ -80,23 +77,11 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		initialized: make(chan bool, 1),
 	}
 
-	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
+	pwd, err := fetchPassword(s.Options.ConfigDirectory)
 	if err != nil {
 		return nil, err
 	}
-	if tlsC != nil {
-		s.TLSConfig = tlsC
-		pwd, err := fetchPassword(s.Options.ConfigDirectory)
-		if err != nil {
-			return nil, err
-		}
-		s.Password = pwd
-
-		// if we need TLS, we need a password too
-		if s.Password == "" {
-			return nil, fmt.Errorf("Cannot enable TLS without a password")
-		}
-	}
+	s.Password = pwd
 
 	return s, nil
 }
@@ -116,21 +101,11 @@ func (s *Server) Start() error {
 	}
 	defer store.Close()
 
-	var listener net.Listener
-
-	if s.TLSConfig != nil {
-		listener, err = tls.Listen("tcp", s.Options.Binding, s.TLSConfig)
-		if err != nil {
-			return err
-		}
-		util.Infof("Now listening securely at %s, press Ctrl-C to stop", s.Options.Binding)
-	} else {
-		listener, err = net.Listen("tcp", s.Options.Binding)
-		if err != nil {
-			return err
-		}
-		util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
+	listener, err := net.Listen("tcp", s.Options.Binding)
+	if err != nil {
+		return err
 	}
+	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
 	s.store = store
@@ -160,7 +135,7 @@ func (s *Server) Start() error {
 			return nil
 		}
 		s.pending.Add(1)
-		go func() {
+		go func(conn net.Conn) {
 			defer s.pending.Done()
 
 			c := startConnection(conn, s)
@@ -168,7 +143,7 @@ func (s *Server) Start() error {
 				return
 			}
 			processLines(c, s)
-		}()
+		}(conn)
 	}
 }
 

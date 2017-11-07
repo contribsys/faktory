@@ -11,7 +11,7 @@ import (
 // Dispatch operations:
 //
 //  - Basic dequeue
-//    - Connection sends POP q1, q2
+//    - Connection sends FETCH q1, q2
 // 	 - Job moved from Queue into Working
 //  - Scheduled
 //  	 - Job Pushed into Queue
@@ -25,7 +25,7 @@ import (
 //
 // How are jobs passed to waiting workers?
 //
-// Socket sends "POP q1, q2, q3"
+// Socket sends "FETCH q1, q2, q3"
 // Connection pops each queue:
 //   store.GetQueue("q1").Pop()
 // and returns if it gets any non-nil data.

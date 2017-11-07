@@ -93,7 +93,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentPage := int64(1)
+	currentPage := uint64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
@@ -101,9 +101,9 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = int64(val)
+		currentPage = uint64(val)
 	}
-	count := int64(25)
+	count := uint64(25)
 
 	ego_queue(w, r, q, count, currentPage)
 }
@@ -123,7 +123,7 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentPage := int64(1)
+	currentPage := uint64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
@@ -131,9 +131,9 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = int64(val)
+		currentPage = uint64(val)
 	}
-	count := int64(25)
+	count := uint64(25)
 
 	ego_listRetries(w, r, set, count, currentPage)
 }
@@ -190,7 +190,7 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentPage := int64(1)
+	currentPage := uint64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
@@ -198,9 +198,9 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = int64(val)
+		currentPage = uint64(val)
 	}
-	count := int64(25)
+	count := uint64(25)
 
 	ego_listScheduled(w, r, set, count, currentPage)
 }
@@ -258,7 +258,7 @@ func morgueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentPage := int64(1)
+	currentPage := uint64(1)
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
@@ -266,9 +266,9 @@ func morgueHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = int64(val)
+		currentPage = uint64(val)
 	}
-	count := int64(25)
+	count := uint64(25)
 
 	ego_listDead(w, r, set, count, currentPage)
 }

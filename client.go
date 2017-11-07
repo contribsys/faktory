@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -122,15 +121,10 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
-	local, err := regexp.Match("\\Alocalhost:", []byte(srv.Address))
-	if err != nil {
-		return nil, err
-	}
-	//util.Debugf("Connecting to %v TLS:%v", srv, !local)
-
+	var err error
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
-	if local {
+	if srv.Network == "tcp" {
 		conn, err = dial.Dial(srv.Network, srv.Address)
 		if err != nil {
 			return nil, err
@@ -144,6 +138,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 			return nil, err
 		}
 	}
+
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
@@ -380,6 +375,9 @@ func readString(rdr *bufio.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if val == nil {
+		return "", nil
+	}
 
 	return string(val), nil
 }
@@ -410,6 +408,9 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		count, err := strconv.Atoi(string(line))
 		if err != nil {
 			return nil, err
+		}
+		if count == -1 {
+			return nil, nil
 		}
 		var buff []byte
 		if count > 0 {

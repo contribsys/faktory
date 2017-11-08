@@ -70,7 +70,7 @@ func pop(count int) {
 		handleError(err)
 		return
 	}
-	util.Info(hash)
+	util.Infof("%v", hash)
 
 	fmt.Printf("Processed %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
 }
@@ -101,7 +101,7 @@ func push(count int) {
 		handleError(err)
 		return
 	}
-	util.Info(hash)
+	util.Infof("%v", hash)
 
 	fmt.Printf("Enqueued %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
 }

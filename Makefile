@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.5.0
+VERSION=0.6.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -44,7 +44,7 @@ dimg: ## Make a Docker image for the current version
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
-	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
+	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419
 
 generate:
 	go generate github.com/contribsys/faktory/webui
@@ -60,6 +60,7 @@ cover:
 build: clean generate
 	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
 	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+	go build -ldflags="-s -w" -o loadtest test/load/main.go
 
 megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true

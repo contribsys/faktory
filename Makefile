@@ -44,7 +44,7 @@ dimg: ## Make a Docker image for the current version
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
-	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419
+	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419
 
 generate:
 	go generate github.com/contribsys/faktory/webui

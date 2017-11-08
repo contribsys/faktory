@@ -60,6 +60,9 @@ cover:
 build: clean generate
 	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
 	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+
+# this is a separate target because loadtest doesn't need rocksdb or webui
+build_load:
 	go build -ldflags="-s -w" -o loadtest test/load/main.go
 
 megacheck:

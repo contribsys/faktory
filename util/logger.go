@@ -42,7 +42,6 @@ type LogHandler struct {
 	mu     sync.Mutex
 	writer io.Writer
 	tty    bool
-	pid    int
 }
 
 const (
@@ -59,9 +58,9 @@ func (h *LogHandler) HandleLog(e *alog.Entry) error {
 	defer h.mu.Unlock()
 
 	if h.tty {
-		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s %d ", color, level, ts, h.pid)
+		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s ", color, level, ts)
 	} else {
-		fmt.Fprintf(h.writer, "%s %s %d ", level, ts, h.pid)
+		fmt.Fprintf(h.writer, "%s %s ", level, ts)
 	}
 
 	for _, name := range names {
@@ -73,7 +72,7 @@ func (h *LogHandler) HandleLog(e *alog.Entry) error {
 }
 
 func NewLogger(level string, production bool) Logger {
-	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd())), pid: os.Getpid()})
+	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd()))})
 	alog.SetLevelFromString(level)
 	return alog.Log
 }

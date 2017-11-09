@@ -47,7 +47,11 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419
+		-v faktory-data:/var/lib/faktory \
+		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419 -e production
+
+dpush: tag
+	docker push contribsys/faktory:$(VERSION)
 
 generate:
 	go generate github.com/contribsys/faktory/webui

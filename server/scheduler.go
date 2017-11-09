@@ -77,8 +77,8 @@ func (ra *rocksAdapter) Push(name string, priority uint8, elm []byte) error {
 	}
 	return que.Push(priority, elm)
 }
-func (ra *rocksAdapter) Prune(string) ([][]byte, error) {
-	return ra.ts.RemoveBefore(util.Nows())
+func (ra *rocksAdapter) Prune(timestamp string) ([][]byte, error) {
+	return ra.ts.RemoveBefore(timestamp)
 }
 func (ra *rocksAdapter) Size() int64 {
 	return ra.ts.Size()

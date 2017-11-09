@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"regexp"
 
@@ -104,6 +105,14 @@ func (store *rocksStore) Stats() map[string]string {
 		"stats": store.db.GetProperty("rocksdb.stats"),
 		"name":  store.db.Name(),
 	}
+}
+
+func (store *rocksStore) Processed() int64 {
+	return atomic.LoadInt64(&store.history.TotalProcessed)
+}
+
+func (store *rocksStore) Failures() int64 {
+	return atomic.LoadInt64(&store.history.TotalFailures)
 }
 
 // queues are iterated in sorted, lexigraphical order

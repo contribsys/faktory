@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"sync/atomic"
 	"time"
 
 	"github.com/contribsys/faktory"
@@ -101,7 +100,7 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 
 	err = s.store.Retries().AddElement(when, job.Jid, bytes)
 	if err == nil {
-		atomic.AddInt64(&s.Stats.Failures, 1)
+		s.store.Failure()
 	}
 	return err
 }

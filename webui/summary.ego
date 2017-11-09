@@ -7,11 +7,11 @@ func ego_summary(w io.Writer, req *http.Request) {
 %>
 <ul class="list-unstyled summary row">
   <li class="processed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(defaultServer.Stats.Processed) %></span>
+    <span class="count"><%= numberWithDelimiter(defaultServer.Store().Processed()) %></span>
     <span class="desc"><%= t(req, "Processed") %></span>
   </li>
   <li class="failed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(defaultServer.Stats.Failures) %></span>
+    <span class="count"><%= numberWithDelimiter(defaultServer.Store().Failures()) %></span>
     <span class="desc"><%= t(req, "Failed") %></span>
   </li>
   <li class="busy col-sm-1">

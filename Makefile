@@ -79,12 +79,6 @@ megacheck:
 fmt: ## Format the code
 	go fmt ./...
 
-swork: ## Run a simple Ruby worker with TLS, see also "make srun"
-	cd test/ruby && FAKTORY_PROVIDER=FURL \
-		FURL=tcp://:password123@localhost.contribsys.com:7419 \
-		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
-
-
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
@@ -100,10 +94,7 @@ repl: clean generate ## Run the Faktory CLI
 	go run cmd/faktory-cli/repl.go -l debug -e development
 
 run: clean generate ## Run Faktory daemon locally
-	go run cmd/faktory/daemon.go -l debug -e development
-
-srun: clean generate ## Run Faktory daemon locally with TLS
-	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
+	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
 
 cssh:
 	pushd build/centos && vagrant up && vagrant ssh

@@ -91,6 +91,14 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 		}
 	}
 
+	if job.Failure.RetryCount < job.Retry {
+		return s.retryLater(job)
+	} else {
+		return s.sendToMorgue(job)
+	}
+}
+
+func (s *Server) retryLater(job *faktory.Job) error {
 	when := util.Thens(nextRetry(job))
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
@@ -103,6 +111,17 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 		s.store.Failure()
 	}
 	return err
+}
+
+func (s *Server) sendToMorgue(job *faktory.Job) error {
+	bytes, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	atomic.AddInt64(&s.Stats.Failures, 1)
+	deadTimeout := util.Thens(time.Now().Add(time.Duration(180*24*60*60) * time.Second)) // TODO deadTimeout MUST be configurable
+	return s.store.Dead().AddElement(deadTimeout, job.Jid, bytes)
 }
 
 func nextRetry(job *faktory.Job) time.Time {

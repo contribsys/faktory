@@ -36,7 +36,6 @@ func TestStats(t *testing.T) {
 	assert.NoError(t, err)
 
 	defaultServer.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
-	defaultServer.Stats.Processed = 123
 
 	w := httptest.NewRecorder()
 	statsHandler(w, req)
@@ -50,10 +49,6 @@ func TestStats(t *testing.T) {
 	s := content["server"].(map[string]interface{})
 	uid := s["uptime"].(float64)
 	assert.Equal(t, float64(1234567), uid)
-
-	s = content["faktory"].(map[string]interface{})
-	proc := s["total_processed"].(float64)
-	assert.Equal(t, float64(123), proc)
 }
 
 func TestQueues(t *testing.T) {

@@ -25,6 +25,10 @@ type Store interface {
 	EnqueueFrom(SortedSet, []byte) error
 
 	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
+	Success() error
+	Processed() int64
+	Failure() error
+	Failures() int64
 
 	// creates a backup of the current database
 	Backup() error

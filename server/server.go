@@ -32,8 +32,6 @@ type ServerOptions struct {
 }
 
 type RuntimeStats struct {
-	Processed   int64
-	Failures    int64
 	Connections int64
 	Commands    int64
 	StartedAt   time.Time

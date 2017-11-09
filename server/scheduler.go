@@ -42,7 +42,15 @@ func (s *scanner) Execute() error {
 			util.Error("Unable to unmarshal json", err)
 			continue
 		}
-		err = s.adapter.Push(job.Queue, job.GetPriority(), elm)
+
+		job.EnqueuedAt = util.Nows()
+		data, err := json.Marshal(job)
+		if err != nil {
+			util.Error("Unable to marshal json", err)
+			continue
+		}
+
+		err = s.adapter.Push(job.Queue, job.GetPriority(), data)
 		if err != nil {
 			util.Warnf("Error pushing job to '%s': %s", job.Queue, err.Error())
 			continue

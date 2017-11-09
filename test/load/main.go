@@ -2,121 +2,158 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/contribsys/faktory"
-	"github.com/contribsys/faktory/util"
+)
+
+var (
+	jobs           = int64(30000)
+	threads        = int64(10)
+	opsCount []int = nil
+	queues         = []string{
+		"queue0", "queue1", "queue2", "queue3", "queue4",
+	}
+	pops   = int64(0)
+	pushes = int64(0)
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
-		os.Exit(1)
-	}
-	if os.Args[1] != "push" && os.Args[1] != "pop" {
-		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
-		os.Exit(1)
-	}
-	count, err := strconv.ParseInt(os.Args[2], 10, 32)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "./load [push|pop] [num_jobs]\n")
-		os.Exit(1)
+	argc := len(os.Args)
+	if argc > 1 {
+		aops, err := strconv.ParseInt(os.Args[1], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jobs = aops
 	}
 
-	if os.Args[1] == "push" {
-		push(int(count))
+	if argc > 2 {
+		athreads, err := strconv.ParseInt(os.Args[2], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		threads = athreads
+	}
+
+	seed := int64(420)
+	if argc > 3 {
+		aseed, err := strconv.ParseInt(os.Args[3], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		seed = aseed
+	}
+
+	fmt.Printf("Running loadtest with %d jobs and %d threads\n", jobs, threads)
+
+	client, err := faktory.Open()
+	if err != nil {
+		handleError(err)
 		return
 	}
-	pop(int(count))
+	defer client.Close()
+	client.Flush()
+
+	rand.Seed(int64(seed))
+	opsCount = make([]int, threads)
+	run()
 }
 
-func pop(count int) {
-	time.Sleep(300 * time.Millisecond)
-	client, err := faktory.Dial(faktory.DefaultServer(), "123456")
+func run() {
+	start := time.Now()
+	var waiter sync.WaitGroup
+	for i := int64(0); i < threads; i++ {
+		waiter.Add(1)
+		go func(idx int64) {
+			defer waiter.Done()
+			stress(idx)
+		}(i)
+	}
+
+	waiter.Wait()
+	stop := time.Now().Sub(start)
+	fmt.Printf("Processed %d pushes and %d pops in %2f seconds, rate: %f jobs/s\n", pushes, pops, stop.Seconds(), float64(jobs)/stop.Seconds())
+	//fmt.Println(opsCount)
+}
+
+func stress(idx int64) {
+	opsCount[idx] = 0
+
+	client, err := faktory.Open()
 	if err != nil {
 		handleError(err)
 		return
 	}
 	defer client.Close()
 
-	client.Beat()
+	randomQueues := shuffle(queues)
 
-	start := time.Now()
-	util.Info("Popping")
-	for i := 0; i < count; i++ {
-		job, err := client.Fetch("default")
-		if err != nil {
-			handleError(err)
-			return
-		}
-		if i%100 == 99 {
-			err = client.Fail(job.Jid, os.ErrClosed, nil)
+	for {
+		if idx%2 == 0 {
+			push(client, randomQueue())
+			newp := atomic.AddInt64(&pushes, 1)
+			if newp >= jobs {
+				return
+			}
 		} else {
-			err = client.Ack(job.Jid)
+			pop(client, randomQueues)
+			newp := atomic.AddInt64(&pops, 1)
+			if newp >= jobs {
+				return
+			}
 		}
-		if err != nil {
-			handleError(err)
-			return
-		}
+		opsCount[idx] += 1
 	}
-	util.Info("Done")
-	stop := time.Since(start)
-	hash, err := client.Info()
-	if err != nil {
-		handleError(err)
-		return
-	}
-	util.Infof("%v", hash)
-
-	fmt.Printf("Processed %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
 }
 
-func push(count int) {
-	time.Sleep(300 * time.Millisecond)
-	client, err := faktory.Dial(faktory.DefaultServer(), "123456")
-	if err != nil {
-		handleError(err)
-		return
-	}
-	defer client.Close()
-
-	client.Beat()
-
-	start := time.Now()
-	util.Info("Pushing")
-	for i := 0; i < count; i++ {
-		if err = pushJob(client, i); err != nil {
-			handleError(err)
-			return
-		}
-	}
-	util.Info("Done")
-	stop := time.Since(start)
-	hash, err := client.Info()
-	if err != nil {
-		handleError(err)
-		return
-	}
-	util.Infof("%v", hash)
-
-	fmt.Printf("Enqueued %d jobs in %2f seconds, rate: %f jobs/s\n", count, stop.Seconds(), float64(count)/stop.Seconds())
+func randomQueue() string {
+	return queues[rand.Intn(5)]
 }
 
-func pushJob(client *faktory.Client, idx int) error {
-	j := &faktory.Job{
-		Jid:      util.RandomJid(),
-		Queue:    "default",
-		Type:     "SomeJob",
-		Priority: uint8(rand.Intn(9) + 1),
-		Args:     []interface{}{1, "string", 3},
+func pop(client *faktory.Client, queues []string) {
+	job, err := client.Fetch(queues...)
+	if err != nil {
+		handleError(err)
+		return
 	}
-	return client.Push(j)
+	if rand.Intn(100) == 99 {
+		err = client.Fail(job.Jid, os.ErrClosed, nil)
+	} else {
+		err = client.Ack(job.Jid)
+	}
+	if err != nil {
+		handleError(err)
+		return
+	}
+}
+
+func push(client *faktory.Client, queue string) {
+	j := faktory.NewJob("SomeJob", []interface{}{1, "string", 3})
+	j.Priority = uint8(rand.Intn(9) + 1)
+	j.Queue = queue
+	err := client.Push(j)
+	if err != nil {
+		handleError(err)
+		return
+	}
 }
 
 func handleError(err error) {
-	fmt.Println(strings.Replace(err.Error(), "\n", "", -1))
+	fmt.Println(err.Error())
+}
+
+func shuffle(src []string) []string {
+	dest := make([]string, len(src))
+	perm := rand.Perm(len(src))
+	for i, v := range perm {
+		dest[v] = src[i]
+	}
+	return dest
 }

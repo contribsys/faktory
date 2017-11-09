@@ -72,6 +72,9 @@ build: clean generate
 build_load:
 	go build -ldflags="-s -w" -o loadtest test/load/main.go
 
+load: # not war
+	go run test/load/main.go 30000 10
+
 megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 

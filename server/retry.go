@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
-// about one month
-// var maxRetryDelay = 720 * time.Hour
+// six months
+var deadTTL = 180 * 24 * time.Hour
 
 type FailPayload struct {
 	Jid          string   `json:"jid"`
@@ -22,6 +23,16 @@ type FailPayload struct {
 
 func fail(c *Connection, s *Server, cmd string) {
 	raw := cmd[5:]
+
+	err := failProcessor(s.store, raw)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+	c.Ok()
+}
+
+func failProcessor(store storage.Store, raw string) error {
 	errtype := "unknown"
 	msg := "unknown"
 	var backtrace []string
@@ -29,13 +40,11 @@ func fail(c *Connection, s *Server, cmd string) {
 	var failure FailPayload
 	err := json.Unmarshal([]byte(raw), &failure)
 	if err != nil {
-		c.Error(cmd, err)
-		return
+		return err
 	}
 	jid := failure.Jid
 	if jid == "" {
-		c.Error(cmd, fmt.Errorf("Missing JID"))
-		return
+		return fmt.Errorf("Missing JID")
 	}
 
 	if failure.ErrorType != "" {
@@ -55,25 +64,29 @@ func fail(c *Connection, s *Server, cmd string) {
 		backtrace = backtrace[0:50]
 	}
 
-	err = s.Fail(jid, msg, errtype, backtrace)
+	err = Fail(store, jid, msg, errtype, backtrace)
 	if err != nil {
-		c.Error(cmd, err)
-		return
+		return err
 	}
 
-	//util.Debugf("%s Failure %v", jid, failure)
-
-	c.Ok()
+	return nil
 }
 
-func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
-	job, err := acknowledge(jid, s.store.Working())
+func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) error {
+	job, err := acknowledge(jid, store.Working())
 	if err != nil {
 		return err
 	}
 	if job == nil {
 		// job has already been ack'd?
 		return fmt.Errorf("Cannot fail %s, not found in working set", jid)
+	}
+
+	store.Failure()
+
+	if job.Retry == 0 {
+		// no retry, no death, completely ephemeral, goodbye
+		return nil
 	}
 
 	if job.Failure != nil {
@@ -92,13 +105,12 @@ func (s *Server) Fail(jid, msg, errtype string, backtrace []string) error {
 	}
 
 	if job.Failure.RetryCount < job.Retry {
-		return s.retryLater(job)
-	} else {
-		return s.sendToMorgue(job)
+		return retryLater(store, job)
 	}
+	return sendToMorgue(store, job)
 }
 
-func (s *Server) retryLater(job *faktory.Job) error {
+func retryLater(store storage.Store, job *faktory.Job) error {
 	when := util.Thens(nextRetry(job))
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
@@ -106,22 +118,17 @@ func (s *Server) retryLater(job *faktory.Job) error {
 		return err
 	}
 
-	err = s.store.Retries().AddElement(when, job.Jid, bytes)
-	if err == nil {
-		s.store.Failure()
-	}
-	return err
+	return store.Retries().AddElement(when, job.Jid, bytes)
 }
 
-func (s *Server) sendToMorgue(job *faktory.Job) error {
+func sendToMorgue(store storage.Store, job *faktory.Job) error {
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
 
-	atomic.AddInt64(&s.Stats.Failures, 1)
-	deadTimeout := util.Thens(time.Now().Add(time.Duration(180*24*60*60) * time.Second)) // TODO deadTimeout MUST be configurable
-	return s.store.Dead().AddElement(deadTimeout, job.Jid, bytes)
+	expiry := util.Thens(time.Now().Add(deadTTL))
+	return store.Dead().AddElement(expiry, job.Jid, bytes)
 }
 
 func nextRetry(job *faktory.Job) time.Time {

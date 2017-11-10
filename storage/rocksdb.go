@@ -6,9 +6,11 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"regexp"
 
+	"github.com/contribsys/faktory/storage/brodal"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
 )
@@ -103,6 +105,14 @@ func (store *rocksStore) Stats() map[string]string {
 		"stats": store.db.GetProperty("rocksdb.stats"),
 		"name":  store.db.Name(),
 	}
+}
+
+func (store *rocksStore) Processed() int64 {
+	return atomic.LoadInt64(&store.history.TotalProcessed)
+}
+
+func (store *rocksStore) Failures() int64 {
+	return atomic.LoadInt64(&store.history.TotalFailures)
 }
 
 // queues are iterated in sorted, lexigraphical order
@@ -242,12 +252,13 @@ func (store *rocksStore) GetQueue(name string) (Queue, error) {
 
 	q = &rocksQueue{
 		name:  name,
-		size:  -1,
+		size:  0,
 		store: store,
 		cf:    store.queues,
-		high:  0,
-		low:   0,
 		maxsz: DefaultMaxSize,
+
+		pointers:        make(map[uint8]*queuePointer),
+		orderedPointers: brodal.NewHeap(),
 	}
 	err := q.Init()
 	if err != nil {

@@ -6,7 +6,7 @@ import (
   "net/http"
 )
 
-func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, current_page int64) {
+func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, current_page uint64) {
 %>
 
 <% if total_size > count { %>
@@ -28,7 +28,7 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
       </li>
     <% } %>
     <li class="<% if total_size <= current_page * count { %>disabled<% } %>">
-      <a href="<%= url %>?<%= pageparam(req, int64(math.Ceil(float64(total_size) / float64(count)))) %>">&raquo;</a>
+      <a href="<%= url %>?<%= pageparam(req, uint64(math.Ceil(float64(total_size) / float64(count)))) %>">&raquo;</a>
     </li>
   </ul>
 <% } %>

@@ -8,8 +8,8 @@ import (
   "github.com/contribsys/faktory/storage"
 )
 
-func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count int64, currentPage int64) {
-  totalSize := set.Size()
+func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
+  totalSize := uint64(set.Size())
 %>
 
 <% ego_layout(w, req, func() { %>
@@ -43,6 +43,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
             <th><%= t(req, "RetryCount") %></th>
             <th><%= t(req, "Queue") %></th>
             <th><%= t(req, "Job") %></th>
+            <th><%= t(req, "Priority") %></th>
             <th><%= t(req, "Arguments") %></th>
             <th><%= t(req, "Error") %></th>
           </tr>
@@ -62,6 +63,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
               <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
             </td>
             <td><code><%= job.Type %></code></td>
+            <td><code><%= job.GetPriority() %></code></td>
             <td>
               <div class="args"><code><%= job.Args %></code></div>
             </td>

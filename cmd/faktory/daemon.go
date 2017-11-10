@@ -53,7 +53,7 @@ func main() {
 	// This takes over the default logger in `log` and gives us
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger(opts.LogLevel)
-	util.Debug("Options", opts)
+	util.Debugf("Options: %v", opts)
 
 	globalConfig, err := readConfig(opts.ConfigDirectory, opts.Environment)
 	if err != nil {
@@ -67,11 +67,10 @@ func main() {
 		StorageDirectory: opts.StorageDirectory,
 		ConfigDirectory:  opts.ConfigDirectory,
 		Environment:      opts.Environment,
-		DisableTls:       opts.DisableTls,
 		Configuration:    globalConfig,
 	})
 	if err != nil {
-		fmt.Println(err)
+		util.Error("Unable to create a new server", err)
 		return
 	}
 
@@ -81,7 +80,7 @@ func main() {
 
 	err = s.Start()
 	if err != nil {
-		fmt.Println(err)
+		util.Error("Unable to start the server", err)
 		return
 	}
 }

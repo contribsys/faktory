@@ -8,8 +8,8 @@ import (
   "github.com/contribsys/faktory/storage"
 )
 
-func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count int64, currentPage int64) {
-  totalSize := set.Size()
+func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
+  totalSize := uint64(set.Size())
 %>
 
 <% ego_layout(w, req, func() { %>
@@ -40,6 +40,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
             <th><%= t(req, "When") %></th>
             <th><%= t(req, "Queue") %></th>
             <th><%= t(req, "Job") %></th>
+            <th><%= t(req, "Priority") %></th>
             <th><%= t(req, "Arguments") %></th>
           </tr>
         </thead>
@@ -55,6 +56,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
               <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
             </td>
             <td><code><%= job.Type %></code></td>
+            <td><code><%= job.GetPriority() %></code></td>
             <td>
                <div class="args"><code><%= job.Args %></code></div>
             </td>

@@ -7,14 +7,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	// This is the protocol version supported by this client.
+	// The server might be running an older or newer version.
+	ExpectedProtocolVersion = 2
 )
 
 type Client struct {
@@ -41,6 +45,10 @@ type ClientData struct {
 	Labels   []string `json:"labels"`
 	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
+	// The protocol version used by this client.
+	// The server can reject this connection if the version will not work
+	// The server advertises its protocol version in the HI.
+	Version int `json:"v"`
 }
 
 type Server struct {
@@ -50,7 +58,8 @@ type Server struct {
 }
 
 var (
-	RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+	// Set this to a non-empty value in a consumer process
+	RandomProcessWid = ""
 )
 
 func DefaultServer() *Server {
@@ -118,15 +127,10 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
-	local, err := regexp.Match("\\Alocalhost:", []byte(srv.Address))
-	if err != nil {
-		return nil, err
-	}
-	//util.Debugf("Connecting to %v TLS:%v", srv, !local)
-
+	var err error
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
-	if local {
+	if srv.Network == "tcp" {
 		conn, err = dial.Dial(srv.Network, srv.Address)
 		if err != nil {
 			return nil, err
@@ -140,6 +144,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 			return nil, err
 		}
 	}
+
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
@@ -151,15 +156,28 @@ func Dial(srv *Server, password string) (*Client, error) {
 	if strings.HasPrefix(line, "HI ") {
 		str := strings.TrimSpace(line)[3:]
 
-		var hi map[string]string
+		var hi map[string]interface{}
 		err = json.Unmarshal([]byte(str), &hi)
 		if err != nil {
 			conn.Close()
 			return nil, err
 		}
-		salt, ok := hi["s"]
+		v, ok := hi["v"].(float64)
 		if ok {
-			client.PasswordHash = fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt)))
+			if ExpectedProtocolVersion != int(v) {
+				fmt.Println("Warning: server and client protocol versions out of sync:", v, ExpectedProtocolVersion)
+			}
+		}
+
+		salt, ok := hi["s"].(string)
+		if ok {
+			iter := 1
+			iterVal, ok := hi["i"]
+			if ok {
+				iter = int(iterVal.(float64))
+			}
+
+			client.PasswordHash = hash(password, salt, iter)
 		}
 	} else {
 		conn.Close()
@@ -327,6 +345,7 @@ func emptyClientData() *ClientData {
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
 	client.Labels = []string{"golang"}
+	client.Version = ExpectedProtocolVersion
 	return client
 }
 
@@ -368,6 +387,9 @@ func readString(rdr *bufio.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if val == nil {
+		return "", nil
+	}
 
 	return string(val), nil
 }
@@ -399,6 +421,9 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		if count == -1 {
+			return nil, nil
+		}
 		var buff []byte
 		if count > 0 {
 			buff = make([]byte, count)
@@ -420,4 +445,16 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		//util.Debugf("< %s%s", string(chr), string(line))
 		return line, nil
 	}
+}
+
+func hash(pwd, salt string, iterations int) string {
+	bytes := []byte(pwd + salt)
+	var hash [32]byte
+	hash = sha256.Sum256(bytes)
+	if iterations > 1 {
+		for i := 1; i < iterations; i++ {
+			hash = sha256.Sum256(hash[:])
+		}
+	}
+	return fmt.Sprintf("%x", hash)
 }

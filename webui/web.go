@@ -70,15 +70,9 @@ func FireItUp(svr *server.Server) error {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
-			TLSConfig:      svr.TLSConfig,
 		}
-		if s.TLSConfig == nil {
-			util.Info("Web server now listening on port 7420")
-			log.Fatal(s.ListenAndServe())
-		} else {
-			util.Info("Web server now listening securely on port 7420")
-			log.Fatal(s.ListenAndServeTLS("", ""))
-		}
+		util.Info("Web server now listening on port 7420")
+		log.Fatal(s.ListenAndServe())
 	}()
 	return nil
 }
@@ -199,7 +193,20 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 		start := time.Now()
 
 		// negotiate the language to be used for rendering
-		locale := localeFromHeader(r.Header.Get("Accept-Language"))
+
+		// set locale via cookie
+		localeCookie, _ := r.Cookie("faktory_locale")
+
+		var locale string
+		if localeCookie != nil {
+			locale = localeCookie.Value
+		}
+
+		if locale == "" {
+			// fall back to browser language
+			locale = localeFromHeader(r.Header.Get("Accept-Language"))
+		}
+
 		w.Header().Set("Content-Language", locale)
 
 		dctx := &DefaultContext{

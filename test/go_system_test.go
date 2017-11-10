@@ -3,12 +3,13 @@ package tester
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ func TestSystem(t *testing.T) {
 	util.InitLogger("info")
 
 	os.RemoveAll("/tmp/system.db")
+	defer os.RemoveAll("/tmp/system.db")
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: "/tmp/system.db",
@@ -47,6 +49,9 @@ func TestSystem(t *testing.T) {
 
 	s.WaitUntilInitialized()
 
+	// this is a worker process so we need to set the global WID before connecting
+	faktory.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+
 	each := 10000
 	start := time.Now()
 
@@ -63,8 +68,8 @@ func TestSystem(t *testing.T) {
 	wg.Wait()
 	s.Stop(nil)
 
-	assert.Equal(t, int64(3*each), atomic.LoadInt64(&s.Stats.Processed))
-	assert.Equal(t, int64(3*(each/100)), atomic.LoadInt64(&s.Stats.Failures))
+	assert.Equal(t, int64(3*each), s.Store().Processed())
+	assert.Equal(t, int64(3*(each/100)), s.Store().Failures())
 }
 
 func pushAndPop(t *testing.T, count int) {
@@ -111,7 +116,7 @@ func pushAndPop(t *testing.T, count int) {
 		handleError(err)
 		return
 	}
-	util.Info(hash)
+	util.Infof("%v", hash)
 }
 
 func pushJob(client *faktory.Client, idx int) error {

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,30 +29,26 @@ type ServerOptions struct {
 	StorageDirectory string
 	ConfigDirectory  string
 	Environment      string
-	DisableTls       bool
 	GlobalConfig     map[string]interface{}
 }
 
 type RuntimeStats struct {
-	Processed   int64
-	Failures    int64
 	Connections int64
 	Commands    int64
 	StartedAt   time.Time
 }
 
 type Server struct {
-	Options   *ServerOptions
-	Stats     *RuntimeStats
-	TLSConfig *tls.Config
-	Password  string
+	Options  *ServerOptions
+	Stats    *RuntimeStats
+	Password string
 
 	listener   net.Listener
 	store      storage.Store
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-	heartbeats map[string]*ClientWorker
+	heartbeats map[string]*ClientData
 	hbmu       sync.RWMutex
 
 	initialized chan bool
@@ -77,32 +72,20 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Options:     opts,
 		Stats:       &RuntimeStats{StartedAt: time.Now()},
 		pending:     &sync.WaitGroup{},
-		heartbeats:  make(map[string]*ClientWorker, 12),
+		heartbeats:  make(map[string]*ClientData, 12),
 		initialized: make(chan bool, 1),
 	}
 
-	tlsC, err := tlsConfig(s.Options.Binding, s.Options.DisableTls, s.Options.ConfigDirectory)
+	pwd, err := fetchPassword(s.Options.ConfigDirectory)
 	if err != nil {
 		return nil, err
 	}
-	if tlsC != nil {
-		s.TLSConfig = tlsC
-		pwd, err := fetchPassword(s.Options.ConfigDirectory)
-		if err != nil {
-			return nil, err
-		}
-		s.Password = pwd
-
-		// if we need TLS, we need a password too
-		if s.Password == "" {
-			return nil, fmt.Errorf("Cannot enable TLS without a password")
-		}
-	}
+	s.Password = pwd
 
 	return s, nil
 }
 
-func (s *Server) Heartbeats() map[string]*ClientWorker {
+func (s *Server) Heartbeats() map[string]*ClientData {
 	return s.heartbeats
 }
 
@@ -117,21 +100,11 @@ func (s *Server) Start() error {
 	}
 	defer store.Close()
 
-	var listener net.Listener
-
-	if s.TLSConfig != nil {
-		listener, err = tls.Listen("tcp", s.Options.Binding, s.TLSConfig)
-		if err != nil {
-			return err
-		}
-		util.Infof("Now listening securely at %s, press Ctrl-C to stop", s.Options.Binding)
-	} else {
-		listener, err = net.Listen("tcp", s.Options.Binding)
-		if err != nil {
-			return err
-		}
-		util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
+	listener, err := net.Listen("tcp", s.Options.Binding)
+	if err != nil {
+		return err
 	}
+	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
 	s.store = store
@@ -161,7 +134,7 @@ func (s *Server) Start() error {
 			return nil
 		}
 		s.pending.Add(1)
-		go func() {
+		go func(conn net.Conn) {
 			defer s.pending.Done()
 
 			c := startConnection(conn, s)
@@ -169,7 +142,7 @@ func (s *Server) Start() error {
 				return
 			}
 			processLines(c, s)
-		}()
+		}(conn)
 	}
 }
 
@@ -191,22 +164,31 @@ func (s *Server) Stop(f func()) {
 	}
 }
 
-func hash(pwd, salt string) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(pwd+salt)))
+func hash(pwd, salt string, iterations int) string {
+	bytes := []byte(pwd + salt)
+	var hash [32]byte
+	hash = sha256.Sum256(bytes)
+	if iterations > 1 {
+		for i := 1; i < iterations; i++ {
+			hash = sha256.Sum256(hash[:])
+		}
+	}
+	return fmt.Sprintf("%x", hash)
 }
-
-var (
-	ProtocolVersion = []byte(`"1"`)
-)
 
 func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
+	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
+	iter := rand.Intn(4096) + 4000
+
 	var salt string
-	conn.Write([]byte(`+HI {"v":`))
-	conn.Write(ProtocolVersion)
+	conn.Write([]byte(`+HI {"v":2`))
 	if s.Password != "" {
+		conn.Write([]byte(`,"i":`))
+		iters := strconv.FormatInt(int64(iter), 10)
+		conn.Write([]byte(iters))
 		salt = strconv.FormatInt(rand.Int63(), 16)
 		conn.Write([]byte(`,"s":"`))
 		conn.Write([]byte(salt))
@@ -220,28 +202,32 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		util.Error("Closing connection", err, nil)
+		util.Error("Closing connection", err)
 		conn.Close()
 		return nil
 	}
 
 	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
-		util.Info("Invalid preamble", line)
+		util.Infof("Invalid preamble: %s", line)
 		util.Info("Need a valid HELLO")
 		conn.Close()
 		return nil
 	}
 
-	client, err := clientWorkerFromHello(line[5:])
+	client, err := clientDataFromHello(line[5:])
 	if err != nil {
-		util.Error("Invalid client data in HELLO", err, nil)
+		util.Error("Invalid client data in HELLO", err)
 		conn.Close()
 		return nil
 	}
 
 	if s.Password != "" {
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt))) != 1 {
+		if client.Version < 2 {
+			iter = 1
+		}
+
+		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt, iter))) != 1 {
 			conn.Write([]byte("-ERR Invalid password\r\n"))
 			conn.Close()
 			return nil
@@ -256,7 +242,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
-		util.Error("Closing connection", err, nil)
+		util.Error("Closing connection", err)
 		conn.Close()
 		return nil
 	}
@@ -280,7 +266,7 @@ func processLines(conn *Connection, server *Server) {
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			if e != io.EOF {
-				util.Error("Unexpected socket error", e, nil)
+				util.Error("Unexpected socket error", e)
 			}
 			conn.Close()
 			return

@@ -24,64 +24,78 @@ func ego_debug(w io.Writer, req *http.Request) {
   <table class="error table table-bordered table-striped">
     <tbody>
       <tr>
-        <th><%= t(req, "Version") %></th>
-        <td>Faktory <%= faktory.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
-      </tr>
-      <tr>
-        <th><%= t(req, "Data Location") %></th>
-        <td><%= stats["name"] %></td>
-      </tr>
-      <tr>
-        <th><%= t(req, "Runtime") %></th>
-        <td>Goroutines: <%= runtime.NumGoroutine() %>, CPUs: <%= runtime.NumCPU() %></td>
-      </tr>
-      <tr>
-        <th><%= t(req, "Memory") %></th>
+        <th><%= t(req, "Locale") %></th>
         <td>
-          Alloc (KB): <%= m.Alloc / 1024 %><br/>
-          Live Objects: <%= m.Mallocs - m.Frees %>
+          <select name="locales" id="faktory_locale">
+            <% for _,locale := range sortedLocaleNames(locales) { %>
+              <option name="<%= locale %>" <% if locale == req.Context().(*DefaultContext).locale { %> selected <% } %> > <%= locale %> </option>
+            <% } %>
+          </select>
+          <span style="font-size: small">
+            Want to help us improve the translations?
+            <a href="https://github.com/contribsys/faktory/tree/master/webui/static/locales">Submit a PR</a>.
+          </span>
         </td>
-      </tr>
-      <tr>
-        <th><%= t(req, "GC") %></th>
-        <td>
-          PauseTotal (µs): <%= m.PauseTotalNs / 1000 %><br/>
-          NumGC: <%= m.NumGC %>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+    </tr>
+    <tr>
+      <th><%= t(req, "Version") %></th>
+      <td>Faktory <%= faktory.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
+    </tr>
+    <tr>
+    <th><%= t(req, "Data Location") %></th>
+      <td><%= stats["name"] %></td>
+    </tr>
+    <tr>
+      <th><%= t(req, "Runtime") %></th>
+      <td>Goroutines: <%= runtime.NumGoroutine() %>, CPUs: <%= runtime.NumCPU() %></td>
+    </tr>
+    <tr>
+      <th><%= t(req, "Memory") %></th>
+      <td>
+        Alloc (KB): <%= m.Alloc / 1024 %><br/>
+        Live Objects: <%= m.Mallocs - m.Frees %>
+      </td>
+    </tr>
+    <tr>
+      <th><%= t(req, "GC") %></th>
+      <td>
+        PauseTotal (µs): <%= m.PauseTotalNs / 1000 %><br/>
+        NumGC: <%= m.NumGC %>
+      </td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
 <h3><%= t(req, "Backups") %></h3>
 <div class="table_container">
-  <table class="error table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Id</th>
-        <th>Files</th>
-        <th>Size</th>
-        <th>Timestamp</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
-      <tr>
-        <td><%= bi.Id %></td>
-        <td><%= bi.FileCount %></td>
-        <td><%= numberWithDelimiter(bi.Size) %></td>
-        <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
-      </tr>
-      <% }) %>
-      <% if err != nil { %><%= err.Error() %><% } %>
-    </tbody>
-  </table>
-  <form action="/debug" method="post">
-    <%== csrfTag(req) %>
-    <div class="btn-group pull-left flip">
-      <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
-    </div>
-  </form>
+<table class="error table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Files</th>
+      <th>Size</th>
+      <th>Timestamp</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
+    <tr>
+      <td><%= bi.Id %></td>
+      <td><%= bi.FileCount %></td>
+      <td><%= numberWithDelimiter(bi.Size) %></td>
+      <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
+    </tr>
+    <% }) %>
+    <% if err != nil { %><%= err.Error() %><% } %>
+  </tbody>
+</table>
+<form action="/debug" method="post">
+  <%== csrfTag(req) %>
+  <div class="btn-group pull-left flip">
+    <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
+  </div>
+</form>
 </div>
 
 <h3><%= t(req, "Disk Usage") %></h3>

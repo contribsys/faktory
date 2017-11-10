@@ -107,7 +107,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 		conn, err := listener.Accept()
 		assert.NoError(t, err)
 		conn.SetDeadline(time.Now().Add(1 * time.Second))
-		conn.Write([]byte("+HI {\"v\":\"1\",\"s\":\"123\"}\r\n"))
+		conn.Write([]byte("+HI {\"v\":2,\"s\":\"123\",\"i\":123}\r\n"))
 		for {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')
@@ -136,4 +136,13 @@ func stacks() {
 	stacklen := runtime.Stack(buf, true)
 	log.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
 	os.Exit(-10)
+}
+
+func TestPasswordHashing(t *testing.T) {
+	iterations := 1545
+	pwd := "foobar"
+	salt := "55104dc76695721d"
+
+	result := hash(pwd, salt, iterations)
+	assert.Equal(t, "6d877f8e5544b1f2598768f817413ab8a357afffa924dedae99eb91472d4ec30", result)
 }

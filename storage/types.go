@@ -25,6 +25,10 @@ type Store interface {
 	EnqueueFrom(SortedSet, []byte) error
 
 	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
+	Success() error
+	Processed() int64
+	Failure() error
+	Failures() int64
 
 	// creates a backup of the current database
 	Backup() error
@@ -39,11 +43,11 @@ type Store interface {
 
 type Queue interface {
 	Name() string
-	Size() int64
-	Push([]byte) error
+	Size() uint64
+	Push(uint8, []byte) error
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
-	Clear() (int64, error)
+	Clear() (uint64, error)
 
 	// Please note that k/vs are NOT safe to use outside of the func.
 	// You must copy the values if you want to stash them for later use.

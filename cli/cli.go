@@ -22,7 +22,6 @@ type CmdOptions struct {
 	ConfigDirectory  string
 	LogLevel         string
 	StorageDirectory string
-	DisableTls       bool
 	Password         string
 }
 
@@ -33,7 +32,7 @@ var (
 )
 
 func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", false, ""}
+	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
 
 	log.SetFlags(0)
 	log.Println(faktory.Name, faktory.Version)
@@ -47,7 +46,6 @@ func ParseArguments() CmdOptions {
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
 	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production, etc)")
-	flag.BoolVar(&defaults.DisableTls, "no-tls", false, "Disable TLS, I don't want encryption")
 
 	// undocumented on purpose, we don't want people changing these if possible
 	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")
@@ -78,7 +76,6 @@ func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
 	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
-	log.Println("-no-tls\tDisable TLS for network sockets, I know what I'm doing")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")
 }

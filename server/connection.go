@@ -13,7 +13,7 @@ import (
 // Shout out to antirez for his nice design document on it.
 // https://redis.io/topics/protocol
 type Connection struct {
-	client *ClientWorker
+	client *ClientData
 	conn   io.WriteCloser
 	buf    *bufio.Reader
 }
@@ -40,6 +40,11 @@ func (c *Connection) Number(val int) error {
 }
 
 func (c *Connection) Result(msg []byte) error {
+	if msg == nil {
+		_, err := c.conn.Write([]byte("$-1\r\n"))
+		return err
+	}
+
 	_, err := c.conn.Write([]byte("$" + strconv.Itoa(len(msg)) + "\r\n"))
 	if err != nil {
 		return err

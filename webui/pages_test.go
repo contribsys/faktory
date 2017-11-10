@@ -36,7 +36,6 @@ func TestStats(t *testing.T) {
 	assert.NoError(t, err)
 
 	defaultServer.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
-	defaultServer.Stats.Processed = 123
 
 	w := httptest.NewRecorder()
 	statsHandler(w, req)
@@ -50,10 +49,6 @@ func TestStats(t *testing.T) {
 	s := content["server"].(map[string]interface{})
 	uid := s["uptime"].(float64)
 	assert.Equal(t, float64(1234567), uid)
-
-	s = content["faktory"].(map[string]interface{})
-	proc := s["total_processed"].(float64)
-	assert.Equal(t, float64(123), proc)
 }
 
 func TestQueues(t *testing.T) {
@@ -64,7 +59,7 @@ func TestQueues(t *testing.T) {
 	str.GetQueue("default")
 	q, _ := str.GetQueue("foobar")
 	q.Clear()
-	q.Push([]byte("1l23j12l3"))
+	q.Push(5, []byte("1l23j12l3"))
 
 	w := httptest.NewRecorder()
 	queuesHandler(w, req)
@@ -80,7 +75,7 @@ func TestQueue(t *testing.T) {
 	str := defaultServer.Store()
 	q, _ := str.GetQueue("foobar")
 	q.Clear()
-	q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+	q.Push(5, []byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
 
 	w := httptest.NewRecorder()
 	queueHandler(w, req)
@@ -88,7 +83,7 @@ func TestQueue(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), "1l23j12l3"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
 
-	assert.Equal(t, int64(1), q.Size())
+	assert.Equal(t, uint64(1), q.Size())
 	payload := url.Values{
 		"action": {"delete"},
 	}
@@ -98,7 +93,7 @@ func TestQueue(t *testing.T) {
 	w = httptest.NewRecorder()
 	queueHandler(w, req)
 
-	assert.Equal(t, int64(0), q.Size())
+	assert.Equal(t, uint64(0), q.Size())
 	assert.Equal(t, 302, w.Code)
 }
 
@@ -138,7 +133,7 @@ func TestRetries(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, sz, cnt)
 
-	assert.Equal(t, int64(0), def.Size())
+	assert.Equal(t, uint64(0), def.Size())
 	assert.Equal(t, int64(2), q.Size())
 	payload := url.Values{
 		"key":    {keys, "abadone"},
@@ -152,7 +147,7 @@ func TestRetries(t *testing.T) {
 
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, int64(1), q.Size())
-	assert.Equal(t, int64(1), def.Size())
+	assert.Equal(t, uint64(1), def.Size())
 
 	q.Each(func(idx int, k, v []byte) error {
 		key = make([]byte, len(k))
@@ -310,12 +305,13 @@ func TestBusy(t *testing.T) {
 	assert.NoError(t, err)
 
 	wid := "1239123oim,bnsad"
-	wrk := &server.ClientWorker{
+	wrk := &server.ClientData{
 		Hostname:  "foobar.local",
 		Pid:       12345,
 		Wid:       wid,
 		Labels:    []string{"bubba"},
 		StartedAt: time.Now(),
+		Version:   2,
 	}
 	defaultServer.Heartbeats()[wid] = wrk
 

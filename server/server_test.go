@@ -48,20 +48,15 @@ func TestServerStart(t *testing.T) {
 
 		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		// salt := strings.TrimSpace(result)
-		// if salt != "HI" {
-		// 	// needs password
-		// }
 
-		var client ClientWorker
+		var client ClientData
 		hs, err := os.Hostname()
 		assert.NoError(t, err)
 		client.Hostname = hs
 		client.Pid = os.Getpid()
 		client.Wid = strconv.FormatInt(rand.Int63(), 10)
 		client.Labels = []string{"blue", "seven"}
-		// password is "123456" also
-		client.PasswordHash = "958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"
+		client.Version = 2
 
 		val, err := json.Marshal(client)
 		assert.NoError(t, err)
@@ -126,4 +121,24 @@ func TestServerStart(t *testing.T) {
 		conn.Close()
 	})
 
+}
+
+func TestPasswordHashing(t *testing.T) {
+	iterations := 1545
+	pwd := "foobar"
+	salt := "55104dc76695721d"
+
+	result := hash(pwd, salt, iterations)
+	assert.Equal(t, "6d877f8e5544b1f2598768f817413ab8a357afffa924dedae99eb91472d4ec30", result)
+}
+
+func BenchmarkHash(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		// 1550 µs per call with 5545 iterations
+		iterations := 5545
+		pwd := "foobar"
+		salt := "55104dc76695721d"
+
+		hash(pwd, salt, iterations)
+	}
 }

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	mathrand "math/rand"
 	"os"
-	"reflect"
 	"runtime"
 	"time"
 )
@@ -66,16 +65,13 @@ func Log() Logger {
 	return logg
 }
 
-func Error(msg string, err error, stack []byte) {
-	logg.Error(msg, reflect.TypeOf(err).Name(), err.Error())
-	if stack != nil {
-		logg.Error(string(stack))
-	}
+func Error(msg string, err error) {
+	logg.WithError(err).Error(msg)
 }
 
 // Uh oh, not good but not worthy of process death
-func Warn(args ...interface{}) {
-	logg.Warn(args...)
+func Warn(arg string) {
+	logg.Warn(arg)
 }
 
 func Warnf(msg string, args ...interface{}) {
@@ -83,9 +79,9 @@ func Warnf(msg string, args ...interface{}) {
 }
 
 // Typical logging output, the default level
-func Info(args ...interface{}) {
+func Info(arg string) {
 	if LogInfo {
-		logg.Info(args...)
+		logg.Info(arg)
 	}
 }
 
@@ -98,9 +94,9 @@ func Infof(msg string, args ...interface{}) {
 
 // Verbosity level helps track down production issues:
 //  -l debug
-func Debug(args ...interface{}) {
+func Debug(arg string) {
 	if LogDebug {
-		logg.Debug(args...)
+		logg.Debug(arg)
 	}
 }
 
@@ -139,6 +135,13 @@ func Nows() string {
 
 func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
+}
+
+func MemoryUsage() string {
+	m := runtime.MemStats{}
+	runtime.ReadMemStats(&m)
+	mb := m.Sys / 1024 / 1024
+	return fmt.Sprintf("%v MB", mb)
 }
 
 // Backtrace gathers a backtrace for the caller.

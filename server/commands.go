@@ -65,6 +65,8 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	job.EnsureValidPriority()
+
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
 		if err != nil {
@@ -103,7 +105,7 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = q.Push(data)
+	err = q.Push(job.GetPriority(), data)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -137,7 +139,6 @@ func fetch(c *Connection, s *Server, cmd string) {
 			c.Error(cmd, err)
 			return
 		}
-		atomic.AddInt64(&s.Stats.Processed, 1)
 		c.Result(res)
 	} else {
 		c.Result(nil)
@@ -164,6 +165,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	s.store.Success()
 	c.Ok()
 }
 
@@ -172,8 +174,7 @@ func uptimeInSeconds(s *Server) int {
 }
 
 func currentMemoryUsage(s *Server) string {
-	// TODO maybe remove this and/or offer a better stat?
-	return "123 MB"
+	return util.MemoryUsage()
 }
 
 func CurrentState(s *Server) (map[string]interface{}, error) {
@@ -194,8 +195,8 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"default_size":    defalt.Size(),
-			"total_failures":  atomic.LoadInt64(&s.Stats.Failures),
-			"total_processed": atomic.LoadInt64(&s.Stats.Processed),
+			"total_failures":  store.Failures(),
+			"total_processed": store.Processed(),
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
 			"tasks":           s.taskRunner.Stats()},
@@ -232,7 +233,7 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	var worker ClientWorker
+	var worker ClientData
 	data := cmd[5:]
 	err := json.Unmarshal([]byte(data), &worker)
 	if err != nil {
@@ -253,6 +254,6 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	if entry.state == Running {
 		c.Ok()
 	} else {
-		c.Result([]byte(fmt.Sprintf(`{"signal":"%s"}`, stateSignal(entry.state))))
+		c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(entry.state))))
 	}
 }

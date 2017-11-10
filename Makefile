@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.5.0
+VERSION=0.6.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -36,14 +36,22 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui
+		github.com/contribsys/faktory/webui \
+		github.com/contribsys/faktory/cmd/faktory-cli
 
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
-	docker run --rm -it -p 7419:7419 -p 7420:7420 contribsys/faktory:$(VERSION) -b :7419 -no-tls
+	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
+		-p 127.0.0.1:7419:7419 \
+		-p 127.0.0.1:7420:7420 \
+		-v faktory-data:/var/lib/faktory \
+		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419 -e production
+
+dpush: tag
+	docker push contribsys/faktory:$(VERSION)
 
 generate:
 	go generate github.com/contribsys/faktory/webui
@@ -53,11 +61,19 @@ cover:
 	go tool cover -html=cover.out -o coverage.html
 	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
 
+# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -o faktory-cli cmd/faktory-cli/repl.go
-	go build -o faktory cmd/faktory/daemon.go
+	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
+	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+
+# this is a separate target because loadtest doesn't need rocksdb or webui
+build_load:
+	go build -ldflags="-s -w" -o loadtest test/load/main.go
+
+load: # not war
+	go run test/load/main.go 30000 10
 
 megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
@@ -65,12 +81,6 @@ megacheck:
 # TODO integrate a few useful Golang linters.
 fmt: ## Format the code
 	go fmt ./...
-
-swork: ## Run a simple Ruby worker with TLS, see also "make srun"
-	cd test/ruby && FAKTORY_PROVIDER=FURL \
-		FURL=tcp://:password123@localhost.contribsys.com:7419 \
-		bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
-
 
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
@@ -84,13 +94,10 @@ clean: ## Clean the project, set it up for a new build
 	@mkdir -p packaging/output/systemd
 
 repl: clean generate ## Run the Faktory CLI
-	go run cmd/repl.go -l debug -e development
+	go run cmd/faktory-cli/repl.go -l debug -e development
 
 run: clean generate ## Run Faktory daemon locally
-	go run cmd/daemon.go -l debug -e development
-
-srun: clean generate ## Run Faktory daemon locally with TLS
-	FAKTORY_PASSWORD=password123 go run cmd/daemon.go -b 127.0.0.1:7419 -l debug -e development
+	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
 
 cssh:
 	pushd build/centos && vagrant up && vagrant ssh
@@ -216,4 +223,4 @@ upload:	package tag
 
 
 help:
-		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

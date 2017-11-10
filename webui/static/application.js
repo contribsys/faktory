@@ -37,6 +37,10 @@ $(function() {
     $($(this).attr('data-target')).toggle();
   });
 
+  $(document).on("change","#faktory_locale", function() {
+    document.cookie = "faktory_locale="+$("#faktory_locale").find(":selected").text();
+    location.reload();
+  })
   updateFuzzyTimes($('body').data('locale'));
 });
 

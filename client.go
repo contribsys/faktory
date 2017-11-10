@@ -449,13 +449,12 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-
-	sha := sha256.New()
-	sha.Write(bytes)
+	var hash [32]byte
+	hash = sha256.Sum256(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
-			sha.Write(sha.Sum(nil))
+			hash = sha256.Sum256(hash[:])
 		}
 	}
-	return fmt.Sprintf("%x", sha.Sum(nil))
+	return fmt.Sprintf("%x", hash)
 }

@@ -165,23 +165,22 @@ func (s *Server) Stop(f func()) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-
-	sha := sha256.New()
-	sha.Write(bytes)
+	var hash [32]byte
+	hash = sha256.Sum256(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
-			sha.Write(sha.Sum(nil))
+			hash = sha256.Sum256(hash[:])
 		}
 	}
-	return fmt.Sprintf("%x", sha.Sum(nil))
+	return fmt.Sprintf("%x", hash)
 }
 
 func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
-	// 2000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
-	iter := rand.Intn(4096) + 2000
+	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
+	iter := rand.Intn(4096) + 4000
 
 	var salt string
 	conn.Write([]byte(`+HI {"v":2`))

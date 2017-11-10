@@ -144,5 +144,5 @@ func TestPasswordHashing(t *testing.T) {
 	salt := "55104dc76695721d"
 
 	result := hash(pwd, salt, iterations)
-	assert.Equal(t, "d3590a2722bb8998a6392ed027bcef642b79a58a97219ca4920e9e7f2fe000d7", result)
+	assert.Equal(t, "6d877f8e5544b1f2598768f817413ab8a357afffa924dedae99eb91472d4ec30", result)
 }

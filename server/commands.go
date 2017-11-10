@@ -65,7 +65,10 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	job.EnsureValidPriority()
+	// Priority can never be negative because of signedness
+	if job.Priority > 9 || job.Priority == 0 {
+		job.Priority = 5
+	}
 
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
@@ -105,7 +108,7 @@ func push(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = q.Push(job.GetPriority(), data)
+	err = q.Push(job.Priority, data)
 	if err != nil {
 		c.Error(cmd, err)
 		return

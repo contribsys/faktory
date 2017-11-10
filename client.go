@@ -21,6 +21,12 @@ const (
 	ExpectedProtocolVersion = 2
 )
 
+var (
+	// Set this to a non-empty value in a consumer process
+	// e.g. see how faktory_worker_go sets this.
+	RandomProcessWid = ""
+)
+
 type Client struct {
 	Location string
 	Options  *ClientData
@@ -57,21 +63,22 @@ type Server struct {
 	Timeout time.Duration
 }
 
-var (
-	// Set this to a non-empty value in a consumer process
-	RandomProcessWid = ""
-)
-
 func DefaultServer() *Server {
 	return &Server{"tcp", "localhost:7419", 1 * time.Second}
 }
 
-// Open connects to a Faktory server based on the
+// Open connects to a Faktory server based on
 // environment variable conventions:
 //
 // • Use FAKTORY_PROVIDER to point to a custom URL variable.
-//
 // • Use FAKTORY_URL as a catch-all default.
+//
+// Use the URL to configure any necessary password:
+//
+//    tcp://:mypassword@localhost:7419
+//
+// By default Open assumes localhost with no password
+// which is appropriate for local development.
 func Open() (*Client, error) {
 	srv := DefaultServer()
 

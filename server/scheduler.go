@@ -50,7 +50,7 @@ func (s *scanner) Execute() error {
 			continue
 		}
 
-		err = s.adapter.Push(job.Queue, job.GetPriority(), data)
+		err = s.adapter.Push(job.Queue, job.Priority, data)
 		if err != nil {
 			util.Warnf("Error pushing job to '%s': %s", job.Queue, err.Error())
 			continue

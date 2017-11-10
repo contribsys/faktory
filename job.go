@@ -43,23 +43,8 @@ func NewJob(jobtype string, args ...interface{}) *Job {
 		Jid:       randomJid(),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Retry:     25,
+		Priority:  5,
 	}
-}
-
-func (j *Job) EnsureValidPriority() {
-	// Priority can never be negative because of signedness
-	if j.Priority > 9 {
-		// set to 0 so we use the default value in GetPriority
-		j.Priority = 0
-	}
-}
-
-// Accessor so that if priority isn't specified we don't persist it to disk
-func (j *Job) GetPriority() uint8 {
-	if j.Priority == 0 {
-		return 5
-	}
-	return j.Priority
 }
 
 func randomJid() string {

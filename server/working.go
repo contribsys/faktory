@@ -121,7 +121,7 @@ func (r *reservationReaper) Execute() error {
 		workingMutex.Unlock()
 
 		if ok {
-			err = q.Push(job.GetPriority(), data)
+			err = q.Push(job.Priority, data)
 			if err != nil {
 				util.Error("Unable to push job", err)
 				continue

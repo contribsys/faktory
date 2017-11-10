@@ -165,19 +165,20 @@ func (s *Server) Stop(f func()) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-	var hash [32]byte
 
-	hash = sha256.Sum256(bytes)
+	sha := sha256.New()
+	sha.Write(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
-			hash = sha256.Sum256(hash[:])
+			sha.Write(sha.Sum(nil))
 		}
 	}
-	return fmt.Sprintf("%x", hash)
+	return fmt.Sprintf("%x", sha.Sum(nil))
 }
 
 var (
-	HashIterations = rand.Intn(4096) + 1000
+	// 2000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
+	HashIterations = rand.Intn(4096) + 2000
 )
 
 func startConnection(conn net.Conn, s *Server) *Connection {

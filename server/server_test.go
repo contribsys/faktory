@@ -122,3 +122,23 @@ func TestServerStart(t *testing.T) {
 	})
 
 }
+
+func TestPasswordHashing(t *testing.T) {
+	iterations := 1545
+	pwd := "foobar"
+	salt := "55104dc76695721d"
+
+	result := hash(pwd, salt, iterations)
+	assert.Equal(t, "d3590a2722bb8998a6392ed027bcef642b79a58a97219ca4920e9e7f2fe000d7", result)
+}
+
+func BenchmarkHash(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		// 2343 µs per call with 5450 iterations
+		iterations := 1545
+		pwd := "foobar"
+		salt := "55104dc76695721d"
+
+		hash(pwd, salt, iterations)
+	}
+}

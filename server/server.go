@@ -176,21 +176,19 @@ func hash(pwd, salt string, iterations int) string {
 	return fmt.Sprintf("%x", sha.Sum(nil))
 }
 
-var (
-	// 2000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
-	HashIterations = rand.Intn(4096) + 2000
-)
-
 func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
 	conn.SetDeadline(time.Now().Add(1 * time.Second))
+
+	// 2000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
+	iter := rand.Intn(4096) + 2000
 
 	var salt string
 	conn.Write([]byte(`+HI {"v":2`))
 	if s.Password != "" {
 		conn.Write([]byte(`,"i":`))
-		iter := strconv.FormatInt(int64(HashIterations), 10)
-		conn.Write([]byte(iter))
+		iters := strconv.FormatInt(int64(iter), 10)
+		conn.Write([]byte(iters))
 		salt = strconv.FormatInt(rand.Int63(), 16)
 		conn.Write([]byte(`,"s":"`))
 		conn.Write([]byte(salt))
@@ -225,7 +223,6 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	if s.Password != "" {
-		iter := HashIterations
 		if client.Version < 2 {
 			iter = 1
 		}

@@ -45,7 +45,7 @@ func ParseArguments() CmdOptions {
 	flag.Usage = help
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
-	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production, etc)")
+	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, production)")
 
 	// undocumented on purpose, we don't want people changing these if possible
 	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")
@@ -74,7 +74,7 @@ func ParseArguments() CmdOptions {
 
 func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
-	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
+	log.Println("-e [env]\tSet environment (development, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")

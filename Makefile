@@ -117,7 +117,7 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check clean build build_deb_systemd build_rpm_systemd
+package: deb rpm
 
 version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -164,7 +164,7 @@ build_rpm_upstart:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-build_rpm_systemd:
+rpm: version_check faktory faktory-cli
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
@@ -199,7 +199,7 @@ build_deb_upstart:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-build_deb_systemd:
+deb: version_check faktory faktory-cli
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \

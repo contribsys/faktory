@@ -39,3 +39,8 @@ make prepare
 echo === Running Faktory test suite
 make
 make build
+
+# If you wish to build a .deb package, run these commands
+# sudo apt install ruby-dev --no-install-recommends -y
+# sudo gem install -N fpm
+# make deb

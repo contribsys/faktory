@@ -41,7 +41,10 @@ test: clean generate ## Execute test suite
 
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
-	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
+	docker build \
+		--build-arg GOLANG_VERSION=1.9.1  \
+		--build-arg ROCKSDB_VERSION=5.7.3 \
+		--tag contribsys/faktory:$(VERSION) .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \

@@ -54,6 +54,11 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419 -e production
 
 dpush: tag
+	docker build \
+		--build-arg GOLANG_VERSION=1.9.1    \
+		--build-arg ROCKSDB_VERSION=5.7.3   \
+		--tag contribsys/faktory:$(VERSION) \
+		--tag contribsys/faktory:latest .
 	docker push contribsys/faktory:$(VERSION)
 
 generate:

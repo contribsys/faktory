@@ -9,18 +9,17 @@ WORKDIR /rocksdb
 RUN DEBUG_LEVEL=0 PORTABLE=1 make libsnappy.a
 RUN PORTABLE=1 make static_lib
 RUN strip -g librocksdb.a
-ENV ROCKSDB_HOME /rocksdb
 
-RUN mkdir -p /root/go/src/github.com/contribsys
-ADD . /root/go/src/github.com/contribsys/faktory
-WORKDIR /root/go/src/github.com/contribsys/faktory
+ENV ROCKSDB_HOME /rocksdb
 ENV CGO_CFLAGS -I${ROCKSDB_HOME}/include
 ENV CGO_LDFLAGS -L${ROCKSDB_HOME} -lrocksdb
 ENV GOPATH /root/go
 ENV PATH ${PATH}:/root/go/bin
-RUN make prepare
-RUN make test
-RUN make build
+
+RUN mkdir -p /root/go/src/github.com/contribsys
+ADD . /root/go/src/github.com/contribsys/faktory
+WORKDIR /root/go/src/github.com/contribsys/faktory
+RUN make prepare && make test && make build
 
 FROM alpine:3.6
 COPY --from=build /root/go/src/github.com/contribsys/faktory/faktory \

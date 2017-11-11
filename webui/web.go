@@ -13,6 +13,7 @@ import (
 
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
+	"github.com/justinas/nosurf"
 )
 
 type Tab struct {
@@ -70,6 +71,7 @@ func FireItUp(svr *server.Server) error {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
+			Handler:        nosurf.New(http.DefaultServeMux),
 		}
 		util.Info("Web server now listening on port 7420")
 		log.Fatal(s.ListenAndServe())

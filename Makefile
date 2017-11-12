@@ -1,5 +1,6 @@
 NAME=faktory
 VERSION=0.7.0
+LDFLAGS="-s -w -X github.com/contribsys/faktory.Version=$(VERSION)"
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -73,12 +74,12 @@ cover:
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
-	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+	go build -ldflags $(LDFLAGS) -o faktory-cli cmd/faktory-cli/repl.go
+	go build -ldflags $(LDFLAGS) -o faktory cmd/faktory/daemon.go
 
 # this is a separate target because loadtest doesn't need rocksdb or webui
 build_load:
-	go build -ldflags="-s -w" -o loadtest test/load/main.go
+	go build -ldflags $(LDFLAGS) -o loadtest test/load/main.go
 
 load: # not war
 	go run test/load/main.go 30000 10
@@ -118,9 +119,6 @@ ussh:
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
 package: deb rpm
-
-version_check:
-	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
 purge_deb:
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true
@@ -164,7 +162,7 @@ build_rpm_upstart:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-rpm: version_check faktory faktory-cli
+rpm: faktory faktory-cli
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
@@ -199,7 +197,7 @@ build_deb_upstart:
 		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-deb: version_check faktory faktory-cli
+deb: faktory faktory-cli
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \

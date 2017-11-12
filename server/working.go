@@ -94,19 +94,20 @@ func (r *reservationReaper) Name() string {
 func (r *reservationReaper) Execute() error {
 	count := 0
 
-	jobs, err := r.s.store.Working().RemoveBefore(util.Nows())
+	reservations, err := r.s.store.Working().RemoveBefore(util.Nows())
 	if err != nil {
 		return err
 	}
 
-	for _, data := range jobs {
-		var job faktory.Job
-		err := json.Unmarshal(data, &job)
+	for _, data := range reservations {
+		var res Reservation
+		err := json.Unmarshal(data, &res)
 		if err != nil {
-			util.Error("Unable to unmarshal job", err)
+			util.Error("Unable to unmarshal reservation", err)
 			continue
 		}
 
+		job := res.Job
 		q, err := r.s.store.GetQueue(job.Queue)
 		if err != nil {
 			util.Error("Unable to retrieve queue", err)
@@ -121,6 +122,12 @@ func (r *reservationReaper) Execute() error {
 		workingMutex.Unlock()
 
 		if ok {
+			job.EnqueuedAt = util.Nows()
+			data, err = json.Marshal(job)
+			if err != nil {
+				util.Error("Unable to serialize job", err)
+				continue
+			}
 			err = q.Push(job.Priority, data)
 			if err != nil {
 				util.Error("Unable to push job", err)

@@ -113,7 +113,7 @@ func (s *Server) Start() error {
 	s.startScanners(s.pending)
 	s.mu.Unlock()
 
-	s.initialized <- true
+	close(s.initialized)
 
 	// wait for outstanding requests to finish
 	defer s.pending.Wait()

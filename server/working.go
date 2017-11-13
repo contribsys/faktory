@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -92,13 +93,22 @@ func (r *reservationReaper) Name() string {
 }
 
 func (r *reservationReaper) Execute() error {
-	count := 0
-
-	reservations, err := r.s.store.Working().RemoveBefore(util.Nows())
+	count, err := reapLongRunningJobs(r.s.store, util.Nows())
 	if err != nil {
 		return err
 	}
 
+	r.count += count
+	return nil
+}
+
+func reapLongRunningJobs(store storage.Store, timestamp string) (int, error) {
+	reservations, err := store.Working().RemoveBefore(timestamp)
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
 	for _, data := range reservations {
 		var res Reservation
 		err := json.Unmarshal(data, &res)
@@ -108,7 +118,7 @@ func (r *reservationReaper) Execute() error {
 		}
 
 		job := res.Job
-		q, err := r.s.store.GetQueue(job.Queue)
+		q, err := store.GetQueue(job.Queue)
 		if err != nil {
 			util.Error("Unable to retrieve queue", err)
 			continue
@@ -137,9 +147,8 @@ func (r *reservationReaper) Execute() error {
 			count += 1
 		}
 	}
-	r.count += count
 
-	return nil
+	return count, nil
 }
 
 func (r *reservationReaper) Stats() map[string]interface{} {

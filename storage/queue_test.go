@@ -472,18 +472,19 @@ func TestBlockingPop(t *testing.T) {
 	assert.Nil(t, data)
 	assert.Nil(t, err)
 	b := time.Now()
-	assert.True(t, (b.Sub(a) > 5*time.Millisecond))
+	diff := b.Sub(a)
+	assert.True(t, (diff > 5*time.Millisecond), fmt.Sprintf("%v", diff))
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
 		time.Sleep(50 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
@@ -494,10 +495,11 @@ func TestBlockingPop(t *testing.T) {
 	var waitMutex sync.Mutex
 
 	for i := 0; i < 4; i++ {
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			c, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+			c, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
 			defer cancel()
 			data, err := q.BPop(c)
 			assert.NoError(t, err)

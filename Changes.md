@@ -1,3 +1,8 @@
+## 0.6.1
+
+- Fix job reservation [#94, jweslley]
+- Send exhausted jobs to the morgue [#86, jweslley]
+
 ## 0.6.0
 
 - Add support for job priorities [#68, andrewstucki]

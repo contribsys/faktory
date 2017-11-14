@@ -1,4 +1,4 @@
-package faktory
+package client
 
 import (
 	cryptorand "crypto/rand"

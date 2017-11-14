@@ -10,8 +10,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/contribsys/faktory"
 	"github.com/contribsys/faktory/cli"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
@@ -28,7 +28,7 @@ help
 
 * Requires an immediate restart after running command.`
 
-var versionMsg = fmt.Sprintf("Faktory %s, RocksDB %s\n", faktory.Version, gorocksdb.RocksDBVersion())
+var versionMsg = fmt.Sprintf("Faktory %s, RocksDB %s\n", client.Version, gorocksdb.RocksDBVersion())
 
 // The REPL provides a few admin commands outside of Faktory itself,
 // notably the backup and restore commands.

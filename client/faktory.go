@@ -1,4 +1,4 @@
-package faktory
+package client
 
 var (
 	Name      = "Faktory"

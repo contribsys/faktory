@@ -3,7 +3,7 @@ package webui
 
 import (
   "net/http"
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
   "github.com/contribsys/faktory/util"
 )
 
@@ -49,7 +49,7 @@ func ego_index(w io.Writer, req *http.Request) {
 <div class="faktory-wrapper">
   <div class="stats-container">
     <div class="stat">
-      <h3 class="faktory_version"><%= faktory.Version %></h3>
+      <h3 class="faktory_version"><%= client.Version %></h3>
       <p><%= t(req, "Version") %></p>
     </div>
 

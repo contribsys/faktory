@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func TestAcknowledge(t *testing.T) {
 	assert.Nil(t, job)
 
 	wid := "123876"
-	job = faktory.NewJob("sometest", 1, 2, 3)
+	job = client.NewJob("sometest", 1, 2, 3)
 
 	err = reserve(wid, job, set)
 	assert.NoError(t, err)
@@ -46,7 +46,7 @@ func TestReservation(t *testing.T) {
 	defer store.Close()
 
 	wid := "123876"
-	job := faktory.NewJob("sometest", 1, 2, 3)
+	job := client.NewJob("sometest", 1, 2, 3)
 
 	err = reserve(wid, job, store.Working())
 	assert.NoError(t, err)

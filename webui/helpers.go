@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
@@ -96,9 +96,9 @@ func numberWithDelimiter(val int64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
+func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, key, data []byte) error {
-		var job faktory.Job
+		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(data))
@@ -136,9 +136,9 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
+func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	err := set.Page(int64((currentPage-1)*count), int64(count), func(idx int, key []byte, data []byte) error {
-		var job faktory.Job
+		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(data))

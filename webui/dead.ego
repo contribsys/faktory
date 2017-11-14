@@ -4,10 +4,10 @@ package webui
 import (
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
 )
 
-func ego_dead(w io.Writer, req *http.Request, key string, dead *faktory.Job) {
+func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 %>
 
 <% ego_layout(w, req, func() { %>

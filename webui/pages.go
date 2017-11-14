@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 )
 
@@ -161,7 +161,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
+	var job client.Job
 	err = json.Unmarshal(data, &job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -229,7 +229,7 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
+	var job client.Job
 	err = json.Unmarshal(data, &job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -296,7 +296,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
+	var job client.Job
 	err = json.Unmarshal(data, &job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

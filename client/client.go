@@ -1,4 +1,4 @@
-package faktory
+package client
 
 import (
 	"bufio"
@@ -129,7 +129,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 
 // Dial connects to the remote faktory server.
 //
-//   faktory.Dial(faktory.Localhost, "topsecret")
+//   client.Dial(client.Localhost, "topsecret")
 //
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()

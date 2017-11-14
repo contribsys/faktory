@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -22,10 +22,10 @@ var (
 )
 
 type Reservation struct {
-	Job     *faktory.Job `json:"job"`
-	Since   string       `json:"reserved_at"`
-	Expiry  string       `json:"expires_at"`
-	Wid     string       `json:"wid"`
+	Job     *client.Job `json:"job"`
+	Since   string      `json:"reserved_at"`
+	Expiry  string      `json:"expires_at"`
+	Wid     string      `json:"wid"`
 	tsince  time.Time
 	texpiry time.Time
 }
@@ -67,7 +67,7 @@ func (s *Server) loadWorkingSet() error {
 	return err
 }
 
-func acknowledge(jid string, set TimedSet) (*faktory.Job, error) {
+func acknowledge(jid string, set TimedSet) (*client.Job, error) {
 	workingMutex.Lock()
 	res, ok := workingMap[jid]
 	if !ok {
@@ -160,7 +160,7 @@ func (r *reservationReaper) Stats() map[string]interface{} {
 	}
 }
 
-func reserve(wid string, job *faktory.Job, set TimedSet) error {
+func reserve(wid string, job *client.Job, set TimedSet) error {
 	now := time.Now()
 	timeout := job.ReserveFor
 	if timeout == 0 {

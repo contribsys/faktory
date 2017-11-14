@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sync/atomic"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/gorocksdb"
 )
 
@@ -40,7 +40,7 @@ func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
 		if data == nil {
 			return nil
 		}
-		var job faktory.Job
+		var job client.Job
 		err = json.Unmarshal(data, &job)
 		if err != nil {
 			return err

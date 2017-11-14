@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
 )
@@ -27,7 +27,7 @@ type CmdOptions struct {
 
 var (
 	StartupInfo = func() {
-		log.Println(faktory.Licensing)
+		log.Println(client.Licensing)
 	}
 )
 
@@ -35,7 +35,7 @@ func ParseArguments() CmdOptions {
 	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
 
 	log.SetFlags(0)
-	log.Println(faktory.Name, faktory.Version)
+	log.Println(client.Name, client.Version)
 	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
 
 	if StartupInfo != nil {
@@ -106,7 +106,7 @@ func HandleSignals(s *server.Server) {
 }
 
 func exit(s *server.Server) {
-	util.Debugf("%s shutting down", faktory.Name)
+	util.Debugf("%s shutting down", client.Name)
 
 	s.Stop(func() {
 		util.Info("Goodbye")

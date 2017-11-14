@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -291,8 +291,8 @@ func processLines(conn *Connection, server *Server) {
 	}
 }
 
-func parseJob(buf []byte) (*faktory.Job, error) {
-	var job faktory.Job
+func parseJob(buf []byte) (*client.Job, error) {
+	var job client.Job
 
 	err := json.Unmarshal(buf, &job)
 	if err != nil {

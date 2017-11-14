@@ -5,7 +5,7 @@ import (
   "encoding/base64"
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
   "github.com/contribsys/faktory/storage"
 )
 
@@ -34,7 +34,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
       <th><%= t(req, "Priority") %></th>
       <th><%= t(req, "Arguments") %></th>
     </thead>
-    <% queueJobs(q, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
+    <% queueJobs(q, count, currentPage, func(idx int, key []byte, job *client.Job) { %>
       <tr>
         <td><input type="checkbox" name="bkey" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" /></td>
         <td><%= job.Type %></td>

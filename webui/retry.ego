@@ -4,10 +4,10 @@ package webui
 import (
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
 )
 
-func ego_retry(w io.Writer, req *http.Request, key string, retry *faktory.Job) {
+func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 %>
 
 <% ego_layout(w, req, func() { %>

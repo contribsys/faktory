@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/gorocksdb"
 	"github.com/stretchr/testify/assert"
@@ -86,7 +86,7 @@ func TestInteractiveOutputs(t *testing.T) {
 	}{
 		{"flush", "> OK> "},
 		{"purge", "> OK> "},
-		{"version", "> Faktory " + faktory.Version + ", RocksDB " + gorocksdb.RocksDBVersion() + "> "},
+		{"version", "> Faktory " + client.Version + ", RocksDB " + gorocksdb.RocksDBVersion() + "> "},
 		{"help", ">" + " Valid commands:flushbackuprestore *repair *versionhelp* Requires an immediate restart after running command." + "> "},
 	}
 

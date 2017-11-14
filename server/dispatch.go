@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 )
 
@@ -32,7 +32,7 @@ import (
 //
 // If all nil, the connection registers itself, blocking for a job.
 
-func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues ...string) (*faktory.Job, error) {
+func (s *Server) Fetch(fn func(*client.Job) error, ctx context.Context, queues ...string) (*client.Job, error) {
 	var first storage.Queue
 
 	for idx, q := range queues {
@@ -46,7 +46,7 @@ func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues 
 			return nil, err
 		}
 		if data != nil {
-			var job faktory.Job
+			var job client.Job
 			err = json.Unmarshal(data, &job)
 			if err != nil {
 				return nil, err
@@ -71,7 +71,7 @@ func (s *Server) Fetch(fn func(*faktory.Job) error, ctx context.Context, queues 
 		return nil, err
 	}
 	if data != nil {
-		var job faktory.Job
+		var job client.Job
 		err = json.Unmarshal(data, &job)
 		if err != nil {
 			return nil, err

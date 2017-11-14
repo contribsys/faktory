@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -129,7 +129,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 	defer cancel()
 
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := s.Fetch(func(job *faktory.Job) error {
+	job, err := s.Fetch(func(job *client.Job) error {
 		return reserve(c.client.Wid, job, s.store.Working())
 	}, ctx, qs...)
 	if err != nil {
@@ -204,7 +204,7 @@ func CurrentState(s *Server) (map[string]interface{}, error) {
 			"total_queues":    totalQueues,
 			"tasks":           s.taskRunner.Stats()},
 		"server": map[string]interface{}{
-			"faktory_version": faktory.Version,
+			"faktory_version": client.Version,
 			"uptime":          uptimeInSeconds(s),
 			"connections":     atomic.LoadInt64(&s.Stats.Connections),
 			"command_count":   atomic.LoadInt64(&s.Stats.Commands),

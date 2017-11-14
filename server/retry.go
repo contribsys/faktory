@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -95,7 +95,7 @@ func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) err
 		job.Failure.ErrorType = errtype
 		job.Failure.Backtrace = backtrace
 	} else {
-		job.Failure = &faktory.Failure{
+		job.Failure = &client.Failure{
 			RetryCount:   0,
 			FailedAt:     util.Nows(),
 			ErrorMessage: msg,
@@ -110,7 +110,7 @@ func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) err
 	return sendToMorgue(store, job)
 }
 
-func retryLater(store storage.Store, job *faktory.Job) error {
+func retryLater(store storage.Store, job *client.Job) error {
 	when := util.Thens(nextRetry(job))
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
@@ -121,7 +121,7 @@ func retryLater(store storage.Store, job *faktory.Job) error {
 	return store.Retries().AddElement(when, job.Jid, bytes)
 }
 
-func sendToMorgue(store storage.Store, job *faktory.Job) error {
+func sendToMorgue(store storage.Store, job *client.Job) error {
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func sendToMorgue(store storage.Store, job *faktory.Job) error {
 	return store.Dead().AddElement(expiry, job.Jid, bytes)
 }
 
-func nextRetry(job *faktory.Job) time.Time {
+func nextRetry(job *client.Job) time.Time {
 	count := job.Failure.RetryCount
 	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
 	return time.Now().Add(time.Duration(secs) * time.Second)

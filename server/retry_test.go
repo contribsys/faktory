@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,8 +52,8 @@ func fp(jid, msg, errtype string, bt []string) string {
 	return string(data)
 }
 
-func newjob(retries int) *faktory.Job {
-	j := faktory.NewJob("RetryJob", 1, 2, 3)
+func newjob(retries int) *client.Job {
+	j := client.NewJob("RetryJob", 1, 2, 3)
 	j.Retry = retries
 	return j
 }

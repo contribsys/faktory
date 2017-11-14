@@ -2,7 +2,7 @@
 package webui
 
 import (
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
 )
 
 func ego_footer(w io.Writer) {
@@ -12,7 +12,7 @@ func ego_footer(w io.Writer) {
     <div class="container text-center">
         <ul class="nav">
           <li>
-            <p class="navbar-text product-version"><%= faktory.Name %> <%= faktory.Version %></p>
+            <p class="navbar-text product-version"><%= client.Name %> <%= client.Version %></p>
           </li>
           <li>
             <p class="navbar-text faktory-url"><%= serverLocation() %></p>

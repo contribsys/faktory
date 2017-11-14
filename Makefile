@@ -68,7 +68,7 @@ generate:
 cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
-	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
+	open coverage.html
 
 # https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 # we can't cross-compile when using cgo <cry>

@@ -60,6 +60,7 @@ dpush: tag
 		--tag contribsys/faktory:$(VERSION) \
 		--tag contribsys/faktory:latest .
 	docker push contribsys/faktory:$(VERSION)
+	docker push contribsys/faktory:latest
 
 generate:
 	go generate github.com/contribsys/faktory/webui

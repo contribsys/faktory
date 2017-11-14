@@ -13,12 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	util.LogInfo = true
+	//util.LogInfo = true
 	//util.LogDebug = true
 	go stacks()
 }

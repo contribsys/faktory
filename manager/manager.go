@@ -1,8 +1,10 @@
 package manager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -14,14 +16,53 @@ const DefaultTimeout = 1800
 
 type Manager interface {
 	Push(job *client.Job) error
+
+	// Dispatch operations:
+	//
+	//  - Basic dequeue
+	//    - Connection sends FETCH q1, q2
+	// 	 - Job moved from Queue into Working
+	//  - Scheduled
+	//  	 - Job Pushed into Queue
+	// 	 - Job moved from Queue into Working
+	//  - Failure
+	//    - Job Pushed into Retries
+	//  - Push
+	//    - Job Pushed into Queue
+	//  - Ack
+	//    - Job removed from Working
+	//
+	// How are jobs passed to waiting workers?
+	//
+	// Socket sends "FETCH q1, q2, q3"
+	// Connection pops each queue:
+	//   store.GetQueue("q1").Pop()
+	// and returns if it gets any non-nil data.
+	//
+	// If all nil, the connection registers itself, blocking for a job.
+	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
+
+	WorkingCount() int
+
+	ReapLongRunningJobs(timestamp string) (int, error)
 }
 
 func NewManager(s storage.Store) Manager {
-	return &manager{store: s}
+	return &manager{
+		store:      s,
+		workingMap: map[string]*Reservation{},
+	}
 }
 
 type manager struct {
 	store storage.Store
+
+	// Hold the working set in memory so we don't need to burn CPU
+	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
+	// When client ack's JID, we can lookup reservation
+	// and remove Rocks entry quickly.
+	workingMap   map[string]*Reservation
+	workingMutex sync.RWMutex
 }
 
 func (m *manager) Push(job *client.Job) error {
@@ -79,4 +120,58 @@ func (m *manager) Push(job *client.Job) error {
 	}
 
 	return nil
+}
+
+func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
+	var first storage.Queue
+
+	for idx, qname := range queues {
+		q, err := m.store.GetQueue(qname)
+		if err != nil {
+			return nil, err
+		}
+
+		data, err := q.Pop()
+		if err != nil {
+			return nil, err
+		}
+		if data != nil {
+			var job client.Job
+			err = json.Unmarshal(data, &job)
+			if err != nil {
+				return nil, err
+			}
+			err = m.reserve(wid, &job)
+			if err != nil {
+				return nil, err
+			}
+			return &job, nil
+		}
+		if idx == 0 {
+			first = q
+		}
+	}
+
+	// scanned through our queues, no jobs were available
+	// we should block for a moment, awaiting a job to be
+	// pushed.  this allows us to pick up new jobs in µs
+	// rather than seconds.
+	data, err := first.BPop(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if data != nil {
+		var job client.Job
+		err = json.Unmarshal(data, &job)
+		if err != nil {
+			return nil, err
+		}
+		err = m.reserve(wid, &job)
+		if err != nil {
+			return nil, err
+		}
+		return &job, nil
+	}
+
+	return nil, nil
 }

@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -189,6 +190,124 @@ func TestManagerPush(t *testing.T) {
 		assert.Error(t, err)
 		assert.EqualValues(t, 0, q.Size())
 		assert.Empty(t, job.EnqueuedAt)
+	})
+}
+
+func TestManagerFetch(t *testing.T) {
+	t.Run("Fetch", func(t *testing.T) {
+		t.Parallel()
+		store, teardown := setupTest(t)
+		defer teardown(t)
+
+		m := NewManager(store)
+
+		job := client.NewJob("ManagerPush", 1, 2, 3)
+		q, err := store.GetQueue(job.Queue)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, q.Size())
+
+		err = m.Push(job)
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, q.Size())
+
+		queues := []string{"default"}
+		fetchedJob, err := m.Fetch(context.Background(), "workerId", queues...)
+		assert.NoError(t, err)
+		assert.EqualValues(t, job.Jid, fetchedJob.Jid)
+		assert.EqualValues(t, 0, q.Size())
+	})
+
+	t.Run("FetchFromEmptyQueue", func(t *testing.T) {
+		t.Parallel()
+		store, teardown := setupTest(t)
+		defer teardown(t)
+
+		m := NewManager(store)
+
+		q, err := store.GetQueue("default")
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, q.Size())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+
+		queues := []string{"default"}
+		fetchedJob, err := m.Fetch(ctx, "workerId", queues...)
+		assert.NoError(t, err)
+		assert.Empty(t, fetchedJob)
+	})
+
+	t.Run("FetchFromMultipleQueues", func(t *testing.T) {
+		t.Parallel()
+		store, teardown := setupTest(t)
+		defer teardown(t)
+
+		m := NewManager(store)
+
+		job := client.NewJob("ManagerPush", 1, 2, 3)
+		q1, err := store.GetQueue(job.Queue)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, q1.Size())
+
+		err = m.Push(job)
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, q1.Size())
+
+		email := client.NewJob("SendEmail", 1, 2, 3)
+		email.Queue = "email"
+		q2, err := store.GetQueue(email.Queue)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, q2.Size())
+
+		err = m.Push(email)
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, q2.Size())
+
+		queues := []string{"default", "email"}
+
+		fetchedJob, err := m.Fetch(context.Background(), "workerId", queues...)
+		assert.NoError(t, err)
+		assert.EqualValues(t, job.Jid, fetchedJob.Jid)
+		assert.EqualValues(t, 0, q1.Size())
+		assert.EqualValues(t, 1, q2.Size())
+
+		fetchedJob, err = m.Fetch(context.Background(), "workerId", queues...)
+		assert.NoError(t, err)
+		assert.EqualValues(t, email.Jid, fetchedJob.Jid)
+		assert.EqualValues(t, 0, q1.Size())
+		assert.EqualValues(t, 0, q2.Size())
+	})
+
+	t.Run("FetchAwaitsForNewJob", func(t *testing.T) {
+		t.Parallel()
+		store, teardown := setupTest(t)
+		defer teardown(t)
+
+		m := NewManager(store)
+
+		q, err := store.GetQueue("default")
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, q.Size())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		go func() {
+			time.Sleep(time.Duration(1) * time.Second)
+
+			t.Log("Pushing job")
+			job := client.NewJob("ManagerPush", 1, 2, 3)
+			err = m.Push(job)
+			assert.NoError(t, err)
+		}()
+
+		queues := []string{"default"}
+		fetchedJob, err := m.Fetch(ctx, "workerId", queues...)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, fetchedJob)
 	})
 }
 

@@ -74,9 +74,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 	defer cancel()
 
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := s.Fetch(func(job *client.Job) error {
-		return reserve(c.client.Wid, job, s.store.Working())
-	}, ctx, qs...)
+	job, err := s.manager.Fetch(ctx, c.client.Wid, qs...)
 	if err != nil {
 		c.Error(cmd, err)
 		return

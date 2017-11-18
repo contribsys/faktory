@@ -51,6 +51,40 @@ func TestManagerReserve(t *testing.T) {
 	})
 }
 
+func TestManagerAcknowledge(t *testing.T) {
+	t.Parallel()
+	store, teardown := setupTest(t)
+	defer teardown(t)
+
+	m := NewManager(store).(*manager)
+
+	job, err := m.Acknowledge("")
+	assert.NoError(t, err)
+	assert.Nil(t, job)
+
+	job = client.NewJob("AckJob", 1, 2, 3)
+	q, err := store.GetQueue(job.Queue)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 0, store.Working().Size())
+	assert.EqualValues(t, 0, m.WorkingCount())
+
+	err = m.reserve("workerId", job)
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 1, store.Working().Size())
+	assert.EqualValues(t, 1, m.WorkingCount())
+
+	aJob, err := m.Acknowledge(job.Jid)
+	assert.NoError(t, err)
+	assert.Equal(t, job.Jid, aJob.Jid)
+
+	aJob, err = m.Acknowledge(job.Jid)
+	assert.NoError(t, err)
+	assert.Nil(t, aJob)
+}
+
 func TestManagerReapLongRunningJobs(t *testing.T) {
 	t.Parallel()
 	store, teardown := setupTest(t)

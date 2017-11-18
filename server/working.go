@@ -3,14 +3,8 @@ package server
 import (
 	"encoding/json"
 
-	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 )
-
-type TimedSet interface {
-	AddElement(string, string, []byte) error
-	RemoveElement(string, string) error
-}
 
 /*
  * When we restart the server, we need to load the
@@ -42,22 +36,6 @@ func (s *Server) loadWorkingSet() error {
 		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
 	}
 	return err
-}
-
-func acknowledge(jid string, set TimedSet) (*client.Job, error) {
-	workingMutex.Lock()
-	res, ok := workingMap[jid]
-	if !ok {
-		workingMutex.Unlock()
-		util.Infof("No such job to acknowledge %s", jid)
-		return nil, nil
-	}
-
-	delete(workingMap, jid)
-	workingMutex.Unlock()
-
-	err := set.RemoveElement(res.Expiry, jid)
-	return res.Job, err
 }
 
 type reservationReaper struct {

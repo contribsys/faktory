@@ -105,7 +105,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
 		return
 	}
-	_, err = acknowledge(jid, s.store.Working())
+	_, err = s.manager.Acknowledge(jid)
 	if err != nil {
 		c.Error(cmd, err)
 		return

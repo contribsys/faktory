@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -43,7 +44,8 @@ type Server struct {
 	Password string
 
 	listener   net.Listener
-	store      storage.Store
+	store      storage.Store // FIXME drop store
+	manager    manager.Manager
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
@@ -106,7 +108,8 @@ func (s *Server) Start() error {
 	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
-	s.store = store
+	s.store = store // FIXME drop store
+	s.manager = manager.NewManager(store)
 	s.listener = listener
 	s.loadWorkingSet()
 	s.startTasks(s.pending)

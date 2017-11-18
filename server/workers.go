@@ -122,8 +122,9 @@ func (worker *ClientData) IsConsumer() bool {
 }
 
 func (worker *ClientData) BusyCount() int {
-	workingMutex.Lock()
-	defer workingMutex.Unlock()
+	// FIXME workingMutex
+	// workingMutex.Lock()
+	// defer workingMutex.Unlock()
 
 	count := 0
 	for _, res := range workingMap {

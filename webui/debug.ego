@@ -68,34 +68,36 @@ func ego_debug(w io.Writer, req *http.Request) {
 </div>
 
 <h3><%= t(req, "Backups") %></h3>
-<div class="table_container">
-<table class="error table table-bordered table-striped">
-  <thead>
-    <tr>
-      <th>Id</th>
-      <th>Files</th>
-      <th>Size</th>
-      <th>Timestamp</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
-    <tr>
-      <td><%= bi.Id %></td>
-      <td><%= bi.FileCount %></td>
-      <td><%= numberWithDelimiter(bi.Size) %></td>
-      <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
-    </tr>
-    <% }) %>
-    <% if err != nil { %><%= err.Error() %><% } %>
-  </tbody>
-</table>
-<form action="/debug" method="post">
-  <%== csrfTag(req) %>
-  <div class="btn-group pull-left flip">
-    <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
+<div class="container">
+  <div class="table_container">
+    <table class="error table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Files</th>
+          <th>Size</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
+        <tr>
+          <td><%= bi.Id %></td>
+          <td><%= bi.FileCount %></td>
+          <td><%= numberWithDelimiter(bi.Size) %></td>
+          <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
+        </tr>
+        <% }) %>
+        <% if err != nil { %><%= err.Error() %><% } %>
+      </tbody>
+    </table>
   </div>
-</form>
+  <div class="btn-group pull-left flip">
+    <form action="/debug" method="post">
+      <%== csrfTag(req) %>
+      <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
+    </form>
+  </div>
 </div>
 
 <h3><%= t(req, "Disk Usage") %></h3>

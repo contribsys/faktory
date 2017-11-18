@@ -23,6 +23,38 @@ func (m *manager) WorkingCount() int {
 	return len(m.workingMap)
 }
 
+/*
+ * When we restart the server, we need to load the
+ * current set of Reservations back into memory so any
+ * outstanding jobs can be Acknowledged successfully.
+ *
+ * The alternative is that a server restart would re-execute
+ * all outstanding jobs, something to be avoided when possible.
+ */
+func (m *manager) loadWorkingSet() error {
+	m.workingMutex.Lock()
+	defer m.workingMutex.Unlock()
+
+	addedCount := 0
+	err := m.store.Working().Each(func(_ int, _ []byte, data []byte) error {
+		var res Reservation
+		err := json.Unmarshal(data, &res)
+		if err != nil {
+			return err
+		}
+		m.workingMap[res.Job.Jid] = &res
+		addedCount += 1
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if addedCount > 0 {
+		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
+	}
+	return err
+}
+
 func (m *manager) reserve(wid string, job *client.Job) error {
 	now := time.Now()
 	timeout := job.ReserveFor

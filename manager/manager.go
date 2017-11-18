@@ -50,10 +50,12 @@ type Manager interface {
 }
 
 func NewManager(s storage.Store) Manager {
-	return &manager{
+	m := &manager{
 		store:      s,
 		workingMap: map[string]*Reservation{},
 	}
+	m.loadWorkingSet()
+	return m
 }
 
 type manager struct {

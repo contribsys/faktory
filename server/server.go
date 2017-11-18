@@ -111,7 +111,6 @@ func (s *Server) Start() error {
 	s.store = store // FIXME drop store
 	s.manager = manager.NewManager(store)
 	s.listener = listener
-	s.loadWorkingSet()
 	s.startTasks(s.pending)
 	s.startScanners(s.pending)
 	s.mu.Unlock()

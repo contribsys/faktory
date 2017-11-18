@@ -9,6 +9,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLoadWorkingSet(t *testing.T) {
+	t.Parallel()
+	store, teardown := setupTest(t)
+	defer teardown(t)
+
+	m := NewManager(store).(*manager)
+
+	job := client.NewJob("WorkingJob", 1, 2, 3)
+	job.ReserveFor = 600
+	assert.EqualValues(t, 0, store.Working().Size())
+	assert.EqualValues(t, 0, m.WorkingCount())
+
+	err := m.reserve("workerId", job)
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, store.Working().Size())
+	assert.EqualValues(t, 1, m.WorkingCount())
+
+	m2 := NewManager(store).(*manager)
+	assert.EqualValues(t, 1, store.Working().Size())
+	assert.EqualValues(t, 1, m2.WorkingCount())
+}
+
 func TestManagerReserve(t *testing.T) {
 	t.Run("ReserveJob", func(t *testing.T) {
 		t.Parallel()

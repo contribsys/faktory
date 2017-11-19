@@ -82,6 +82,14 @@ func (m *manager) Push(job *client.Job) error {
 		return fmt.Errorf("All jobs must have an args parameter")
 	}
 
+	if job.CreatedAt == "" {
+		job.CreatedAt = util.Nows()
+	}
+
+	if job.Queue == "" {
+		job.Queue = "default"
+	}
+
 	// Priority can never be negative because of signedness
 	if job.Priority > 9 || job.Priority == 0 {
 		job.Priority = 5

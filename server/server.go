@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -15,7 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
@@ -291,21 +289,4 @@ func processLines(conn *Connection, server *Server) {
 			break
 		}
 	}
-}
-
-func parseJob(buf []byte) (*client.Job, error) {
-	var job client.Job
-
-	err := json.Unmarshal(buf, &job)
-	if err != nil {
-		return nil, err
-	}
-
-	if job.CreatedAt == "" {
-		job.CreatedAt = util.Nows()
-	}
-	if job.Queue == "" {
-		job.Queue = "default"
-	}
-	return &job, nil
 }

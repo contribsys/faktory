@@ -48,7 +48,9 @@ func end(c *Connection, s *Server, cmd string) {
 
 func push(c *Connection, s *Server, cmd string) {
 	data := []byte(cmd[5:])
-	job, err := parseJob(data)
+
+	var job client.Job
+	err := json.Unmarshal(buf, &job)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -112,7 +114,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	s.store.Success()
+	s.store.Success() // FIXME MUST not be here
 	c.Ok()
 }
 

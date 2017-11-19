@@ -91,6 +91,8 @@ func TestManagerAcknowledge(t *testing.T) {
 	assert.EqualValues(t, 0, q.Size())
 	assert.EqualValues(t, 0, store.Working().Size())
 	assert.EqualValues(t, 0, m.WorkingCount())
+	assert.EqualValues(t, 0, store.Processed())
+	assert.EqualValues(t, 0, store.Failures())
 
 	err = m.reserve("workerId", job)
 
@@ -98,14 +100,20 @@ func TestManagerAcknowledge(t *testing.T) {
 	assert.EqualValues(t, 0, q.Size())
 	assert.EqualValues(t, 1, store.Working().Size())
 	assert.EqualValues(t, 1, m.WorkingCount())
+	assert.EqualValues(t, 0, store.Processed())
+	assert.EqualValues(t, 0, store.Failures())
 
 	aJob, err := m.Acknowledge(job.Jid)
 	assert.NoError(t, err)
 	assert.Equal(t, job.Jid, aJob.Jid)
+	assert.EqualValues(t, 1, store.Processed())
+	assert.EqualValues(t, 0, store.Failures())
 
 	aJob, err = m.Acknowledge(job.Jid)
 	assert.NoError(t, err)
 	assert.Nil(t, aJob)
+	assert.EqualValues(t, 1, store.Processed())
+	assert.EqualValues(t, 0, store.Failures())
 }
 
 func TestManagerReapLongRunningJobs(t *testing.T) {

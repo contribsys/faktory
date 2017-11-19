@@ -58,7 +58,7 @@ func (m *manager) Fail(failure *FailPayload) error {
 }
 
 func (m *manager) processFailure(jid, msg, errtype string, backtrace []string) error {
-	job, err := m.Acknowledge(jid)
+	job, err := m.ack(jid)
 	if err != nil {
 		return err
 	}

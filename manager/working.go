@@ -99,7 +99,7 @@ func (m *manager) reserve(wid string, job *client.Job) error {
 	return nil
 }
 
-func (m *manager) Acknowledge(jid string) (*client.Job, error) {
+func (m *manager) ack(jid string) (*client.Job, error) {
 	m.workingMutex.Lock()
 	res, ok := m.workingMap[jid]
 	if !ok {
@@ -113,6 +113,18 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 
 	err := m.store.Working().RemoveElement(res.Expiry, jid)
 	return res.Job, err
+}
+
+func (m *manager) Acknowledge(jid string) (*client.Job, error) {
+	job, err := m.ack(jid)
+	if err != nil {
+		return nil, err
+	}
+
+	if job != nil {
+		m.store.Success()
+	}
+	return job, nil
 }
 
 func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {

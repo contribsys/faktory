@@ -26,6 +26,8 @@ func TestManagerFail(t *testing.T) {
 		assert.NotNil(t, m.workingMap[job.Jid])
 		assert.Nil(t, m.workingMap[job.Jid].Job.Failure)
 		assert.EqualValues(t, 0, store.Retries().Size())
+		assert.EqualValues(t, 0, store.Processed())
+		assert.EqualValues(t, 0, store.Failures())
 
 		fail := failure(job.Jid, "uh no", "SomeError", nil)
 		err = m.Fail(fail)
@@ -33,6 +35,8 @@ func TestManagerFail(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, m.workingMap[job.Jid])
 		assert.EqualValues(t, 1, store.Retries().Size())
+		assert.EqualValues(t, 1, store.Processed())
+		assert.EqualValues(t, 1, store.Failures())
 
 		// retry job
 		err = m.reserve("workerId", job)
@@ -52,6 +56,8 @@ func TestManagerFail(t *testing.T) {
 		assert.Nil(t, m.workingMap[job.Jid])
 		assert.EqualValues(t, 1, store.Retries().Size())
 		assert.EqualValues(t, 1, store.Dead().Size())
+		assert.EqualValues(t, 2, store.Processed())
+		assert.EqualValues(t, 2, store.Failures())
 	})
 
 	t.Run("FailOneShotJob", func(t *testing.T) {
@@ -72,6 +78,8 @@ func TestManagerFail(t *testing.T) {
 		assert.NotNil(t, m.workingMap[job.Jid])
 		assert.Nil(t, m.workingMap[job.Jid].Job.Failure)
 		assert.EqualValues(t, 0, store.Retries().Size())
+		assert.EqualValues(t, 0, store.Processed())
+		assert.EqualValues(t, 0, store.Failures())
 
 		fail := failure(job.Jid, "uh no", "SomeError", nil)
 		err = m.Fail(fail)
@@ -80,6 +88,8 @@ func TestManagerFail(t *testing.T) {
 		assert.Nil(t, m.workingMap[job.Jid])
 		assert.EqualValues(t, 0, store.Retries().Size())
 		assert.EqualValues(t, 0, store.Dead().Size())
+		assert.EqualValues(t, 1, store.Processed())
+		assert.EqualValues(t, 1, store.Failures())
 	})
 
 	t.Run("FailWithInvalidFailPayload", func(t *testing.T) {

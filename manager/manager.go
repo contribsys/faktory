@@ -47,6 +47,8 @@ type Manager interface {
 	ReapLongRunningJobs(timestamp string) (int, error)
 
 	Acknowledge(jid string) (*client.Job, error)
+
+	Fail(fail *FailPayload) error
 }
 
 func NewManager(s storage.Store) Manager {

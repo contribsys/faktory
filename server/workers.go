@@ -127,11 +127,12 @@ func (worker *ClientData) BusyCount() int {
 	// defer workingMutex.Unlock()
 
 	count := 0
-	for _, res := range workingMap {
-		if res.Wid == worker.Wid {
-			count += 1
-		}
-	}
+	// FIXME busycount
+	// for _, res := range workingMap {
+	// 	if res.Wid == worker.Wid {
+	// 		count += 1
+	// 	}
+	// }
 	return count
 }
 

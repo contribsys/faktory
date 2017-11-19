@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -112,6 +113,24 @@ func ack(c *Connection, s *Server, cmd string) {
 	}
 
 	s.store.Success()
+	c.Ok()
+}
+
+func fail(c *Connection, s *Server, cmd string) {
+	data := []byte(cmd[5:])
+
+	var failure manager.FailPayload
+	err := json.Unmarshal(data, &failure)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
+
+	err = s.manager.Fail(&failure)
+	if err != nil {
+		c.Error(cmd, err)
+		return
+	}
 	c.Ok()
 }
 

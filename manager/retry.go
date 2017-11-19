@@ -1,4 +1,4 @@
-package server
+package manager
 
 import (
 	"encoding/json"
@@ -21,31 +21,19 @@ type FailPayload struct {
 	Backtrace    []string `json:"backtrace"`
 }
 
-func fail(c *Connection, s *Server, cmd string) {
-	raw := cmd[5:]
-
-	err := failProcessor(s.store, raw)
-	if err != nil {
-		c.Error(cmd, err)
-		return
+func (m *manager) Fail(failure *FailPayload) error {
+	if failure == nil {
+		return fmt.Errorf("No failure")
 	}
-	c.Ok()
-}
 
-func failProcessor(store storage.Store, raw string) error {
-	errtype := "unknown"
-	msg := "unknown"
-	var backtrace []string
-
-	var failure FailPayload
-	err := json.Unmarshal([]byte(raw), &failure)
-	if err != nil {
-		return err
-	}
 	jid := failure.Jid
 	if jid == "" {
 		return fmt.Errorf("Missing JID")
 	}
+
+	errtype := "unknown"
+	msg := "unknown"
+	var backtrace []string
 
 	if failure.ErrorType != "" {
 		errtype = failure.ErrorType
@@ -53,27 +41,24 @@ func failProcessor(store storage.Store, raw string) error {
 			errtype = errtype[0:100]
 		}
 	}
+
 	if failure.ErrorMessage != "" {
 		msg = failure.ErrorMessage
 		if len(msg) > 1000 {
 			msg = msg[0:1000]
 		}
 	}
+
 	backtrace = failure.Backtrace
 	if len(backtrace) > 50 {
 		backtrace = backtrace[0:50]
 	}
 
-	err = Fail(store, jid, msg, errtype, backtrace)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return m.processFailure(jid, msg, errtype, backtrace)
 }
 
-func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) error {
-	job, err := acknowledge(jid, store.Working())
+func (m *manager) processFailure(jid, msg, errtype string, backtrace []string) error {
+	job, err := m.Acknowledge(jid)
 	if err != nil {
 		return err
 	}
@@ -82,7 +67,7 @@ func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) err
 		return fmt.Errorf("Cannot fail %s, not found in working set", jid)
 	}
 
-	store.Failure()
+	m.store.Failure()
 
 	if job.Retry == 0 {
 		// no retry, no death, completely ephemeral, goodbye
@@ -105,9 +90,9 @@ func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) err
 	}
 
 	if job.Failure.RetryCount < job.Retry {
-		return retryLater(store, job)
+		return retryLater(m.store, job)
 	}
-	return sendToMorgue(store, job)
+	return sendToMorgue(m.store, job)
 }
 
 func retryLater(store storage.Store, job *client.Job) error {

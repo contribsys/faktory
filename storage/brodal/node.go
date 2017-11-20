@@ -194,11 +194,11 @@ func simpleLink(existingnode *HeapNode, newnode *HeapNode) *HeapNode {
 
 	if existingnode.value.Value() < newnode.value.Value() {
 		existingnode.adopt(newnode)
-		existingnode.rank += 1
+		existingnode.rank++
 		return existingnode
 	} else {
 		newnode.adopt(existingnode)
-		newnode.rank += 1
+		newnode.rank++
 		return newnode
 	}
 }

@@ -128,7 +128,7 @@ func (worker *ClientData) BusyCount() int {
 	count := 0
 	for _, res := range workingMap {
 		if res.Wid == worker.Wid {
-			count += 1
+			count++
 		}
 	}
 	return count

@@ -90,7 +90,7 @@ func Fail(store storage.Store, jid, msg, errtype string, backtrace []string) err
 	}
 
 	if job.Failure != nil {
-		job.Failure.RetryCount += 1
+		job.Failure.RetryCount++
 		job.Failure.ErrorMessage = msg
 		job.Failure.ErrorType = errtype
 		job.Failure.Backtrace = backtrace

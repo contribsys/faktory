@@ -55,7 +55,7 @@ func (s *Server) loadWorkingSet() error {
 			return err
 		}
 		workingMap[res.Job.Jid] = &res
-		addedCount += 1
+		addedCount++
 		return nil
 	})
 	if err != nil {
@@ -144,7 +144,7 @@ func reapLongRunningJobs(store storage.Store, timestamp string) (int, error) {
 				continue
 			}
 
-			count += 1
+			count++
 		}
 	}
 

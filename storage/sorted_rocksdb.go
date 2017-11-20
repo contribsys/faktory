@@ -65,13 +65,13 @@ func (ts *rocksSortedSet) Page(start int64, count int64, proc func(int, []byte, 
 		key := k.Data()
 		payload := v.Data()
 		err := proc(index, key, payload)
-		index += 1
+		index++
 		k.Free()
 		v.Free()
 		if err != nil {
 			return err
 		}
-		count -= 1
+		count--
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 
 	var count int64
 	for it.SeekToFirst(); it.Valid(); it.Next() {
-		count += 1
+		count++
 	}
 	if err := it.Err(); err != nil {
 		panic(fmt.Sprintf("%s size: %s", ts.name, err.Error()))
@@ -144,7 +144,7 @@ func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 		wb.DeleteCF(ts.cf, k.Data())
 		k.Free()
 		v.Free()
-		count += 1
+		count++
 	}
 	if count > 0 {
 		err := ts.db.Write(ts.wo, wb)
@@ -225,7 +225,7 @@ func (ts *rocksSortedSet) Clear() (int64, error) {
 			return count, err
 		}
 		k.Free()
-		count += 1
+		count++
 		atomic.AddInt64(&ts.size, -1)
 	}
 	atomic.StoreInt64(&ts.size, 0)

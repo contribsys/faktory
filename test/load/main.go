@@ -109,7 +109,7 @@ func stress(idx int64) {
 				return
 			}
 		}
-		opsCount[idx] += 1
+		opsCount[idx]++
 	}
 }
 

@@ -506,10 +506,10 @@ func TestBlockingPop(t *testing.T) {
 			waitMutex.Lock()
 			defer waitMutex.Unlock()
 			if data != nil {
-				count += 1
+				count++
 			}
 			if data == nil && err == nil {
-				timedout += 1
+				timedout++
 			}
 		}()
 	}

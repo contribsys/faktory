@@ -112,7 +112,7 @@ func (ts *taskRunner) cycle() {
 		}
 		atomic.AddInt64(&t.runs, 1)
 		atomic.AddInt64(&t.walltimeNs, tend.Sub(tstart).Nanoseconds())
-		count += 1
+		count++
 	}
 	end := time.Now()
 	atomic.AddInt64(&ts.cycles, 1)

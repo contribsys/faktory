@@ -83,16 +83,16 @@ func repl(path string, store storage.Store) {
 		if er != nil {
 			if io.EOF == er {
 				fmt.Println("")
-				if store != nil {
-					store.Close()
-				}
-				os.Exit(0)
+				break
 			}
 			fmt.Printf("Error: %s\n", er.Error())
 			continue
 		}
 		line := string(bytes)
 		cmd := strings.Split(line, " ")
+		if cmd[0] == "exit" || cmd[0] == "quit" {
+			break
+		}
 		err := execute(cmd, store, path)
 		if err != nil {
 			fmt.Println(err)

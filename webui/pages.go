@@ -14,7 +14,7 @@ import (
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := server.CurrentState(defaultServer)
+	hash, err := defaultServer.CurrentState()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

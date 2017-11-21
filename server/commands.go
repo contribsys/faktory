@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
+// A command responds to an client request.
+// Each command must parse the request payload (if any), invoke a action and produce a response.
+// Commands should not have business logic.
 type command func(c *Connection, s *Server, cmd string)
 
 var cmdSet = map[string]command{
@@ -47,16 +48,16 @@ func end(c *Connection, s *Server, cmd string) {
 }
 
 func push(c *Connection, s *Server, cmd string) {
-	data := []byte(cmd[5:])
+	data := cmd[5:]
 
 	var job client.Job
-	err := json.Unmarshal(buf, &job)
+	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
-		c.Error(cmd, err)
+		c.Error(cmd, fmt.Errorf("Invalid PUSH %s", data))
 		return
 	}
 
-	err = s.manager.Push(job)
+	err = s.manager.Push(&job)
 	if err != nil {
 		c.Error(cmd, err)
 		return
@@ -114,17 +115,16 @@ func ack(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	s.store.Success() // FIXME MUST not be here
 	c.Ok()
 }
 
 func fail(c *Connection, s *Server, cmd string) {
-	data := []byte(cmd[5:])
+	data := cmd[5:]
 
 	var failure manager.FailPayload
-	err := json.Unmarshal(data, &failure)
+	err := json.Unmarshal([]byte(data), &failure)
 	if err != nil {
-		c.Error(cmd, err)
+		c.Error(cmd, fmt.Errorf("Invalid FAIL %s", data))
 		return
 	}
 
@@ -136,48 +136,8 @@ func fail(c *Connection, s *Server, cmd string) {
 	c.Ok()
 }
 
-func uptimeInSeconds(s *Server) int {
-	return int(time.Since(s.Stats.StartedAt).Seconds())
-}
-
-func currentMemoryUsage(s *Server) string {
-	return util.MemoryUsage()
-}
-
-func CurrentState(s *Server) (map[string]interface{}, error) {
-	defalt, err := s.store.GetQueue("default")
-	if err != nil {
-		return nil, err
-	}
-	store := s.Store()
-	totalQueued := 0
-	totalQueues := 0
-	// queue size is cached so this should be very efficient.
-	store.EachQueue(func(q storage.Queue) {
-		totalQueued += int(q.Size())
-		totalQueues += 1
-	})
-
-	return map[string]interface{}{
-		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
-		"faktory": map[string]interface{}{
-			"default_size":    defalt.Size(),
-			"total_failures":  store.Failures(),
-			"total_processed": store.Processed(),
-			"total_enqueued":  totalQueued,
-			"total_queues":    totalQueues,
-			"tasks":           s.taskRunner.Stats()},
-		"server": map[string]interface{}{
-			"faktory_version": client.Version,
-			"uptime":          uptimeInSeconds(s),
-			"connections":     atomic.LoadInt64(&s.Stats.Connections),
-			"command_count":   atomic.LoadInt64(&s.Stats.Commands),
-			"used_memory_mb":  currentMemoryUsage(s)},
-	}, nil
-}
-
 func info(c *Connection, s *Server, cmd string) {
-	data, err := CurrentState(s)
+	data, err := s.CurrentState()
 	if err != nil {
 		c.Error(cmd, err)
 		return

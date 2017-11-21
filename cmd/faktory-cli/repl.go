@@ -46,7 +46,6 @@ func main() {
 	store, err := storage.Open("rocksdb", opts.StorageDirectory)
 	if err != nil {
 		fmt.Println("Unable to open storage:", err.Error())
-		fmt.Println(`Run "db repair" to attempt repair`)
 	}
 
 	if interactive {
@@ -171,7 +170,6 @@ func purge(store storage.Store, args []string) error {
 		}
 		count = val
 	}
-	fmt.Printf("Purging %d\n", count)
 	if err := store.PurgeOldBackups(count); err != nil {
 		return err
 	}

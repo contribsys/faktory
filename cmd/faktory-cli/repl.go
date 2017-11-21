@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -19,10 +20,11 @@ import (
 
 const helpMsg = `Valid commands:
 
-flush
-backup
-restore *
-repair *
+flush			flush all job data from database, useful for testing
+backup			create a new backup
+purge [keep]		purge old backups, keep [N] newest backups, default 24
+restore *		restore the database from the newest backup
+repair *		run RocksDB's internal repair function to recover from data issues
 version
 help
 
@@ -118,7 +120,7 @@ func execute(cmd []string, store storage.Store, path string) error {
 	case "repair":
 		return repair(store, path)
 	case "purge":
-		return purge(store)
+		return purge(store, cmd[1:])
 	case "restore":
 		return restore(store)
 	default:
@@ -160,8 +162,17 @@ func repair(store storage.Store, path string) error {
 	return nil
 }
 
-func purge(store storage.Store) error {
-	if err := store.PurgeOldBackups(storage.DefaultKeepBackupsCount); err != nil {
+func purge(store storage.Store, args []string) error {
+	count := storage.DefaultKeepBackupsCount
+	if len(args) == 1 {
+		val, err := strconv.Atoi(args[0])
+		if err != nil {
+			return err
+		}
+		count = val
+	}
+	fmt.Printf("Purging %d\n", count)
+	if err := store.PurgeOldBackups(count); err != nil {
 		return err
 	}
 	fmt.Println("OK")

@@ -151,36 +151,25 @@ func info(c *Connection, s *Server, cmd string) {
 	c.Result(bytes)
 }
 
-/*
-BEAT {"wid":1238971623}
-*/
 func heartbeat(c *Connection, s *Server, cmd string) {
-	if !strings.HasPrefix(cmd, "BEAT {") {
-		c.Error(cmd, fmt.Errorf("Invalid format %s", cmd))
-		return
-	}
-
-	var worker ClientData
 	data := cmd[5:]
-	err := json.Unmarshal([]byte(data), &worker)
+
+	var client ClientData
+	err := json.Unmarshal([]byte(data), &client)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid format %s", data))
+		c.Error(cmd, fmt.Errorf("Invalid BEAT %s", data))
 		return
 	}
 
-	s.hbmu.Lock()
-	defer s.hbmu.Unlock()
-	entry, ok := s.heartbeats[worker.Wid]
+	worker, ok := s.workers.heartbeat(&client, false)
 	if !ok {
-		c.Error(cmd, fmt.Errorf("Unknown client %s", worker.Wid))
+		c.Error(cmd, fmt.Errorf("Unknown worker %s", client.Wid))
 		return
 	}
 
-	entry.lastHeartbeat = time.Now()
-
-	if entry.state == Running {
+	if worker.state == Running {
 		c.Ok()
 	} else {
-		c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(entry.state))))
+		c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(worker.state))))
 	}
 }

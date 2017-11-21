@@ -45,11 +45,10 @@ type Server struct {
 	listener   net.Listener
 	store      storage.Store // FIXME drop store
 	manager    manager.Manager
+	workers    *workers
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-	heartbeats map[string]*ClientData
-	hbmu       sync.RWMutex
 
 	initialized chan bool
 }
@@ -72,7 +71,6 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Options:     opts,
 		Stats:       &RuntimeStats{StartedAt: time.Now()},
 		pending:     &sync.WaitGroup{},
-		heartbeats:  make(map[string]*ClientData, 12),
 		initialized: make(chan bool, 1),
 	}
 
@@ -86,7 +84,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 }
 
 func (s *Server) Heartbeats() map[string]*ClientData {
-	return s.heartbeats
+	return s.workers.heartbeats
 }
 
 func (s *Server) Store() storage.Store {
@@ -108,6 +106,7 @@ func (s *Server) Start() error {
 
 	s.mu.Lock()
 	s.store = store // FIXME drop store
+	s.workers = NewWorkers()
 	s.manager = manager.NewManager(store)
 	s.listener = listener
 	s.startTasks(s.pending)
@@ -237,7 +236,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	if client.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		updateHeartbeat(client, s.heartbeats, &s.hbmu)
+		s.workers.heartbeat(client, true)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))

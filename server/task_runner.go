@@ -125,7 +125,7 @@ func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	// reaps job reservations which have expired
 	ts.AddTask(15, &reservationReaper{s.manager, 0})
 	// reaps workers who have not heartbeated
-	ts.AddTask(15, &beatReaper{s, 0})
+	ts.AddTask(15, &beatReaper{s.workers, 0})
 	ts.Run(waiter)
 	s.taskRunner = ts
 }

@@ -1,16 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/chzyer/readline"
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
@@ -77,24 +78,50 @@ func main() {
 func repl(path string, store storage.Store) {
 	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), path)
 
-	rdr := bufio.NewReader(os.Stdin)
+	var completer = readline.NewPrefixCompleter(
+		readline.PcItem("version"),
+		readline.PcItem("flush"),
+		readline.PcItem("backup"),
+		readline.PcItem("restore"),
+		readline.PcItem("repair"),
+		readline.PcItem("purge"),
+		readline.PcItem("exit"),
+		readline.PcItem("help"),
+	)
+
+	l, err := readline.NewEx(&readline.Config{
+		Prompt:          "> ",
+		HistoryFile:     "/tmp/faktory.tmp",
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+
+	log.SetOutput(l.Stderr())
 	for {
-		fmt.Printf("> ")
-		bytes, _, er := rdr.ReadLine()
-		if er != nil {
-			if io.EOF == er {
-				fmt.Println("")
+		line, err := l.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
 				break
+			} else {
+				continue
 			}
-			fmt.Printf("Error: %s\n", er.Error())
-			continue
+		} else if err == io.EOF {
+			fmt.Println("")
+			break
 		}
-		line := string(bytes)
+
+		line = strings.TrimSpace(line)
 		cmd := strings.Split(line, " ")
 		if cmd[0] == "exit" || cmd[0] == "quit" {
 			break
 		}
-		err := execute(cmd, store, path)
+
+		err = execute(cmd, store, path)
 		if err != nil {
 			fmt.Println(err)
 		}

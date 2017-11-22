@@ -8,6 +8,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/chzyer/readline"
+  packages = ["."]
+  revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
+  version = "v1.4"
+
+[[projects]]
   name = "github.com/contribsys/gorocksdb"
   packages = ["."]
   revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
@@ -39,6 +45,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fd74b45ceff28bf452c9a049dbef830eeddc8ec4a97e430c7b3e33abd81b60cd"
+  inputs-digest = "a0eefbd45a8908fa96e2ab89e806a7db3558a1a871b2158f2be6e77d4c3436b5"
   solver-name = "gps-cdcl"
   solver-version = 1

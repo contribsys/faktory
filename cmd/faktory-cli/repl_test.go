@@ -84,10 +84,10 @@ func TestInteractiveOutputs(t *testing.T) {
 		Arg    string
 		Output string
 	}{
-		{"flush", "> OK> "},
-		{"purge", "> OK> "},
-		{"version", "> Faktory " + client.Version + ", RocksDB " + gorocksdb.RocksDBVersion() + "> "},
-		{"help", ">" + " Valid commands:flush\t\t\tflush all job data from database, useful for testingbackup\t\t\tcreate a new backuppurge [keep]\t\tpurge old backups, keep [N] newest backups, default 24restore *\t\trestore the database from the newest backuprepair *\t\trun RocksDB's internal repair function to recover from data issuesversionhelp* Requires an immediate restart after running command." + "> "},
+		{"flush", "OK"},
+		{"purge", "OK"},
+		{"version", "Faktory " + client.Version + ", RocksDB " + gorocksdb.RocksDBVersion()},
+		{"help", "Valid commands:flush\t\t\tflush all job data from database, useful for testingbackup\t\t\tcreate a new backuppurge [keep]\t\tpurge old backups, keep [N] newest backups, default 24restore *\t\trestore the database from the newest backuprepair *\t\trun RocksDB's internal repair function to recover from data issuesversionhelp* Requires an immediate restart after running command."},
 	}
 
 	for _, ts := range tests {
@@ -121,7 +121,8 @@ func TestInteractiveOutputs(t *testing.T) {
 			bkp = fmt.Sprintf("{Id:%d FileCount:%d Size:%d Timestamp:%d}", bi.Id, bi.FileCount, bi.Size, bi.Timestamp)
 		})
 
-		expected := usingRockDB + "./" + storageName + "-data> Backup created" + bkp + "> "
+		expected := usingRockDB + "./" + storageName + "-data"
+		expected += "Backup created" + bkp
 		assert.Equal(t, expected, output)
 	})
 

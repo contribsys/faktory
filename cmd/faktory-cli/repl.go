@@ -95,7 +95,7 @@ func repl(path string, store storage.Store) {
 
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "> ",
-		HistoryFile:     dir + "/.faktory/cli.history",
+		HistoryFile:     dir + "/.local/.faktory-cli.history",
 		AutoComplete:    completer,
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",

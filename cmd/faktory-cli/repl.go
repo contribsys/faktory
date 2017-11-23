@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
@@ -90,12 +89,9 @@ func repl(path string, store storage.Store) {
 		readline.PcItem("help"),
 	)
 
-	usr, _ := user.Current()
-	dir := usr.HomeDir
-
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "> ",
-		HistoryFile:     dir + "/.local/.faktory-cli.history",
+		HistoryFile:     util.HistoryFilePath(),
 		AutoComplete:    completer,
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",

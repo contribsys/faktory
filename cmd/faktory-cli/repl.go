@@ -90,12 +90,9 @@ func repl(path string, store storage.Store) {
 		readline.PcItem("help"),
 	)
 
-	usr, _ := user.Current()
-	dir := usr.HomeDir
-
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "> ",
-		HistoryFile:     dir + "/.local/.faktory-cli.history",
+		HistoryFile:     historyFilePath(),
 		AutoComplete:    completer,
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
@@ -228,4 +225,28 @@ func handleSignals(fn func()) {
 		util.Debugf("Received signal: %v", sig)
 		fn()
 	}
+}
+
+// historyFilePath returns the path of the history file
+// $HOME/.local/.faktory-cli.history
+// if the .local folder does not exists, it will create it.
+func historyFilePath() string {
+	usr, _ := user.Current()
+	dir := usr.HomeDir + "/.local"
+	historyFilePath := dir + "/.faktory-cli.history"
+
+	exists, err := util.FileExists(historyFilePath)
+	if err != nil {
+		return ""
+	}
+
+	if !exists {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			util.Error("Unable to create $HOME/.local dir", err)
+			return ""
+		}
+	}
+
+	return historyFilePath
 }

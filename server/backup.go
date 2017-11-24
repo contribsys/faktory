@@ -33,6 +33,11 @@ func (bp *backupPolicy) Name() string {
 }
 
 func (bp *backupPolicy) Execute() error {
+	if bp.Server.Options.Environment != "production" {
+		// we only back up in production mode, don't need to fill
+		// developer's laptop with old junk data
+		return nil
+	}
 	bp.count++
 
 	util.Debug("Running automatic backup...")

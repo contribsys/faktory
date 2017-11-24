@@ -8,7 +8,6 @@ import (
 	"fmt"
 	mathrand "math/rand"
 	"os"
-	"os/user"
 	"runtime"
 	"time"
 )
@@ -172,28 +171,4 @@ func Backtrace(size int) []string {
 	}
 
 	return str[0:count]
-}
-
-// HistoryFilePath returns the path of the history file
-// $HOME/.local/.faktory-cli.history
-// if the .local folder does not exists, it will create it.
-func HistoryFilePath() string {
-	usr, _ := user.Current()
-	dir := usr.HomeDir + "/.local"
-	historyFilePath := dir + "/.faktory-cli.history"
-
-	exists, err := FileExists(historyFilePath)
-	if err != nil {
-		return ""
-	}
-
-	if !exists {
-		err = os.MkdirAll(dir, 0755)
-		if err != nil {
-			Error("Unable to create $HOME/.local dir", err)
-			return ""
-		}
-	}
-
-	return historyFilePath
 }

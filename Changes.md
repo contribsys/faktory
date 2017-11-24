@@ -1,3 +1,8 @@
+## HEAD
+
+- Implement automated backups, default once per hour and keeping 24. [#106]
+- Implement `purge` command for faktory-cli, to remove old backups.
+
 ## 0.6.1
 
 - Fix job reservation [#94, jweslley]

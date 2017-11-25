@@ -195,7 +195,7 @@ PUSH            ||   v         FETCH                 ACK
                   ``===================================> 
 ```
 
-# Client States
+# Client Lifecycle
 
 Once the connection between client and server is established, an FWP
 connection is in one of several states; initially "Not identified". Most
@@ -205,15 +205,24 @@ inappropriate state, and the server will respond with an error.
 
 Clients that wish to act as consumers, that is, to execute jobs, MUST
 regularly issue `BEAT` commands to the server to recognize state changes
-initiated by the server. Clients that are not consumers MUST NOT send
-`BEAT` commands, and MUST NOT enter the Quiet or Terminating stages.
+initiated by the server. Clients SHOULD NOT send these more frequently
+than every 5 seconds, and MUST send them at least every 60 seconds.
+Clients that are not consumers MUST NOT send `BEAT` commands, and MUST
+NOT enter the Quiet or Terminating stages.
 
 ## Not Identified State
 
 In the not identified state, the client MUST issue a `HELLO` command
 before most other commands will be permitted. This state is entered when
 a connection starts. Upon connecting, the server will first send a `HI`
-message, and then wait for the client's `HELLO`.
+message, and then wait for the client's `HELLO`. The server `HI` is sent
+as a single JSON hash with the following fields:
+
+| Field name | Value type | Description |
+| ---------- | ---------- | ----------- |
+| `v`        | Integer    | protocol version number. always 2 for servers conforming to this FWP specification.
+| `i`        | Integer    | only present when password is required. number of password hash iterations. see `HELLO`.
+| `s`        | String     | only present when password is required. salt for password hashing. see `HELLO`.
 
 ### Identified State
 
@@ -283,25 +292,173 @@ Arguments: JSON hash of client information
 
 Responses:
 
- - String "OK" - client connection accepted
+ - Simple String "OK" - client connection accepted
  - Error - client connection declined
 
 The `HELLO` command MUST be the first command issued by any client when
 connecting to a Faktory server. It is sent in response to the server's
 initial `HI` message.
 
+A `HELLO` contains identifying information about the client, as well as
+authentication credentials if the server requests them. Clients MUST
+supply the following fields:
+
+| Field name | Value type | Description |
+| ---------- | ---------- | ----------- |
+| `v`        | Integer    | protocol version number. always 2 for clients conforming to this FWP specification.
+
+In response to a client `HELLO`, the server will send either a
+Simple String OK response, or an error. If an OK response is received,
+the client enters the "Identified" state, and may begin issuing other
+commands.
+
+#### Required Fields for Protected Server
+
+When the server `HI` includes an iteration count `i` and a salt `s`,
+a client MUST include a `pwdhash` String-typed field in their `HELLO`.
+This field should be the hexadecimal representation of the `i`th SHA256
+hash of the client password concatenated with the value in `s`.
+
+```example
+hash = password + s
+for 0..i {
+  hash = sha256(hash)
+}
+hex(hash)
+```
+
+#### Required Fields for Consumers
+
+A client that wishes to act as a consumer MUST include the following
+additional fields in their `HELLO`:
+
+| Field name | Value type    | Description |
+| ---------- | ------------- | ----------- |
+| `hostname` | String        | name for the host that is running this worker.
+| `wid`      | String        | globally unique identifier for this worker.
+| `pid`      | Integer       | local process identifier for this worker on its host.
+| `labels`   | Array[String] | labels that apply to this worker, to allow producers to target work units to worker types.
+
+A client is allowed to establish multiple connections to the server, and
+use the same `wid` value across connections. If this is done, the same
+`hostname`, `pid`, and `labels` values MUST be provided in all the
+`HELLO` commands for those connections.
+
 ### `INFO` Command
 
+TODO
+
 ### `END` Command
+
+Arguments: *none*
+
+Responses:
+
+ - Simple String "OK" - client connection will be terminated
+
+The `END` command is used by a client to signal to the server that it
+wishes to terminate the connection. A client MUST NOT send additional
+commands on the same connection after sending `END`. A consumer SHOULD
+NOT send `END` while it has outstanding work units, instead, it should
+first `FAIL` those jobs, or wait for their completion, and only
+subsequently send `END`.
+
+The server responds to an `END` with a Simple String OK response. Upon
+receiving this response, the client enters the End state.
 
 ## Producer Commands
 
 ### `PUSH` Command
 
+Arguments: work unit
+
+Responses:
+
+ - Simple String "OK" - work unit was enqueued
+ - Error - work unit was not enqueued
+
+`PUSH` lets producers enqueue jobs at the work server for later
+execution. See the work unit specification for further details.
+
 ## Consumer Commands
 
 ### `FETCH` Command
 
+Arguments: [queue...]
+
+Responses:
+
+ - Bulk String containing work unit - work unit for execution
+ - Null Bulk String - no work unit available for execution
+ - Error
+
+Consumers SHOULD issue a `FETCH` command whenever they are able to
+execute another work unit. `FETCH` will normally return a work unit that
+has been enqueued by a producer, which the consumer should execute.
+
+A consumer MAY include a list of queues to fetch work units from. The
+server will check these queues in order, and return the first work unit
+found. If no work units are found, `FETCH` will block for up to 2
+seconds on the *first* queue provided. If no queue is provided, only the
+`default` queue will be scanned.
+
+If a work unit is returned from `FETCH`, the client MUST subsequently
+send either an `ACK` or `FAIL` command for the `jid` of the returned
+work unit. A client SHOULD send at most one `ACK` or `FAIL` for a given
+job.
+
 ### `ACK` Command
 
+Arguments: `{jid: String}`
+
+Responses:
+
+ - Simple String "OK" - ACK was received and accepted
+ - Error - ACK was malformed or rejected
+
+Consumers MUST issue an `ACK` command for any job it executes in
+response to a `FETCH` command if its execution did not result in an
+error. The argument should be a single-field JSON hash, `jid`, which
+contains the `jid` included in the work unit returned by `FETCH`. This
+informs the server that the job has been completed, and can be removed.
+
 ### `FAIL` Command
+
+Arguments: `{jid: String, errtype: String, message: String, backtrace: Array[String]}`
+
+Responses:
+
+ - Simple String "OK" - FAIL was received and accepted
+ - Error - FAIL was malformed or rejected
+
+Consumers MUST issue a `FAIL` command for any job it executes in
+response to a `FETCH` command if its execution resulted in an error.
+The argument should be a JSON hash with the following fields:
+
+| Field name  | Description |
+| ----------- | ----------- |
+| `jid`       | the `jid` of the job whose execution failed.
+| `errtype`   | the class of error that occurred during execution.
+| `message`   | a short description of the error.
+| `backtrace` | a longer, multi-line backtrace of how the error occurred.
+
+### `BEAT` Command
+
+Arguments: `{wid: String}`
+
+Responses:
+
+ - Simple String "OK" - `BEAT` acknowledged.
+ - Simple String `{state: String}` - server-initiated state change.
+ - Error - `BEAT` malformed or rejected.
+
+Consumers MUST regularly issue the `BEAT` command to indicate liveness,
+and to get notified about server-initiated state changes. The argument
+to `BEAT` is a single-field JSON hash that contains the `wid` issued by
+this worker in its `HELLO`.
+
+If a non-OK simple string response is received, it represents a
+server-initiated state change. The `state` field of the returned JSON
+hash contains one of two values: "quiet" or "terminate". The client MUST
+immediately enter the associated lifecycle state upon receiving either
+of these messages.

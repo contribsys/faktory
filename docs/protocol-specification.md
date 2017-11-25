@@ -206,9 +206,10 @@ inappropriate state, and the server will respond with an error.
 Clients that wish to act as consumers, that is, to execute jobs, MUST
 regularly issue `BEAT` commands to the server to recognize state changes
 initiated by the server. Clients SHOULD NOT send these more frequently
-than every 5 seconds, and MUST send them at least every 60 seconds.
-Clients that are not consumers MUST NOT send `BEAT` commands, and MUST
-NOT enter the Quiet or Terminating stages.
+than every 5 seconds, and MUST send them at least every 60 seconds. A
+`BEAT` interval of 15 seconds is recommended. Clients that are not
+consumers MUST NOT send `BEAT` commands, and MUST NOT enter the Quiet or
+Terminating stages.
 
 ## Not Identified State
 
@@ -216,7 +217,9 @@ In the not identified state, the client MUST issue a `HELLO` command
 before most other commands will be permitted. This state is entered when
 a connection starts. Upon connecting, the server will first send a `HI`
 message, and then wait for the client's `HELLO`. The server `HI` is sent
-as a single JSON hash with the following fields:
+as a single-line Simple String response, starting with the three-byte
+sequence `HI `, followed by a single JSON hash with the following
+fields:
 
 | Field name | Value type | Description |
 | ---------- | ---------- | ----------- |
@@ -234,14 +237,15 @@ this state, the client can issue commands at will.
 This state is entered as a result of a Quiet server response to a
 consumer `BEAT`. In the quiet state, a consumer SHOULD NOT fetch further
 jobs for execution. While in this state, the consumer MUST NOT
-terminate.
+terminate, and MUST continue to issue regular `BEAT` commands.
 
 ### Terminating State
 
 This state is entered as a result of a Terminate server response to a
-consumer `BEAT`. In the terminating state, a consumer SHOULD NOT fetch
+consumer `BEAT`. In the terminating state, a consumer MUST NOT fetch
 further jobs for execution, and SHOULD issue a `FAIL` for any currently
-executing jobs. The consumer MUST then immediately enter the end state.
+executing jobs within 30 seconds. The consumer MUST enter the end state
+after at most 30 seconds.
 
 ### End State
 
@@ -343,6 +347,32 @@ A client is allowed to establish multiple connections to the server, and
 use the same `wid` value across connections. If this is done, the same
 `hostname`, `pid`, and `labels` values MUST be provided in all the
 `HELLO` commands for those connections.
+
+#### Examples
+
+Producer connecting to non-secured server:
+
+```example
+S: +HI {"v":2}
+C: HELLO {"v":2}
+S: +OK
+```
+
+Consumer connecting to non-secured server:
+
+```example
+S: +HI {"v":2}
+C: HELLO {"hostname":"localhost","wid":"4qpc2443vpvai","pid":2676,"labels":["golang"],"v":2}
+S: +OK
+```
+
+Producer connecting to a protected server:
+
+```example
+S: +HI {"v":2,"s":"123456789abc","i":1735}
+C: HELLO {"pwdhash":"1e440e3f3d2db545e9129bb4b63121b6b09d594dae4344d1d2a309af0e2acac1","v":2}
+S: +OK
+```
 
 ### `INFO` Command
 
@@ -462,3 +492,16 @@ server-initiated state change. The `state` field of the returned JSON
 hash contains one of two values: "quiet" or "terminate". The client MUST
 immediately enter the associated lifecycle state upon receiving either
 of these messages.
+
+#### Examples
+
+```example
+C: BEAT {"wid": "4qpc2443vpvai"}
+S: +OK
+C: BEAT {"wid": "4qpc2443vpvai"}
+S: +{"state": "quiet"}
+C: BEAT {"wid": "4qpc2443vpvai"}
+S: +{"state": "terminate"}
+C: END
+S: +OK
+```

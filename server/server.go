@@ -106,7 +106,7 @@ func (s *Server) Start() error {
 
 	s.mu.Lock()
 	s.store = store // FIXME drop store
-	s.workers = NewWorkers()
+	s.workers = newWorkers()
 	s.manager = manager.NewManager(store)
 	s.listener = listener
 	s.startTasks(s.pending)

@@ -51,7 +51,7 @@ func TestClientData(t *testing.T) {
 func TestWorkers(t *testing.T) {
 	t.Parallel()
 
-	workers := NewWorkers()
+	workers := newWorkers()
 	assert.Equal(t, 0, workers.Count())
 
 	client := &ClientData{

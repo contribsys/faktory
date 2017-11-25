@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
@@ -152,9 +153,9 @@ func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, 
 	}
 }
 
-func busyReservations(fn func(worker *server.Reservation)) {
+func busyReservations(fn func(worker *manager.Reservation)) {
 	err := defaultServer.Store().Working().Each(func(idx int, key []byte, data []byte) error {
-		var res server.Reservation
+		var res manager.Reservation
 		err := json.Unmarshal(data, &res)
 		if err != nil {
 			util.Error("Cannot unmarshal reservation", err)

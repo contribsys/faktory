@@ -141,7 +141,7 @@ type workers struct {
 	mu         sync.RWMutex
 }
 
-func NewWorkers() *workers {
+func newWorkers() *workers {
 	return &workers{
 		heartbeats: make(map[string]*ClientData, 12),
 	}

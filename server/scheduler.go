@@ -65,13 +65,13 @@ func (s *scanner) Execute() error {
 	return nil
 }
 
-type rocksAdapter struct {
+type storageAdapter struct {
 	store   storage.Store
 	ts      storage.SortedSet
 	goodbye bool
 }
 
-func (ra *rocksAdapter) Push(name string, priority uint8, elm []byte) error {
+func (ra *storageAdapter) Push(name string, priority uint8, elm []byte) error {
 	if ra.goodbye {
 		// when the Dead elements come up for "scheduling", they have
 		// expired and are removed forever.  Goodbye!
@@ -85,10 +85,10 @@ func (ra *rocksAdapter) Push(name string, priority uint8, elm []byte) error {
 	}
 	return que.Push(priority, elm)
 }
-func (ra *rocksAdapter) Prune(timestamp string) ([][]byte, error) {
+func (ra *storageAdapter) Prune(timestamp string) ([][]byte, error) {
 	return ra.ts.RemoveBefore(timestamp)
 }
-func (ra *rocksAdapter) Size() int64 {
+func (ra *storageAdapter) Size() int64 {
 	return ra.ts.Size()
 }
 
@@ -108,7 +108,7 @@ func (s *scanner) Stats() map[string]interface{} {
 }
 
 func (s *Server) startScanners(waiter *sync.WaitGroup) {
-	s.taskRunner.AddTask(5, &scanner{name: "Scheduled", adapter: &rocksAdapter{s.store, s.store.Scheduled(), false}})
-	s.taskRunner.AddTask(5, &scanner{name: "Retries", adapter: &rocksAdapter{s.store, s.store.Retries(), false}})
-	s.taskRunner.AddTask(60, &scanner{name: "Dead", adapter: &rocksAdapter{s.store, s.store.Dead(), true}})
+	s.taskRunner.AddTask(5, &scanner{name: "Scheduled", adapter: &storageAdapter{s.store, s.store.Scheduled(), false}})
+	s.taskRunner.AddTask(5, &scanner{name: "Retries", adapter: &storageAdapter{s.store, s.store.Retries(), false}})
+	s.taskRunner.AddTask(60, &scanner{name: "Dead", adapter: &storageAdapter{s.store, s.store.Dead(), true}})
 }

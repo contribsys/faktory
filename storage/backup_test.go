@@ -29,7 +29,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	count := 0
 	db.EachBackup(func(element BackupInfo) {
-		count += 1
+		count++
 	})
 	assert.Equal(t, 0, count)
 
@@ -38,7 +38,7 @@ func TestBackupAndRestore(t *testing.T) {
 	assert.NoError(t, err)
 	count = 0
 	db.EachBackup(func(element BackupInfo) {
-		count += 1
+		count++
 	})
 	assert.Equal(t, 1, count)
 

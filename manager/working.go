@@ -43,7 +43,7 @@ func (m *manager) loadWorkingSet() error {
 			return err
 		}
 		m.workingMap[res.Job.Jid] = &res
-		addedCount += 1
+		addedCount++
 		return nil
 	})
 	if err != nil {
@@ -158,7 +158,7 @@ func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 				continue
 			}
 
-			count += 1
+			count++
 		}
 	}
 

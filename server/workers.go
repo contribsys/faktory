@@ -130,7 +130,7 @@ func (worker *ClientData) BusyCount() int {
 	// FIXME busycount
 	// for _, res := range workingMap {
 	// 	if res.Wid == worker.Wid {
-	// 		count += 1
+	// 		count++
 	// 	}
 	// }
 	return count

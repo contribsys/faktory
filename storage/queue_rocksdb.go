@@ -115,7 +115,7 @@ func (q *rocksQueue) Page(start int64, count int64, fn func(index int, k, v []by
 		value := v.Data()
 		key := k.Data()
 		err := fn(index, key, value)
-		index += 1
+		index++
 		k.Free()
 		v.Free()
 		if err != nil {
@@ -170,7 +170,7 @@ func (q *rocksQueue) Clear() (uint64, error) {
 		//util.Warnf("Queue#clear: delete %x", key)
 		wb.DeleteCF(q.cf, key)
 		k.Free()
-		count += 1
+		count++
 	}
 	err := q.store.db.Write(wo, wb)
 	if err != nil {
@@ -228,7 +228,7 @@ func (q *rocksQueue) Init() error {
 		}
 
 		k.Free()
-		count += 1
+		count++
 	}
 	it.SeekToLast()
 

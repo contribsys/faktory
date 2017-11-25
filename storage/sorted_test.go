@@ -80,7 +80,7 @@ func TestRocksSortedSet(b *testing.T) {
 	pageSize := 12
 	given := 0
 	err = retries.Page(10, 12, func(idx int, key []byte, elm []byte) error {
-		given += 1
+		given++
 		return nil
 	})
 	assert.NoError(b, err)

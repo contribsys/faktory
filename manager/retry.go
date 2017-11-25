@@ -75,7 +75,7 @@ func (m *manager) processFailure(jid, msg, errtype string, backtrace []string) e
 	}
 
 	if job.Failure != nil {
-		job.Failure.RetryCount += 1
+		job.Failure.RetryCount++
 		job.Failure.ErrorMessage = msg
 		job.Failure.ErrorType = errtype
 		job.Failure.Backtrace = backtrace

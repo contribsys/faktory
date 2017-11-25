@@ -306,7 +306,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	// queue size is cached so this should be very efficient.
 	s.store.EachQueue(func(q storage.Queue) {
 		totalQueued += int(q.Size())
-		totalQueues += 1
+		totalQueues++
 	})
 
 	return map[string]interface{}{

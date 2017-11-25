@@ -56,7 +56,7 @@ func (s *scanner) Execute() error {
 			continue
 		}
 
-		count += 1
+		count++
 	}
 	end := time.Now()
 	atomic.AddInt64(&s.cycles, 1)

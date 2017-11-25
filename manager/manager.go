@@ -42,13 +42,22 @@ type Manager interface {
 	// If all nil, the connection registers itself, blocking for a job.
 	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
 
+	Acknowledge(jid string) (*client.Job, error)
+
+	Fail(fail *FailPayload) error
+
 	WorkingCount() int
 
 	ReapLongRunningJobs(timestamp string) (int, error)
 
-	Acknowledge(jid string) (*client.Job, error)
+	// Purge deletes all dead jobs
+	Purge() (int64, error)
 
-	Fail(fail *FailPayload) error
+	// EnqueueScheduledJobs enqueues scheduled jobs
+	EnqueueScheduledJobs() (int64, error)
+
+	// RetryJobs enqueues failed jobs
+	RetryJobs() (int64, error)
 }
 
 func NewManager(s storage.Store) Manager {
@@ -117,6 +126,10 @@ func (m *manager) Push(job *client.Job) error {
 	}
 
 	// enqueue immediately
+	return m.enqueue(job)
+}
+
+func (m *manager) enqueue(job *client.Job) error {
 	q, err := m.store.GetQueue(job.Queue)
 	if err != nil {
 		return err

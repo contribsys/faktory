@@ -152,7 +152,7 @@ func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 		m.workingMutex.Unlock()
 
 		if ok {
-			err = m.Push(job)
+			err = m.enqueue(job)
 			if err != nil {
 				util.Error("Unable to push job", err)
 				continue

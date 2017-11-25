@@ -17,14 +17,9 @@ implementation respectively.
 This document is written from the point of view of the implementor of
 an FWP client.  Beyond the protocol overview in section 2, it is not
 optimized for someone trying to understand the operation of the
-protocol.  The material in sections 3 through 5 provides the general
-context and definitions with which FWP operates.
-
-Sections 6, 7, and 9 describe the FWP commands, responses, and syntax,
-respectively.  The relationships among these are such that it is almost
-impossible to understand any of them separately.  In particular, do not
-attempt to deduce command syntax from the command section alone; instead
-refer to the Formal Syntax section.
+protocol.  The material in sections 3 and 4 provides the general context
+and definitions with which FWP operates. Sections 5 describes the FWP
+commands, responses, and syntax.
 
 ## Conventions Used in This Document
 
@@ -274,15 +269,11 @@ FWP commands are described in this section.  Commands are organized by
 the type of client likely to issue them (producer first, then consumer). 
 
 Command arguments, identified by "Arguments:" in the command
-descriptions below, are described by function, not by syntax.  The
-precise syntax of command arguments is described in the Formal Syntax
-section.
+descriptions below, are shown either a metavariables (e.g., "queue"), or
+as JSON hash templates. The precise meaning is defined in the body text.
 
 All commands cause specific server responses to be returned; these are
-identified by "Responses:" in the command descriptions below. See the
-response descriptions in the Responses section for information on these
-responses, and the Formal Syntax section for the precise syntax of these
-responses.
+identified by "Responses:" in the command descriptions below.
 
 The state of a connection is only changed by successful commands which
 are documented as changing state. A rejected command (error response)

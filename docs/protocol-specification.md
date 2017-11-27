@@ -1,10 +1,10 @@
 Faktory Work Protocol
 ---------------------
 
-The Factory Work Protocol (FWP) allows a client interact with a Faktory
-work server. It permits a client to authenticate to a Faktory server,
-submit units of work for later execution, and/or fetch units of work for
-processing and subsequently report their execution result.
+The Factory Work Protocol (FWP) allows a client to interact with a
+Faktory work server. It permits a client to authenticate to a Faktory
+server, submit units of work for later execution, and/or fetch units of
+work for processing and subsequently report their execution result.
 
 FWP does not dictate how work units are scheduled or executed, nor their
 semantics. This is left to the Faktory work server and the client
@@ -131,7 +131,7 @@ fields depending on the situation.
 | Field name    | Value type     | When omitted   | Description |
 | ------------- | -------------- | -------------- | ----------- |
 | `queue`       | String         | `default`      | which job queue to push this job onto.
-| `priority`    | Integer [1-9]  | 5              | higher priority jobs are scheduled before lower priority jobs.
+| `priority`    | Integer [1-9]  | 5              | higher priority jobs are dequeued before lower priority jobs.
 | `reserve_for` | Integer [60+]  | 1800           | number of seconds a job may be held by a worker before it is considered failed.
 | `at`          | RFC3339 string | \<blank\>      | run the job at approximately this time; immediately if blank
 | `retry`       | Integer        | 25             | number of times to retry this job if it fails. -1 prevents retries.
@@ -143,7 +143,7 @@ fields depending on the situation.
 
 | Field name    | Value type     | Description |
 | ------------- | -------------- | ----------- |
-| `enqueued_at` | RFC3339 string | the time at which this job was enqueued by the server.
+| `enqueued_at` | RFC3339 string | the most recent time this job was enqueued by the server.
 | `failure`     | JSON hash      | data about this job's most recent failure (if any).
 
 ### Work unit state diagram

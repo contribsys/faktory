@@ -1,7 +1,7 @@
 Faktory Work Protocol
 ---------------------
 
-The Factory Work Protocol (FWP) allows a client interact with a Faktory
+The Factory Work Protocol (FWP) allows a client to interact with a Faktory
 work server. It permits a client to authenticate to a Faktory server,
 submit units of work for later execution, and/or fetch units of work for
 processing and subsequently report their execution result.

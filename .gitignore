@@ -24,3 +24,4 @@ vendor/
 /faktory
 /faktory-cli
 /loadtest
+/coverage.html

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -22,11 +21,13 @@ func TestClientData(t *testing.T) {
 	cw, err = clientDataFromHello("{}")
 	assert.NoError(t, err)
 	assert.NotNil(t, cw)
+	assert.False(t, cw.IsConsumer())
 
 	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
 	cw, err = clientDataFromHello(ahoy)
 	assert.NoError(t, err)
 	assert.NotNil(t, cw)
+	assert.True(t, cw.IsConsumer())
 
 	assert.Equal(t, Running, cw.state)
 	assert.False(t, cw.IsQuiet())
@@ -47,33 +48,41 @@ func TestClientData(t *testing.T) {
 	assert.Equal(t, 0, cw.BusyCount())
 }
 
-func TestHeartbeats(t *testing.T) {
+func TestWorkers(t *testing.T) {
 	t.Parallel()
 
-	beatsByMe := map[string]*ClientData{}
-	var mu sync.RWMutex
+	workers := newWorkers()
+	assert.Equal(t, 0, workers.Count())
 
-	assert.Equal(t, 0, len(beatsByMe))
-	reapHeartbeats(beatsByMe, &mu)
+	client := &ClientData{
+		Hostname: "MikeBookPro.local",
+		Wid:      "78629a0f5f3f164f",
+	}
 
-	ahoy := `{"hostname":"MikeBookPro.local","wid":"78629a0f5f3f164f","pid":40275,"labels":["blue","seven"],"salt":"123456","pwdhash":"958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589"}`
-	client, err := clientDataFromHello(ahoy)
-	assert.NoError(t, err)
+	entry, ok := workers.heartbeat(client, false)
+	assert.Equal(t, 0, workers.Count())
+	assert.Nil(t, entry)
+	assert.False(t, ok)
+
+	entry, ok = workers.heartbeat(client, true)
+	assert.Equal(t, 1, workers.Count())
+	assert.NotNil(t, entry)
+	assert.True(t, ok)
 
 	before := time.Now()
-	updateHeartbeat(client, beatsByMe, &mu)
+	entry, ok = workers.heartbeat(client, true)
 	after := time.Now()
-	assert.True(t, client.lastHeartbeat.After(before))
-	assert.True(t, client.lastHeartbeat.Before(after))
+	assert.Equal(t, 1, workers.Count())
+	assert.NotNil(t, entry)
+	assert.True(t, ok)
+	assert.True(t, entry.lastHeartbeat.After(before))
+	assert.True(t, entry.lastHeartbeat.Before(after))
 
-	assert.Equal(t, 1, len(beatsByMe))
-	reapHeartbeats(beatsByMe, &mu)
-	assert.Equal(t, 1, len(beatsByMe))
+	count := workers.reapHeartbeats(client.lastHeartbeat)
+	assert.Equal(t, 1, workers.Count())
+	assert.Equal(t, 0, count)
 
-	updateHeartbeat(client, beatsByMe, &mu)
-	assert.False(t, client.lastHeartbeat.Before(after))
-
-	client.lastHeartbeat = time.Now().Add(-65 * time.Second)
-	reapHeartbeats(beatsByMe, &mu)
-	assert.Equal(t, 0, len(beatsByMe))
+	count = workers.reapHeartbeats(time.Now())
+	assert.Equal(t, 0, workers.Count())
+	assert.Equal(t, 1, count)
 }

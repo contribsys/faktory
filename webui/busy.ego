@@ -5,6 +5,7 @@ import (
   "net/http"
 
   "github.com/contribsys/faktory/server"
+  "github.com/contribsys/faktory/manager"
 )
 
 func ego_busy(w io.Writer, req *http.Request) {
@@ -89,7 +90,7 @@ func ego_busy(w io.Writer, req *http.Request) {
       <th><%= t(req, "Arguments") %></th>
       <th><%= t(req, "Started") %></th>
     </thead>
-    <% busyReservations(func(res *server.Reservation) { %>
+    <% busyReservations(func(res *manager.Reservation) { %>
       <% job := res.Job %>
       <tr>
         <td>

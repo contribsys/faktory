@@ -121,7 +121,7 @@ func (q *rocksQueue) Page(start int64, count int64, fn func(index int, k, v []by
 		if err != nil {
 			return err
 		}
-		count--
+		count -= 1
 	}
 	if it.Err() != nil {
 		return it.Err()

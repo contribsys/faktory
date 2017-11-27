@@ -108,7 +108,7 @@ func TestRocksSortedSet(b *testing.T) {
 	assert.NoError(b, err)
 	assert.Equal(b, int64(1), db.Working().Size())
 	assert.Equal(b, count-1, retries.Size())
-	count--
+	count -= 1
 
 	err = retries.MoveTo(db.Working(), "1231", strs[1], func(payload []byte) (string, []byte, error) {
 		return util.Nows(), payload, nil

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -43,12 +43,12 @@ type Server struct {
 	Password string
 
 	listener   net.Listener
-	store      storage.Store
+	store      storage.Store // FIXME drop store
+	manager    manager.Manager
+	workers    *workers
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-	heartbeats map[string]*ClientData
-	hbmu       sync.RWMutex
 
 	initialized chan bool
 }
@@ -71,7 +71,6 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Options:     opts,
 		Stats:       &RuntimeStats{StartedAt: time.Now()},
 		pending:     &sync.WaitGroup{},
-		heartbeats:  make(map[string]*ClientData, 12),
 		initialized: make(chan bool, 1),
 	}
 
@@ -85,7 +84,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 }
 
 func (s *Server) Heartbeats() map[string]*ClientData {
-	return s.heartbeats
+	return s.workers.heartbeats
 }
 
 func (s *Server) Store() storage.Store {
@@ -106,9 +105,10 @@ func (s *Server) Start() error {
 	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
-	s.store = store
+	s.store = store // FIXME drop store
+	s.workers = newWorkers()
+	s.manager = manager.NewManager(store)
 	s.listener = listener
-	s.loadWorkingSet()
 	s.startTasks(s.pending)
 	s.startScanners(s.pending)
 	s.mu.Unlock()
@@ -236,7 +236,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	if client.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		updateHeartbeat(client, s.heartbeats, &s.hbmu)
+		s.workers.heartbeat(client, true)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -291,19 +291,38 @@ func processLines(conn *Connection, server *Server) {
 	}
 }
 
-func parseJob(buf []byte) (*client.Job, error) {
-	var job client.Job
+func (s *Server) uptimeInSeconds() int {
+	return int(time.Since(s.Stats.StartedAt).Seconds())
+}
 
-	err := json.Unmarshal(buf, &job)
+func (s *Server) CurrentState() (map[string]interface{}, error) {
+	defalt, err := s.store.GetQueue("default")
 	if err != nil {
 		return nil, err
 	}
 
-	if job.CreatedAt == "" {
-		job.CreatedAt = util.Nows()
-	}
-	if job.Queue == "" {
-		job.Queue = "default"
-	}
-	return &job, nil
+	totalQueued := 0
+	totalQueues := 0
+	// queue size is cached so this should be very efficient.
+	s.store.EachQueue(func(q storage.Queue) {
+		totalQueued += int(q.Size())
+		totalQueues++
+	})
+
+	return map[string]interface{}{
+		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+		"faktory": map[string]interface{}{
+			"default_size":    defalt.Size(),
+			"total_failures":  s.store.Failures(),
+			"total_processed": s.store.Processed(),
+			"total_enqueued":  totalQueued,
+			"total_queues":    totalQueues,
+			"tasks":           s.taskRunner.Stats()},
+		"server": map[string]interface{}{
+			"faktory_version": client.Version,
+			"uptime":          s.uptimeInSeconds(),
+			"connections":     atomic.LoadInt64(&s.Stats.Connections),
+			"command_count":   atomic.LoadInt64(&s.Stats.Commands),
+			"used_memory_mb":  util.MemoryUsage()},
+	}, nil
 }

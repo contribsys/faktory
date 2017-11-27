@@ -71,7 +71,7 @@ func (ts *rocksSortedSet) Page(start int64, count int64, proc func(int, []byte, 
 		if err != nil {
 			return err
 		}
-		count--
+		count -= 1
 	}
 
 	return nil

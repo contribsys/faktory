@@ -128,38 +128,27 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 }
 
 func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
-	reservations, err := m.store.Working().RemoveBefore(timestamp)
+	elms, err := m.store.Working().RemoveBefore(timestamp)
 	if err != nil {
 		return 0, err
 	}
 
 	count := 0
-	for _, data := range reservations {
+	for _, elm := range elms {
 		var res Reservation
-		err := json.Unmarshal(data, &res)
+		err := json.Unmarshal(elm, &res)
 		if err != nil {
-			util.Error("Unable to unmarshal reservation", err)
+			util.Error("Unable to read reservation", err)
 			continue
 		}
 
 		job := res.Job
-
-		m.workingMutex.Lock()
-		_, ok := m.workingMap[job.Jid]
-		if ok {
-			delete(m.workingMap, job.Jid)
+		err = m.processFailure(job.Jid, "job execution expired", "ReservationExpired", nil)
+		if err != nil {
+			util.Error("Unable to retry reservation", err)
+			continue
 		}
-		m.workingMutex.Unlock()
-
-		if ok {
-			err = m.enqueue(job)
-			if err != nil {
-				util.Error("Unable to push job", err)
-				continue
-			}
-
-			count++
-		}
+		count++
 	}
 
 	return count, nil

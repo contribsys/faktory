@@ -141,11 +141,11 @@ func TestManagerReapLongRunningJobs(t *testing.T) {
 	count, err := m.ReapLongRunningJobs(util.Thens(exp))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
-	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 0, store.Retries().Size())
 
 	exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)
 	count, err = m.ReapLongRunningJobs(util.Thens(exp))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
-	assert.EqualValues(t, 1, q.Size())
+	assert.EqualValues(t, 1, store.Retries().Size())
 }

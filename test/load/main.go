@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory"
+	faktory "github.com/contribsys/faktory/client"
 )
 
 var (
@@ -114,7 +114,7 @@ func stress(idx int64) {
 }
 
 func randomQueue() string {
-	return queues[rand.Intn(5)]
+	return queues[rand.Intn(len(queues))]
 }
 
 func pop(client *faktory.Client, queues []string) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -31,44 +32,66 @@ func (m *manager) Fail(failure *FailPayload) error {
 		return fmt.Errorf("Missing JID")
 	}
 
-	errtype := "unknown"
-	msg := "unknown"
-	var backtrace []string
+	cleanse(failure)
+
+	return m.processFailure(jid, failure)
+}
+
+func cleanse(failure *FailPayload) {
+	failure.ErrorType = strings.TrimSpace(failure.ErrorType)
+	failure.ErrorMessage = strings.TrimSpace(failure.ErrorMessage)
 
 	if failure.ErrorType != "" {
-		errtype = failure.ErrorType
-		if len(errtype) > 100 {
-			errtype = errtype[0:100]
+		if len(failure.ErrorType) > 100 {
+			failure.ErrorType = failure.ErrorType[0:100]
 		}
+	} else {
+		failure.ErrorType = "unknown"
 	}
 
 	if failure.ErrorMessage != "" {
-		msg = failure.ErrorMessage
-		if len(msg) > 1000 {
-			msg = msg[0:1000]
+		if len(failure.ErrorMessage) > 1000 {
+			failure.ErrorMessage = failure.ErrorMessage[0:1000]
 		}
+	} else {
+		failure.ErrorMessage = "unknown"
 	}
 
-	backtrace = failure.Backtrace
-	if len(backtrace) > 50 {
-		backtrace = backtrace[0:50]
+	if failure.Backtrace == nil {
+		failure.Backtrace = []string{}
 	}
-
-	return m.processFailure(jid, msg, errtype, backtrace)
+	if len(failure.Backtrace) > 50 {
+		failure.Backtrace = failure.Backtrace[0:50]
+	}
 }
 
-func (m *manager) processFailure(jid, msg, errtype string, backtrace []string) error {
-	job, err := m.ack(jid)
+func (m *manager) clearReservation(jid string) *Reservation {
+	m.workingMutex.Lock()
+	res, ok := m.workingMap[jid]
+	if !ok {
+		m.workingMutex.Unlock()
+		return nil
+	}
+
+	delete(m.workingMap, jid)
+	m.workingMutex.Unlock()
+	return res
+}
+
+func (m *manager) processFailure(jid string, failure *FailPayload) error {
+	res := m.clearReservation(jid)
+	if res == nil {
+		return fmt.Errorf("Job not found %s", jid)
+	}
+
+	err := m.store.Working().RemoveElement(res.Expiry, jid)
 	if err != nil {
 		return err
-	}
-	if job == nil {
-		// job has already been ack'd?
-		return fmt.Errorf("Cannot fail %s, not found in working set", jid)
 	}
 
 	m.store.Failure()
 
+	job := res.Job
 	if job.Retry == 0 {
 		// no retry, no death, completely ephemeral, goodbye
 		return nil
@@ -76,16 +99,16 @@ func (m *manager) processFailure(jid, msg, errtype string, backtrace []string) e
 
 	if job.Failure != nil {
 		job.Failure.RetryCount++
-		job.Failure.ErrorMessage = msg
-		job.Failure.ErrorType = errtype
-		job.Failure.Backtrace = backtrace
+		job.Failure.ErrorMessage = failure.ErrorMessage
+		job.Failure.ErrorType = failure.ErrorType
+		job.Failure.Backtrace = failure.Backtrace
 	} else {
 		job.Failure = &client.Failure{
 			RetryCount:   0,
 			FailedAt:     util.Nows(),
-			ErrorMessage: msg,
-			ErrorType:    errtype,
-			Backtrace:    backtrace,
+			ErrorMessage: failure.ErrorMessage,
+			ErrorType:    failure.ErrorType,
+			Backtrace:    failure.Backtrace,
 		}
 	}
 

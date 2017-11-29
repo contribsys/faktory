@@ -100,16 +100,11 @@ func (m *manager) reserve(wid string, job *client.Job) error {
 }
 
 func (m *manager) ack(jid string) (*client.Job, error) {
-	m.workingMutex.Lock()
-	res, ok := m.workingMap[jid]
-	if !ok {
-		m.workingMutex.Unlock()
+	res := m.clearReservation(jid)
+	if res == nil {
 		util.Infof("No such job to acknowledge %s", jid)
 		return nil, nil
 	}
-
-	delete(m.workingMap, jid)
-	m.workingMutex.Unlock()
 
 	err := m.store.Working().RemoveElement(res.Expiry, jid)
 	return res.Job, err
@@ -127,6 +122,13 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return job, nil
 }
 
+var (
+	JobExecutionExpired = &FailPayload{
+		ErrorType:    "ReservationTimeout",
+		ErrorMessage: "faktory job expired",
+	}
+)
+
 func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 	elms, err := m.store.Working().RemoveBefore(timestamp)
 	if err != nil {
@@ -143,7 +145,7 @@ func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 		}
 
 		job := res.Job
-		err = m.processFailure(job.Jid, "job execution expired", "ReservationExpired", nil)
+		err = m.processFailure(job.Jid, JobExecutionExpired)
 		if err != nil {
 			util.Error("Unable to retry reservation", err)
 			continue

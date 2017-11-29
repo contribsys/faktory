@@ -172,6 +172,8 @@ func TestQueuePrioritization(t *testing.T) {
 }
 
 func TestDecentQueueUsage(t *testing.T) {
+	t.Parallel()
+
 	defer os.RemoveAll("/tmp/qbench.db")
 	store, err := Open("rocksdb", "/tmp/qbench.db")
 	assert.NoError(t, err)
@@ -181,7 +183,7 @@ func TestDecentQueueUsage(t *testing.T) {
 	assert.Equal(t, uint64(0), q.Size())
 	err = q.Push(5, []byte("first"))
 	assert.NoError(t, err)
-	n := 50000
+	n := 5000
 	// Push N jobs to queue
 	// Get Size() each time
 	for i := 0; i < n; i++ {
@@ -234,7 +236,7 @@ func TestThreadedQueueUsage(t *testing.T) {
 	assert.NoError(t, err)
 
 	tcnt := 5
-	n := 10000
+	n := 1000
 
 	var wg sync.WaitGroup
 	for i := 0; i < tcnt; i++ {
@@ -463,11 +465,10 @@ func TestBlockingPop(t *testing.T) {
 	assert.Nil(t, data)
 	assert.Nil(t, err)
 
-	// verify we block for 50ms, fruitlessly waiting for a job
+	a := time.Now()
 	c, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
 	defer cancel()
 
-	a := time.Now()
 	data, err = q.BPop(c)
 	assert.Nil(t, data)
 	assert.Nil(t, err)
@@ -478,6 +479,7 @@ func TestBlockingPop(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	// verify we block for 50ms, fruitlessly waiting for a job
 	go func() {
 		defer wg.Done()
 		time.Sleep(5 * time.Millisecond)
@@ -486,7 +488,7 @@ func TestBlockingPop(t *testing.T) {
 		q.Push(5, []byte("somedata"))
 		time.Sleep(5 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		q.Push(5, []byte("somedata"))
 	}()
 
@@ -499,7 +501,7 @@ func TestBlockingPop(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			c, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+			c, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 			defer cancel()
 			data, err := q.BPop(c)
 			assert.NoError(t, err)
@@ -523,6 +525,8 @@ func TestBlockingPop(t *testing.T) {
 
 	q.Clear()
 
+	// verify we have four waiters and they are released
+	// immediately upon q.Close()
 	wg = sync.WaitGroup{}
 	rq := q.(*rocksQueue)
 	var nothing int64

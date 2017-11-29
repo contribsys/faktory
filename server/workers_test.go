@@ -44,8 +44,6 @@ func TestClientData(t *testing.T) {
 	cw.Signal(Quiet)
 	assert.Equal(t, Terminate, cw.state)
 	assert.True(t, cw.IsQuiet())
-
-	assert.Equal(t, 0, cw.BusyCount())
 }
 
 func TestWorkers(t *testing.T) {

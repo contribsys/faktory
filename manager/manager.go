@@ -56,7 +56,7 @@ type Manager interface {
 
 	WorkingCount() int
 
-	ReapLongRunningJobs(timestamp string) (int, error)
+	ReapExpiredJobs(timestamp string) (int, error)
 
 	// Purge deletes all dead jobs
 	Purge() (int64, error)
@@ -66,6 +66,8 @@ type Manager interface {
 
 	// RetryJobs enqueues failed jobs
 	RetryJobs() (int64, error)
+
+	BusyCount(wid string) int
 }
 
 func NewManager(s storage.Store) Manager {

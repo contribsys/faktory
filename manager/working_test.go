@@ -65,6 +65,7 @@ func TestManagerReserve(t *testing.T) {
 			job.ReserveFor = timeout
 			assert.EqualValues(t, 0, store.Working().Size())
 
+			// doesn't return an error but resets to default timeout
 			err := m.reserve("workerId", job)
 
 			assert.NoError(t, err)
@@ -103,11 +104,15 @@ func TestManagerAcknowledge(t *testing.T) {
 	assert.EqualValues(t, 0, store.Processed())
 	assert.EqualValues(t, 0, store.Failures())
 
+	assert.EqualValues(t, 1, m.BusyCount("workerId"))
+	assert.EqualValues(t, 0, m.BusyCount("fakeId"))
+
 	aJob, err := m.Acknowledge(job.Jid)
 	assert.NoError(t, err)
 	assert.Equal(t, job.Jid, aJob.Jid)
 	assert.EqualValues(t, 1, store.Processed())
 	assert.EqualValues(t, 0, store.Failures())
+	assert.EqualValues(t, 0, m.BusyCount("workerId"))
 
 	aJob, err = m.Acknowledge(job.Jid)
 	assert.NoError(t, err)
@@ -116,7 +121,7 @@ func TestManagerAcknowledge(t *testing.T) {
 	assert.EqualValues(t, 0, store.Failures())
 }
 
-func TestManagerReapLongRunningJobs(t *testing.T) {
+func TestManagerReapExpiredJobs(t *testing.T) {
 	t.Parallel()
 	store, teardown := setupTest(t)
 	defer teardown(t)
@@ -138,13 +143,13 @@ func TestManagerReapLongRunningJobs(t *testing.T) {
 	assert.EqualValues(t, 1, m.WorkingCount())
 
 	exp := time.Now().Add(time.Duration(10) * time.Second)
-	count, err := m.ReapLongRunningJobs(util.Thens(exp))
+	count, err := m.ReapExpiredJobs(util.Thens(exp))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 	assert.EqualValues(t, 0, store.Retries().Size())
 
 	exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)
-	count, err = m.ReapLongRunningJobs(util.Thens(exp))
+	count, err = m.ReapExpiredJobs(util.Thens(exp))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 	assert.EqualValues(t, 1, store.Retries().Size())

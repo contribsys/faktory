@@ -17,7 +17,7 @@ func (r *reservationReaper) Name() string {
 }
 
 func (r *reservationReaper) Execute() error {
-	count, err := r.m.ReapLongRunningJobs(util.Nows())
+	count, err := r.m.ReapExpiredJobs(util.Nows())
 	if err != nil {
 		return err
 	}

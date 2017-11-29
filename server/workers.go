@@ -15,7 +15,7 @@ import (
 // A client can be a producer AND/OR consumer of jobs.  Typically a process will
 // either only produce jobs (like a webapp pushing jobs) or produce/consume jobs
 // (like a faktory worker process where a job can create other jobs while
-// executing another job).
+// executing).
 //
 // Each Faktory worker process should send a BEAT command every 15 seconds.
 // Only consumers should send a BEAT.  If Faktory does not receive a BEAT from a
@@ -23,7 +23,7 @@ import (
 // page.
 //
 // From Faktory's POV, the worker can BEAT again and resume normal operations,
-// e.g.  due to a network partition.  If a process dies, it will be removed
+// e.g. due to a network partition.  If a process dies, it will be removed
 // after 1 minute and its jobs recovered after the job reservation timeout has
 // passed (typically 30 minutes).
 //
@@ -119,21 +119,6 @@ func (worker *ClientData) Signal(newstate WorkerState) {
 
 func (worker *ClientData) IsConsumer() bool {
 	return worker.Wid != ""
-}
-
-func (worker *ClientData) BusyCount() int {
-	// FIXME workingMutex
-	// workingMutex.Lock()
-	// defer workingMutex.Unlock()
-
-	count := 0
-	// FIXME busycount
-	// for _, res := range workingMap {
-	// 	if res.Wid == worker.Wid {
-	// 		count++
-	// 	}
-	// }
-	return count
 }
 
 type workers struct {

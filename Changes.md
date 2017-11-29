@@ -1,5 +1,6 @@
 ## HEAD
 
+- Expired jobs now use the retry process so they don't re-enqueue forever [#99]
 - Implement automated backups, default once per hour and keeping 24. [#106]
 - Implement `purge` command for faktory-cli, to remove old backups.
 

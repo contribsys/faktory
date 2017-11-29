@@ -12,9 +12,6 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-// six months
-var deadTTL = 180 * 24 * time.Hour
-
 type FailPayload struct {
 	Jid          string   `json:"jid"`
 	ErrorMessage string   `json:"message"`
@@ -135,7 +132,7 @@ func sendToMorgue(store storage.Store, job *client.Job) error {
 		return err
 	}
 
-	expiry := util.Thens(time.Now().Add(deadTTL))
+	expiry := util.Thens(time.Now().Add(DeadTTL))
 	return store.Dead().AddElement(expiry, job.Jid, bytes)
 }
 

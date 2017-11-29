@@ -30,6 +30,19 @@ func (m *manager) WorkingCount() int {
 	return len(m.workingMap)
 }
 
+func (m *manager) BusyCount(wid string) int {
+	m.workingMutex.RLock()
+
+	count := 0
+	for _, res := range m.workingMap {
+		if res.Wid == wid {
+			count++
+		}
+	}
+	m.workingMutex.RUnlock()
+	return count
+}
+
 /*
  * When we restart the server, we need to load the
  * current set of Reservations back into memory so any
@@ -129,7 +142,7 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return job, nil
 }
 
-func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
+func (m *manager) ReapExpiredJobs(timestamp string) (int, error) {
 	elms, err := m.store.Working().RemoveBefore(timestamp)
 	if err != nil {
 		return 0, err

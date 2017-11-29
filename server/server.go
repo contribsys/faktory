@@ -43,7 +43,7 @@ type Server struct {
 	Password string
 
 	listener   net.Listener
-	store      storage.Store // FIXME drop store
+	store      storage.Store
 	manager    manager.Manager
 	workers    *workers
 	taskRunner *taskRunner
@@ -91,6 +91,10 @@ func (s *Server) Store() storage.Store {
 	return s.store
 }
 
+func (s *Server) Manager() manager.Manager {
+	return s.manager
+}
+
 func (s *Server) Start() error {
 	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
 	if err != nil {
@@ -105,7 +109,7 @@ func (s *Server) Start() error {
 	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
-	s.store = store // FIXME drop store
+	s.store = store
 	s.workers = newWorkers()
 	s.manager = manager.NewManager(store)
 	s.listener = listener

@@ -9,6 +9,10 @@ import (
 )
 
 func (m *manager) Purge() (int64, error) {
+	// TODO We need to purge the dead set if it collects more
+	// than N elements.  The dead set shouldn't be able to collect
+	// millions or billions of jobs.  Sidekiq uses a default max size
+	// of 10,000 jobs.
 	dead, err := m.store.Dead().RemoveBefore(util.Nows())
 	if err != nil {
 		return 0, err

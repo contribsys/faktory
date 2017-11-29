@@ -12,7 +12,15 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-const DefaultTimeout = 1800
+const (
+	// Jobs will be reserved for 30 minutes by default.
+	// You can customize this per-job with the reserve_for attribute
+	// in the job payload.
+	DefaultTimeout = 30 * 60
+
+	// Save dead jobs for 180 days, after that they will be purged
+	DeadTTL = 180 * 24 * time.Hour
+)
 
 type Manager interface {
 	Push(job *client.Job) error

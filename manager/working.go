@@ -8,6 +8,13 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
+var (
+	JobReservationExpired = &FailPayload{
+		ErrorType:    "ReservationExpired",
+		ErrorMessage: "Faktory job reservation expired",
+	}
+)
+
 type Reservation struct {
 	Job     *client.Job `json:"job"`
 	Since   string      `json:"reserved_at"`
@@ -122,13 +129,6 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return job, nil
 }
 
-var (
-	JobExecutionExpired = &FailPayload{
-		ErrorType:    "ReservationTimeout",
-		ErrorMessage: "faktory job expired",
-	}
-)
-
 func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 	elms, err := m.store.Working().RemoveBefore(timestamp)
 	if err != nil {
@@ -145,7 +145,7 @@ func (m *manager) ReapLongRunningJobs(timestamp string) (int, error) {
 		}
 
 		job := res.Job
-		err = m.processFailure(job.Jid, JobExecutionExpired)
+		err = m.processFailure(job.Jid, JobReservationExpired)
 		if err != nil {
 			util.Error("Unable to retry reservation", err)
 			continue

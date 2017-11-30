@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -106,7 +107,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
-	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
+	util.Infof("PID %d listening at %s, press Ctrl-C to stop", os.Getpid(), s.Options.Binding)
 
 	s.mu.Lock()
 	s.store = store

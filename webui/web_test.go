@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
@@ -83,24 +82,20 @@ func bootRuntime() *server.Server {
 	if err != nil {
 		panic(err)
 	}
+	err = s.Boot()
+	if err != nil {
+		panic(err)
+	}
 	go func() {
-		err := s.Start()
+		err := s.Run()
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	s.WaitUntilInitialized()
-
 	mutex.Lock()
 	defer mutex.Unlock()
 	defaultServer = s
-	for {
-		if defaultServer.Store() != nil {
-			break
-		}
-		time.Sleep(1 * time.Millisecond)
-	}
 	return s
 }
 

@@ -27,15 +27,19 @@ func runServer(binding string, runner func()) {
 	if err != nil {
 		panic(err)
 	}
+	err = s.Boot()
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		err := s.Start()
+		err := s.Run()
 		if err != nil {
 			panic(err)
 		}
-		s.Stop(func() {})
 	}()
-	s.WaitUntilInitialized()
 	runner()
+	s.Stop(nil)
 }
 
 func TestServerStart(t *testing.T) {

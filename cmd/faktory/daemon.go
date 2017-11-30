@@ -28,11 +28,14 @@ func main() {
 
 	webui.InitialSetup(s.Password)
 
-	go cli.HandleSignals(s)
-
-	err = s.Start()
+	err = s.Boot()
 	if err != nil {
 		util.Error("Unable to start the server", err)
 		return
 	}
+
+	go cli.HandleSignals(s)
+
+	defer s.Stop(nil)
+	s.Run()
 }

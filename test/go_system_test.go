@@ -40,14 +40,17 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 
+	err = s.Boot()
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		err = s.Start()
+		err = s.Run()
 		if err != nil {
 			panic(err)
 		}
 	}()
-
-	s.WaitUntilInitialized()
 
 	// this is a worker process so we need to set the global WID before connecting
 	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)

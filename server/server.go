@@ -50,8 +50,7 @@ type Server struct {
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-
-	initialized chan bool
+	closed     bool
 }
 
 // register a global handler to be called when the Server instance
@@ -69,10 +68,10 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 	}
 
 	s := &Server{
-		Options:     opts,
-		Stats:       &RuntimeStats{StartedAt: time.Now()},
-		pending:     &sync.WaitGroup{},
-		initialized: make(chan bool, 1),
+		Options: opts,
+		Stats:   &RuntimeStats{StartedAt: time.Now()},
+		pending: &sync.WaitGroup{},
+		closed:  false,
 	}
 
 	pwd, err := fetchPassword(s.Options.ConfigDirectory)
@@ -96,18 +95,17 @@ func (s *Server) Manager() manager.Manager {
 	return s.manager
 }
 
-func (s *Server) Start() error {
+func (s *Server) Boot() error {
 	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
 	if err != nil {
 		return err
 	}
-	defer store.Close()
 
 	listener, err := net.Listen("tcp", s.Options.Binding)
 	if err != nil {
+		store.Close()
 		return err
 	}
-	util.Infof("PID %d listening at %s, press Ctrl-C to stop", os.Getpid(), s.Options.Binding)
 
 	s.mu.Lock()
 	s.store = store
@@ -117,9 +115,12 @@ func (s *Server) Start() error {
 	s.startTasks(s.pending)
 	s.mu.Unlock()
 
-	close(s.initialized)
+	return nil
+}
 
-	// wait for outstanding requests to finish
+func (s *Server) Run() error {
+	// NB: defers happen in reverse order
+	defer s.store.Close()
 	defer s.pending.Wait()
 	defer s.taskRunner.Stop()
 
@@ -130,32 +131,35 @@ func (s *Server) Start() error {
 		}
 	}
 
+	util.Infof("PID %d listening at %s, press Ctrl-C to stop", os.Getpid(), s.Options.Binding)
+
 	// this is the central runtime loop for the main goroutine
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			return nil
 		}
-		s.pending.Add(1)
 		go func(conn net.Conn) {
-			defer s.pending.Done()
-
 			c := startConnection(conn, s)
 			if c == nil {
 				return
 			}
-			processLines(c, s)
+			s.processLines(c)
 		}(conn)
 	}
 }
 
-func (s *Server) WaitUntilInitialized() {
-	<-s.initialized
+func (s *Server) isClosed() bool {
+	return s.closed
 }
 
 func (s *Server) Stop(f func()) {
 	// Don't allow new network connections
 	s.mu.Lock()
+	if s.closed {
+		return
+	}
+	s.closed = true
 	if s.listener != nil {
 		s.listener.Close()
 	}
@@ -260,17 +264,21 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 }
 
-func processLines(conn *Connection, server *Server) {
-	atomic.AddInt64(&server.Stats.Connections, 1)
-	defer atomic.AddInt64(&server.Stats.Connections, -1)
+func (s *Server) processLines(conn *Connection) {
+	atomic.AddInt64(&s.Stats.Connections, 1)
+	defer atomic.AddInt64(&s.Stats.Connections, -1)
 
 	for {
-		atomic.AddInt64(&server.Stats.Commands, 1)
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			if e != io.EOF {
 				util.Error("Unexpected socket error", e)
 			}
+			conn.Close()
+			return
+		}
+		if s.isClosed() {
+			conn.Error("Closing connection", newTaggedError("SHUTDOWN", fmt.Errorf("Shutdown in progress")))
 			conn.Close()
 			return
 		}
@@ -287,7 +295,8 @@ func processLines(conn *Connection, server *Server) {
 		if !ok {
 			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
-			proc(conn, server, cmd)
+			atomic.AddInt64(&s.Stats.Commands, 1)
+			proc(conn, s, cmd)
 		}
 		if verb == "END" {
 			break

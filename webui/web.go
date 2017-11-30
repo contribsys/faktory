@@ -93,7 +93,7 @@ func initLocales() {
 		locales[name] = nil
 	}
 	translations("en") // eager load English
-	util.Debugf("Initialized %d locales", len(localeFiles))
+	//util.Debugf("Initialized %d locales", len(localeFiles))
 }
 
 func translations(locale string) map[string]string {
@@ -109,7 +109,7 @@ func translations(locale string) map[string]string {
 	}
 
 	if ok {
-		util.Debugf("Booting the %s locale", locale)
+		//util.Debugf("Booting the %s locale", locale)
 		content, err := Asset(fmt.Sprintf("static/locales/%s.yml", locale))
 		if err != nil {
 			panic(err)

@@ -1,12 +1,16 @@
 package server
 
-import "runtime/debug"
+import "fmt"
 
-type runtimeError struct {
-	Error error
-	Stack []byte
+type taggedError struct {
+	Code string
+	Err  error
 }
 
-func internalError(err error) *runtimeError {
-	return &runtimeError{Error: err, Stack: debug.Stack()}
+func (re *taggedError) Error() string {
+	return fmt.Sprintf("%s %s", re.Code, re.Err.Error())
+}
+
+func newTaggedError(code string, err error) *taggedError {
+	return &taggedError{Code: code, Err: err}
 }

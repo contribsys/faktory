@@ -1,7 +1,6 @@
 package server
 
 import (
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -50,10 +49,4 @@ func (s *scanner) Stats() map[string]interface{} {
 		"size":          s.set.Size(),
 		"wall_time_sec": (float64(atomic.LoadInt64(&s.walltime)) / 1000000000),
 	}
-}
-
-func (s *Server) startScanners(waiter *sync.WaitGroup) {
-	s.taskRunner.AddTask(5, &scanner{name: "Scheduled", set: s.store.Scheduled(), task: s.manager.EnqueueScheduledJobs})
-	s.taskRunner.AddTask(5, &scanner{name: "Retries", set: s.store.Retries(), task: s.manager.RetryJobs})
-	s.taskRunner.AddTask(60, &scanner{name: "Dead", set: s.store.Dead(), task: s.manager.Purge})
 }

@@ -122,6 +122,11 @@ func (ts *taskRunner) cycle() {
 
 func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	ts := newTaskRunner()
+	// scan the various sets, looking for things to do
+	ts.AddTask(5, &scanner{name: "Scheduled", set: s.store.Scheduled(), task: s.manager.EnqueueScheduledJobs})
+	ts.AddTask(5, &scanner{name: "Retries", set: s.store.Retries(), task: s.manager.RetryJobs})
+	ts.AddTask(60, &scanner{name: "Dead", set: s.store.Dead(), task: s.manager.Purge})
+
 	// reaps job reservations which have expired
 	ts.AddTask(15, &reservationReaper{s.manager, 0})
 	// reaps workers who have not heartbeated

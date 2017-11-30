@@ -115,7 +115,6 @@ func (s *Server) Start() error {
 	s.manager = manager.NewManager(store)
 	s.listener = listener
 	s.startTasks(s.pending)
-	s.startScanners(s.pending)
 	s.mu.Unlock()
 
 	close(s.initialized)

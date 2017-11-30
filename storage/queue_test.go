@@ -451,8 +451,6 @@ func TestReopening(t *testing.T) {
 }
 
 func TestBlockingPop(t *testing.T) {
-	t.Parallel()
-
 	defer os.RemoveAll("/tmp/blocking.db")
 	store, err := Open("rocksdb", "/tmp/blocking.db")
 	assert.NoError(t, err)

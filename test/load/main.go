@@ -123,6 +123,9 @@ func pop(client *faktory.Client, queues []string) {
 		handleError(err)
 		return
 	}
+	if job == nil {
+		return // timeout?
+	}
 	if rand.Intn(100) == 99 {
 		err = client.Fail(job.Jid, os.ErrClosed, nil)
 	} else {

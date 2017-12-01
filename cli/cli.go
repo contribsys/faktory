@@ -2,14 +2,12 @@ package cli
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"os/user"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
@@ -25,22 +23,8 @@ type CmdOptions struct {
 	Password         string
 }
 
-var (
-	StartupInfo = func() {
-		log.Println(client.Licensing)
-	}
-)
-
 func ParseArguments() CmdOptions {
 	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
-
-	log.SetFlags(0)
-	log.Println(client.Name, client.Version)
-	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
-
-	if StartupInfo != nil {
-		StartupInfo()
-	}
 
 	flag.Usage = help
 	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")

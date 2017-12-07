@@ -37,13 +37,17 @@ func DefaultOptions() *gorocksdb.Options {
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
 	opts.IncreaseParallelism(2)
-	// 16MB buffer minimizes the number of jobs we'll write to disk.
+	// Try to minimize the number of jobs we'll write to disk.
 	// Ideally jobs are processed in-memory, before they need to be
-	// flushed to disk.
-	opts.SetWriteBufferSize(16 * 1024 * 1024)
-	// default is 6 hrs, set to 1 hr
+	// flushed to disk.  Defaults to 64MB which is likely more than we need.
+	opts.SetWriteBufferSize(2 * 1024 * 1024)
+	// default is 6 hrs, set to 1 hr, recovers disk space quicker
 	opts.SetDeleteObsoleteFilesPeriodMicros(1000000 * 3600)
 	opts.SetKeepLogFileNum(10)
+	// these are used in OptimizeForSmallDb()
+	// since queues are usually empty, we optimize for a smaller (<1GB) dataset.
+	opts.SetMaxFileOpeningThreads(2)
+	opts.SetMaxOpenFiles(5000)
 	return opts
 }
 

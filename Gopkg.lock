@@ -14,9 +14,10 @@
   version = "v1.4"
 
 [[projects]]
+  branch = "master"
   name = "github.com/contribsys/gorocksdb"
   packages = ["."]
-  revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
+  revision = "844b933831c4b53ca8a7b162a94c64da653b6de5"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -45,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a0eefbd45a8908fa96e2ab89e806a7db3558a1a871b2158f2be6e77d4c3436b5"
+  inputs-digest = "29dd9d28a42e824785b47b1882465ff9c70c86ec98bf5711c9f2d5fcacdafbf5"
   solver-name = "gps-cdcl"
   solver-version = 1

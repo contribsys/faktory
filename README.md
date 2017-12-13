@@ -8,7 +8,7 @@ You can use this server to distribute jobs to one or hundreds of
 machines. Jobs can be executed with any language by clients using
 the Faktory API to fetch a job from a queue.
 
-![webui](https://raw.githubusercontent.com/contribsys/faktory/master/misc/webui.png)
+![webui](https://raw.githubusercontent.com/contribsys/faktory/master/docs/webui.png)
 
 ## Basic Features
 

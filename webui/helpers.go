@@ -75,7 +75,6 @@ func store() storage.Store {
 }
 
 func csrfTag(req *http.Request) string {
-	// random string :-)
 	if req.Context().(*DefaultContext).UseCsrf() {
 		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
 	} else {

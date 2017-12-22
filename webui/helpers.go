@@ -76,8 +76,11 @@ func store() storage.Store {
 
 func csrfTag(req *http.Request) string {
 	// random string :-)
-	token := nosurf.Token(req)
-	return `<input type="hidden" name="csrf_token" value="` + token + `"/>`
+	if req.Context().(*DefaultContext).UseCsrf() {
+		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
+	} else {
+		return ""
+	}
 }
 
 func numberWithDelimiter(val int64) string {

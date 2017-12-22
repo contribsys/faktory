@@ -217,6 +217,7 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 			request:  r,
 			locale:   locale,
 			strings:  translations(locale),
+			csrf: true,
 		}
 
 		pass(w, r.WithContext(dctx))

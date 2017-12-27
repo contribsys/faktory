@@ -339,7 +339,6 @@ func TestBusy(t *testing.T) {
 }
 
 func TestRequireCSRF(t *testing.T) {
-
 	req, err := NewRequest("GET", "http://localhost:7420/busy", nil)
 	assert.NoError(t, err)
 
@@ -400,6 +399,54 @@ func TestRequireCSRF(t *testing.T) {
 	csrfBusyHandler.ServeHTTP(w, req)
 
 	// Request with CSRF should pass
+	assert.Equal(t, 302, w.Code)
+	assert.True(t, wrk.IsQuiet())
+}
+
+func TestRespectUseCSRFGlobal(t *testing.T) {
+	// Disable CSRF
+	UseCSRF = false
+
+	req, err := NewRequest("GET", "http://localhost:7420/busy", nil)
+	assert.NoError(t, err)
+
+	wid := "1239123oim,bnsad"
+	wrk := &server.ClientData{
+		Hostname:  "foobar.local",
+		Pid:       12345,
+		Wid:       wid,
+		Labels:    []string{"bubba"},
+		StartedAt: time.Now(),
+		Version:   2,
+	}
+	defaultServer.Heartbeats()[wid] = wrk
+
+	w := httptest.NewRecorder()
+
+	// Wrap the handler with CSRF protection
+	var hndlr http.HandlerFunc = Setup(busyHandler, false)
+	csrfBusyHandler := Protect(hndlr)
+	csrfBusyHandler.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "foobar.local"), w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "bubba"), w.Body.String())
+	assert.False(t, wrk.IsQuiet())
+
+	// Make the POST request without any CSRF tokens present
+	data := url.Values{
+		"signal": {"quiet"},
+		"wid":    {wid},
+	}
+	req, err = NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	csrfBusyHandler.ServeHTTP(w, req)
+
+	// Request without CSRF should pass
 	assert.Equal(t, 302, w.Code)
 	assert.True(t, wrk.IsQuiet())
 }

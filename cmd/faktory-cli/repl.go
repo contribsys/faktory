@@ -77,7 +77,7 @@ func main() {
 }
 
 func repl(path string, store storage.Store) {
-	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), path)
+	fmt.Printf("Faktory %s, using RocksDB %s at %s\n", client.Version, gorocksdb.RocksDBVersion(), path)
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("version"),

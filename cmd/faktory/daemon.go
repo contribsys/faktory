@@ -1,13 +1,23 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"time"
+
 	"github.com/contribsys/faktory/cli"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/faktory/webui"
 )
 
 func main() {
+	log.SetFlags(0)
+	log.Println(client.Name, client.Version)
+	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
+	log.Println(client.Licensing)
+
 	opts := cli.ParseArguments()
 
 	// This takes over the default logger in `log` and gives us

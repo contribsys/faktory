@@ -23,7 +23,7 @@
 
 [[constraint]]
   name = "github.com/contribsys/gorocksdb"
-  revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"

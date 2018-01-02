@@ -74,7 +74,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		closed:  false,
 	}
 
-	pwd, err := fetchPassword(s.Options.ConfigDirectory)
+	pwd, err := fetchPassword(s.Options)
 	if err != nil {
 		return nil, err
 	}

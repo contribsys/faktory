@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -8,12 +9,13 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-func fetchPassword(configDir string) (string, error) {
+func fetchPassword(opts *ServerOptions) (string, error) {
 	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
 	if ok {
 		return val, nil
 	}
 
+	configDir := opts.ConfigDirectory
 	pwd := configDir + "/password"
 	exists, err := util.FileExists(pwd)
 	if err != nil {
@@ -28,5 +30,14 @@ func fetchPassword(configDir string) (string, error) {
 		return strings.TrimSpace(string(data)), nil
 	}
 
+	if opts.Environment == "production" && !skip() {
+		return "", fmt.Errorf("Faktory requires a password to be set in production mode, see the Security wiki page")
+	}
+
 	return "", nil
+}
+
+func skip() bool {
+	val, ok := os.LookupEnv("FAKTORY_SKIP_PASSWORD")
+	return ok && (val == "1" || val == "true" || val == "yes")
 }

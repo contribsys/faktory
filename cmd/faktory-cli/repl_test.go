@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var usingRockDB = "Using RocksDB " + gorocksdb.RocksDBVersion() + " at "
+var usingRockDB = "Faktory " + client.Version + ", using RocksDB " + gorocksdb.RocksDBVersion() + " at "
 
 func setupTests() func(t *testing.T) {
 	if _, err := os.Stat("faktory-cli-test"); err != nil {

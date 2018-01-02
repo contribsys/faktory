@@ -31,4 +31,4 @@ RUN mkdir -p /var/lib/faktory/db
 RUN mkdir -p /etc/faktory
 
 EXPOSE 7419 7420
-ENTRYPOINT ["/faktory"]
+CMD ["/faktory", "-b", "0.0.0.0:7419", "-e", "development"]

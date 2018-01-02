@@ -16,12 +16,19 @@ type backupPolicy struct {
 
 func newBackupPolicy(s *Server) *backupPolicy {
 	freak := backupFrequency()
-	util.Debugf("Backing up storage every %v", freak)
-	return &backupPolicy{
+	bp := &backupPolicy{
 		Server:    s,
 		frequency: freak,
 		count:     0,
 	}
+	if bp.IsEnabled() {
+		util.Debugf("Backing up storage every %v", freak)
+	}
+	return bp
+}
+
+func (bp *backupPolicy) IsEnabled() bool {
+	return bp.Server.Options.Environment == "production"
 }
 
 func (bp *backupPolicy) Frequency() int64 {
@@ -33,7 +40,7 @@ func (bp *backupPolicy) Name() string {
 }
 
 func (bp *backupPolicy) Execute() error {
-	if bp.Server.Options.Environment != "production" {
+	if !bp.IsEnabled() {
 		// we only back up in production mode, don't need to fill
 		// developer's laptop with old junk data
 		return nil

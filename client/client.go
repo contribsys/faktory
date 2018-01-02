@@ -27,6 +27,12 @@ var (
 	RandomProcessWid = ""
 )
 
+// The Client structure represents a thread-unsafe connection
+// to a Faktory server.  It is recommended to use a connection pool
+// of Clients in a multi-threaded process.  See faktory_worker_go's
+// internal connection pool for example.
+//
+// TODO Provide a connection pool as part of this package?
 type Client struct {
 	Location string
 	Options  *ClientData

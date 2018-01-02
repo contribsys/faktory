@@ -339,6 +339,7 @@ func TestBusy(t *testing.T) {
 }
 
 func TestRequireCSRF(t *testing.T) {
+	enableCSRF = true
 	req, err := NewRequest("GET", "http://localhost:7420/busy", nil)
 	assert.NoError(t, err)
 
@@ -404,8 +405,7 @@ func TestRequireCSRF(t *testing.T) {
 }
 
 func TestRespectUseCSRFGlobal(t *testing.T) {
-	// Disable CSRF
-	UseCSRF = false
+	enableCSRF = false
 
 	req, err := NewRequest("GET", "http://localhost:7420/busy", nil)
 	assert.NoError(t, err)

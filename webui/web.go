@@ -71,7 +71,7 @@ func FireItUp(svr *server.Server) error {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
-			Handler:        Protect(http.DefaultServeMux),
+			Handler:        http.DefaultServeMux,
 		}
 		util.Info("Web server now listening on port 7420")
 		log.Fatal(s.ListenAndServe())
@@ -81,7 +81,7 @@ func FireItUp(svr *server.Server) error {
 
 var (
 	Password    = ""
-	UseCSRF     = true
+	enableCSRF  = true
 	locales     = map[string]map[string]string{}
 	localeMutex = sync.Mutex{}
 )
@@ -186,7 +186,7 @@ func DebugLog(pass http.HandlerFunc) http.HandlerFunc {
 }
 
 func Log(pass http.HandlerFunc) http.HandlerFunc {
-	return Setup(pass, false)
+	return Protect(Setup(pass, false))
 }
 
 func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
@@ -218,7 +218,7 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 			request:  r,
 			locale:   locale,
 			strings:  translations(locale),
-			csrf:     UseCSRF,
+			csrf:     enableCSRF,
 		}
 
 		pass(w, r.WithContext(dctx))
@@ -278,12 +278,12 @@ func Cache(h http.Handler) http.HandlerFunc {
 	}
 }
 
-func Protect(h http.Handler) http.Handler {
+func Protect(h http.HandlerFunc) http.HandlerFunc {
 	hndlr := nosurf.New(h)
-
 	hndlr.ExemptFunc(func(r *http.Request) bool {
-		return !UseCSRF
+		return !enableCSRF
 	})
-
-	return hndlr
+	return func(w http.ResponseWriter, r *http.Request) {
+		hndlr.ServeHTTP(w, r)
+	}
 }

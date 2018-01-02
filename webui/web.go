@@ -13,6 +13,7 @@ import (
 
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
+	"github.com/justinas/nosurf"
 )
 
 type Tab struct {
@@ -70,6 +71,7 @@ func FireItUp(svr *server.Server) error {
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
+			Handler:        Protect(http.DefaultServeMux),
 		}
 		util.Info("Web server now listening on port 7420")
 		log.Fatal(s.ListenAndServe())
@@ -79,6 +81,7 @@ func FireItUp(svr *server.Server) error {
 
 var (
 	Password    = ""
+	UseCSRF     = true
 	locales     = map[string]map[string]string{}
 	localeMutex = sync.Mutex{}
 )
@@ -215,6 +218,7 @@ func Setup(pass http.HandlerFunc, debug bool) http.HandlerFunc {
 			request:  r,
 			locale:   locale,
 			strings:  translations(locale),
+			csrf:     UseCSRF,
 		}
 
 		pass(w, r.WithContext(dctx))
@@ -272,4 +276,14 @@ func Cache(h http.Handler) http.HandlerFunc {
 		w.Header().Add("Cache-Control", "public, max-age=3600")
 		h.ServeHTTP(w, r)
 	}
+}
+
+func Protect(h http.Handler) http.Handler {
+	hndlr := nosurf.New(h)
+
+	hndlr.ExemptFunc(func(r *http.Request) bool {
+		return !UseCSRF
+	})
+
+	return hndlr
 }

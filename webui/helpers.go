@@ -14,6 +14,7 @@ import (
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/justinas/nosurf"
 )
 
 var (
@@ -74,8 +75,11 @@ func store() storage.Store {
 }
 
 func csrfTag(req *http.Request) string {
-	// random string :-)
-	return `<input type="hidden" name="authenticity_token" value="p8tNCpaxTOdAEgoTT3UdSzReVPdWTRJimHS8zDXAVPw="/>`
+	if req.Context().(*DefaultContext).UseCsrf() {
+		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
+	} else {
+		return ""
+	}
 }
 
 func numberWithDelimiter(val int64) string {

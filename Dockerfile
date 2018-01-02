@@ -1,5 +1,5 @@
 ARG GOLANG_VERSION
-FROM golang:${GOLANG_VERSION}-alpine3.6 AS build
+FROM golang:${GOLANG_VERSION}-alpine3.7 AS build
 
 ARG ROCKSDB_VERSION
 RUN apk add --no-cache build-base git ca-certificates bash perl curl linux-headers
@@ -21,7 +21,7 @@ ADD . /root/go/src/github.com/contribsys/faktory
 WORKDIR /root/go/src/github.com/contribsys/faktory
 RUN make prepare && make test && make build
 
-FROM alpine:3.6
+FROM alpine:3.7
 COPY --from=build /root/go/src/github.com/contribsys/faktory/faktory \
                   /root/go/src/github.com/contribsys/faktory/faktory-cli \
                   /

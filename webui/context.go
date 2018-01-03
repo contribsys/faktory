@@ -19,6 +19,7 @@ type DefaultContext struct {
 	request  *http.Request
 	locale   string
 	strings  map[string]string
+	csrf     bool
 }
 
 func (d *DefaultContext) Response() http.ResponseWriter {
@@ -27,6 +28,10 @@ func (d *DefaultContext) Response() http.ResponseWriter {
 
 func (d *DefaultContext) Request() *http.Request {
 	return d.request
+}
+
+func (d *DefaultContext) UseCsrf() bool {
+	return d.csrf
 }
 
 type Translator interface {

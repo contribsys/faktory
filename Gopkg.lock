@@ -44,6 +44,12 @@
   revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/justinas/nosurf"
+  packages = ["."]
+  revision = "7182011986c42c33f0a79fd4b07e41edc784532b"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -76,6 +82,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "18283abceeb672d81c11ca9b388f0a5402815cf9329f00194f5f5759c2d8cada"
+  inputs-digest = "e1eeb1b3c6dd7c45f2af3ee75ac5128946edd53a767896979ac2c34793dc8c72"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -74,7 +74,7 @@ func main() {
 }
 
 func repl(path string, store storage.Store) {
-	fmt.Printf("Using %s at %s\n", store.Label(), path)
+	fmt.Printf("Faktory %s, using %s at %s\n", client.Version, store.Label(), path)
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("version"),

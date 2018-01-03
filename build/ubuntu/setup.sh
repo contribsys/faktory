@@ -6,11 +6,11 @@ sudo apt-get update -y
 sudo apt install -y --no-install-recommends make g++
 
 echo === Building RocksDB
-# download and compile rocksdb 5.7.3
+# download and compile rocksdb
 if [ ! -f ~/rocksdb/librocksdb.a ]; then
   git clone https://github.com/facebook/rocksdb
   cd rocksdb
-  git checkout v5.7.3
+  git checkout v5.9.2
   time PORTABLE=1 make static_lib
   # default binary is 340MB!
   # stripped is 18MB
@@ -21,7 +21,7 @@ echo === Installing Golang
 # download and install go 1.9
 if [ ! -d /usr/local/go ]; then
   cd /usr/local
-  curl https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz | sudo tar xfz -
+  curl https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz | sudo tar xfz -
   echo "export PATH=/usr/local/go/bin:$HOME/go/bin:\$PATH" >> ~/.bash_profile
   export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
 fi

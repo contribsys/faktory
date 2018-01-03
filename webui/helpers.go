@@ -1,8 +1,10 @@
 package webui
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -14,6 +16,7 @@ import (
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/justinas/nosurf"
 )
 
 var (
@@ -74,8 +77,11 @@ func store() storage.Store {
 }
 
 func csrfTag(req *http.Request) string {
-	// random string :-)
-	return `<input type="hidden" name="authenticity_token" value="p8tNCpaxTOdAEgoTT3UdSzReVPdWTRJimHS8zDXAVPw="/>`
+	if req.Context().(*DefaultContext).UseCsrf() {
+		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
+	} else {
+		return ""
+	}
 }
 
 func numberWithDelimiter(val int64) string {
@@ -225,6 +231,27 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 
 func uptimeInDays() string {
 	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+}
+
+func rss() string {
+	ex, err := util.FileExists("/proc/self/status")
+	if err != nil || !ex {
+		return ""
+	}
+
+	content, err := ioutil.ReadFile("/proc/self/status")
+	if err != nil {
+		return ""
+	}
+
+	lines := bytes.Split(content, []byte("\n"))
+	for line := range lines {
+		ls := string(line)
+		if strings.Contains(ls, "VmRSS") {
+			return strings.Split(ls, ":")[1]
+		}
+	}
+	return ""
 }
 
 func locale(req *http.Request) string {

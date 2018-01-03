@@ -13,7 +13,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	defer os.RemoveAll("/tmp/backup.db")
 	// open db
-	db, err := Open("rocksdb", "/tmp/backup.db")
+	db, err := Open("badger", "/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// put elements
@@ -50,7 +50,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
 
-	db, err = Open("rocksdb", "/tmp/backup.db")
+	db, err = Open("badger", "/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// verify elements
@@ -90,7 +90,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
 
-	db, err = Open("rocksdb", "/tmp/backup.db")
+	db, err = Open("badger", "/tmp/backup.db")
 	assert.NoError(t, err)
 
 	q, err = db.GetQueue("default")

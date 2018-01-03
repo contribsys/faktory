@@ -10,11 +10,8 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
-	"github.com/contribsys/gorocksdb"
 	"github.com/stretchr/testify/assert"
 )
-
-var usingRockDB = "Using RocksDB " + gorocksdb.RocksDBVersion() + " at "
 
 func setupTests() func(t *testing.T) {
 	if _, err := os.Stat("faktory-cli-test"); err != nil {
@@ -86,7 +83,7 @@ func TestInteractiveOutputs(t *testing.T) {
 	}{
 		{"flush", "OK"},
 		{"purge", "OK"},
-		{"version", "Faktory " + client.Version + ", RocksDB " + gorocksdb.RocksDBVersion()},
+		{"version", "Faktory " + client.Version + ", Badger 1.3.0"},
 		{"help", "Valid commands:flush\t\t\tflush all job data from database, useful for testingbackup\t\t\tcreate a new backuppurge [keep]\t\tpurge old backups, keep [N] newest backups, default 24restore *\t\trestore the database from the newest backuprepair *\t\trun RocksDB's internal repair function to recover from data issuesversionhelp* Requires an immediate restart after running command."},
 	}
 
@@ -98,7 +95,8 @@ func TestInteractiveOutputs(t *testing.T) {
 			go runFaktory(ts.Arg, inputChan, cmdOutputChan)
 			inputChan <- ts.Arg
 
-			expected := usingRockDB + "./" + ts.Arg + "-data" + ts.Output
+			var using = "Using Badger 1.3.0 at "
+			expected := using + "./" + ts.Arg + "-data" + ts.Output
 			assert.Equal(t, expected, <-cmdOutputChan)
 		})
 	}

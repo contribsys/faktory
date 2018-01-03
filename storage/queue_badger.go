@@ -11,7 +11,7 @@ import (
 
 	"github.com/contribsys/faktory/storage/brodal"
 	"github.com/contribsys/faktory/util"
-	"github.com/contribsys/gorocksdb"
+	"github.com/dgraph-io/badger"
 )
 
 var (
@@ -50,11 +50,12 @@ func (p *queuePointer) Value() int {
 	return int(-p.priority)
 }
 
-type rocksQueue struct {
-	name    string
+type bQueue struct {
+	// includes the q~ namespace prefix
+	name  string
+	store *bStore
+
 	size    uint64
-	store   *rocksStore
-	cf      *gorocksdb.ColumnFamilyHandle
 	mu      sync.Mutex
 	maxsz   uint64
 	waiters *list.List
@@ -65,116 +66,151 @@ type rocksQueue struct {
 	pointers        map[uint8]*queuePointer
 }
 
-func (q *rocksQueue) Close() {
+func newQueue(name string, store *bStore) (*bQueue, error) {
+	q := &bQueue{
+		name:            fmt.Sprintf("%s%s", "q~", name),
+		store:           store,
+		mu:              sync.Mutex{},
+		waiters:         list.New(),
+		pointers:        make(map[uint8]*queuePointer),
+		orderedPointers: brodal.NewHeap(),
+		maxsz:           DefaultMaxSize,
+	}
+	err := q.init()
+	if err != nil {
+		return nil, err
+	}
+	return q, nil
+}
+
+func (q *bQueue) init() error {
+	var count uint64
+	err := q.store.bdb.View(func(tx *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		it := tx.NewIterator(opts)
+		defer it.Close()
+
+		prefix := append([]byte(q.name), 0xFF)
+		it.Seek(prefix)
+
+		for ; it.ValidForPrefix(prefix); it.Next() {
+			key := it.Item().Key()
+
+			_, priority, seq := decodeKey(q.name, key)
+			if p, ok := q.pointers[priority]; ok {
+				if seq > p.high {
+					p.high = seq
+				} else if seq < p.low {
+					p.low = seq
+				}
+			} else {
+				p = &queuePointer{
+					priority: priority,
+					high:     seq,
+					low:      seq,
+				}
+				q.orderedPointers.Insert(p)
+				q.pointers[priority] = p
+			}
+
+			count++
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	atomic.StoreUint64(&q.size, count)
+
+	util.Debugf("Queue init: %s %d elements", q.name, atomic.LoadUint64(&q.size))
+	return nil
+}
+
+func (q *bQueue) Close() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.done = true
 	q.clearWaiters()
 }
 
-func (q *rocksQueue) Name() string {
-	return q.name
+func (q *bQueue) Name() string {
+	// don't include the q~ namespace prefix
+	return q.name[2:]
 }
 
-func (q *rocksQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
+func (q *bQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
 	index := 0
-	upper := upperBound(q.name)
+	//upper := upperBound(q.name)
 
-	ro := queueReadOptions(false)
-	ro.SetIterateUpperBound(upper)
-	ro.SetFillCache(false)
-	defer ro.Destroy()
+	return q.store.bdb.View(func(tx *badger.Txn) error {
+		it := tx.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
 
-	it := q.store.db.NewIteratorCF(ro, q.cf)
-	defer it.Close()
+		prefix := append([]byte(q.name), 0xFF)
+		it.Seek(prefix)
 
-	prefix := append([]byte(q.name), 0xFF)
-	it.Seek(prefix)
-	if it.Err() != nil {
-		return it.Err()
-	}
-
-	// skip any before start point
-	for i := start; i > 0; i-- {
-		if !it.Valid() {
-			return nil
-		}
-		it.Next()
-	}
-
-	for ; it.Valid(); it.Next() {
-		if count == 0 {
-			break
-		}
-		if err := it.Err(); err != nil {
-			return err
+		// skip any before start point
+		for i := start; i > 0; i-- {
+			if !it.ValidForPrefix(prefix) {
+				return nil
+			}
+			it.Next()
 		}
 
-		k := it.Key()
-		v := it.Value()
-		value := v.Data()
-		key := k.Data()
-		err := fn(index, key, value)
-		index++
-		k.Free()
-		v.Free()
-		if err != nil {
-			return err
+		for ; it.ValidForPrefix(prefix); it.Next() {
+			if count == 0 {
+				break
+			}
+
+			k := it.Item().Key()
+			v, err := it.Item().ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			err = fn(index, k[2:], v)
+			index++
+			if err != nil {
+				return err
+			}
+			count -= 1
 		}
-		count -= 1
-	}
-	if it.Err() != nil {
-		return it.Err()
-	}
-	return nil
+		return nil
+	})
 }
 
-func (q *rocksQueue) Each(fn func(index int, k, v []byte) error) error {
+func (q *bQueue) Each(fn func(index int, k, v []byte) error) error {
 	return q.Page(0, -1, fn)
 }
 
-func (q *rocksQueue) Clear() (uint64, error) {
+func (q *bQueue) Clear() (uint64, error) {
 	count := uint64(0)
-	// TODO impl which uses Rocks range deletes?
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	upper := upperBound(q.name)
-	ro := queueReadOptions(true)
-	ro.SetIterateUpperBound(upper)
-	ro.SetFillCache(false)
-	defer ro.Destroy()
+	//upper := upperBound(q.name)
 
-	it := q.store.db.NewIteratorCF(ro, q.cf)
-	defer it.Close()
+	err := q.store.bdb.Update(func(tx *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		it := tx.NewIterator(opts)
+		defer it.Close()
 
-	prefix := append([]byte(q.name), 0xFF)
-	it.Seek(prefix)
-	if it.Err() != nil {
-		return 0, it.Err()
-	}
+		prefix := append([]byte(q.name), 0xFF)
+		it.Seek(prefix)
 
-	if !it.Valid() {
-		return 0, nil
-	}
-
-	wo := queueWriteOptions()
-	defer wo.Destroy()
-
-	wb := gorocksdb.NewWriteBatch()
-	defer wb.Destroy()
-
-	for ; it.Valid(); it.Next() {
-		k := it.Key()
-		key := k.Data()
-		//util.Warnf("Queue#clear: delete %x", key)
-		wb.DeleteCF(q.cf, key)
-		k.Free()
-		count++
-	}
-	err := q.store.db.Write(wo, wb)
+		for ; it.Valid(); it.Next() {
+			err := tx.Delete(it.Item().Key())
+			if err != nil {
+				return err
+			}
+			count++
+		}
+		return nil
+	})
 	if err != nil {
-		return count, err
+		return 0, err
 	}
 
 	// reset the pointer references since we iterated over all keys
@@ -186,80 +222,24 @@ func (q *rocksQueue) Clear() (uint64, error) {
 	return count, nil
 }
 
-func (q *rocksQueue) Init() error {
-	q.mu = sync.Mutex{}
-	upper := upperBound(q.name)
-
-	ro := queueReadOptions(false)
-	ro.SetIterateUpperBound(upper)
-	ro.SetFillCache(false)
-	defer ro.Destroy()
-
-	var count uint64
-	it := q.store.db.NewIteratorCF(ro, q.cf)
-	defer it.Close()
-
-	prefix := append([]byte(q.name), 0xFF)
-
-	it.Seek(prefix)
-	if err := it.Err(); err != nil {
-		return err
-	}
-
-	for ; it.Valid(); it.Next() {
-		k := it.Key()
-		key := k.Data()
-
-		_, priority, seq := decodeKey(q.name, key)
-		if p, ok := q.pointers[priority]; ok {
-			if seq > p.high {
-				p.high = seq
-			} else if seq < p.low {
-				p.low = seq
-			}
-		} else {
-			p = &queuePointer{
-				priority: priority,
-				high:     seq,
-				low:      seq,
-			}
-			q.orderedPointers.Insert(p)
-			q.pointers[priority] = p
-		}
-
-		k.Free()
-		count++
-	}
-	it.SeekToLast()
-
-	if err := it.Err(); err != nil {
-		return err
-	}
-
-	atomic.StoreUint64(&q.size, count)
-	q.waiters = list.New()
-
-	util.Debugf("Queue init: %s %d elements", q.name, atomic.LoadUint64(&q.size))
-	return nil
-}
-
-func (q *rocksQueue) Size() uint64 {
+func (q *bQueue) Size() uint64 {
 	return atomic.LoadUint64(&q.size)
 }
 
-func (q *rocksQueue) Push(priority uint8, payload []byte) error {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	if size := atomic.LoadUint64(&q.size); size > q.maxsz {
+func (q *bQueue) Push(priority uint8, payload []byte) error {
+	size := atomic.LoadUint64(&q.size)
+	if size > q.maxsz {
 		return Backpressure{q.name, size, q.maxsz}
 	}
 
+	q.mu.Lock()
 	k := q.nextkey(priority)
+	q.mu.Unlock()
+
 	v := payload
-	wo := queueWriteOptions()
-	defer wo.Destroy()
-	err := q.store.db.PutCF(wo, q.cf, k, v)
+	err := q.store.bdb.Update(func(tx *badger.Txn) error {
+		return tx.Set(k, v)
+	})
 	if err != nil {
 		return err
 	}
@@ -272,7 +252,7 @@ func (q *rocksQueue) Push(priority uint8, payload []byte) error {
 }
 
 // non-blocking, returns immediately if there's nothing enqueued
-func (q *rocksQueue) Pop() ([]byte, error) {
+func (q *bQueue) Pop() ([]byte, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -284,7 +264,7 @@ func (q *rocksQueue) Pop() ([]byte, error) {
 }
 
 // caller must hold q.mu or else DOOM!
-func (q *rocksQueue) _pop() ([]byte, error) {
+func (q *bQueue) _pop() ([]byte, error) {
 	var value []byte
 	var err error
 
@@ -294,17 +274,29 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 	}
 
 	p := q.orderedPointers.Peek().(*queuePointer)
-	key := makeKey(q.name, p.priority, p.high)
-	ro := queueReadOptions(true)
-	ro.SetIterateUpperBound(key)
-	defer ro.Destroy()
 
+	var key []byte
 	for {
 		key = makeKey(q.name, p.priority, p.low)
-		value, err = q.store.db.GetBytesCF(ro, q.cf, key)
+		err := q.store.bdb.View(func(tx *badger.Txn) error {
+			item, err := tx.Get(key)
+			if err != nil {
+				return err
+			}
+			value, err = item.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		if err == badger.ErrKeyNotFound {
+			err = nil
+			value = nil
+		}
 		if err != nil {
 			return nil, err
 		}
+
 		if value != nil {
 			break
 		}
@@ -322,10 +314,9 @@ func (q *rocksQueue) _pop() ([]byte, error) {
 		return nil, nil
 	}
 
-	wo := queueWriteOptions()
-	defer wo.Destroy()
-
-	err = q.store.db.DeleteCF(wo, q.cf, key)
+	err = q.store.bdb.Update(func(tx *badger.Txn) error {
+		return tx.Delete(key)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +343,7 @@ type QueueWaiter struct {
 //
 // This is best effort: it's possible for the waiter's
 // deadline to pass just as it is selected to wake up.
-func (q *rocksQueue) notify() {
+func (q *bQueue) notify() {
 	q.waitmu.Lock()
 	defer q.waitmu.Unlock()
 
@@ -369,7 +360,7 @@ func (q *rocksQueue) notify() {
 	}
 }
 
-func (q *rocksQueue) clearWaiters() {
+func (q *bQueue) clearWaiters() {
 	q.waitmu.Lock()
 	defer q.waitmu.Unlock()
 
@@ -387,7 +378,7 @@ func (q *rocksQueue) clearWaiters() {
 // Sends that channel to the dispatcher via waiter channel.
 // Dispatcher is notified of new job on queue, pulls off a waiter
 // and pushes notification to its channel.
-func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
+func (q *bQueue) BPop(ctx context.Context) ([]byte, error) {
 	for {
 		q.mu.Lock()
 		if q.done {
@@ -425,33 +416,32 @@ func (q *rocksQueue) BPop(ctx context.Context) ([]byte, error) {
 	}
 }
 
-func (q *rocksQueue) Delete(keys [][]byte) error {
-	wb := gorocksdb.NewWriteBatch()
-	defer wb.Destroy()
-	db := q.store.db
-	ro := gorocksdb.NewDefaultReadOptions()
-	wo := gorocksdb.NewDefaultWriteOptions()
-	defer ro.Destroy()
-	defer wo.Destroy()
-
+func (q *bQueue) Delete(keys [][]byte) error {
 	var count uint64
 
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	for _, key := range keys {
-		data, err := db.GetCF(ro, q.cf, key)
-		if err != nil {
-			return err
-		}
-		if data.Size() > 0 {
-			wb.DeleteCF(q.cf, key)
+	err := q.store.bdb.Update(func(tx *badger.Txn) error {
+		for _, key := range keys {
+			qkey := append([]byte("q~"), key...)
+			_, err := tx.Get(qkey)
+			if err == badger.ErrKeyNotFound {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+
+			err = tx.Delete(qkey)
+			if err != nil {
+				return err
+			}
 			count++
 		}
-		data.Free()
-	}
-	util.Debugf(`Deleting %d elements from queue "%s"`, count, q.name)
-	err := db.Write(wo, wb)
+		return nil
+	})
+	util.Infof(`Deleting %d elements from queue "%s"`, count, q.name)
 	if err == nil {
 		// decrement count
 		atomic.AddUint64(&q.size, ^uint64(count-1))
@@ -461,7 +451,7 @@ func (q *rocksQueue) Delete(keys [][]byte) error {
 
 //////////////////////////////////////////////////
 
-func (q *rocksQueue) nextkey(priority uint8) []byte {
+func (q *bQueue) nextkey(priority uint8) []byte {
 	p, ok := q.pointers[priority]
 	if !ok {
 		p = &queuePointer{
@@ -493,10 +483,6 @@ func makeKey(name string, priority uint8, seq uint64) []byte {
 
 func decodeKey(name string, key []byte) (string, uint8, uint64) {
 	length := len(name) + 1
-	// TODO backwards compatibililty, remove after 0.6.0
-	if len(key)-len(name) == 9 {
-		return name, 5, binary.BigEndian.Uint64(key[length:])
-	}
 	return name, uint8(^key[length]), binary.BigEndian.Uint64(key[length+1:])
 }
 
@@ -515,14 +501,4 @@ func upperBound(name string) []byte {
 	bytes[len+7] = 0xFF
 	bytes[len+8] = 0xFF
 	return bytes
-}
-
-func queueReadOptions(tailing bool) *gorocksdb.ReadOptions {
-	ro := gorocksdb.NewDefaultReadOptions()
-	ro.SetTailing(tailing)
-	return ro
-}
-
-func queueWriteOptions() *gorocksdb.WriteOptions {
-	return gorocksdb.NewDefaultWriteOptions()
 }

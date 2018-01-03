@@ -12,7 +12,7 @@ cache:
 
 env:
   global:
-    - ROCKSDB_VERSION="v5.7.3"
+    - ROCKSDB_VERSION="v5.9.2"
     - ROCKSDB_HOME="$HOME/rocksdb-$ROCKSDB_VERSION"
     - CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
     - CGO_LDFLAGS="-L${ROCKSDB_HOME}"

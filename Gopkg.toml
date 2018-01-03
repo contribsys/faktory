@@ -22,8 +22,8 @@
 
 
 [[constraint]]
-  name = "github.com/contribsys/gorocksdb"
-  revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
+  name = "github.com/dgraph-io/badger"
+  version = "1.3.0"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"

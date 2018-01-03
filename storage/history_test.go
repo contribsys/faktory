@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/contribsys/gorocksdb"
+	"github.com/dgraph-io/badger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,10 +14,10 @@ func TestStatsMerge(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/merge.db")
-	db, err := Open("rocksdb", "/tmp/merge.db")
+	db, err := Open("badger", "/tmp/merge.db")
 	assert.NoError(t, err)
 
-	store := db.(*rocksStore)
+	store := db.(*bStore)
 	for i := 0; i < 10000; i++ {
 		if i%100 == 99 {
 			store.Failure()
@@ -30,26 +30,33 @@ func TestStatsMerge(t *testing.T) {
 	assert.Equal(t, int64(100), store.history.TotalFailures)
 	//store.db.Flush()
 
-	ro := gorocksdb.NewDefaultReadOptions()
-	value, err := store.db.GetBytesCF(ro, store.stats, []byte("Processed"))
-	assert.NoError(t, err)
-	count, _ := binary.Varint(value)
-	assert.Equal(t, int64(10000), count)
+	err = store.bdb.View(func(tx *badger.Txn) error {
+		value, err := tx.Get([]byte("z~Processed"))
+		assert.NoError(t, err)
+		val, err := value.ValueCopy(nil)
+		assert.NoError(t, err)
+		count, _ := binary.Varint(val)
+		assert.Equal(t, int64(10000), count)
 
-	value, err = store.db.GetBytesCF(ro, store.stats, []byte("Failures"))
+		value, err = tx.Get([]byte("z~Failures"))
+		assert.NoError(t, err)
+		val, err = value.ValueCopy(nil)
+		assert.NoError(t, err)
+		count, _ = binary.Varint(val)
+		assert.Equal(t, int64(100), count)
+		return nil
+	})
 	assert.NoError(t, err)
-	count, _ = binary.Varint(value)
-	assert.Equal(t, int64(100), count)
 
 	store.Failure()
 	store.Success()
 	db.Close()
 
-	db, err = Open("rocksdb", "/tmp/merge.db")
+	db, err = Open("badger", "/tmp/merge.db")
 	assert.NoError(t, err)
 	defer db.Close()
 
-	store = db.(*rocksStore)
+	store = db.(*bStore)
 	assert.Equal(t, int64(10002), store.history.TotalProcessed)
 	assert.Equal(t, int64(101), store.history.TotalFailures)
 

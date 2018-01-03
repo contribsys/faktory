@@ -8,7 +8,6 @@ import (
 
   "github.com/contribsys/faktory/client"
   "github.com/contribsys/faktory/storage"
-  "github.com/contribsys/gorocksdb"
 )
 
 func ego_debug(w io.Writer, req *http.Request) {
@@ -39,7 +38,7 @@ func ego_debug(w io.Writer, req *http.Request) {
     </tr>
     <tr>
       <th><%= t(req, "Version") %></th>
-      <td>Faktory <%= client.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
+      <td>Faktory <%= client.Version %>, <%= defaultServer.Store().Label() %></td>
     </tr>
     <tr>
     <th><%= t(req, "Data Location") %></th>

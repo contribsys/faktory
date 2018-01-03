@@ -17,7 +17,6 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
-	"github.com/contribsys/gorocksdb"
 )
 
 const helpMsg = `Valid commands:
@@ -32,8 +31,6 @@ help
 
 * Requires an immediate restart after running command.`
 
-var versionMsg = fmt.Sprintf("Faktory %s, RocksDB %s\n", client.Version, gorocksdb.RocksDBVersion())
-
 // The REPL provides a few admin commands outside of Faktory itself,
 // notably the backup and restore commands.
 func main() {
@@ -45,7 +42,7 @@ func main() {
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger("warn")
 
-	store, err := storage.Open("rocksdb", opts.StorageDirectory)
+	store, err := storage.Open("badger", opts.StorageDirectory)
 	if err != nil {
 		fmt.Println("Unable to open storage:", err.Error())
 	}
@@ -77,7 +74,7 @@ func main() {
 }
 
 func repl(path string, store storage.Store) {
-	fmt.Printf("Using RocksDB %s at %s\n", gorocksdb.RocksDBVersion(), path)
+	fmt.Printf("Using %s at %s\n", store.Label(), path)
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("version"),
@@ -137,7 +134,7 @@ func execute(cmd []string, store storage.Store, path string) error {
 	case "quit":
 		return nil
 	case "version":
-		fmt.Printf(versionMsg)
+		fmt.Printf("Faktory %s, %s\n", client.Version, store.Label())
 	case "help":
 		fmt.Println(helpMsg)
 	case "flush":
@@ -179,10 +176,10 @@ func repair(store storage.Store, path string) error {
 	if store != nil {
 		store.Close()
 	}
-	opts := storage.DefaultOptions()
-	if err := gorocksdb.RepairDb(path, opts); err != nil {
-		return err
-	}
+	//opts := storage.DefaultOptions()
+	//if err := gorocksdb.RepairDb(path, opts); err != nil {
+	//return err
+	//}
 
 	fmt.Println("Repair complete, restart required")
 	os.Exit(0)

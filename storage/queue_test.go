@@ -16,7 +16,7 @@ func TestBasicQueueOps(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/queues.db")
 
-	store, err := Open("rocksdb", "/tmp/queues.db")
+	store, err := Open("badger", "/tmp/queues.db")
 	assert.NoError(t, err)
 	defer store.Close()
 	q, err := store.GetQueue("default")
@@ -81,14 +81,14 @@ func TestBasicQueueOps(t *testing.T) {
 func TestQueuePrioritization(t *testing.T) {
 	os.RemoveAll("/tmp/qpriority.db")
 	defer os.RemoveAll("/tmp/qpriority.db")
-	store, err := Open("rocksdb", "/tmp/qpriority.db")
+	store, err := Open("badger", "/tmp/qpriority.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
 	assert.Equal(t, uint64(0), q.Size())
 
-	n := 100
+	n := 10
 	// Push N jobs to queue with low priority
 	// Get Size() each time
 	for i := 0; i < n; i++ {
@@ -173,34 +173,34 @@ func TestQueuePrioritization(t *testing.T) {
 
 func TestDecentQueueUsage(t *testing.T) {
 	t.Parallel()
-
 	defer os.RemoveAll("/tmp/qbench.db")
-	store, err := Open("rocksdb", "/tmp/qbench.db")
+
+	store, err := Open("badger", "/tmp/qbench.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 	err = q.Push(5, []byte("first"))
 	assert.NoError(t, err)
-	n := 5000
+	n := 50
 	// Push N jobs to queue
 	// Get Size() each time
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
 		err = q.Push(5, data)
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(i+2), q.Size())
+		assert.EqualValues(t, i+2, q.Size())
 	}
 
 	err = q.Push(5, []byte("last"))
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(n+2), q.Size())
+	assert.EqualValues(t, n+2, q.Size())
 
 	// Close DB, reopen
 	store.Close()
 
-	store, err = Open("rocksdb", "/tmp/qbench.db")
+	store, err = Open("badger", "/tmp/qbench.db")
 	assert.NoError(t, err)
 
 	q, err = store.GetQueue("default")
@@ -208,19 +208,19 @@ func TestDecentQueueUsage(t *testing.T) {
 
 	// Pop N jobs from queue
 	// Get Size() each time
-	assert.Equal(t, uint64(n+2), q.Size())
+	assert.EqualValues(t, n+2, q.Size())
 	data, err := q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("first"), data)
 	for i := 0; i < n; i++ {
 		_, err := q.Pop()
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(n-i), q.Size())
+		assert.EqualValues(t, n-i, q.Size())
 	}
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("last"), data)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 
 	data, err = q.Pop()
 	assert.NoError(t, err)
@@ -230,13 +230,13 @@ func TestDecentQueueUsage(t *testing.T) {
 func TestThreadedQueueUsage(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/qthreaded.db")
-	store, err := Open("rocksdb", "/tmp/qthreaded.db")
+	store, err := Open("badger", "/tmp/qthreaded.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
 	tcnt := 5
-	n := 1000
+	n := 100
 
 	var wg sync.WaitGroup
 	for i := 0; i < tcnt; i++ {
@@ -248,15 +248,15 @@ func TestThreadedQueueUsage(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Equal(t, int64(0), counter)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, counter)
+	assert.EqualValues(t, 0, q.Size())
 
 	q.Each(func(idx int, k, v []byte) error {
 		atomic.AddInt64(&counter, 1)
 		//log.Println(string(k), string(v))
 		return nil
 	})
-	assert.Equal(t, int64(0), counter)
+	assert.EqualValues(t, 0, counter)
 	store.Close()
 }
 
@@ -283,7 +283,7 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 func TestQueueKeys(t *testing.T) {
 	t.Parallel()
 
-	q := &rocksQueue{
+	q := &bQueue{
 		name: "foo",
 		pointers: map[uint8]*queuePointer{
 			5: &queuePointer{
@@ -309,7 +309,7 @@ func TestQueueKeys(t *testing.T) {
 
 func TestClearAndPush(t *testing.T) {
 	defer os.RemoveAll("/tmp/qpush.db")
-	store, err := Open("rocksdb", "/tmp/qpush.db")
+	store, err := Open("badger", "/tmp/qpush.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("lksjadfl")
 	assert.NoError(t, err)
@@ -329,7 +329,7 @@ func TestClearAndPush(t *testing.T) {
 
 func BenchmarkQueuePerformance(b *testing.B) {
 	defer os.RemoveAll("/tmp/qblah.db")
-	store, err := Open("rocksdb", "/tmp/qblah.db")
+	store, err := Open("badger", "/tmp/qblah.db")
 	assert.NoError(b, err)
 	assert.NotNil(b, store)
 	defer store.Close()
@@ -352,7 +352,7 @@ func TestReopening(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/reopening.db")
-	store, err := Open("rocksdb", "/tmp/reopening.db")
+	store, err := Open("badger", "/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -380,15 +380,15 @@ func TestReopening(t *testing.T) {
 	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint64(3), b.Size())
-	assert.Equal(t, uint64(2), d.Size())
-	assert.Equal(t, uint64(1), c.Size())
-	assert.Equal(t, uint64(0), e.Size())
-	assert.Equal(t, uint64(0), a.Size())
+	assert.EqualValues(t, 3, b.Size())
+	assert.EqualValues(t, 2, d.Size())
+	assert.EqualValues(t, 1, c.Size())
+	assert.EqualValues(t, 0, e.Size())
+	assert.EqualValues(t, 0, a.Size())
 
 	store.Close()
 
-	store, err = Open("rocksdb", "/tmp/reopening.db")
+	store, err = Open("badger", "/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -404,18 +404,18 @@ func TestReopening(t *testing.T) {
 	assert.NoError(t, err)
 
 	store.EachQueue(func(q Queue) {
-		fmt.Println(q.Name(), q.Size())
+		//fmt.Println(q.Name(), q.Size())
 	})
 
-	assert.Equal(t, uint64(3), b.Size())
-	assert.Equal(t, uint64(2), d.Size())
-	assert.Equal(t, uint64(1), c.Size())
-	assert.Equal(t, uint64(0), e.Size())
-	assert.Equal(t, uint64(0), a.Size())
+	assert.EqualValues(t, 3, b.Size())
+	assert.EqualValues(t, 2, d.Size())
+	assert.EqualValues(t, 1, c.Size())
+	assert.EqualValues(t, 0, e.Size())
+	assert.EqualValues(t, 0, a.Size())
 
 	err = b.Push(5, []byte("bulk"))
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(4), b.Size())
+	assert.EqualValues(t, 4, b.Size())
 
 	var keys [2][]byte
 	b.Each(func(idx int, k, v []byte) error {
@@ -429,7 +429,7 @@ func TestReopening(t *testing.T) {
 	keys[1] = []byte("somefakekey")
 	err = b.Delete(keys[0:2])
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(3), b.Size())
+	assert.EqualValues(t, 3, b.Size())
 
 	data, err := b.Pop()
 	assert.NoError(t, err)
@@ -440,19 +440,19 @@ func TestReopening(t *testing.T) {
 	data, err = b.Pop()
 	assert.NoError(t, err)
 	assert.NotNil(t, data)
-	assert.Equal(t, uint64(0), b.Size())
+	assert.EqualValues(t, 0, b.Size())
 
 	data, err = b.Pop()
 	assert.NoError(t, err)
 	assert.Nil(t, data)
-	assert.Equal(t, uint64(0), b.Size())
+	assert.EqualValues(t, 0, b.Size())
 
 	store.Close()
 }
 
 func TestBlockingPop(t *testing.T) {
 	defer os.RemoveAll("/tmp/blocking.db")
-	store, err := Open("rocksdb", "/tmp/blocking.db")
+	store, err := Open("badger", "/tmp/blocking.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer store.Close()
@@ -519,14 +519,14 @@ func TestBlockingPop(t *testing.T) {
 	assert.Equal(t, 3, count)
 	assert.Equal(t, 1, timedout)
 	assert.Equal(t, uint64(1), q.Size())
-	assert.Equal(t, 0, q.(*rocksQueue).waiters.Len())
+	assert.Equal(t, 0, q.(*bQueue).waiters.Len())
 
 	q.Clear()
 
 	// verify we have four waiters and they are released
 	// immediately upon q.Close()
 	wg = sync.WaitGroup{}
-	rq := q.(*rocksQueue)
+	rq := q.(*bQueue)
 	var nothing int64
 
 	for i := 0; i < 4; i++ {

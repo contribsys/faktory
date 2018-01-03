@@ -13,6 +13,9 @@ type BackupInfo struct {
 }
 
 type Store interface {
+	// "Badger v1.3.0"
+	Label() string
+
 	Close() error
 	Retries() SortedSet
 	Scheduled() SortedSet
@@ -82,8 +85,10 @@ type SortedSet interface {
 }
 
 func Open(dbtype string, path string) (Store, error) {
-	if dbtype == "rocksdb" {
-		return OpenRocks(path)
+	if dbtype == "badger" {
+		return OpenBadger(path)
+	} else if dbtype == "rocksdb" {
+		return nil, nil // OpenRocks(path)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

@@ -54,6 +54,9 @@ func ego_debug(w io.Writer, req *http.Request) {
       <td>
         Alloc (KB): <%= m.Alloc / 1024 %><br/>
         Live Objects: <%= m.Mallocs - m.Frees %>
+        <% if amt := rss(); amt != "" { %>
+        <br/>RSS: <%= amt %>
+        <% } %>
       </td>
     </tr>
     <tr>

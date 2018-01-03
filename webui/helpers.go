@@ -1,8 +1,10 @@
 package webui
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -229,6 +231,27 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 
 func uptimeInDays() string {
 	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+}
+
+func rss() string {
+	ex, err := util.FileExists("/proc/self/status")
+	if err != nil || !ex {
+		return ""
+	}
+
+	content, err := ioutil.ReadFile("/proc/self/status")
+	if err != nil {
+		return ""
+	}
+
+	lines := bytes.Split(content, []byte("\n"))
+	for line := range lines {
+		ls := string(line)
+		if strings.Contains(ls, "VmRSS") {
+			return strings.Split(ls, ":")[1]
+		}
+	}
+	return ""
 }
 
 func locale(req *http.Request) string {

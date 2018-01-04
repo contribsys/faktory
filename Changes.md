@@ -1,4 +1,4 @@
-## HEAD
+## 0.7.0
 
 - Upgrade to RocksDB from 5.7.3 to 5.9.2
 - Add CSRF protection to Web UI [#92, vosmith]

@@ -3,7 +3,7 @@
 - Upgrade to RocksDB from 5.7.3 to 5.9.2
 - Add CSRF protection to Web UI [#92, vosmith]
 - Faktory in production mode now requires a password by default [#113]
-- Expired jobs now use the retry process so they don't re-enqueue forever [#99]
+- Orphaned jobs now use the retry process so they don't re-enqueue forever [#99]
 - Implement automated backups, default once per hour and keeping 24. [#106]
 - Implement `purge` command for faktory-cli, to remove old backups.
 

@@ -1,6 +1,6 @@
 ## 0.7.0
 
-- Upgrade to RocksDB from 5.7.3 to 5.9.2
+- Upgrade RocksDB from 5.7.3 to 5.9.2
 - Add CSRF protection to Web UI [#92, vosmith]
 - Faktory in production mode now requires a password by default [#113]
 - Orphaned jobs now use the retry process so they don't re-enqueue forever [#99]

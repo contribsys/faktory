@@ -218,6 +218,19 @@ func TestManagerFetch(t *testing.T) {
 		assert.EqualValues(t, 0, q.Size())
 	})
 
+	t.Run("FetchNoQueues", func(t *testing.T) {
+		t.Parallel()
+		store, teardown := setupTest(t)
+		defer teardown(t)
+
+		m := NewManager(store)
+
+		queues := []string{}
+		job, err := m.Fetch(context.Background(), "workerId", queues...)
+		assert.Nil(t, job)
+		assert.Error(t, err)
+	})
+
 	t.Run("FetchFromEmptyQueue", func(t *testing.T) {
 		t.Parallel()
 		store, teardown := setupTest(t)

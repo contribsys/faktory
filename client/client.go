@@ -243,6 +243,10 @@ func (c *Client) Push(job *Job) error {
 }
 
 func (c *Client) Fetch(q ...string) (*Job, error) {
+	if len(q) == 0 {
+		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
+	}
+
 	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
 	if err != nil {
 		return nil, err

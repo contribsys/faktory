@@ -113,7 +113,14 @@ func (ts *rocksSortedSet) Size() int64 {
 }
 
 func (ts *rocksSortedSet) Remove(key []byte) error {
-	err := ts.db.DeleteCF(ts.wo, ts.cf, key)
+	d, err := ts.Get(key)
+	if err != nil {
+		return err
+	}
+	if d == nil {
+		return nil
+	}
+	err = ts.db.DeleteCF(ts.wo, ts.cf, key)
 	if err != nil {
 		return err
 	}
@@ -226,7 +233,6 @@ func (ts *rocksSortedSet) Clear() (int64, error) {
 		}
 		k.Free()
 		count++
-		atomic.AddInt64(&ts.size, -1)
 	}
 	atomic.StoreInt64(&ts.size, 0)
 	return count, nil

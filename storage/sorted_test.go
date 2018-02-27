@@ -49,7 +49,9 @@ func TestBasicSortedSet(t *testing.T) {
 
 	var key []byte
 	r.Each(func(idx int, k, v []byte) error {
-		key = k
+		cp := make([]byte, len(k))
+		copy(cp, k)
+		key = cp
 		return nil
 	})
 

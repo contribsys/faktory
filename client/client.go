@@ -143,18 +143,18 @@ func Dial(srv *Server, password string) (*Client, error) {
 	var err error
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
-	if srv.Network == "tcp" {
+	if srv.Network == "tcp+tls" {
+		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, &tls.Config{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
 		conn, err = dial.Dial(srv.Network, srv.Address)
 		if err != nil {
 			return nil, err
 		}
 		if x, ok := conn.(*net.TCPConn); ok {
 			x.SetKeepAlive(true)
-		}
-	} else {
-		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
-		if err != nil {
-			return nil, err
 		}
 	}
 

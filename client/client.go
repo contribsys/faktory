@@ -146,7 +146,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 	if srv.Network == "tcp+tls" {
 		insecure := false
 		v, ok := os.LookupEnv("FAKTORY_SKIP_TLS_VERIFY")
-		if ok && strings.ToLower(v) == "yes"{
+		if ok && strings.ToLower(v) == "yes" {
 			insecure = true
 		}
 		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, &tls.Config{

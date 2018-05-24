@@ -144,7 +144,14 @@ func Dial(srv *Server, password string) (*Client, error) {
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
 	if srv.Network == "tcp+tls" {
-		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, &tls.Config{})
+		insecure := false
+		v, ok := os.LookupEnv("FAKTORY_SKIP_TLS_VERIFY")
+		if ok && strings.ToLower(v) == "yes"{
+			insecure = true
+		}
+		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, &tls.Config{
+			InsecureSkipVerify: insecure,
+		})
 		if err != nil {
 			return nil, err
 		}

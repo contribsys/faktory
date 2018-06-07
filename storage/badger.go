@@ -55,6 +55,7 @@ func OpenBadger(path string) (Store, error) {
 		scheduled: scheduled,
 		mu:        sync.Mutex{},
 		queueSet:  make(map[string]*bQueue),
+		history:   &processingHistory{0, 0},
 	}, nil
 }
 

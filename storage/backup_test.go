@@ -9,6 +9,7 @@ import (
 )
 
 func TestBackupAndRestore(t *testing.T) {
+	t.Skip("skipping backup tests with badger.")
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/backup.db")

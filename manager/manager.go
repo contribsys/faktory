@@ -189,6 +189,10 @@ func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*cli
 		}
 	}
 
+	if first == nil {
+		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
+	}
+
 	// scanned through our queues, no jobs were available
 	// we should block for a moment, awaiting a job to be
 	// pushed.  this allows us to pick up new jobs in µs

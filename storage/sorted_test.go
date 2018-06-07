@@ -49,7 +49,9 @@ func TestBasicSortedSet(t *testing.T) {
 
 	var key []byte
 	r.Each(func(idx int, k, v []byte) error {
-		key = k
+		cp := make([]byte, len(k))
+		copy(cp, k)
+		key = cp
 		return nil
 	})
 
@@ -57,8 +59,17 @@ func TestBasicSortedSet(t *testing.T) {
 	err = r.Remove(key)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, r.Size())
+}
 
-	count := 100
+func TestRocksSortedSet(t *testing.T) {
+	t.Parallel()
+	defer os.RemoveAll("/tmp/rocks.db")
+
+	db, err := Open("badger", "/tmp/rocks.db")
+	assert.NoError(t, err)
+	defer db.Close()
+
+	count := 1000
 	retries := db.Retries()
 	start := time.Now()
 	for i := 0; i < count; i++ {
@@ -85,11 +96,11 @@ func TestBasicSortedSet(t *testing.T) {
 
 		assert.True(t, len(key) > 40, key)
 		assert.NotNil(t, elm)
-		amt++
+		amt += 1
 		return nil
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, count, amt)
+	assert.EqualValues(t, count, amt)
 
 	strs := strings.Split(string(akey), "|")
 	assert.EqualValues(t, 0, db.Working().Size())
@@ -116,7 +127,7 @@ func TestBasicSortedSet(t *testing.T) {
 		assert.EqualValues(t, count-remd, retries.Size())
 		assert.True(t, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
 	}
-	assert.EqualValues(t, 49, retries.Size())
+	assert.EqualValues(t, 499, retries.Size())
 	retries.Clear()
 	assert.EqualValues(t, 0, retries.Size())
 }
@@ -183,8 +194,8 @@ func TestBadgerSortedSet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, retries.Size())
 
-	err = db.(*bStore).bdb.PurgeOlderVersions()
-	assert.NoError(t, err)
+	//err = db.(*bStore).bdb.PurgeOlderVersions()
+	//assert.NoError(t, err)
 
 	err = br.init()
 	assert.NoError(t, err)

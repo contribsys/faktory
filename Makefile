@@ -52,7 +52,7 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419 -e production
+		contribsys/faktory:$(VERSION) /faktory -b 0.0.0.0:7419 -e production
 
 dpush: tag
 	docker build \

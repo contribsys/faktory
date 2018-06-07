@@ -22,7 +22,7 @@ func TestBasicQueueOps(t *testing.T) {
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 
 	data, err := q.Pop()
 	assert.NoError(t, err)
@@ -30,11 +30,11 @@ func TestBasicQueueOps(t *testing.T) {
 
 	err = q.Push(5, []byte("hello"))
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 
 	err = q.Push(5, []byte("world"))
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(2), q.Size())
+	assert.EqualValues(t, 2, q.Size())
 
 	values := [][]byte{
 		[]byte("hello"),
@@ -48,12 +48,12 @@ func TestBasicQueueOps(t *testing.T) {
 	data, err = q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("hello"), data)
-	assert.Equal(t, uint64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 
 	cnt, err := q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(1), cnt)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 1, cnt)
+	assert.EqualValues(t, 0, q.Size())
 
 	// valid names:
 	_, err = store.GetQueue("A-Za-z0-9_.-")
@@ -86,7 +86,7 @@ func TestQueuePrioritization(t *testing.T) {
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 
 	n := 10
 	// Push N jobs to queue with low priority
@@ -94,7 +94,7 @@ func TestQueuePrioritization(t *testing.T) {
 	for i := 0; i < n; i++ {
 		err = q.Push(1, []byte("1"))
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(i+1), q.Size())
+		assert.EqualValues(t, i+1, q.Size())
 	}
 
 	// Push N jobs to queue with high priority
@@ -102,7 +102,7 @@ func TestQueuePrioritization(t *testing.T) {
 	for i := 0; i < n; i++ {
 		err = q.Push(3, []byte("3"))
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(i+1+n), q.Size())
+		assert.EqualValues(t, i+1+n, q.Size())
 	}
 
 	// Push N jobs to queue with medium priority
@@ -110,10 +110,10 @@ func TestQueuePrioritization(t *testing.T) {
 	for i := 0; i < n; i++ {
 		err = q.Push(2, []byte("2"))
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(i+1+2*n), q.Size())
+		assert.EqualValues(t, i+1+2*n, q.Size())
 	}
 
-	if !assert.Equal(t, uint64(3*n), q.Size()) {
+	if !assert.EqualValues(t, 3*n, q.Size()) {
 		return
 	}
 
@@ -121,21 +121,21 @@ func TestQueuePrioritization(t *testing.T) {
 		data, err := q.Pop()
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("3"), data)
-		assert.Equal(t, uint64(3*n-(i+1)), q.Size())
+		assert.EqualValues(t, 3*n-(i+1), q.Size())
 	}
 
 	for i := 0; i < n; i++ {
 		data, err := q.Pop()
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("2"), data)
-		assert.Equal(t, uint64(2*n-(i+1)), q.Size())
+		assert.EqualValues(t, 2*n-(i+1), q.Size())
 	}
 
 	for i := 0; i < n; i++ {
 		data, err := q.Pop()
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("1"), data)
-		assert.Equal(t, uint64(n-(i+1)), q.Size())
+		assert.EqualValues(t, n-(i+1), q.Size())
 	}
 
 	// paging starting with empty queue
@@ -298,13 +298,13 @@ func TestQueueKeys(t *testing.T) {
 	_, _, seqX := decodeKey("foo", x)
 	_, _, seqY := decodeKey("foo", y)
 	_, _, seqZ := decodeKey("foo", z)
-	assert.Equal(t, uint64(1293712939), seqX)
-	assert.Equal(t, uint64(1293712940), seqY)
-	assert.Equal(t, uint64(1293712941), seqZ)
+	assert.EqualValues(t, 1293712939, seqX)
+	assert.EqualValues(t, 1293712940, seqY)
+	assert.EqualValues(t, 1293712941, seqZ)
 
 	x = q.nextkey(5)
 	_, _, seqX = decodeKey("foo", x)
-	assert.Equal(t, uint64(1293712942), seqX)
+	assert.EqualValues(t, 1293712942, seqX)
 }
 
 func TestClearAndPush(t *testing.T) {
@@ -316,15 +316,15 @@ func TestClearAndPush(t *testing.T) {
 
 	_, err = q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 	q.Push(5, []byte("123o8123"))
 	q.Push(5, []byte("123o8123"))
-	assert.Equal(t, uint64(2), q.Size())
+	assert.EqualValues(t, 2, q.Size())
 	_, err = q.Clear()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 	q.Push(5, []byte("123o8123"))
-	assert.Equal(t, uint64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 }
 
 func BenchmarkQueuePerformance(b *testing.B) {
@@ -516,10 +516,10 @@ func TestBlockingPop(t *testing.T) {
 
 	wg.Wait()
 
-	assert.Equal(t, 3, count)
-	assert.Equal(t, 1, timedout)
-	assert.Equal(t, uint64(1), q.Size())
-	assert.Equal(t, 0, q.(*bQueue).waiters.Len())
+	assert.EqualValues(t, 3, count)
+	assert.EqualValues(t, 1, timedout)
+	assert.EqualValues(t, 1, q.Size())
+	assert.EqualValues(t, 0, q.(*bQueue).waiters.Len())
 
 	q.Clear()
 
@@ -556,5 +556,5 @@ func TestBlockingPop(t *testing.T) {
 
 	rq.Close()
 	wg.Wait()
-	assert.Equal(t, int64(4), nothing)
+	assert.EqualValues(t, 4, nothing)
 }

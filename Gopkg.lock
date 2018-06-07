@@ -20,6 +20,12 @@
   version = "v1.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/contribsys/gorocksdb"
+  packages = ["."]
+  revision = "844b933831c4b53ca8a7b162a94c64da653b6de5"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -28,8 +34,8 @@
 [[projects]]
   name = "github.com/dgraph-io/badger"
   packages = [".","options","protos","skl","table","y"]
-  revision = "69611218c7078be6de16f4ea13fb256e701b6b73"
-  version = "v1.3.0"
+  revision = "690400e629977977ecddfa8ab3a7f9285e1041a8"
+  version = "v1.5.1"
 
 [[projects]]
   branch = "master"
@@ -82,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e1eeb1b3c6dd7c45f2af3ee75ac5128946edd53a767896979ac2c34793dc8c72"
+  inputs-digest = "38ce553f5be4ab5b1f8286a1e5a95f10d5a75cb1392c60f0efdc153f6732bbf6"
   solver-name = "gps-cdcl"
   solver-version = 1

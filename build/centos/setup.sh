@@ -47,5 +47,5 @@ make prepare
 
 # build faktory
 echo === Running Faktory test suite
-make
+make test
 make build

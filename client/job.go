@@ -56,3 +56,20 @@ func randomJid() string {
 
 	return base64.RawURLEncoding.EncodeToString(bytes)
 }
+
+func (j *Job) GetCustom(name string) (interface{}, bool) {
+	if j.Custom == nil {
+		return nil, false
+	}
+
+	val, ok := j.Custom[name]
+	return val, ok
+}
+
+func (j *Job) SetCustom(name string, value interface{}) {
+	if j.Custom == nil {
+		j.Custom = map[string]interface{}{}
+	}
+
+	j.Custom[name] = value
+}

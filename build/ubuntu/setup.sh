@@ -37,7 +37,7 @@ echo === Installing dependencies
 make prepare
 
 echo === Running Faktory test suite
-make
+make test
 make build
 
 # If you wish to build a .deb package, run these commands

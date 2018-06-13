@@ -24,11 +24,11 @@ type Store interface {
 	EnqueueAll(SortedSet) error
 	EnqueueFrom(SortedSet, []byte) error
 
-	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
+	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
-	Processed() int64
+	Processed() uint64
 	Failure() error
-	Failures() int64
+	Failures() uint64
 
 	// creates a backup of the current database
 	Backup() error
@@ -62,8 +62,8 @@ type Queue interface {
 
 type SortedSet interface {
 	Name() string
-	Size() int64
-	Clear() (int64, error)
+	Size() uint64
+	Clear() (uint64, error)
 
 	AddElement(timestamp string, jid string, payload []byte) error
 

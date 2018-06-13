@@ -26,15 +26,15 @@ func TestEnqueueAll(t *testing.T) {
 	assert.NoError(t, err)
 	err = r.AddElement(util.Thens(past), jid2, j2)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2), r.Size())
+	assert.EqualValues(t, 2, r.Size())
 
 	err = db.EnqueueAll(r)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), r.Size())
+	assert.EqualValues(t, 0, r.Size())
 
 	q, err := db.GetQueue("default")
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(2), q.Size())
+	assert.EqualValues(t, 2, q.Size())
 
 	job, err := q.Pop()
 	assert.NoError(t, err)

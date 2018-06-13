@@ -71,8 +71,8 @@ func TestSystem(t *testing.T) {
 	wg.Wait()
 	s.Stop(nil)
 
-	assert.Equal(t, int64(3*each), s.Store().Processed())
-	assert.Equal(t, int64(3*(each/100)), s.Store().Failures())
+	assert.EqualValues(t, 3*each, s.Store().Processed())
+	assert.EqualValues(t, 3*(each/100), s.Store().Failures())
 }
 
 func pushAndPop(t *testing.T, count int) {

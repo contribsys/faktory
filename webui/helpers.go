@@ -84,8 +84,8 @@ func csrfTag(req *http.Request) string {
 	}
 }
 
-func numberWithDelimiter(val int64) string {
-	in := strconv.FormatInt(val, 10)
+func uintWithDelimiter(val uint64) string {
+	in := strconv.FormatUint(val, 10)
 	out := make([]byte, len(in)+(len(in)-2+int(in[0]/'0'))/3)
 	if in[0] == '-' {
 		in, out[0] = in[1:], '-'
@@ -295,10 +295,10 @@ func daysMatches(req *http.Request, value string, defalt bool) string {
 
 func processedHistory(req *http.Request) string {
 	cnt := days(req)
-	procd := map[string]int64{}
+	procd := map[string]uint64{}
 	//faild := map[string]int64{}
 
-	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+	defaultServer.Store().History(cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
 		//faild[daystr] = f
 	})
@@ -312,9 +312,9 @@ func processedHistory(req *http.Request) string {
 func failedHistory(req *http.Request) string {
 	cnt := days(req)
 	//procd := map[string]int64{}
-	faild := map[string]int64{}
+	faild := map[string]uint64{}
 
-	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+	defaultServer.Store().History(cnt, func(daystr string, p, f uint64) {
 		//procd[daystr] = p
 		faild[daystr] = f
 	})

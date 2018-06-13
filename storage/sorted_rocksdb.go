@@ -14,7 +14,7 @@ type rocksSortedSet struct {
 	cf   *gorocksdb.ColumnFamilyHandle
 	ro   *gorocksdb.ReadOptions
 	wo   *gorocksdb.WriteOptions
-	size int64
+	size uint64
 }
 
 func (ts *rocksSortedSet) Name() string {
@@ -27,7 +27,7 @@ func (ts *rocksSortedSet) AddElement(tstamp string, jid string, payload []byte) 
 	if err != nil {
 		return err
 	}
-	atomic.AddInt64(&ts.size, 1)
+	atomic.AddUint64(&ts.size, 1)
 	return nil
 }
 
@@ -97,19 +97,19 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 	it := ts.db.NewIteratorCF(ro, ts.cf)
 	defer it.Close()
 
-	var count int64
+	var count uint64
 	for it.SeekToFirst(); it.Valid(); it.Next() {
 		count++
 	}
 	if err := it.Err(); err != nil {
 		panic(fmt.Sprintf("%s size: %s", ts.name, err.Error()))
 	}
-	atomic.StoreInt64(&ts.size, count)
+	atomic.StoreUint64(&ts.size, count)
 	return ts
 }
 
-func (ts *rocksSortedSet) Size() int64 {
-	return atomic.LoadInt64(&ts.size)
+func (ts *rocksSortedSet) Size() uint64 {
+	return atomic.LoadUint64(&ts.size)
 }
 
 func (ts *rocksSortedSet) Remove(key []byte) error {
@@ -124,7 +124,7 @@ func (ts *rocksSortedSet) Remove(key []byte) error {
 	if err != nil {
 		return err
 	}
-	atomic.AddInt64(&ts.size, -1)
+	atomic.AddUint64(&ts.size, ^uint64(0))
 	return nil
 }
 
@@ -135,7 +135,7 @@ func (ts *rocksSortedSet) RemoveElement(tstamp string, jid string) error {
 func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	prefix := []byte(tstamp + "|")
 	results := [][]byte{}
-	count := int64(0)
+	count := uint64(0)
 
 	// TODO does Rocks have range deletes?
 	wb := gorocksdb.NewWriteBatch()
@@ -158,7 +158,7 @@ func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		atomic.AddInt64(&ts.size, -count)
+		atomic.AddUint64(&ts.size, ^uint64(count-1))
 	}
 
 	// reverse results since we iterated backwards
@@ -197,13 +197,13 @@ func (ts *rocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutat
 	if err != nil {
 		return err
 	}
-	atomic.AddInt64(&ts.size, -1)
-	atomic.AddInt64(&other.size, 1)
+	atomic.AddUint64(&ts.size, ^uint64(0))
+	atomic.AddUint64(&other.size, 1)
 	return nil
 }
 
-func (ts *rocksSortedSet) Clear() (int64, error) {
-	count := int64(0)
+func (ts *rocksSortedSet) Clear() (uint64, error) {
+	count := uint64(0)
 
 	ro := queueReadOptions(true)
 	ro.SetFillCache(false)
@@ -234,6 +234,6 @@ func (ts *rocksSortedSet) Clear() (int64, error) {
 		k.Free()
 		count++
 	}
-	atomic.StoreInt64(&ts.size, 0)
+	atomic.StoreUint64(&ts.size, 0)
 	return count, nil
 }

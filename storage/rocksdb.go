@@ -67,7 +67,7 @@ func OpenRocks(path string) (Store, error) {
 
 	// the global registration function in gorocksdb, registerMergeOperator seems to be racy
 	registerMutex.Lock()
-	sopts.SetMergeOperator(&int64CounterMerge{})
+	sopts.SetMergeOperator(&uint64CounterMerge{})
 	registerMutex.Unlock()
 
 	db, handles, err := gorocksdb.OpenDbColumnFamilies(opts, path,
@@ -111,12 +111,12 @@ func (store *rocksStore) Stats() map[string]string {
 	}
 }
 
-func (store *rocksStore) Processed() int64 {
-	return atomic.LoadInt64(&store.history.TotalProcessed)
+func (store *rocksStore) Processed() uint64 {
+	return atomic.LoadUint64(&store.history.TotalProcessed)
 }
 
-func (store *rocksStore) Failures() int64 {
-	return atomic.LoadInt64(&store.history.TotalFailures)
+func (store *rocksStore) Failures() uint64 {
+	return atomic.LoadUint64(&store.history.TotalFailures)
 }
 
 // queues are iterated in sorted, lexigraphical order
@@ -220,7 +220,7 @@ func (store *rocksStore) init() error {
 		return err
 	}
 	if value != nil {
-		store.history.TotalProcessed, _ = binary.Varint(value)
+		store.history.TotalProcessed, _ = binary.Uvarint(value)
 	}
 
 	value, err = store.db.GetBytesCF(ro, store.stats, []byte("Failures"))
@@ -228,7 +228,7 @@ func (store *rocksStore) init() error {
 		return err
 	}
 	if value != nil {
-		store.history.TotalFailures, _ = binary.Varint(value)
+		store.history.TotalFailures, _ = binary.Uvarint(value)
 	}
 	return nil
 }

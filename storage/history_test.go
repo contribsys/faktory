@@ -26,20 +26,20 @@ func TestStatsMerge(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, int64(10000), store.history.TotalProcessed)
-	assert.Equal(t, int64(100), store.history.TotalFailures)
+	assert.EqualValues(t, 10000, store.history.TotalProcessed)
+	assert.EqualValues(t, 100, store.history.TotalFailures)
 	//store.db.Flush()
 
 	ro := gorocksdb.NewDefaultReadOptions()
 	value, err := store.db.GetBytesCF(ro, store.stats, []byte("Processed"))
 	assert.NoError(t, err)
-	count, _ := binary.Varint(value)
-	assert.Equal(t, int64(10000), count)
+	count, _ := binary.Uvarint(value)
+	assert.EqualValues(t, 10000, count)
 
 	value, err = store.db.GetBytesCF(ro, store.stats, []byte("Failures"))
 	assert.NoError(t, err)
-	count, _ = binary.Varint(value)
-	assert.Equal(t, int64(100), count)
+	count, _ = binary.Uvarint(value)
+	assert.EqualValues(t, 100, count)
 
 	store.Failure()
 	store.Success()
@@ -50,18 +50,18 @@ func TestStatsMerge(t *testing.T) {
 	defer db.Close()
 
 	store = db.(*rocksStore)
-	assert.Equal(t, int64(10002), store.history.TotalProcessed)
-	assert.Equal(t, int64(101), store.history.TotalFailures)
+	assert.EqualValues(t, 10002, store.history.TotalProcessed)
+	assert.EqualValues(t, 101, store.history.TotalFailures)
 
-	hash := map[string][2]int64{}
-	store.History(3, func(day string, p, f int64) {
-		hash[day] = [2]int64{p, f}
+	hash := map[string][2]uint64{}
+	store.History(3, func(day string, p, f uint64) {
+		hash[day] = [2]uint64{p, f}
 	})
 	assert.Equal(t, 3, len(hash))
 
 	daystr := time.Now().Format("2006-01-02")
 	counts := hash[daystr]
 	assert.NotNil(t, counts)
-	assert.Equal(t, int64(10002), counts[0])
-	assert.Equal(t, int64(101), counts[1])
+	assert.EqualValues(t, 10002, counts[0])
+	assert.EqualValues(t, 101, counts[1])
 }

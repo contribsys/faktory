@@ -87,7 +87,7 @@ func ego_debug(w io.Writer, req *http.Request) {
         <tr>
           <td><%= bi.Id %></td>
           <td><%= bi.FileCount %></td>
-          <td><%= numberWithDelimiter(bi.Size) %></td>
+          <td><%= uintWithDelimiter(uint64(bi.Size)) %></td>
           <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
         </tr>
         <% }) %>

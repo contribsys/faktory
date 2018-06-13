@@ -85,7 +85,7 @@ func TestQueue(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), "1l23j12l3"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
 
-	assert.Equal(t, uint64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 	payload := url.Values{
 		"action": {"delete"},
 	}
@@ -95,7 +95,7 @@ func TestQueue(t *testing.T) {
 	w = httptest.NewRecorder()
 	queueHandler(w, req)
 
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 	assert.Equal(t, 302, w.Code)
 }
 
@@ -135,8 +135,8 @@ func TestRetries(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, sz, cnt)
 
-	assert.Equal(t, uint64(0), def.Size())
-	assert.Equal(t, int64(2), q.Size())
+	assert.EqualValues(t, 0, def.Size())
+	assert.EqualValues(t, 2, q.Size())
 	payload := url.Values{
 		"key":    {keys, "abadone"},
 		"action": {"retry"},
@@ -148,8 +148,8 @@ func TestRetries(t *testing.T) {
 	retriesHandler(w, req)
 
 	assert.Equal(t, 302, w.Code)
-	assert.Equal(t, int64(1), q.Size())
-	assert.Equal(t, uint64(1), def.Size())
+	assert.EqualValues(t, 1, q.Size())
+	assert.EqualValues(t, 1, def.Size())
 
 	q.Each(func(idx int, k, v []byte) error {
 		key = make([]byte, len(k))
@@ -161,7 +161,7 @@ func TestRetries(t *testing.T) {
 		"key":    {keys},
 		"action": {"kill"},
 	}
-	assert.Equal(t, int64(0), str.Dead().Size())
+	assert.EqualValues(t, 0, str.Dead().Size())
 	req, err = NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -169,8 +169,8 @@ func TestRetries(t *testing.T) {
 	retriesHandler(w, req)
 
 	assert.Equal(t, 302, w.Code)
-	assert.Equal(t, int64(0), q.Size())
-	assert.Equal(t, int64(1), str.Dead().Size())
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 1, str.Dead().Size())
 }
 
 func TestRetry(t *testing.T) {
@@ -217,7 +217,7 @@ func TestScheduled(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), "SomeWorker"), w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), keys), w.Body.String())
 
-	assert.Equal(t, int64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 	payload := url.Values{
 		"key":    {keys},
 		"action": {"delete"},
@@ -229,7 +229,7 @@ func TestScheduled(t *testing.T) {
 	scheduledHandler(w, req)
 
 	assert.Equal(t, 302, w.Code)
-	assert.Equal(t, int64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 	assert.False(t, strings.Contains(w.Body.String(), keys), w.Body.String())
 }
 
@@ -286,7 +286,7 @@ func TestDead(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
 
-	assert.Equal(t, int64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 	payload := url.Values{
 		"key":    {"all"},
 		"action": {"delete"},
@@ -299,7 +299,7 @@ func TestDead(t *testing.T) {
 
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "", w.Body.String())
-	assert.Equal(t, int64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 }
 
 func TestBusy(t *testing.T) {

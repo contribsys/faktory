@@ -33,8 +33,8 @@ type ServerOptions struct {
 }
 
 type RuntimeStats struct {
-	Connections int64
-	Commands    int64
+	Connections uint64
+	Commands    uint64
 	StartedAt   time.Time
 }
 
@@ -265,8 +265,8 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 }
 
 func (s *Server) processLines(conn *Connection) {
-	atomic.AddInt64(&s.Stats.Connections, 1)
-	defer atomic.AddInt64(&s.Stats.Connections, -1)
+	atomic.AddUint64(&s.Stats.Connections, 1)
+	defer atomic.AddUint64(&s.Stats.Connections, ^uint64(0))
 
 	for {
 		cmd, e := conn.buf.ReadString('\n')
@@ -295,7 +295,7 @@ func (s *Server) processLines(conn *Connection) {
 		if !ok {
 			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
-			atomic.AddInt64(&s.Stats.Commands, 1)
+			atomic.AddUint64(&s.Stats.Commands, 1)
 			proc(conn, s, cmd)
 		}
 		if verb == "END" {
@@ -334,8 +334,8 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 		"server": map[string]interface{}{
 			"faktory_version": client.Version,
 			"uptime":          s.uptimeInSeconds(),
-			"connections":     atomic.LoadInt64(&s.Stats.Connections),
-			"command_count":   atomic.LoadInt64(&s.Stats.Commands),
+			"connections":     atomic.LoadUint64(&s.Stats.Connections),
+			"command_count":   atomic.LoadUint64(&s.Stats.Commands),
 			"used_memory_mb":  util.MemoryUsage()},
 	}, nil
 }

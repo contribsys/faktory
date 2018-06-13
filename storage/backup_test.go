@@ -21,11 +21,11 @@ func TestBackupAndRestore(t *testing.T) {
 	assert.NoError(t, err)
 	q.Push(5, []byte("f"))
 	q.Push(5, []byte("fo"))
-	assert.Equal(t, uint64(2), q.Size())
+	assert.EqualValues(t, 2, q.Size())
 
 	rs := db.Retries()
 	rs.AddElement(util.Nows(), "foobar", []byte("thepayload"))
-	assert.Equal(t, int64(1), rs.Size())
+	assert.EqualValues(t, 1, rs.Size())
 
 	count := 0
 	db.EachBackup(func(element BackupInfo) {
@@ -44,7 +44,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	// put more elements
 	q.Push(5, []byte("foo"))
-	assert.Equal(t, uint64(3), q.Size())
+	assert.EqualValues(t, 3, q.Size())
 
 	// restore from backup
 	err = db.RestoreFromLatest()
@@ -56,13 +56,13 @@ func TestBackupAndRestore(t *testing.T) {
 	// verify elements
 	q, err = db.GetQueue("default")
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(2), q.Size())
+	assert.EqualValues(t, 2, q.Size())
 
 	elm, err := q.Pop()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("f"), elm)
 
-	assert.Equal(t, int64(1), db.Retries().Size())
+	assert.EqualValues(t, 1, db.Retries().Size())
 
 	// flush the entire db
 	// backup
@@ -75,7 +75,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	q, err = db.GetQueue("default")
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 
 	err = db.Backup()
 	assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	err = q.Push(5, []byte("foo"))
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(1), q.Size())
+	assert.EqualValues(t, 1, q.Size())
 
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
@@ -95,5 +95,5 @@ func TestBackupAndRestore(t *testing.T) {
 
 	q, err = db.GetQueue("default")
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), q.Size())
+	assert.EqualValues(t, 0, q.Size())
 }

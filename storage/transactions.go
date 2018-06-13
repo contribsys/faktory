@@ -56,7 +56,7 @@ func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
 		xa.batch.DeleteCF(ss.cf, key)
 		xa.onSuccess = func() {
 			atomic.AddUint64(&q.size, 1)
-			atomic.AddInt64(&ss.size, -1)
+			atomic.AddUint64(&ss.size, ^uint64(0))
 		}
 		return nil
 	})

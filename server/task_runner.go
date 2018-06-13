@@ -52,8 +52,8 @@ func (ts *taskRunner) AddTask(sec int64, thing taskable) {
 	tsk.runner = thing
 	tsk.every = sec
 	ts.mutex.Lock()
-	defer ts.mutex.Unlock()
 	ts.tasks = append(ts.tasks, &tsk)
+	ts.mutex.Unlock()
 }
 
 func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
@@ -134,6 +134,8 @@ func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	// backup runner
 	policy := newBackupPolicy(s)
 	ts.AddTask(policy.Frequency(), policy)
+
+	ts.AddTask(60, &cacheReset{s.store, 0})
 
 	ts.Run(waiter)
 	s.taskRunner = ts

@@ -64,6 +64,7 @@ type SortedSet interface {
 	Name() string
 	Size() uint64
 	Clear() (uint64, error)
+	Reset() int
 
 	AddElement(timestamp string, jid string, payload []byte) error
 

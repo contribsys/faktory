@@ -14,6 +14,10 @@ type rocksSortedSet struct {
 	cf   *gorocksdb.ColumnFamilyHandle
 	ro   *gorocksdb.ReadOptions
 	wo   *gorocksdb.WriteOptions
+
+	// this is a cache of the number of elements within the ColumnFamily.
+	// unfortunately it is possible for this number to get out of sync so we need
+	// to monitor its value and reset it occasionally.
 	size uint64
 }
 
@@ -106,6 +110,21 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 	}
 	atomic.StoreUint64(&ts.size, count)
 	return ts
+}
+
+const (
+	MAX uint64 = 2<<63 - 1
+)
+
+func (ts *rocksSortedSet) Reset() int {
+	sz := atomic.LoadUint64(&ts.size)
+	if sz > MAX {
+		// The size has "gone negative" as a uint.
+		// Reset it by iterating through the data.
+		ts.init()
+		return 1
+	}
+	return 0
 }
 
 func (ts *rocksSortedSet) Size() uint64 {

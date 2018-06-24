@@ -21,7 +21,7 @@ var (
 	// This is known as "back pressue" and is important to
 	// prevent bugs in one component from taking down the
 	// entire system.
-	DefaultMaxSize = uint64(1000000)
+	DefaultMaxSize = uint64(10000000)
 )
 
 const (

@@ -113,7 +113,7 @@ func (ts *rocksSortedSet) init() *rocksSortedSet {
 }
 
 const (
-	MAX uint64 = 2<<63 - 1
+	MAX uint64 = 2 << 62
 )
 
 func (ts *rocksSortedSet) Reset() int {

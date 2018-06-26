@@ -10,7 +10,7 @@ echo === Building RocksDB
 if [ ! -f ~/rocksdb/librocksdb.a ]; then
   git clone https://github.com/facebook/rocksdb
   cd rocksdb
-  git checkout v5.9.2
+  git checkout v5.13.4
   time PORTABLE=1 make static_lib
   # default binary is 340MB!
   # stripped is 18MB
@@ -18,10 +18,10 @@ if [ ! -f ~/rocksdb/librocksdb.a ]; then
 fi
 
 echo === Installing Golang
-# download and install go 1.9
+# download and install go 1.10
 if [ ! -d /usr/local/go ]; then
   cd /usr/local
-  curl https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz | sudo tar xfz -
+  curl https://storage.googleapis.com/golang/go1.10.3.linux-amd64.tar.gz | sudo tar xfz -
   echo "export PATH=/usr/local/go/bin:$HOME/go/bin:\$PATH" >> ~/.bash_profile
   export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
 fi

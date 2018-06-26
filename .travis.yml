@@ -3,7 +3,6 @@ dist: trusty
 sudo: required
 language: go
 go:
-  - 1.9.x
   - 1.10.x
 
 cache:
@@ -13,7 +12,7 @@ cache:
 
 env:
   global:
-    - ROCKSDB_VERSION="v5.9.2"
+    - ROCKSDB_VERSION="v5.13.4"
     - ROCKSDB_HOME="$HOME/rocksdb-$ROCKSDB_VERSION"
     - CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
     - CGO_LDFLAGS="-L${ROCKSDB_HOME}"

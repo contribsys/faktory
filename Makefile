@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.7.0
+VERSION=0.8.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -9,11 +9,6 @@ TEST_FLAGS=-parallel 4
 ifdef DETECT_RACES
 	TEST_FLAGS += -race
 endif
-
-# contains various secret or machine-specific variables.
-# DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
-# RPM_PRODUCTION: hostname of a redhat-based systemd machine (e.g. CentOS 7)
-#include $(HOME)/.local.sh
 
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
@@ -30,7 +25,7 @@ prepare: ## Download all dependencies
 	@echo Now you should be ready to run "make"
 
 test: clean generate ## Execute test suite
-	go test $(TEST_FLAGS) \
+	GOCACHE=off go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
 		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
@@ -43,8 +38,8 @@ test: clean generate ## Execute test suite
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--build-arg GOLANG_VERSION=1.9.2  \
-		--build-arg ROCKSDB_VERSION=5.9.2 \
+		--build-arg GOLANG_VERSION=1.10.3  \
+		--build-arg ROCKSDB_VERSION=5.13.4 \
 		--tag contribsys/faktory:$(VERSION) .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
@@ -56,8 +51,8 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 
 dpush: tag
 	docker build \
-		--build-arg GOLANG_VERSION=1.9.2    \
-		--build-arg ROCKSDB_VERSION=5.9.2   \
+		--build-arg GOLANG_VERSION=1.10.3    \
+		--build-arg ROCKSDB_VERSION=5.13.4   \
 		--tag contribsys/faktory:$(VERSION) \
 		--tag contribsys/faktory:latest .
 	docker push contribsys/faktory:$(VERSION)

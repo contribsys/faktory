@@ -1,3 +1,11 @@
+# Faktory Changelog
+
+## HEAD
+
+- Workaround for negative busy/retry/scheduled/dead counts [#148]
+- Upgrade to Go 1.10.3
+- Upgrade to RocksDB 5.13.4
+
 ## 0.7.0
 
 - Upgrade RocksDB from 5.7.3 to 5.9.2

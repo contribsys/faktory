@@ -26,8 +26,8 @@
   branch = "master"
 
 [[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.0.3"
+  name = "github.com/apex/log"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

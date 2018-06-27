@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -70,7 +70,7 @@ type Manager interface {
 	BusyCount(wid string) int
 }
 
-func NewManager(s storage.Store) Manager {
+func NewManager(s types.Store) Manager {
 	m := &manager{
 		store:      s,
 		workingMap: map[string]*Reservation{},
@@ -80,7 +80,7 @@ func NewManager(s storage.Store) Manager {
 }
 
 type manager struct {
-	store storage.Store
+	store types.Store
 
 	// Hold the working set in memory so we don't need to burn CPU
 	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
@@ -160,7 +160,7 @@ func (m *manager) enqueue(job *client.Job) error {
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
-	var first storage.Queue
+	var first types.Queue
 
 	for idx, qname := range queues {
 		q, err := m.store.GetQueue(qname)

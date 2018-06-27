@@ -7,7 +7,7 @@ import (
   "time"
 
   "github.com/contribsys/faktory/client"
-  "github.com/contribsys/faktory/storage"
+  "github.com/contribsys/faktory/storage/types"
   "github.com/contribsys/gorocksdb"
 )
 
@@ -83,7 +83,7 @@ func ego_debug(w io.Writer, req *http.Request) {
         </tr>
       </thead>
       <tbody>
-        <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
+        <% err := defaultServer.Store().EachBackup(func(bi types.BackupInfo) { %>
         <tr>
           <td><%= bi.Id %></td>
           <td><%= bi.FileCount %></td>

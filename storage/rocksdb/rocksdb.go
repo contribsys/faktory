@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"encoding/binary"
@@ -11,6 +11,7 @@ import (
 	"regexp"
 
 	"github.com/contribsys/faktory/storage/brodal"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
 )
@@ -53,7 +54,7 @@ func DefaultOptions() *gorocksdb.Options {
 
 var registerMutex sync.Mutex
 
-func OpenRocks(path string) (Store, error) {
+func OpenRocks(path string) (types.Store, error) {
 
 	util.Infof("Initializing storage at %s", path)
 	util.Debugf("Using RocksDB v%s", gorocksdb.RocksDBVersion())
@@ -120,7 +121,7 @@ func (store *rocksStore) Failures() uint64 {
 }
 
 // queues are iterated in sorted, lexigraphical order
-func (store *rocksStore) EachQueue(x func(Queue)) {
+func (store *rocksStore) EachQueue(x func(types.Queue)) {
 	store.mu.Lock()
 	keys := make([]string, 0, len(store.queueSet))
 	for k := range store.queueSet {
@@ -237,7 +238,7 @@ var (
 	ValidQueueName = regexp.MustCompile(`\A[a-zA-Z0-9._-]+\z`)
 )
 
-func (store *rocksStore) GetQueue(name string) (Queue, error) {
+func (store *rocksStore) GetQueue(name string) (types.Queue, error) {
 	if name == "" {
 		return nil, fmt.Errorf("queue name cannot be blank")
 	}
@@ -291,18 +292,18 @@ func (store *rocksStore) Close() error {
 	return nil
 }
 
-func (store *rocksStore) Retries() SortedSet {
+func (store *rocksStore) Retries() types.SortedSet {
 	return store.retries
 }
 
-func (store *rocksStore) Scheduled() SortedSet {
+func (store *rocksStore) Scheduled() types.SortedSet {
 	return store.scheduled
 }
 
-func (store *rocksStore) Working() SortedSet {
+func (store *rocksStore) Working() types.SortedSet {
 	return store.working
 }
 
-func (store *rocksStore) Dead() SortedSet {
+func (store *rocksStore) Dead() types.SortedSet {
 	return store.dead
 }

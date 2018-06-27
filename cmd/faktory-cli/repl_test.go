@@ -10,6 +10,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/gorocksdb"
 	"github.com/stretchr/testify/assert"
 )
@@ -117,7 +118,7 @@ func TestInteractiveOutputs(t *testing.T) {
 		assert.NoError(t, err)
 
 		bkp := ""
-		db.EachBackup(func(bi storage.BackupInfo) {
+		db.EachBackup(func(bi types.BackupInfo) {
 			bkp = fmt.Sprintf("{Id:%d FileCount:%d Size:%d Timestamp:%d}", bi.Id, bi.FileCount, bi.Size, bi.Timestamp)
 		})
 

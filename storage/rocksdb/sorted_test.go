@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func TestBasicSortedSet(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/sorted.db")
-	db, err := Open("rocksdb", "/tmp/sorted.db")
+	db, err := OpenRocks("/tmp/sorted.db")
 	assert.NoError(t, err)
 	defer db.Close()
 
@@ -65,7 +65,7 @@ func TestRocksSortedSet(b *testing.T) {
 	b.Parallel()
 	defer os.RemoveAll("/tmp/rocks.db")
 
-	db, err := Open("rocksdb", "/tmp/rocks.db")
+	db, err := OpenRocks("/tmp/rocks.db")
 	assert.NoError(b, err)
 	defer db.Close()
 

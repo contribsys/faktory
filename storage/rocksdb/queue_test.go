@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestBasicQueueOps(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/queues.db")
 
-	store, err := Open("rocksdb", "/tmp/queues.db")
+	store, err := OpenRocks("/tmp/queues.db")
 	assert.NoError(t, err)
 	defer store.Close()
 	q, err := store.GetQueue("default")
@@ -81,7 +82,7 @@ func TestBasicQueueOps(t *testing.T) {
 func TestQueuePrioritization(t *testing.T) {
 	os.RemoveAll("/tmp/qpriority.db")
 	defer os.RemoveAll("/tmp/qpriority.db")
-	store, err := Open("rocksdb", "/tmp/qpriority.db")
+	store, err := OpenRocks("/tmp/qpriority.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
@@ -175,7 +176,7 @@ func TestDecentQueueUsage(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/qbench.db")
-	store, err := Open("rocksdb", "/tmp/qbench.db")
+	store, err := OpenRocks("/tmp/qbench.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
@@ -200,7 +201,7 @@ func TestDecentQueueUsage(t *testing.T) {
 	// Close DB, reopen
 	store.Close()
 
-	store, err = Open("rocksdb", "/tmp/qbench.db")
+	store, err = OpenRocks("/tmp/qbench.db")
 	assert.NoError(t, err)
 
 	q, err = store.GetQueue("default")
@@ -230,7 +231,7 @@ func TestDecentQueueUsage(t *testing.T) {
 func TestThreadedQueueUsage(t *testing.T) {
 	t.Parallel()
 	defer os.RemoveAll("/tmp/qthreaded.db")
-	store, err := Open("rocksdb", "/tmp/qthreaded.db")
+	store, err := OpenRocks("/tmp/qthreaded.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("default")
 	assert.NoError(t, err)
@@ -264,7 +265,7 @@ var (
 	counter int64
 )
 
-func pushAndPop(t *testing.T, n int, q Queue) {
+func pushAndPop(t *testing.T, n int, q types.Queue) {
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
 		err := q.Push(5, data)
@@ -309,7 +310,7 @@ func TestQueueKeys(t *testing.T) {
 
 func TestClearAndPush(t *testing.T) {
 	defer os.RemoveAll("/tmp/qpush.db")
-	store, err := Open("rocksdb", "/tmp/qpush.db")
+	store, err := OpenRocks("/tmp/qpush.db")
 	assert.NoError(t, err)
 	q, err := store.GetQueue("lksjadfl")
 	assert.NoError(t, err)
@@ -329,7 +330,7 @@ func TestClearAndPush(t *testing.T) {
 
 func BenchmarkQueuePerformance(b *testing.B) {
 	defer os.RemoveAll("/tmp/qblah.db")
-	store, err := Open("rocksdb", "/tmp/qblah.db")
+	store, err := OpenRocks("/tmp/qblah.db")
 	assert.NoError(b, err)
 	assert.NotNil(b, store)
 	defer store.Close()
@@ -352,7 +353,7 @@ func TestReopening(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/reopening.db")
-	store, err := Open("rocksdb", "/tmp/reopening.db")
+	store, err := OpenRocks("/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -388,7 +389,7 @@ func TestReopening(t *testing.T) {
 
 	store.Close()
 
-	store, err = Open("rocksdb", "/tmp/reopening.db")
+	store, err = OpenRocks("/tmp/reopening.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 
@@ -403,7 +404,7 @@ func TestReopening(t *testing.T) {
 	a, err = store.GetQueue("another")
 	assert.NoError(t, err)
 
-	store.EachQueue(func(q Queue) {
+	store.EachQueue(func(q types.Queue) {
 		fmt.Println(q.Name(), q.Size())
 	})
 
@@ -452,7 +453,7 @@ func TestReopening(t *testing.T) {
 
 func TestBlockingPop(t *testing.T) {
 	defer os.RemoveAll("/tmp/blocking.db")
-	store, err := Open("rocksdb", "/tmp/blocking.db")
+	store, err := OpenRocks("/tmp/blocking.db")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer store.Close()

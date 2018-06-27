@@ -14,7 +14,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/server"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/justinas/nosurf"
 )
@@ -66,13 +66,13 @@ type Queue struct {
 
 func queues() []Queue {
 	queues := make([]Queue, 0)
-	defaultServer.Store().EachQueue(func(q storage.Queue) {
+	defaultServer.Store().EachQueue(func(q types.Queue) {
 		queues = append(queues, Queue{q.Name(), q.Size()})
 	})
 	return queues
 }
 
-func store() storage.Store {
+func store() types.Store {
 	return defaultServer.Store()
 }
 
@@ -103,7 +103,7 @@ func uintWithDelimiter(val uint64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+func queueJobs(q types.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, key, data []byte) error {
 		var job client.Job
 		err := json.Unmarshal(data, &job)
@@ -121,7 +121,7 @@ func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key 
 
 func enqueuedSize() uint64 {
 	var total uint64
-	defaultServer.Store().EachQueue(func(q storage.Queue) {
+	defaultServer.Store().EachQueue(func(q types.Queue) {
 		total += q.Size()
 	})
 	return total
@@ -143,7 +143,7 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+func setJobs(set types.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	err := set.Page(int64((currentPage-1)*count), int64(count), func(idx int, key []byte, data []byte) error {
 		var job client.Job
 		err := json.Unmarshal(data, &job)
@@ -181,7 +181,7 @@ func busyWorkers(fn func(proc *server.ClientData)) {
 	}
 }
 
-func actOn(set storage.SortedSet, action string, keys []string) error {
+func actOn(set types.SortedSet, action string, keys []string) error {
 	switch action {
 	case "delete":
 		if len(keys) == 1 && keys[0] == "all" {

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -59,7 +59,7 @@ func (r *beatReaper) Stats() map[string]interface{} {
 }
 
 type cacheReset struct {
-	s     storage.Store
+	s     types.Store
 	count int
 }
 

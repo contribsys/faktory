@@ -1,8 +1,12 @@
-package storage
+package types
 
-import (
-	"context"
-	"fmt"
+import "context"
+
+const (
+	// Assume hourly backups and keep a day's worth.
+	// If we take backups every 5 minutes, this will keep
+	// two hours worth.
+	DefaultKeepBackupsCount int = 24
 )
 
 type BackupInfo struct {
@@ -80,12 +84,4 @@ type SortedSet interface {
 	// SortedSet atomically.  The given func may mutate the payload and
 	// return a new tstamp.
 	MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error
-}
-
-func Open(dbtype string, path string) (Store, error) {
-	if dbtype == "rocksdb" {
-		return OpenRocks(path)
-	} else {
-		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
-	}
 }

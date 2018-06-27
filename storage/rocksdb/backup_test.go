@@ -1,9 +1,10 @@
-package storage
+package rocksdb
 
 import (
 	"os"
 	"testing"
 
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,7 +14,7 @@ func TestBackupAndRestore(t *testing.T) {
 
 	defer os.RemoveAll("/tmp/backup.db")
 	// open db
-	db, err := Open("rocksdb", "/tmp/backup.db")
+	db, err := OpenRocks("/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// put elements
@@ -28,7 +29,7 @@ func TestBackupAndRestore(t *testing.T) {
 	assert.EqualValues(t, 1, rs.Size())
 
 	count := 0
-	db.EachBackup(func(element BackupInfo) {
+	db.EachBackup(func(element types.BackupInfo) {
 		count++
 	})
 	assert.Equal(t, 0, count)
@@ -37,7 +38,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.Backup()
 	assert.NoError(t, err)
 	count = 0
-	db.EachBackup(func(element BackupInfo) {
+	db.EachBackup(func(element types.BackupInfo) {
 		count++
 	})
 	assert.Equal(t, 1, count)
@@ -50,7 +51,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
 
-	db, err = Open("rocksdb", "/tmp/backup.db")
+	db, err = OpenRocks("/tmp/backup.db")
 	assert.NoError(t, err)
 
 	// verify elements
@@ -90,7 +91,7 @@ func TestBackupAndRestore(t *testing.T) {
 	err = db.RestoreFromLatest()
 	assert.NoError(t, err)
 
-	db, err = Open("rocksdb", "/tmp/backup.db")
+	db, err = OpenRocks("/tmp/backup.db")
 	assert.NoError(t, err)
 
 	q, err = db.GetQueue("default")

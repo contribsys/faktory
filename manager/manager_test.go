@@ -9,6 +9,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -324,7 +325,7 @@ func TestManagerFetch(t *testing.T) {
 	})
 }
 
-func setupTest(t *testing.T) (storage.Store, func(t *testing.T)) {
+func setupTest(t *testing.T) (types.Store, func(t *testing.T)) {
 	path := fmt.Sprintf("/tmp/%s.db", t.Name())
 	store, err := storage.Open("rocksdb", path)
 	if err != nil {

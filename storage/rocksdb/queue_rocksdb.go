@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"container/list"

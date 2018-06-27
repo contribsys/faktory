@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -28,7 +28,7 @@ func (m *manager) RetryJobs() (int64, error) {
 	return m.schedule(m.store.Retries())
 }
 
-func (m *manager) schedule(set storage.SortedSet) (int64, error) {
+func (m *manager) schedule(set types.SortedSet) (int64, error) {
 	elms, err := set.RemoveBefore(util.Nows())
 	if err != nil {
 		return 0, err

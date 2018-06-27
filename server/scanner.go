@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -13,7 +13,7 @@ type scannerTask func() (int64, error)
 type scanner struct {
 	name     string
 	task     scannerTask
-	set      storage.SortedSet
+	set      types.SortedSet
 	jobs     int64
 	cycles   int64
 	walltime int64

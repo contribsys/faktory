@@ -6,10 +6,10 @@ import (
   "net/http"
 
   "github.com/contribsys/faktory/client"
-  "github.com/contribsys/faktory/storage"
+  "github.com/contribsys/faktory/storage/types"
 )
 
-func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPage uint64) {
+func ego_queue(w io.Writer, req *http.Request, q types.Queue, count, currentPage uint64) {
   ego_layout(w, req, func() { %>
 
 <header class="row">

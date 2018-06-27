@@ -1,9 +1,10 @@
-package storage
+package rocksdb
 
 import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/gorocksdb"
 )
 
@@ -188,7 +189,7 @@ func (ts *rocksSortedSet) RemoveBefore(tstamp string) ([][]byte, error) {
 	return results, nil
 }
 
-func (ts *rocksSortedSet) MoveTo(ots SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
+func (ts *rocksSortedSet) MoveTo(ots types.SortedSet, tstamp string, jid string, mutator func(value []byte) (string, []byte, error)) error {
 	other := ots.(*rocksSortedSet)
 	key := []byte(fmt.Sprintf("%s|%s", tstamp, jid))
 

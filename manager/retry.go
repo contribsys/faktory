@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -115,7 +115,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	return sendToMorgue(m.store, job)
 }
 
-func retryLater(store storage.Store, job *client.Job) error {
+func retryLater(store types.Store, job *client.Job) error {
 	when := util.Thens(nextRetry(job))
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
@@ -126,7 +126,7 @@ func retryLater(store storage.Store, job *client.Job) error {
 	return store.Retries().AddElement(when, job.Jid, bytes)
 }
 
-func sendToMorgue(store storage.Store, job *client.Job) error {
+func sendToMorgue(store types.Store, job *client.Job) error {
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return err

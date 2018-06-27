@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -53,7 +53,7 @@ func (bp *backupPolicy) Execute() error {
 		util.Error("BACKUP FAILED", err)
 		return err
 	}
-	err = bp.Server.Store().PurgeOldBackups(storage.DefaultKeepBackupsCount)
+	err = bp.Server.Store().PurgeOldBackups(types.DefaultKeepBackupsCount)
 	if err != nil {
 		util.Error("PURGE FAILED", err)
 		return err

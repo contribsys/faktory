@@ -18,6 +18,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -44,7 +45,7 @@ type Server struct {
 	Password string
 
 	listener   net.Listener
-	store      storage.Store
+	store      types.Store
 	manager    manager.Manager
 	workers    *workers
 	taskRunner *taskRunner
@@ -87,7 +88,7 @@ func (s *Server) Heartbeats() map[string]*ClientData {
 	return s.workers.heartbeats
 }
 
-func (s *Server) Store() storage.Store {
+func (s *Server) Store() types.Store {
 	return s.store
 }
 
@@ -317,7 +318,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	totalQueued := 0
 	totalQueues := 0
 	// queue size is cached so this should be very efficient.
-	s.store.EachQueue(func(q storage.Queue) {
+	s.store.EachQueue(func(q types.Queue) {
 		totalQueued += int(q.Size())
 		totalQueues++
 	})

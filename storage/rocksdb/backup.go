@@ -1,17 +1,11 @@
-package storage
+package rocksdb
 
 import (
 	"fmt"
 
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
-)
-
-const (
-	// Assume hourly backups and keep a day's worth.
-	// If we take backups every 5 minutes, this will keep
-	// two hours worth.
-	DefaultKeepBackupsCount int = 24
 )
 
 func (store *rocksStore) PurgeOldBackups(keepCount int) error {
@@ -42,7 +36,7 @@ func (store *rocksStore) Backup() error {
 	return be.CreateNewBackup(store.db)
 }
 
-func (store *rocksStore) EachBackup(fn func(BackupInfo)) error {
+func (store *rocksStore) EachBackup(fn func(types.BackupInfo)) error {
 	be, err := gorocksdb.OpenBackupEngine(store.opts, store.db.Name())
 	if err != nil {
 		return err
@@ -52,7 +46,7 @@ func (store *rocksStore) EachBackup(fn func(BackupInfo)) error {
 	defer bei.Destroy()
 
 	for i := 0; i < bei.GetCount(); i++ {
-		fn(BackupInfo{
+		fn(types.BackupInfo{
 			Id:        bei.GetBackupId(i),
 			FileCount: bei.GetNumFiles(i),
 			Size:      bei.GetSize(i),

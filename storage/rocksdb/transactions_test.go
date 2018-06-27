@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"os"
@@ -13,7 +13,7 @@ func TestEnqueueAll(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/xa.db")
-	db, err := Open("rocksdb", "/tmp/xa.db")
+	db, err := OpenRocks("/tmp/xa.db")
 	assert.NoError(t, err)
 	defer db.Close()
 

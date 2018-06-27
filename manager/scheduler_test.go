@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -136,7 +136,7 @@ func TestRetryJobs(t *testing.T) {
 	assert.EqualValues(t, 0, store.Retries().Size())
 }
 
-func addJob(t *testing.T, set storage.SortedSet, timestamp string, job *client.Job) {
+func addJob(t *testing.T, set types.SortedSet, timestamp string, job *client.Job) {
 	data, err := json.Marshal(job)
 	assert.NoError(t, err)
 

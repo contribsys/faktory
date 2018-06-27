@@ -29,7 +29,7 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/client \
 		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
-		github.com/contribsys/faktory/storage \
+		github.com/contribsys/faktory/storage/rocksdb \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui \

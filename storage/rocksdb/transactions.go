@@ -1,10 +1,11 @@
-package storage
+package rocksdb
 
 import (
 	"encoding/json"
 	"sync/atomic"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/gorocksdb"
 )
 
@@ -23,13 +24,13 @@ func (store *rocksStore) newTransaction() *Transaction {
 
 // Enqueue all moves all jobs within the given set into the
 // queues associated with those jobs.
-func (store *rocksStore) EnqueueAll(set SortedSet) error {
+func (store *rocksStore) EnqueueAll(set types.SortedSet) error {
 	return set.Each(func(idx int, key []byte, data []byte) error {
 		return store.EnqueueFrom(set, key)
 	})
 }
 
-func (store *rocksStore) EnqueueFrom(set SortedSet, key []byte) error {
+func (store *rocksStore) EnqueueFrom(set types.SortedSet, key []byte) error {
 	return store.RunTransaction(func(xa *Transaction) error {
 		ss := set.(*rocksSortedSet)
 

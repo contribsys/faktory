@@ -16,6 +16,8 @@ import (
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/storage/rocksdb"
+	"github.com/contribsys/faktory/storage/types"
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/gorocksdb"
 )
@@ -76,7 +78,7 @@ func main() {
 	}
 }
 
-func repl(path string, store storage.Store) {
+func repl(path string, store types.Store) {
 	fmt.Printf("Faktory %s, using RocksDB %s at %s\n", client.Version, gorocksdb.RocksDBVersion(), path)
 
 	var completer = readline.NewPrefixCompleter(
@@ -129,7 +131,7 @@ func repl(path string, store storage.Store) {
 	}
 }
 
-func execute(cmd []string, store storage.Store, path string) error {
+func execute(cmd []string, store types.Store, path string) error {
 	first := cmd[0]
 	switch first {
 	case "exit":
@@ -156,7 +158,7 @@ func execute(cmd []string, store storage.Store, path string) error {
 	return nil
 }
 
-func flush(store storage.Store) error {
+func flush(store types.Store) error {
 	if err := store.Flush(); err != nil {
 		return err
 	}
@@ -164,22 +166,22 @@ func flush(store storage.Store) error {
 	return nil
 }
 
-func backup(store storage.Store) error {
+func backup(store types.Store) error {
 	if err := store.Backup(); err != nil {
 		return err
 	}
 	fmt.Println("Backup created")
-	store.EachBackup(func(x storage.BackupInfo) {
+	store.EachBackup(func(x types.BackupInfo) {
 		fmt.Printf("%+v\n", x)
 	})
 	return nil
 }
 
-func repair(store storage.Store, path string) error {
+func repair(store types.Store, path string) error {
 	if store != nil {
 		store.Close()
 	}
-	opts := storage.DefaultOptions()
+	opts := rocksdb.DefaultOptions()
 	if err := gorocksdb.RepairDb(path, opts); err != nil {
 		return err
 	}
@@ -189,8 +191,8 @@ func repair(store storage.Store, path string) error {
 	return nil
 }
 
-func purge(store storage.Store, args []string) error {
-	count := storage.DefaultKeepBackupsCount
+func purge(store types.Store, args []string) error {
+	count := types.DefaultKeepBackupsCount
 	if len(args) == 1 {
 		val, err := strconv.Atoi(args[0])
 		if err != nil {
@@ -205,7 +207,7 @@ func purge(store storage.Store, args []string) error {
 	return nil
 }
 
-func restore(store storage.Store) error {
+func restore(store types.Store) error {
 	if err := store.RestoreFromLatest(); err != nil {
 		return err
 	}

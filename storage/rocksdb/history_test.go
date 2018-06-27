@@ -1,4 +1,4 @@
-package storage
+package rocksdb
 
 import (
 	"encoding/binary"
@@ -14,7 +14,7 @@ func TestStatsMerge(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/merge.db")
-	db, err := Open("rocksdb", "/tmp/merge.db")
+	db, err := OpenRocks("/tmp/merge.db")
 	assert.NoError(t, err)
 
 	store := db.(*rocksStore)
@@ -45,7 +45,7 @@ func TestStatsMerge(t *testing.T) {
 	store.Success()
 	db.Close()
 
-	db, err = Open("rocksdb", "/tmp/merge.db")
+	db, err = OpenRocks("/tmp/merge.db")
 	assert.NoError(t, err)
 	defer db.Close()
 

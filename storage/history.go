@@ -17,6 +17,7 @@ type processingHistory struct {
 var (
 	ONE          = make([]byte, 8)
 	writeOptions = gorocksdb.NewDefaultWriteOptions()
+	historyCache = map[string]uint64{}
 )
 
 func init() {
@@ -43,34 +44,71 @@ func (store *rocksStore) Failure() error {
 	return nil
 }
 
+func cachedStat(store *rocksStore, name string) (uint64, error) {
+	val, ok := historyCache[name]
+	if ok {
+		return val, nil
+	}
+
+	ro := gorocksdb.NewDefaultReadOptions()
+	defer ro.Destroy()
+
+	value, err := store.db.GetBytesCF(ro, store.stats, []byte(name))
+	if err != nil {
+		return 0, err
+	}
+	if value != nil {
+		proc, _ := binary.Uvarint(value)
+		historyCache[name] = proc
+		return proc, nil
+	}
+	historyCache[name] = 0
+	return 0, nil
+}
+
 func (store *rocksStore) History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error {
 	ts := time.Now()
+	daystr := ts.Format("2006-01-02")
 
 	ro := gorocksdb.NewDefaultReadOptions()
 	defer ro.Destroy()
 
 	var proc uint64
 	var failed uint64
-	for i := 0; i < days; i++ {
-		daystr := ts.Format("2006-01-02")
-		value, err := store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Processed:%s", daystr)))
+	// today's data we always get fresh from RocksDB
+	value, err := store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Processed:%s", daystr)))
+	if err != nil {
+		return err
+	}
+	if value != nil {
+		proc, _ = binary.Uvarint(value)
+	}
+	value, err = store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Failures:%s", daystr)))
+	if err != nil {
+		return err
+	}
+	if value != nil {
+		failed, _ = binary.Uvarint(value)
+	}
+	fn(daystr, proc, failed)
+	proc = 0
+	failed = 0
+
+	// we can cache previous day's values
+	for i := 1; i < days; i++ {
+		ts = ts.Add(-24 * time.Hour)
+		daystr = ts.Format("2006-01-02")
+		proc, err = cachedStat(store, fmt.Sprintf("Processed:%s", daystr))
 		if err != nil {
 			return err
 		}
-		if value != nil {
-			proc, _ = binary.Uvarint(value)
-		}
-		value, err = store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Failures:%s", daystr)))
+		failed, err = cachedStat(store, fmt.Sprintf("Failures:%s", daystr))
 		if err != nil {
 			return err
-		}
-		if value != nil {
-			failed, _ = binary.Uvarint(value)
 		}
 		fn(daystr, proc, failed)
 		proc = 0
 		failed = 0
-		ts = ts.Add(-24 * time.Hour)
 	}
 	return nil
 }
@@ -81,7 +119,11 @@ type uint64CounterMerge struct {
 }
 
 func (m *uint64CounterMerge) FullMerge(key, existingValue []byte, operands [][]byte) ([]byte, bool) {
-	eint, _ := binary.Uvarint(existingValue)
+	var eint uint64
+	if existingValue != nil {
+		eint, _ = binary.Uvarint(existingValue)
+	}
+
 	for _, val := range operands {
 		oint, _ := binary.Uvarint(val)
 		eint += oint

@@ -48,7 +48,7 @@ func DefaultOptions() *gorocksdb.Options {
 	// since queues are usually empty, we optimize for a smaller (<1GB) dataset.
 	opts.SetMaxFileOpeningThreads(2)
 	opts.SetMaxOpenFiles(5000)
-	opts.SetMaxSuccessiveMerges(100)
+	opts.SetMaxSuccessiveMerges(1000)
 	return opts
 }
 
@@ -65,6 +65,7 @@ func OpenRocks(path string) (Store, error) {
 	}
 	opts := DefaultOptions()
 	sopts := gorocksdb.NewDefaultOptions()
+	sopts.SetMaxSuccessiveMerges(1000)
 
 	// the global registration function in gorocksdb, registerMergeOperator seems to be racy
 	registerMutex.Lock()

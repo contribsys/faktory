@@ -1,10 +1,11 @@
 # Faktory Changelog
 
-## HEAD
+## 0.8.0
 
 - Workaround for negative busy/retry/scheduled/dead counts [#148]
+- Fix slow index page rendering under heavy load [#156]
 - Upgrade to Go 1.10.3
-- Upgrade to RocksDB 5.13.4
+- Upgrade to RocksDB 5.14.2
 
 ## 0.7.0
 

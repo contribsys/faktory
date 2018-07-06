@@ -39,7 +39,7 @@ dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3  \
-		--build-arg ROCKSDB_VERSION=5.13.4 \
+		--build-arg ROCKSDB_VERSION=5.14.2 \
 		--tag contribsys/faktory:$(VERSION) .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
@@ -52,7 +52,7 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 dpush: tag
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3    \
-		--build-arg ROCKSDB_VERSION=5.13.4   \
+		--build-arg ROCKSDB_VERSION=5.14.2   \
 		--tag contribsys/faktory:$(VERSION) \
 		--tag contribsys/faktory:latest .
 	docker push contribsys/faktory:$(VERSION)

@@ -10,7 +10,7 @@ echo === Building RocksDB
 if [ ! -f ~/rocksdb/librocksdb.a ]; then
   git clone https://github.com/facebook/rocksdb
   cd rocksdb
-  git checkout v5.13.4
+  git checkout v5.14.2
   time PORTABLE=1 make static_lib
   # default binary is 340MB!
   # stripped is 18MB

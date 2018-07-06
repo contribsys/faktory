@@ -40,7 +40,8 @@ dimg: ## Make a Docker image for the current version
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3  \
 		--build-arg ROCKSDB_VERSION=5.14.2 \
-		--tag contribsys/faktory:$(VERSION) .
+		--tag contribsys/faktory:$(VERSION) \
+		--tag contribsys/faktory:latest .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
@@ -50,11 +51,6 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		contribsys/faktory:$(VERSION) /faktory -b 0.0.0.0:7419 -e production
 
 dpush: tag
-	docker build \
-		--build-arg GOLANG_VERSION=1.10.3    \
-		--build-arg ROCKSDB_VERSION=5.14.2   \
-		--tag contribsys/faktory:$(VERSION) \
-		--tag contribsys/faktory:latest .
 	docker push contribsys/faktory:$(VERSION)
 	docker push contribsys/faktory:latest
 

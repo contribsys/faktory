@@ -90,6 +90,11 @@ fmt: ## Format the code
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
+# Go 1.10 has lots of build cache consistency issues if we change native
+# library versions.  This blows it all away on macOS. See also "GOCACHE=off"
+rmcache:
+	rm -rf $(HOME)/Library/Caches/go-build
+
 clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp

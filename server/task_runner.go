@@ -28,13 +28,13 @@ type taskRunner struct {
 }
 
 type task struct {
-	runner     taskable
+	runner     Taskable
 	every      int64
 	runs       int64
 	walltimeNs int64
 }
 
-type taskable interface {
+type Taskable interface {
 	Name() string
 	Execute() error
 	Stats() map[string]interface{}
@@ -47,7 +47,7 @@ func newTaskRunner() *taskRunner {
 	}
 }
 
-func (ts *taskRunner) AddTask(sec int64, thing taskable) {
+func (ts *taskRunner) AddTask(sec int64, thing Taskable) {
 	var tsk task
 	tsk.runner = thing
 	tsk.every = sec

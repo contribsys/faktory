@@ -95,6 +95,13 @@ func (s *Server) Manager() manager.Manager {
 	return s.manager
 }
 
+func (s *Server) AddTask(everySec int64, task Taskable) {
+	if s.isClosed() {
+		return
+	}
+	s.taskRunner.AddTask(everySec, task)
+}
+
 func (s *Server) Boot() error {
 	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
 	if err != nil {

@@ -1,5 +1,9 @@
 # Faktory Changelog
 
+## HEAD
+
+- Allow configuration of backup count with `FAKTORY_BACKUP_COUNT`
+
 ## 0.8.0
 
 - Workaround for negative busy/retry/scheduled/dead counts [#148]

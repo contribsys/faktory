@@ -2,6 +2,7 @@ package server
 
 import (
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/contribsys/faktory/storage"
@@ -11,14 +12,17 @@ import (
 type backupPolicy struct {
 	*Server
 	frequency time.Duration
+	keep      int
 	count     int
 }
 
 func newBackupPolicy(s *Server) *backupPolicy {
 	freak := backupFrequency()
+	kp := backupCount()
 	bp := &backupPolicy{
 		Server:    s,
 		frequency: freak,
+		keep:      kp,
 		count:     0,
 	}
 	if bp.IsEnabled() {
@@ -28,7 +32,7 @@ func newBackupPolicy(s *Server) *backupPolicy {
 }
 
 func (bp *backupPolicy) IsEnabled() bool {
-	return bp.Server.Options.Environment == "production"
+	return bp.Server.Options.Environment == "production" && bp.keep > 0
 }
 
 func (bp *backupPolicy) Frequency() int64 {
@@ -53,7 +57,7 @@ func (bp *backupPolicy) Execute() error {
 		util.Error("BACKUP FAILED", err)
 		return err
 	}
-	err = bp.Server.Store().PurgeOldBackups(storage.DefaultKeepBackupsCount)
+	err = bp.Server.Store().PurgeOldBackups(bp.keep)
 	if err != nil {
 		util.Error("PURGE FAILED", err)
 		return err
@@ -63,7 +67,9 @@ func (bp *backupPolicy) Execute() error {
 
 func (bp *backupPolicy) Stats() map[string]interface{} {
 	return map[string]interface{}{
-		"count": bp.count,
+		"count":     bp.count,
+		"keep":      bp.keep,
+		"frequency": bp.frequency,
 	}
 }
 
@@ -85,4 +91,20 @@ func backupFrequency() time.Duration {
 		return time.Duration(5 * time.Minute)
 	}
 	return dur
+}
+
+func backupCount() int {
+	durs := os.Getenv("FAKTORY_BACKUP_COUNT")
+	if durs == "" {
+		// by default, backup every hour
+		return storage.DefaultKeepBackupsCount
+	}
+
+	dur, err := strconv.ParseInt(durs, 10, 64)
+	if err != nil {
+		util.Warnf("Invalid backup count: %s", err)
+		return storage.DefaultKeepBackupsCount
+	}
+
+	return int(dur)
 }

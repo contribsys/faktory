@@ -331,6 +331,7 @@ func setupTest(t *testing.T) (storage.Store, func(t *testing.T)) {
 		panic(err)
 	}
 	return store, func(t *testing.T) {
+		store.Close()
 		os.RemoveAll(path)
 	}
 }

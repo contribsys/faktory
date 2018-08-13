@@ -39,6 +39,7 @@ type Store interface {
 	// Clear the database of all job data.
 	// Equivalent to Redis's FLUSHDB
 	Flush() error
+	Compact() error
 
 	Raw() KV
 }

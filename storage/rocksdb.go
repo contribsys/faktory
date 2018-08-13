@@ -136,6 +136,16 @@ func (store *rocksStore) EachQueue(x func(Queue)) {
 	}
 }
 
+func (store *rocksStore) Compact() error {
+	util.Debug("Compacting datastore")
+	all := gorocksdb.Range{
+		Start: []byte{1},
+		Limit: []byte{0xFF},
+	} // everything
+	store.db.CompactRange(all)
+	return nil
+}
+
 func (store *rocksStore) Flush() error {
 	// This is a very slow implementation.  Are there lower-level
 	// RocksDB operations we can use to bulk-delete everything

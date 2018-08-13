@@ -72,6 +72,7 @@ func (r *cacheReset) Execute() error {
 	r.count += r.s.Scheduled().Reset()
 	r.count += r.s.Working().Reset()
 	r.count += r.s.Dead().Reset()
+	r.s.Compact()
 	return nil
 }
 

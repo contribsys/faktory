@@ -63,7 +63,7 @@ func TestBasicSortedSet(t *testing.T) {
 
 func TestRocksSortedSet(b *testing.T) {
 	b.Parallel()
-	defer os.RemoveAll("/tmp/rocks.db")
+	//defer os.RemoveAll("/tmp/rocks.db")
 
 	db, err := Open("rocksdb", "/tmp/rocks.db")
 	assert.NoError(b, err)
@@ -130,6 +130,14 @@ func TestRocksSortedSet(b *testing.T) {
 	assert.EqualValues(b, 499, retries.Size())
 	retries.Clear()
 	assert.EqualValues(b, 0, retries.Size())
+
+	fmt.Println("Before")
+	time.Sleep(10 * time.Second)
+	fmt.Println(db.Stats())
+	err = db.Compact()
+	assert.NoError(b, err)
+	fmt.Println("After")
+	fmt.Println(db.Stats())
 }
 
 func fakeJob() (string, []byte) {

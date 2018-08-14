@@ -1,12 +1,10 @@
 package storage
 
 import (
-	"encoding/binary"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/contribsys/gorocksdb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,10 +12,10 @@ func TestStatsMerge(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/merge.db")
-	db, err := Open("rocksdb", "/tmp/merge.db")
+	db, err := Open("redis", "/tmp/merge.db")
 	assert.NoError(t, err)
 
-	store := db.(*rocksStore)
+	store := db.(*redisStore)
 	for i := 0; i < 10000; i++ {
 		if i%100 == 99 {
 			store.Failure()
@@ -28,28 +26,24 @@ func TestStatsMerge(t *testing.T) {
 
 	assert.EqualValues(t, 10000, store.history.TotalProcessed)
 	assert.EqualValues(t, 100, store.history.TotalFailures)
-	//store.db.Flush()
 
-	ro := gorocksdb.NewDefaultReadOptions()
-	value, err := store.db.GetBytesCF(ro, store.stats, []byte("Processed"))
+	value, err := store.client.IncrBy("Processed", 0).Result()
 	assert.NoError(t, err)
-	count, _ := binary.Uvarint(value)
-	assert.EqualValues(t, 10000, count)
+	assert.EqualValues(t, 10000, value)
 
-	value, err = store.db.GetBytesCF(ro, store.stats, []byte("Failures"))
+	value, err = store.client.IncrBy("Failures", 0).Result()
 	assert.NoError(t, err)
-	count, _ = binary.Uvarint(value)
-	assert.EqualValues(t, 100, count)
+	assert.EqualValues(t, 100, value)
 
 	store.Failure()
 	store.Success()
 	db.Close()
 
-	db, err = Open("rocksdb", "/tmp/merge.db")
+	db, err = Open("redis", "/tmp/merge.db")
 	assert.NoError(t, err)
 	defer db.Close()
 
-	store = db.(*rocksStore)
+	store = db.(*redisStore)
 	assert.EqualValues(t, 10002, store.history.TotalProcessed)
 	assert.EqualValues(t, 101, store.history.TotalFailures)
 

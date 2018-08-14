@@ -2,8 +2,6 @@ package storage
 
 import (
 	"errors"
-
-	"github.com/contribsys/gorocksdb"
 )
 
 var (
@@ -17,33 +15,27 @@ type KV interface {
 
 // Provide a basic KV scratch pad, for misc feature usage.
 // Not optimized so "big" features don't use this.
-type rocksKV struct {
-	store *rocksStore
+type redisKV struct {
+	store *redisStore
 }
 
-func (s *rocksStore) Raw() KV {
-	return &rocksKV{s}
+func (s *redisStore) Raw() KV {
+	return &redisKV{s}
 }
 
-func (kv *rocksKV) Get(key string) ([]byte, error) {
-	ro := gorocksdb.NewDefaultReadOptions()
-	defer ro.Destroy()
-
-	value, err := kv.store.db.GetBytesCF(ro, kv.store.defalt, []byte(key))
+func (kv *redisKV) Get(key string) ([]byte, error) {
+	value, err := kv.store.client.Get(key).Result()
 	if err != nil {
 		return nil, err
 	}
-	return value, nil
+	return []byte(value), nil
 }
 
-func (kv *rocksKV) Set(key string, value []byte) error {
+func (kv *redisKV) Set(key string, value []byte) error {
 	if value == nil {
 		return ErrNilValue
 	}
-	wo := gorocksdb.NewDefaultWriteOptions()
-	defer wo.Destroy()
-
-	err := kv.store.db.PutCF(wo, kv.store.defalt, []byte(key), value)
+	err := kv.store.client.Set(key, value, 0).Err()
 	if err != nil {
 		return err
 	}

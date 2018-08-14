@@ -21,8 +21,8 @@ type Store interface {
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string
-	EnqueueAll(SortedSet) error
-	EnqueueFrom(SortedSet, []byte) error
+	//EnqueueAll(SortedSet) error
+	//EnqueueFrom(SortedSet, []byte) error
 
 	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
@@ -31,10 +31,10 @@ type Store interface {
 	Failures() uint64
 
 	// creates a backup of the current database
-	Backup() error
-	EachBackup(func(bi BackupInfo)) error
-	RestoreFromLatest() error
-	PurgeOldBackups(int) error
+	//Backup() error
+	//EachBackup(func(bi BackupInfo)) error
+	//RestoreFromLatest() error
+	//PurgeOldBackups(int) error
 
 	// Clear the database of all job data.
 	// Equivalent to Redis's FLUSHDB
@@ -86,8 +86,8 @@ type SortedSet interface {
 }
 
 func Open(dbtype string, path string) (Store, error) {
-	if dbtype == "rocksdb" {
-		return OpenRocks(path)
+	if dbtype == "redis" {
+		return OpenRedis(path)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

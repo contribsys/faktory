@@ -11,7 +11,7 @@ func TestRawKV(t *testing.T) {
 	t.Parallel()
 
 	defer os.RemoveAll("/tmp/raw.db")
-	db, err := Open("rocksdb", "/tmp/raw.db")
+	db, err := Open("redis", "/tmp/raw.db")
 	assert.NoError(t, err)
 	defer db.Close()
 

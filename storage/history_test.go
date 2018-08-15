@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 func TestStatsMerge(t *testing.T) {
 	t.Parallel()
 
-	defer os.RemoveAll("/tmp/merge.db")
-	db, err := Open("redis", "/tmp/merge.db")
+	db, err := OpenRedis()
 	assert.NoError(t, err)
+	defer db.Close()
 
 	store := db.(*redisStore)
 	for i := 0; i < 10000; i++ {
@@ -37,13 +36,7 @@ func TestStatsMerge(t *testing.T) {
 
 	store.Failure()
 	store.Success()
-	db.Close()
 
-	db, err = Open("redis", "/tmp/merge.db")
-	assert.NoError(t, err)
-	defer db.Close()
-
-	store = db.(*redisStore)
 	assert.EqualValues(t, 10002, store.TotalProcessed())
 	assert.EqualValues(t, 101, store.TotalFailures())
 

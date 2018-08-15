@@ -20,7 +20,6 @@ import (
 type redisStore struct {
 	Name      string
 	mu        sync.Mutex
-	history   *processingHistory
 	queueSet  map[string]*redisQueue
 	scheduled *redisSorted
 	retries   *redisSorted
@@ -47,7 +46,6 @@ func OpenRedis(path string) (Store, error) {
 	rs := &redisStore{
 		Name:     path,
 		mu:       sync.Mutex{},
-		history:  &processingHistory{},
 		queueSet: map[string]*redisQueue{},
 	}
 	rs.initSorted()

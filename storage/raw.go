@@ -2,6 +2,8 @@ package storage
 
 import (
 	"errors"
+
+	"github.com/go-redis/redis"
 )
 
 var (
@@ -26,6 +28,9 @@ func (s *redisStore) Raw() KV {
 func (kv *redisKV) Get(key string) ([]byte, error) {
 	value, err := kv.store.client.Get(key).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return []byte(value), nil

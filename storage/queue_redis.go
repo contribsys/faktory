@@ -1,33 +1,20 @@
 package storage
 
 import (
-	"container/list"
 	"context"
-	"sync"
 	"time"
 
 	"github.com/contribsys/faktory/util"
 )
 
-const (
-	NEW_JOB = iota
-	CLOSE
-)
-
 type redisQueue struct {
-	name    string
-	store   *redisStore
-	mu      sync.Mutex
-	waiters *list.List
-	waitmu  sync.RWMutex
-	done    bool
+	name  string
+	store *redisStore
+	done  bool
 }
 
 func (q *redisQueue) Close() {
-	q.mu.Lock()
-	defer q.mu.Unlock()
 	q.done = true
-	q.clearWaiters()
 }
 
 func (q *redisQueue) Name() string {
@@ -52,21 +39,11 @@ func (q *redisQueue) Each(fn func(index int, k, v []byte) error) error {
 }
 
 func (q *redisQueue) Clear() (uint64, error) {
-	count := uint64(0)
-	// TODO impl which uses redis range deletes?
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
 	q.store.client.Del(q.name)
-
-	//util.Warnf("Queue#clear: deleted %d elements from %s, size %d", count, q.name, q.size)
-	return count, nil
+	return 0, nil
 }
 
 func (q *redisQueue) init() error {
-	q.mu = sync.Mutex{}
-	q.waiters = list.New()
-
 	util.Debugf("Queue init: %s %d elements", q.name, q.Size())
 	return nil
 }
@@ -76,18 +53,12 @@ func (q *redisQueue) Size() uint64 {
 }
 
 func (q *redisQueue) Push(priority uint8, payload []byte) error {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	q.notify()
+	q.store.client.LPush(q.name, payload)
 	return nil
 }
 
 // non-blocking, returns immediately if there's nothing enqueued
 func (q *redisQueue) Pop() ([]byte, error) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
 	if q.done {
 		return nil, nil
 	}
@@ -95,94 +66,27 @@ func (q *redisQueue) Pop() ([]byte, error) {
 	return q._pop()
 }
 
-// caller must hold q.mu or else DOOM!
 func (q *redisQueue) _pop() ([]byte, error) {
-	return nil, nil
+	val, err := q.store.client.RPop(q.name).Result()
+	return []byte(val), err
 }
 
-type QueueWaiter struct {
-	ctx      context.Context
-	notifier chan int
-}
-
-// Iterates through our current list of waiters,
-// finds one whose deadline has not passed and signals
-// the waiter via its channel.
-//
-// This is best effort: it's possible for the waiter's
-// deadline to pass just as it is selected to wake up.
-func (q *redisQueue) notify() {
-	q.waitmu.Lock()
-	defer q.waitmu.Unlock()
-
-	// for loop required to drain old, expired waiters
-	for e := q.waiters.Front(); e != nil; e = e.Next() {
-		qw := e.Value.(*QueueWaiter)
-		q.waiters.Remove(e)
-
-		deadline, _ := qw.ctx.Deadline()
-		if time.Now().Before(deadline) {
-			qw.notifier <- NEW_JOB
-			break
-		}
-	}
-}
-
-func (q *redisQueue) clearWaiters() {
-	q.waitmu.Lock()
-	defer q.waitmu.Unlock()
-
-	for e := q.waiters.Front(); e != nil; e = e.Next() {
-		qw := e.Value.(*QueueWaiter)
-		qw.notifier <- CLOSE
-	}
-	q.waiters = list.New()
-}
-
-// Waits for a job to come onto the queue.  The given context
-// should timeout the blocking.
-//
-// Waiter calls this method, blocks on a channel it creates.
-// Sends that channel to the dispatcher via waiter channel.
-// Dispatcher is notified of new job on queue, pulls off a waiter
-// and pushes notification to its channel.
 func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
-	for {
-		q.mu.Lock()
-		if q.done {
-			q.mu.Unlock()
-			return nil, nil
-		}
-		q.mu.Unlock()
-
-		waiting := make(chan int, 1)
-		me := &QueueWaiter{
-			ctx:      ctx,
-			notifier: waiting,
-		}
-		q.waitmu.Lock()
-		e := q.waiters.PushBack(me)
-		q.waitmu.Unlock()
-
-	Loop:
-		select {
-		case status := <-waiting:
-			if status == NEW_JOB {
-				continue
-			}
-			break Loop
-		case <-ctx.Done():
-			q.waitmu.Lock()
-			q.waiters.Remove(e)
-			q.waitmu.Unlock()
-			return nil, nil
-		}
+	val, err := q.store.client.BRPop(2*time.Second, q.name).Result()
+	if err != nil {
+		return nil, err
 	}
+
+	return []byte(val[1]), nil
 }
 
-func (q *redisQueue) Delete(keys [][]byte) error {
-	q.mu.Lock()
-	defer q.mu.Unlock()
+func (q *redisQueue) Delete(vals [][]byte) error {
+	for _, val := range vals {
+		err := q.store.client.LRem(q.name, 1, val).Err()
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

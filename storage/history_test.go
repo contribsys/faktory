@@ -24,8 +24,8 @@ func TestStatsMerge(t *testing.T) {
 		}
 	}
 
-	assert.EqualValues(t, 10000, store.history.TotalProcessed)
-	assert.EqualValues(t, 100, store.history.TotalFailures)
+	assert.EqualValues(t, 10000, store.TotalProcessed())
+	assert.EqualValues(t, 100, store.TotalFailures())
 
 	value, err := store.client.IncrBy("Processed", 0).Result()
 	assert.NoError(t, err)
@@ -44,8 +44,8 @@ func TestStatsMerge(t *testing.T) {
 	defer db.Close()
 
 	store = db.(*redisStore)
-	assert.EqualValues(t, 10002, store.history.TotalProcessed)
-	assert.EqualValues(t, 101, store.history.TotalFailures)
+	assert.EqualValues(t, 10002, store.TotalProcessed())
+	assert.EqualValues(t, 101, store.TotalFailures())
 
 	hash := map[string][2]uint64{}
 	store.History(3, func(day string, p, f uint64) {

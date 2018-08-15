@@ -87,7 +87,7 @@ type SortedSet interface {
 
 func Open(dbtype string, path string) (Store, error) {
 	if dbtype == "redis" {
-		return OpenRedis(path)
+		return OpenRedis()
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

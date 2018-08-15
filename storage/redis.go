@@ -3,9 +3,11 @@ package storage
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
-	"math/rand"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -26,82 +28,166 @@ type redisStore struct {
 	dead      *redisSorted
 	working   *redisSorted
 
-	client    *redis.Client
-	redisPath string
-	redisPid  int
-	redisPort int
-	conffile  string
+	client *redis.Client
+	DB     int
 }
 
-func OpenRedis(path string) (Store, error) {
-	util.LogInfo = true
+var (
+	redisPort = 0
+	redisPid  = 0
+	redisPath = ""
+	redisConf = ""
+	redisSock = ""
+	opens     = 0
+	dbs       = map[int]bool{}
+	dbLock    = sync.Mutex{}
+)
 
-	util.Infof("Initializing storage at %s", path)
+func MustBootRedis() {
+	datapath := os.Getenv("FAKTORY_REDIS_PATH")
+	if datapath == "" {
+		datapath = "/var/lib/faktory/default"
+	}
+	port := os.Getenv("FAKTORY_REDIS_PORT")
+	if port == "" {
+		port = "7421"
+	}
+	iport, err := strconv.Atoi(port)
+	if err != nil {
+		panic(err)
+	}
+	BootRedis(datapath, iport)
+}
+
+func BootRedis(path string, port int) {
+	util.LogInfo = true
+	util.LogDebug = true
+	util.Infof("Initializing redis storage at %s on port %d", path, port)
 
 	err := os.MkdirAll(path, os.ModeDir|0755)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
+	sock := fmt.Sprintf("/tmp/faktory-redis.%d.sock", port)
+	_ = os.Remove(sock)
+
+	conffilename := "/tmp/redis.conf"
+	redisLoc := "/usr/local/bin/redis-server"
+	loglevel := "notice"
+	if util.LogDebug {
+		loglevel = "verbose"
+	}
+	arguments := []string{
+		"/usr/local/bin/redis-server",
+		conffilename,
+		"--unixsocket",
+		sock,
+		"--port",
+		fmt.Sprintf("%d", port),
+		"--loglevel",
+		loglevel,
+		"--dir",
+		path,
+	}
+
+	pid, err := syscall.ForkExec(redisLoc, arguments, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// wait a few seconds for Redis to start
+	start := time.Now()
+	for i := 0; i < 1000; i++ {
+		conn, err := net.Dial("unix", sock)
+		if err == nil {
+			conn.Close()
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+	done := time.Now()
+
+	client := redis.NewClient(&redis.Options{
+		Network: "unix",
+		Addr:    sock,
+	})
+	_, err = client.Ping().Result()
+	if err != nil {
+		panic(err)
+	}
+
+	infos, err := client.Info().Result()
+	if err != nil {
+		panic(err)
+	}
+	version := "Unknown"
+	scanner := bufio.NewScanner(bytes.NewBufferString(infos))
+	for scanner.Scan() {
+		txt := scanner.Text()
+		if strings.Index(txt, "redis_version") != -1 {
+			version = strings.Split(txt, ":")[1]
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		panic(err)
+	}
+
+	util.Infof("Redis v%s booted in %s", version, done.Sub(start))
+	err = client.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	redisPath = path
+	redisPort = port
+	redisPid = pid
+	redisConf = conffilename
+	redisSock = sock
+}
+
+func OpenRedis() (Store, error) {
+	util.LogInfo = true
+
+	if redisPid == 0 {
+		return nil, errors.New("redis not started, call MustBootRedis() first")
+	}
+
+	// find and reserve an unused DB index
+	db := 0
+	dbLock.Lock()
+	for {
+		val := dbs[db]
+		if !val {
+			dbs[db] = true
+			break
+		}
+		db += 1
+	}
+	dbLock.Unlock()
+
 	rs := &redisStore{
-		Name:     path,
+		Name:     redisPath,
+		DB:       db,
 		mu:       sync.Mutex{},
 		queueSet: map[string]*redisQueue{},
 	}
 	rs.initSorted()
 
-	rs.redisPath = path
-	rs.redisPort = rand.Int() % 65535
-
-	sock := fmt.Sprintf("/tmp/faktory-redis.%d.sock", rs.redisPort)
-	_ = os.Remove(sock)
-	err = rs.start()
-	if err != nil {
-		return nil, err
-	}
-
-	// wait a few seconds for Redis to start
-	for i := 0; i < 50; i++ {
-		f, err := os.Open(sock)
-		if err == nil {
-			f.Close()
-			break
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
-
 	rs.client = redis.NewClient(&redis.Options{
 		Network: "unix",
-		Addr:    sock,
+		Addr:    redisSock,
+		DB:      db,
 	})
-	_, err = rs.client.Ping().Result()
-	if err != nil {
-		return nil, err
-	}
-
-	infos, err := rs.client.Info().Result()
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(bytes.NewBufferString(infos))
-	for scanner.Scan() {
-		txt := scanner.Text()
-		if strings.Index(txt, "redis_version") != -1 {
-			data := strings.Split(txt, ":")
-			util.Infof("Using redis %s", data[1])
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
+	opens += 1
 	return rs, nil
 }
 
 func (store *redisStore) Stats() map[string]string {
 	return map[string]string{
 		"stats": store.client.Info().String(),
-		"name":  fmt.Sprintf("/tmp/faktory-redis.%d.sock", store.redisPort),
+		"name":  redisSock,
 	}
 }
 
@@ -165,17 +251,34 @@ func (store *redisStore) Close() error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	p, err := os.FindProcess(store.redisPid)
-	if err != nil {
-		return err
-	}
-	err = p.Signal(syscall.SIGTERM)
-	if err != nil {
-		return err
-	}
-	_, err = p.Wait()
-	if err != nil {
-		return err
+	opens -= 1
+
+	dbLock.Lock()
+	dbs[store.DB] = false
+	dbLock.Unlock()
+
+	if opens == 0 {
+		p, err := os.FindProcess(redisPid)
+		if err != nil {
+			return err
+		}
+		err = p.Signal(syscall.SIGTERM)
+		if err != nil {
+			return err
+		}
+		_, err = p.Wait()
+		if err != nil {
+			return err
+		}
+
+		sock := fmt.Sprintf("/tmp/faktory-redis.%d.sock", redisPort)
+		_ = os.Remove(sock)
+
+		redisPid = 0
+		redisPort = 0
+		redisPath = ""
+		redisConf = ""
+		redisSock = ""
 	}
 	return nil
 }
@@ -194,38 +297,4 @@ func (store *redisStore) Working() SortedSet {
 
 func (store *redisStore) Dead() SortedSet {
 	return store.dead
-}
-
-func (rs *redisStore) start() error {
-	conffilename := "/tmp/redis.conf"
-	//conf, _ := os.Open(conffilename, os.O_WRONLY|os.O_CREATE, 0444)
-	//ioutil.WriteAll(conf, confByes)
-	//conf.Close()
-
-	redisLoc := "/usr/local/bin/redis-server"
-	loglevel := "notice"
-	if util.LogDebug {
-		loglevel = "verbose"
-	}
-	arguments := []string{
-		"/usr/local/bin/redis-server",
-		conffilename,
-		"--unixsocket",
-		fmt.Sprintf("/tmp/faktory-redis.%d.sock", rs.redisPort),
-		"--port",
-		fmt.Sprintf("%d", rs.redisPort),
-		"--loglevel",
-		loglevel,
-		"--dir",
-		rs.redisPath,
-	}
-
-	pid, err := syscall.ForkExec(redisLoc, arguments, nil)
-	if err != nil {
-		return err
-	}
-	rs.redisPid = pid
-	rs.conffile = conffilename
-
-	return nil
 }

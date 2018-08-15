@@ -1,16 +1,11 @@
 package storage
 
-import (
-	"testing"
+import "os"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestRedisStartup(t *testing.T) {
-	r, err := OpenRedis("/tmp/redis")
-	assert.NoError(t, err)
-	assert.NotNil(t, r)
-
-	err = r.Close()
-	assert.NoError(t, err)
+func init() {
+	err := os.RemoveAll("/tmp/redis-test")
+	if err != nil {
+		panic(err)
+	}
+	BootRedis("/tmp/redis-test", 12345)
 }

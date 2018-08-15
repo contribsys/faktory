@@ -5,16 +5,18 @@ import (
 	"time"
 )
 
-type processingHistory struct {
-	TotalProcessed uint64
-	TotalFailures  uint64
-}
-
 func (store *redisStore) Success() error {
 	daystr := time.Now().Format("2006-01-02")
 	store.client.Incr(fmt.Sprintf("Processed:%s", daystr))
 	store.client.Incr("Processed")
 	return nil
+}
+
+func (store *redisStore) TotalProcessed() uint64 {
+	return uint64(store.client.IncrBy("Processed", 0).Val())
+}
+func (store *redisStore) TotalFailures() uint64 {
+	return uint64(store.client.IncrBy("Failures", 0).Val())
 }
 
 func (store *redisStore) Failure() error {

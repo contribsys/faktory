@@ -7,25 +7,25 @@ import (
 
 func (store *redisStore) Success() error {
 	daystr := time.Now().Format("2006-01-02")
-	store.client.Incr(fmt.Sprintf("Processed:%s", daystr))
-	store.client.Incr("Processed")
+	store.client.Incr(fmt.Sprintf("processed:%s", daystr))
+	store.client.Incr("processed")
 	return nil
 }
 
 func (store *redisStore) TotalProcessed() uint64 {
-	return uint64(store.client.IncrBy("Processed", 0).Val())
+	return uint64(store.client.IncrBy("processed", 0).Val())
 }
 func (store *redisStore) TotalFailures() uint64 {
-	return uint64(store.client.IncrBy("Failures", 0).Val())
+	return uint64(store.client.IncrBy("failures", 0).Val())
 }
 
 func (store *redisStore) Failure() error {
-	store.client.Incr("Processed")
-	store.client.Incr("Failures")
+	store.client.Incr("processed")
+	store.client.Incr("failures")
 
 	daystr := time.Now().Format("2006-01-02")
-	store.client.Incr(fmt.Sprintf("Processed:%s", daystr))
-	store.client.Incr(fmt.Sprintf("Failures:%s", daystr))
+	store.client.Incr(fmt.Sprintf("processed:%s", daystr))
+	store.client.Incr(fmt.Sprintf("failures:%s", daystr))
 	return nil
 }
 
@@ -35,12 +35,12 @@ func (store *redisStore) History(days int, fn func(day string, procCnt uint64, f
 
 	var proc uint64
 	var failed uint64
-	value, err := store.client.IncrBy(fmt.Sprintf("Processed:%s", daystr), 0).Result()
+	value, err := store.client.IncrBy(fmt.Sprintf("processed:%s", daystr), 0).Result()
 	if err != nil {
 		return err
 	}
 	proc = uint64(value)
-	value, err = store.client.IncrBy(fmt.Sprintf("Failures:%s", daystr), 0).Result()
+	value, err = store.client.IncrBy(fmt.Sprintf("failures:%s", daystr), 0).Result()
 	if err != nil {
 		return err
 	}
@@ -52,11 +52,11 @@ func (store *redisStore) History(days int, fn func(day string, procCnt uint64, f
 	for i := 1; i < days; i++ {
 		ts = ts.Add(-24 * time.Hour)
 		daystr = ts.Format("2006-01-02")
-		proc, err := store.client.IncrBy(fmt.Sprintf("Processed:%s", daystr), 0).Result()
+		proc, err := store.client.IncrBy(fmt.Sprintf("processed:%s", daystr), 0).Result()
 		if err != nil {
 			return err
 		}
-		failed, err := store.client.IncrBy(fmt.Sprintf("Failures:%s", daystr), 0).Result()
+		failed, err := store.client.IncrBy(fmt.Sprintf("failures:%s", daystr), 0).Result()
 		if err != nil {
 			return err
 		}

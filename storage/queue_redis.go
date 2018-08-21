@@ -13,6 +13,14 @@ type redisQueue struct {
 	done  bool
 }
 
+func (store *redisStore) NewQueue(name string) *redisQueue {
+	return &redisQueue{
+		name:  name,
+		store: store,
+		done:  false,
+	}
+}
+
 func (q *redisQueue) Close() {
 	q.done = true
 }
@@ -24,12 +32,13 @@ func (q *redisQueue) Name() string {
 func (q *redisQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
 	index := 0
 
-	slice, err := q.store.client.LRange(q.name, start, start+count).Result()
+	slice, err := q.store.client.LRange(q.name, start-1, -(start + count)).Result()
 	for _, job := range slice {
 		err = fn(index, nil, []byte(job))
 		if err != nil {
 			return err
 		}
+		index += 1
 	}
 	return err
 }
@@ -68,6 +77,9 @@ func (q *redisQueue) Pop() ([]byte, error) {
 
 func (q *redisQueue) _pop() ([]byte, error) {
 	val, err := q.store.client.RPop(q.name).Result()
+	if val == "" {
+		return nil, nil
+	}
 	return []byte(val), err
 }
 

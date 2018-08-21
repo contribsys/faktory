@@ -3,11 +3,9 @@ package storage
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -48,71 +46,70 @@ func MustBootRedis() {
 	if datapath == "" {
 		datapath = "/var/lib/faktory/default"
 	}
-	port := os.Getenv("FAKTORY_REDIS_PORT")
-	if port == "" {
-		port = "7421"
+	sock := os.Getenv("FAKTORY_REDIS_SOCK")
+	if sock == "" {
+		sock = "/var/run/faktory-default.sock"
 	}
-	iport, err := strconv.Atoi(port)
-	if err != nil {
-		panic(err)
-	}
-	BootRedis(datapath, iport)
+	BootRedis(datapath, sock)
 }
 
-func BootRedis(path string, port int) {
+func BootRedis(path string, sock string) {
 	util.LogInfo = true
 	util.LogDebug = true
-	util.Infof("Initializing redis storage at %s on port %d", path, port)
+	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
 	err := os.MkdirAll(path, os.ModeDir|0755)
 	if err != nil {
 		panic(err)
 	}
 
-	sock := fmt.Sprintf("/tmp/faktory-redis.%d.sock", port)
-	_ = os.Remove(sock)
-
-	conffilename := "/tmp/redis.conf"
-	redisLoc := "/usr/local/bin/redis-server"
-	loglevel := "notice"
-	if util.LogDebug {
-		loglevel = "verbose"
-	}
-	arguments := []string{
-		"/usr/local/bin/redis-server",
-		conffilename,
-		"--unixsocket",
-		sock,
-		"--port",
-		fmt.Sprintf("%d", port),
-		"--loglevel",
-		loglevel,
-		"--dir",
-		path,
-	}
-
-	pid, err := syscall.ForkExec(redisLoc, arguments, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	// wait a few seconds for Redis to start
-	start := time.Now()
-	for i := 0; i < 1000; i++ {
-		conn, err := net.Dial("unix", sock)
-		if err == nil {
-			conn.Close()
-			break
-		}
-
-		time.Sleep(10 * time.Millisecond)
-	}
-	done := time.Now()
-
 	client := redis.NewClient(&redis.Options{
 		Network: "unix",
 		Addr:    sock,
 	})
+
+	_, err = client.Ping().Result()
+	if err != nil {
+		util.Debugf("Redis not alive, booting... -- %s", err)
+
+		conffilename := "/tmp/redis.conf"
+		redisLoc := "/usr/local/bin/redis-server"
+		loglevel := "notice"
+		if util.LogDebug {
+			loglevel = "verbose"
+		}
+		arguments := []string{
+			"/usr/local/bin/redis-server",
+			conffilename,
+			"--unixsocket",
+			sock,
+			"--loglevel",
+			loglevel,
+			"--dir",
+			path,
+		}
+
+		pid, err := syscall.ForkExec(redisLoc, arguments, nil)
+		if err != nil {
+			panic(err)
+		}
+		redisPid = pid
+
+		// wait a few seconds for Redis to start
+		start := time.Now()
+		for i := 0; i < 1000; i++ {
+			conn, err := net.Dial("unix", sock)
+			if err == nil {
+				conn.Close()
+				break
+			}
+
+			time.Sleep(10 * time.Millisecond)
+		}
+		done := time.Now()
+		util.Debugf("Redis booted in %s", done.Sub(start))
+	}
+
 	_, err = client.Ping().Result()
 	if err != nil {
 		panic(err)
@@ -134,39 +131,21 @@ func BootRedis(path string, port int) {
 		panic(err)
 	}
 
-	util.Infof("Redis v%s booted in %s", version, done.Sub(start))
+	util.Infof("Running Redis v%s", version)
 	err = client.Close()
 	if err != nil {
 		panic(err)
 	}
 
 	redisPath = path
-	redisPort = port
-	redisPid = pid
-	redisConf = conffilename
 	redisSock = sock
 }
 
 func OpenRedis() (Store, error) {
 	util.LogInfo = true
 
-	if redisPid == 0 {
-		return nil, errors.New("redis not started, call MustBootRedis() first")
-	}
-
 	// find and reserve an unused DB index
 	db := 0
-	dbLock.Lock()
-	for {
-		val := dbs[db]
-		if !val {
-			dbs[db] = true
-			break
-		}
-		db += 1
-	}
-	dbLock.Unlock()
-
 	rs := &redisStore{
 		Name:     redisPath,
 		DB:       db,
@@ -180,6 +159,10 @@ func OpenRedis() (Store, error) {
 		Addr:    redisSock,
 		DB:      db,
 	})
+	_, err := rs.client.Ping().Result()
+	if err != nil {
+		return nil, err
+	}
 	opens += 1
 	return rs, nil
 }
@@ -189,14 +172,6 @@ func (store *redisStore) Stats() map[string]string {
 		"stats": store.client.Info().String(),
 		"name":  redisSock,
 	}
-}
-
-func (store *redisStore) Processed() uint64 {
-	return uint64(store.client.IncrBy("processed", 0).Val())
-}
-
-func (store *redisStore) Failures() uint64 {
-	return uint64(store.client.IncrBy("failures", 0).Val())
 }
 
 // queues are iterated in sorted, lexigraphical order
@@ -235,9 +210,7 @@ func (store *redisStore) GetQueue(name string) (Queue, error) {
 		return nil, fmt.Errorf("queue names must match %v", ValidQueueName)
 	}
 
-	q = &redisQueue{
-		name: name,
-	}
+	q = store.NewQueue(name)
 	err := q.init()
 	if err != nil {
 		return nil, err
@@ -247,17 +220,14 @@ func (store *redisStore) GetQueue(name string) (Queue, error) {
 }
 
 func (store *redisStore) Close() error {
-	util.Info("Stopping storage")
+	util.Debug("Stopping storage")
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
 	opens -= 1
 
-	dbLock.Lock()
-	dbs[store.DB] = false
-	dbLock.Unlock()
-
-	if opens == 0 {
+	if false && opens == 0 && redisPid > 0 {
+		util.Infof("Shutting down Redis PID %d", redisPid)
 		p, err := os.FindProcess(redisPid)
 		if err != nil {
 			return err
@@ -271,8 +241,7 @@ func (store *redisStore) Close() error {
 			return err
 		}
 
-		sock := fmt.Sprintf("/tmp/faktory-redis.%d.sock", redisPort)
-		_ = os.Remove(sock)
+		_ = os.Remove(redisSock)
 
 		redisPid = 0
 		redisPort = 0

@@ -6,33 +6,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedis(t *testing.T) {
-	t.Parallel()
+func TestRedisKV(t *testing.T) {
+	db, teardown := setupTest(t)
+	defer teardown(t)
 
-	t.Run("KV", func(t *testing.T) {
-		t.Parallel()
+	kv := db.Raw()
+	assert.NotNil(t, kv)
 
-		db, err := OpenRedis()
-		assert.NoError(t, err)
-		defer db.Close()
+	val, err := kv.Get("mike")
+	assert.NoError(t, err)
+	assert.Nil(t, val)
 
-		kv := db.Raw()
-		assert.NotNil(t, kv)
+	err = kv.Set("bob", nil)
+	assert.Equal(t, ErrNilValue, err)
 
-		val, err := kv.Get("mike")
-		assert.NoError(t, err)
-		assert.Nil(t, val)
+	err = kv.Set("mike", []byte("bob"))
+	assert.NoError(t, err)
 
-		err = kv.Set("bob", nil)
-		assert.Equal(t, ErrNilValue, err)
-
-		err = kv.Set("mike", []byte("bob"))
-		assert.NoError(t, err)
-
-		val, err = kv.Get("mike")
-		assert.NoError(t, err)
-		assert.NotNil(t, val)
-		assert.Equal(t, "bob", string(val))
-
-	})
+	val, err = kv.Get("mike")
+	assert.NoError(t, err)
+	assert.NotNil(t, val)
+	assert.Equal(t, "bob", string(val))
 }

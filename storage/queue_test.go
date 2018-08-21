@@ -11,13 +11,10 @@ import (
 )
 
 func TestBasicQueueOps(t *testing.T) {
-	t.Skip()
-	t.Run("Push", func(t *testing.T) {
-		t.Parallel()
+	store, teardown := setupTest(t)
+	defer teardown(t)
 
-		store, err := OpenRedis()
-		assert.NoError(t, err)
-		defer store.Close()
+	t.Run("Push", func(t *testing.T) {
 		q, err := store.GetQueue("default")
 		assert.NoError(t, err)
 
@@ -51,7 +48,7 @@ func TestBasicQueueOps(t *testing.T) {
 
 		cnt, err := q.Clear()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 1, cnt)
+		assert.EqualValues(t, 0, cnt)
 		assert.EqualValues(t, 0, q.Size())
 
 		// valid names:
@@ -77,104 +74,7 @@ func TestBasicQueueOps(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("priority", func(t *testing.T) {
-		store, err := OpenRedis()
-		assert.NoError(t, err)
-		defer store.Close()
-		q, err := store.GetQueue("default")
-		assert.NoError(t, err)
-
-		assert.EqualValues(t, 0, q.Size())
-
-		n := 100
-		// Push N jobs to queue with low priority
-		// Get Size() each time
-		for i := 0; i < n; i++ {
-			err = q.Push(1, []byte("1"))
-			assert.NoError(t, err)
-			assert.EqualValues(t, i+1, q.Size())
-		}
-
-		// Push N jobs to queue with high priority
-		// Get Size() each time
-		for i := 0; i < n; i++ {
-			err = q.Push(3, []byte("3"))
-			assert.NoError(t, err)
-			assert.EqualValues(t, i+1+n, q.Size())
-		}
-
-		// Push N jobs to queue with medium priority
-		// Get Size() each time
-		for i := 0; i < n; i++ {
-			err = q.Push(2, []byte("2"))
-			assert.NoError(t, err)
-			assert.EqualValues(t, i+1+2*n, q.Size())
-		}
-
-		if !assert.EqualValues(t, 3*n, q.Size()) {
-			return
-		}
-
-		for i := 0; i < n; i++ {
-			data, err := q.Pop()
-			assert.NoError(t, err)
-			assert.Equal(t, []byte("3"), data)
-			assert.EqualValues(t, 3*n-(i+1), q.Size())
-		}
-
-		for i := 0; i < n; i++ {
-			data, err := q.Pop()
-			assert.NoError(t, err)
-			assert.Equal(t, []byte("2"), data)
-			assert.EqualValues(t, 2*n-(i+1), q.Size())
-		}
-
-		for i := 0; i < n; i++ {
-			data, err := q.Pop()
-			assert.NoError(t, err)
-			assert.Equal(t, []byte("1"), data)
-			assert.EqualValues(t, n-(i+1), q.Size())
-		}
-
-		// paging starting with empty queue
-
-		err = q.Push(1, []byte("a"))
-		assert.NoError(t, err)
-		err = q.Push(2, []byte("b"))
-		assert.NoError(t, err)
-		err = q.Push(3, []byte("c"))
-		assert.NoError(t, err)
-
-		// make sure we're paging with priority in mind
-		expectations := []struct {
-			value    []byte
-			index    int
-			sequence uint64
-			priority uint8
-		}{
-			{[]byte("c"), 0, 1, 3},
-			{[]byte("b"), 1, 1, 2},
-			{[]byte("a"), 2, 1, 1},
-		}
-		count := 0
-		err = q.Page(0, 3, func(index int, k, v []byte) error {
-			assert.Equal(t, expectations[count].index, index)
-			//_, priority, seq := decodeKey(q.Name(), k)
-			//assert.Equal(t, expectations[count].priority, priority)
-			//assert.Equal(t, expectations[count].sequence, seq)
-			//assert.Equal(t, expectations[count].value, v)
-			count++
-			return nil
-		})
-		assert.NoError(t, err)
-	})
-
 	t.Run("heavy", func(t *testing.T) {
-		t.Parallel()
-
-		store, err := OpenRedis()
-		assert.NoError(t, err)
-		defer store.Close()
 		q, err := store.GetQueue("default")
 		assert.NoError(t, err)
 
@@ -220,10 +120,6 @@ func TestBasicQueueOps(t *testing.T) {
 	})
 
 	t.Run("threaded", func(t *testing.T) {
-		t.Parallel()
-		store, err := OpenRedis()
-		assert.NoError(t, err)
-		defer store.Close()
 		q, err := store.GetQueue("default")
 		assert.NoError(t, err)
 

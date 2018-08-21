@@ -7,14 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStatsMerge(t *testing.T) {
-	t.Parallel()
+func TestStats(t *testing.T) {
+	store, teardown := setupTest(t)
+	defer teardown(t)
 
-	db, err := OpenRedis()
-	assert.NoError(t, err)
-	defer db.Close()
-
-	store := db.(*redisStore)
 	for i := 0; i < 10000; i++ {
 		if i%100 == 99 {
 			store.Failure()
@@ -25,14 +21,6 @@ func TestStatsMerge(t *testing.T) {
 
 	assert.EqualValues(t, 10000, store.TotalProcessed())
 	assert.EqualValues(t, 100, store.TotalFailures())
-
-	value, err := store.client.IncrBy("Processed", 0).Result()
-	assert.NoError(t, err)
-	assert.EqualValues(t, 10000, value)
-
-	value, err = store.client.IncrBy("Failures", 0).Result()
-	assert.NoError(t, err)
-	assert.EqualValues(t, 100, value)
 
 	store.Failure()
 	store.Success()

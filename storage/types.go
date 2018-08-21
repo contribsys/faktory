@@ -26,9 +26,9 @@ type Store interface {
 
 	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
-	Processed() uint64
 	Failure() error
-	Failures() uint64
+	TotalProcessed() uint64
+	TotalFailures() uint64
 
 	// creates a backup of the current database
 	//Backup() error
@@ -66,8 +66,7 @@ type Queue interface {
 type SortedSet interface {
 	Name() string
 	Size() uint64
-	Clear() (uint64, error)
-	Reset() int
+	Clear() error
 
 	AddElement(timestamp string, jid string, payload []byte) error
 

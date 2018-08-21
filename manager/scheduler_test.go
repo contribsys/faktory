@@ -12,8 +12,6 @@ import (
 )
 
 func TestPurge(t *testing.T) {
-	t.Parallel()
-
 	store, teardown := setupTest(t)
 	defer teardown(t)
 
@@ -51,69 +49,61 @@ func TestPurge(t *testing.T) {
 }
 
 func TestEnqueueScheduledJobs(t *testing.T) {
-	t.Run("EnqueueScheduledJobs", func(t *testing.T) {
-		t.Parallel()
+	store, teardown := setupTest(t)
+	defer teardown(t)
 
-		store, teardown := setupTest(t)
-		defer teardown(t)
+	m := NewManager(store)
 
-		m := NewManager(store)
+	job := client.NewJob("ScheduledJob", 1, 2, 3)
+	q, err := store.GetQueue(job.Queue)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 0, store.Scheduled().Size())
 
-		job := client.NewJob("ScheduledJob", 1, 2, 3)
-		q, err := store.GetQueue(job.Queue)
-		assert.NoError(t, err)
-		assert.EqualValues(t, 0, q.Size())
-		assert.EqualValues(t, 0, store.Scheduled().Size())
+	expiry := util.Thens(time.Now())
+	addJob(t, store.Scheduled(), expiry, job)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 1, store.Scheduled().Size())
 
-		expiry := util.Thens(time.Now())
-		addJob(t, store.Scheduled(), expiry, job)
-		assert.EqualValues(t, 0, q.Size())
-		assert.EqualValues(t, 1, store.Scheduled().Size())
+	count, err := m.EnqueueScheduledJobs()
+	assert.EqualValues(t, 1, count)
+	assert.EqualValues(t, 1, q.Size())
+	assert.EqualValues(t, 0, store.Scheduled().Size())
+}
 
-		count, err := m.EnqueueScheduledJobs()
-		assert.EqualValues(t, 1, count)
-		assert.EqualValues(t, 1, q.Size())
-		assert.EqualValues(t, 0, store.Scheduled().Size())
-	})
+func TestEnqueueScheduledMultipleJobs(t *testing.T) {
+	store, teardown := setupTest(t)
+	defer teardown(t)
 
-	t.Run("EnqueueScheduledMultipleJobs", func(t *testing.T) {
-		t.Parallel()
+	m := NewManager(store)
 
-		store, teardown := setupTest(t)
-		defer teardown(t)
+	job := client.NewJob("ScheduledJob1", 1, 2, 3)
+	q, err := store.GetQueue(job.Queue)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 0, store.Scheduled().Size())
 
-		m := NewManager(store)
+	expiry := util.Thens(time.Now())
+	addJob(t, store.Scheduled(), expiry, job)
 
-		job := client.NewJob("ScheduledJob1", 1, 2, 3)
-		q, err := store.GetQueue(job.Queue)
-		assert.NoError(t, err)
-		assert.EqualValues(t, 0, q.Size())
-		assert.EqualValues(t, 0, store.Scheduled().Size())
+	job = client.NewJob("ScheduledJob2", 1, 2, 3)
+	expiry = util.Thens(time.Now().Add(time.Duration(5) * time.Minute))
+	addJob(t, store.Scheduled(), expiry, job)
 
-		expiry := util.Thens(time.Now())
-		addJob(t, store.Scheduled(), expiry, job)
+	job = client.NewJob("ScheduledJob3", 1, 2, 3)
+	expiry = util.Thens(time.Now().Add(time.Duration(8) * time.Minute))
+	addJob(t, store.Scheduled(), expiry, job)
 
-		job = client.NewJob("ScheduledJob2", 1, 2, 3)
-		expiry = util.Thens(time.Now().Add(time.Duration(5) * time.Minute))
-		addJob(t, store.Scheduled(), expiry, job)
+	assert.EqualValues(t, 0, q.Size())
+	assert.EqualValues(t, 3, store.Scheduled().Size())
 
-		job = client.NewJob("ScheduledJob3", 1, 2, 3)
-		expiry = util.Thens(time.Now().Add(time.Duration(8) * time.Minute))
-		addJob(t, store.Scheduled(), expiry, job)
-
-		assert.EqualValues(t, 0, q.Size())
-		assert.EqualValues(t, 3, store.Scheduled().Size())
-
-		count, err := m.EnqueueScheduledJobs()
-		assert.EqualValues(t, 1, count)
-		assert.EqualValues(t, 1, q.Size())
-		assert.EqualValues(t, 2, store.Scheduled().Size())
-	})
+	count, err := m.EnqueueScheduledJobs()
+	assert.EqualValues(t, 1, count)
+	assert.EqualValues(t, 1, q.Size())
+	assert.EqualValues(t, 2, store.Scheduled().Size())
 }
 
 func TestRetryJobs(t *testing.T) {
-	t.Parallel()
-
 	store, teardown := setupTest(t)
 	defer teardown(t)
 

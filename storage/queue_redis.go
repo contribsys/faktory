@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/util"
+	"github.com/go-redis/redis"
 )
 
 type redisQueue struct {
@@ -86,6 +87,9 @@ func (q *redisQueue) _pop() ([]byte, error) {
 func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
 	val, err := q.store.client.BRPop(2*time.Second, q.name).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return nil, nil
+		}
 		return nil, err
 	}
 

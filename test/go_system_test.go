@@ -17,6 +17,7 @@ import (
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,11 +26,15 @@ func TestSystem(t *testing.T) {
 	opts := cli.ParseArguments()
 	util.InitLogger("info")
 
-	os.RemoveAll("/tmp/system.db")
-	defer os.RemoveAll("/tmp/system.db")
+	dir := "/tmp/system.db"
+	sock := fmt.Sprintf("%s/test.sock", dir)
+	defer os.RemoveAll(dir)
+	defer storage.StopRedis()
+
+	storage.BootRedis(dir, sock)
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
-		StorageDirectory: "/tmp/system.db",
+		StorageDirectory: dir,
 	})
 	if err != nil {
 		panic(err)
@@ -69,10 +74,10 @@ func TestSystem(t *testing.T) {
 	}
 
 	wg.Wait()
-	s.Stop(nil)
+	assert.EqualValues(t, 3*each, s.Store().TotalProcessed())
+	assert.EqualValues(t, 3*(each/100), s.Store().TotalFailures())
 
-	assert.EqualValues(t, 3*each, s.Store().Processed())
-	assert.EqualValues(t, 3*(each/100), s.Store().Failures())
+	s.Stop(nil)
 }
 
 func pushAndPop(t *testing.T, count int) {

@@ -3,7 +3,9 @@ package storage
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -13,6 +15,7 @@ import (
 
 	"regexp"
 
+	faktory "github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/go-redis/redis"
 )
@@ -73,6 +76,17 @@ func BootRedis(path string, sock string) {
 		util.Debugf("Redis not alive, booting... -- %s", err)
 
 		conffilename := "/tmp/redis.conf"
+		if _, err := os.Stat(conffilename); err != nil {
+			if err != nil && os.IsNotExist(err) {
+				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, faktory.Version)), 0x444)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				panic(err)
+			}
+		}
+
 		redisLoc := "/usr/local/bin/redis-server"
 		loglevel := "notice"
 		if util.LogDebug {
@@ -143,6 +157,10 @@ func BootRedis(path string, sock string) {
 
 func OpenRedis() (Store, error) {
 	util.LogInfo = true
+
+	if redisSock == "" {
+		return nil, errors.New("redis not booted, cannot start")
+	}
 
 	// find and reserve an unused DB index
 	db := 0
@@ -225,30 +243,39 @@ func (store *redisStore) Close() error {
 	defer store.mu.Unlock()
 
 	opens -= 1
+	return nil
+}
 
-	if false && opens == 0 && redisPid > 0 {
-		util.Infof("Shutting down Redis PID %d", redisPid)
-		p, err := os.FindProcess(redisPid)
-		if err != nil {
-			return err
-		}
-		err = p.Signal(syscall.SIGTERM)
-		if err != nil {
-			return err
-		}
-		_, err = p.Wait()
-		if err != nil {
-			return err
-		}
-
-		_ = os.Remove(redisSock)
-
-		redisPid = 0
-		redisPort = 0
-		redisPath = ""
-		redisConf = ""
-		redisSock = ""
+func StopRedis() error {
+	if opens != 0 {
+		return errors.New("Redis still opened by clients, cannot stop")
 	}
+
+	if redisPid == 0 {
+		return errors.New("Redis not opened, cannot stop")
+	}
+
+	util.Infof("Shutting down Redis PID %d", redisPid)
+	p, err := os.FindProcess(redisPid)
+	if err != nil {
+		return err
+	}
+	err = p.Signal(syscall.SIGTERM)
+	if err != nil {
+		return err
+	}
+	_, err = p.Wait()
+	if err != nil {
+		return err
+	}
+
+	_ = os.Remove(redisSock)
+
+	redisPid = 0
+	redisPort = 0
+	redisPath = ""
+	redisConf = ""
+	redisSock = ""
 	return nil
 }
 
@@ -267,3 +294,55 @@ func (store *redisStore) Working() SortedSet {
 func (store *redisStore) Dead() SortedSet {
 	return store.dead
 }
+
+const (
+	redisconf = `
+# DO NOT EDIT
+# Created by Faktory %s
+bind 127.0.0.1 ::1
+protected-mode yes
+port 0
+tcp-backlog 511
+
+unixsocket /tmp/faktory-redis.sock
+unixsocketperm 700
+timeout 0
+tcp-keepalive 30
+
+daemonize no
+supervised no
+
+# Specify the server verbosity level.
+# This can be one of:
+# debug (a lot of information, useful for development/testing)
+# verbose (many rarely useful info, but not a mess like the debug level)
+# notice (moderately verbose, what you want in production probably)
+# warning (only very important / critical messages are logged)
+loglevel notice
+logfile /tmp/redis.log
+
+databases 16
+
+save 900 1
+save 300 10
+save 60 100
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename faktory.rdb
+dir /usr/local/var/db/redis/
+
+slave-serve-stale-data yes
+slave-read-only yes
+slave-priority 100
+
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+
+lua-time-limit 5000
+
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+	`
+)

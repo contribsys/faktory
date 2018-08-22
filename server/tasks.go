@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -55,29 +54,5 @@ func (r *beatReaper) Stats() map[string]interface{} {
 	return map[string]interface{}{
 		"size":   r.w.Count(),
 		"reaped": r.count,
-	}
-}
-
-type cacheReset struct {
-	s     storage.Store
-	count int
-}
-
-func (r *cacheReset) Name() string {
-	return "Storage Cache"
-}
-
-func (r *cacheReset) Execute() error {
-	r.count += r.s.Retries().Reset()
-	r.count += r.s.Scheduled().Reset()
-	r.count += r.s.Working().Reset()
-	r.count += r.s.Dead().Reset()
-	r.s.Compact()
-	return nil
-}
-
-func (r *cacheReset) Stats() map[string]interface{} {
-	return map[string]interface{}{
-		"resetCount": r.count,
 	}
 }

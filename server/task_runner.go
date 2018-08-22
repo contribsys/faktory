@@ -131,11 +131,6 @@ func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	ts.AddTask(15, &reservationReaper{s.manager, 0})
 	// reaps workers who have not heartbeated
 	ts.AddTask(15, &beatReaper{s.workers, 0})
-	// backup runner
-	policy := newBackupPolicy(s)
-	ts.AddTask(policy.Frequency(), policy)
-
-	ts.AddTask(60, &cacheReset{s.store, 0})
 
 	ts.Run(waiter)
 	s.taskRunner = ts

@@ -103,7 +103,7 @@ func (s *Server) AddTask(everySec int64, task Taskable) {
 }
 
 func (s *Server) Boot() error {
-	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
+	store, err := storage.Open("redis", s.Options.StorageDirectory)
 	if err != nil {
 		return err
 	}
@@ -333,8 +333,8 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"default_size":    defalt.Size(),
-			"total_failures":  s.store.Failures(),
-			"total_processed": s.store.Processed(),
+			"total_failures":  s.store.TotalFailures(),
+			"total_processed": s.store.TotalProcessed(),
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
 			"tasks":           s.taskRunner.Stats()},

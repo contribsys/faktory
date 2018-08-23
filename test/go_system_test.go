@@ -29,12 +29,14 @@ func TestSystem(t *testing.T) {
 	dir := "/tmp/system.db"
 	sock := fmt.Sprintf("%s/test.sock", dir)
 	defer os.RemoveAll(dir)
-	defer storage.StopRedis()
 
 	storage.BootRedis(dir, sock)
+	defer storage.StopRedis(sock)
+
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.Binding,
 		StorageDirectory: dir,
+		RedisSock:        sock,
 	})
 	if err != nil {
 		panic(err)

@@ -20,12 +20,14 @@ func runServer(binding string, runner func()) {
 	dir := fmt.Sprintf("/tmp/%s", strings.Replace(binding, ":", "_", 1))
 	defer os.RemoveAll(dir)
 
-	storage.BootRedis(dir, fmt.Sprintf("%s/test.sock", dir))
-	defer storage.StopRedis()
+	sock := fmt.Sprintf("%s/test.sock", dir)
+	storage.BootRedis(dir, sock)
+	defer storage.StopRedis(sock)
 
 	opts := &ServerOptions{
 		Binding:          binding,
 		StorageDirectory: dir,
+		RedisSock:        sock,
 		ConfigDirectory:  os.ExpandEnv("$HOME/.faktory"),
 	}
 	s, err := NewServer(opts)

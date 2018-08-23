@@ -28,6 +28,7 @@ var (
 type ServerOptions struct {
 	Binding          string
 	StorageDirectory string
+	RedisSock        string
 	ConfigDirectory  string
 	Environment      string
 }
@@ -103,7 +104,7 @@ func (s *Server) AddTask(everySec int64, task Taskable) {
 }
 
 func (s *Server) Boot() error {
-	store, err := storage.Open("redis", s.Options.StorageDirectory)
+	store, err := storage.Open("redis", s.Options.RedisSock)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+
+	"github.com/go-redis/redis"
 )
 
 type BackupInfo struct {
@@ -21,8 +23,8 @@ type Store interface {
 	GetQueue(string) (Queue, error)
 	EachQueue(func(Queue))
 	Stats() map[string]string
-	//EnqueueAll(SortedSet) error
-	//EnqueueFrom(SortedSet, []byte) error
+	EnqueueAll(SortedSet) error
+	EnqueueFrom(SortedSet, []byte) error
 
 	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
@@ -42,6 +44,10 @@ type Store interface {
 	Compact() error
 
 	Raw() KV
+}
+
+type Redis interface {
+	Redis() *redis.Client
 }
 
 type Queue interface {
@@ -86,7 +92,7 @@ type SortedSet interface {
 
 func Open(dbtype string, path string) (Store, error) {
 	if dbtype == "redis" {
-		return OpenRedis()
+		return OpenRedis(path)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

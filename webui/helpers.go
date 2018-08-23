@@ -185,8 +185,7 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 	switch action {
 	case "delete":
 		if len(keys) == 1 && keys[0] == "all" {
-			_, err := set.Clear()
-			return err
+			return set.Clear()
 		} else {
 			for _, key := range keys {
 				err := set.Remove([]byte(key))
@@ -233,6 +232,14 @@ func uptimeInDays() string {
 	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
 }
 
+func redis_info() string {
+	client := defaultServer.Store().(storage.Redis)
+	val, err := client.Redis().Info().Result()
+	if err != nil {
+		return fmt.Sprintf("%v", err)
+	}
+	return val
+}
 func rss() string {
 	ex, err := util.FileExists("/proc/self/status")
 	if err != nil || !ex {

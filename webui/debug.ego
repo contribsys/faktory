@@ -4,11 +4,8 @@ package webui
 import (
   "net/http"
   "runtime"
-  "time"
 
   "github.com/contribsys/faktory/client"
-  "github.com/contribsys/faktory/storage"
-  "github.com/contribsys/gorocksdb"
 )
 
 func ego_debug(w io.Writer, req *http.Request) {
@@ -39,7 +36,7 @@ func ego_debug(w io.Writer, req *http.Request) {
     </tr>
     <tr>
       <th><%= t(req, "Version") %></th>
-      <td>Faktory <%= client.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
+      <td>Faktory <%= client.Version %></td>
     </tr>
     <tr>
     <th><%= t(req, "Data Location") %></th>
@@ -70,38 +67,10 @@ func ego_debug(w io.Writer, req *http.Request) {
 </table>
 </div>
 
-<h3><%= t(req, "Backups") %></h3>
-<div class="container">
-  <div class="table_container">
-    <table class="error table table-bordered table-striped">
-      <thead>
-        <tr>
-          <th>Id</th>
-          <th>Files</th>
-          <th>Size</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
-        <tr>
-          <td><%= bi.Id %></td>
-          <td><%= bi.FileCount %></td>
-          <td><%= uintWithDelimiter(uint64(bi.Size)) %></td>
-          <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
-        </tr>
-        <% }) %>
-        <% if err != nil { %><%= err.Error() %><% } %>
-      </tbody>
-    </table>
-  </div>
-  <div class="btn-group pull-left flip">
-    <form action="/debug" method="post">
-      <%== csrfTag(req) %>
-      <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
-    </form>
-  </div>
-</div>
+<h3><%= t(req, "Redis Info") %></h3>
+<pre>
+<%= redis_info() %>
+</pre>
 
 <h3><%= t(req, "Disk Usage") %></h3>
 <pre>
@@ -109,10 +78,5 @@ func ego_debug(w io.Writer, req *http.Request) {
 <%= df_h() %>
 </pre>
 
-<h3><%= t(req, "RocksDB Statistics") %></h3>
-<div class="table_container">
-<pre>
-<%= stats["stats"] %>
-</pre>
 <% }) %>
 <% } %>

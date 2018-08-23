@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"syscall"
@@ -34,14 +35,9 @@ type redisStore struct {
 }
 
 var (
-	redisPort = 0
-	redisPid  = 0
-	redisPath = ""
-	redisConf = ""
-	redisSock = ""
-	opens     = 0
-	dbs       = map[int]bool{}
-	dbLock    = sync.Mutex{}
+	opens      = 0
+	instances  = map[string]*exec.Cmd{}
+	redisMutex = sync.Mutex{}
 )
 
 func MustBootRedis() {
@@ -59,6 +55,12 @@ func MustBootRedis() {
 func BootRedis(path string, sock string) {
 	util.LogInfo = true
 	util.LogDebug = true
+
+	redisMutex.Lock()
+	defer redisMutex.Unlock()
+	if _, ok := instances[sock]; ok {
+		return
+	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
 	err := os.MkdirAll(path, os.ModeDir|0755)
@@ -78,7 +80,7 @@ func BootRedis(path string, sock string) {
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
-				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, faktory.Version)), 0x444)
+				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, faktory.Version)), 0444)
 				if err != nil {
 					panic(err)
 				}
@@ -87,7 +89,6 @@ func BootRedis(path string, sock string) {
 			}
 		}
 
-		redisLoc := "/usr/local/bin/redis-server"
 		loglevel := "notice"
 		if util.LogDebug {
 			loglevel = "verbose"
@@ -103,11 +104,12 @@ func BootRedis(path string, sock string) {
 			path,
 		}
 
-		pid, err := syscall.ForkExec(redisLoc, arguments, nil)
+		cmd := exec.Command(arguments[0], arguments[1:]...)
+		instances[sock] = cmd
+		err := cmd.Start()
 		if err != nil {
 			panic(err)
 		}
-		redisPid = pid
 
 		// wait a few seconds for Redis to start
 		start := time.Now()
@@ -150,22 +152,18 @@ func BootRedis(path string, sock string) {
 	if err != nil {
 		panic(err)
 	}
-
-	redisPath = path
-	redisSock = sock
 }
 
-func OpenRedis() (Store, error) {
+func OpenRedis(sock string) (Store, error) {
 	util.LogInfo = true
 
-	if redisSock == "" {
+	if _, ok := instances[sock]; !ok {
 		return nil, errors.New("redis not booted, cannot start")
 	}
 
-	// find and reserve an unused DB index
 	db := 0
 	rs := &redisStore{
-		Name:     redisPath,
+		Name:     sock,
 		DB:       db,
 		mu:       sync.Mutex{},
 		queueSet: map[string]*redisQueue{},
@@ -174,21 +172,20 @@ func OpenRedis() (Store, error) {
 
 	rs.client = redis.NewClient(&redis.Options{
 		Network: "unix",
-		Addr:    redisSock,
+		Addr:    sock,
 		DB:      db,
 	})
 	_, err := rs.client.Ping().Result()
 	if err != nil {
 		return nil, err
 	}
-	opens += 1
 	return rs, nil
 }
 
 func (store *redisStore) Stats() map[string]string {
 	return map[string]string{
 		"stats": store.client.Info().String(),
-		"name":  redisSock,
+		"name":  store.Name,
 	}
 }
 
@@ -246,21 +243,22 @@ func (store *redisStore) Close() error {
 	return nil
 }
 
-func StopRedis() error {
-	if opens != 0 {
-		return errors.New("Redis still opened by clients, cannot stop")
+func (store *redisStore) Redis() *redis.Client {
+	return store.client
+}
+
+func StopRedis(sock string) error {
+	redisMutex.Lock()
+	defer redisMutex.Unlock()
+
+	cmd, ok := instances[sock]
+	if !ok {
+		return errors.New("No such redis instance " + sock)
 	}
 
-	if redisPid == 0 {
-		return errors.New("Redis not opened, cannot stop")
-	}
-
-	util.Infof("Shutting down Redis PID %d", redisPid)
-	p, err := os.FindProcess(redisPid)
-	if err != nil {
-		return err
-	}
-	err = p.Signal(syscall.SIGTERM)
+	util.Infof("Shutting down Redis PID %d", cmd.Process.Pid)
+	p := cmd.Process
+	err := p.Signal(syscall.SIGTERM)
 	if err != nil {
 		return err
 	}
@@ -268,14 +266,8 @@ func StopRedis() error {
 	if err != nil {
 		return err
 	}
+	delete(instances, sock)
 
-	_ = os.Remove(redisSock)
-
-	redisPid = 0
-	redisPort = 0
-	redisPath = ""
-	redisConf = ""
-	redisSock = ""
 	return nil
 }
 
@@ -293,6 +285,14 @@ func (store *redisStore) Working() SortedSet {
 
 func (store *redisStore) Dead() SortedSet {
 	return store.dead
+}
+
+func (store *redisStore) EnqueueAll(sset SortedSet) error {
+	return errors.New("EnqueueAll not implemented")
+}
+
+func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
+	return errors.New("EnqueueFrom not implemented")
 }
 
 const (

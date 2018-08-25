@@ -14,7 +14,7 @@ import (
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := defaultServer.CurrentState()
+	hash, err := ctx(r).Server().CurrentState()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -31,7 +31,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if defaultServer == nil {
+	if ctx(r).Server() == nil {
 		http.Error(w, "Server not booted", http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +53,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	queueName := name[1]
-	q, err := defaultServer.Store().GetQueue(queueName)
+	q, err := ctx(r).Store().GetQueue(queueName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,12 +109,12 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func retriesHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Retries()
+	set := ctx(r).Store().Retries()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -149,7 +149,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Retries().Get([]byte(key))
+	data, err := ctx(r).Store().Retries().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -176,12 +176,12 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func scheduledHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Scheduled()
+	set := ctx(r).Store().Scheduled()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -217,7 +217,7 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := defaultServer.Store().Scheduled().Get([]byte(key))
+	data, err := ctx(r).Store().Scheduled().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -244,12 +244,12 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func morgueHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Dead()
+	set := ctx(r).Store().Dead()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -284,7 +284,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Dead().Get([]byte(key))
+	data, err := ctx(r).Store().Dead().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -321,7 +321,7 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			for _, client := range defaultServer.Heartbeats() {
+			for _, client := range ctx(r).Server().Heartbeats() {
 				if wid == "all" || wid == client.Wid {
 					client.Signal(signal)
 				}

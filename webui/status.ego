@@ -6,7 +6,7 @@ import "net/http"
 func ego_status(w io.Writer, req *http.Request) {
 %>
 <span class="status">
-  <% x := currentStatus() %>
+  <% x := currentStatus(req) %>
   <i class="status-sprite status-<%= x %>"></i>
 </span>
 <% } %>

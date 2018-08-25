@@ -32,14 +32,12 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui \
-		github.com/contribsys/faktory/cmd/faktory-cli
+		github.com/contribsys/faktory/webui
 
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3  \
-		--build-arg ROCKSDB_VERSION=5.14.2 \
 		--tag contribsys/faktory:$(VERSION) \
 		--tag contribsys/faktory:latest .
 
@@ -66,7 +64,6 @@ cover:
 # we can't cross-compile when using cgo <cry>
 #	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
 	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
 
 # this is a separate target because loadtest doesn't need rocksdb or webui
@@ -94,13 +91,10 @@ rmcache:
 clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
-	@rm -f main faktory templates.go faktory-cli
+	@rm -f main faktory templates.go
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
-
-repl: clean generate ## Run the Faktory CLI
-	go run cmd/faktory-cli/repl.go -l debug -e development
 
 run: clean generate ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
@@ -159,10 +153,9 @@ build_rpm_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-rpm: version_check faktory faktory-cli
+rpm: version_check faktory
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
@@ -176,7 +169,6 @@ rpm: version_check faktory faktory-cli
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 build_deb_upstart:
@@ -194,10 +186,9 @@ build_deb_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-deb: version_check faktory faktory-cli
+deb: version_check faktory
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \
@@ -212,7 +203,6 @@ deb: version_check faktory faktory-cli
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 tag:

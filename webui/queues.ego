@@ -17,7 +17,7 @@ func ego_listQueues(w io.Writer, req *http.Request) {
       <th><%= t(req, "Size") %></th>
       <th><%= t(req, "Actions") %></th>
     </thead>
-    <% for _, queue := range queues() { %>
+    <% for _, queue := range queues(req) { %>
       <tr>
         <td>
           <a href="/queues/<%= queue.Name %>"><%= queue.Name %></a>

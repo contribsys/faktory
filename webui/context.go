@@ -3,6 +3,9 @@ package webui
 import (
 	"context"
 	"net/http"
+
+	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/storage"
 )
 
 type Context interface {
@@ -15,6 +18,7 @@ type Context interface {
 type DefaultContext struct {
 	context.Context
 
+	webui    *WebUI
 	response http.ResponseWriter
 	request  *http.Request
 	locale   string
@@ -32,6 +36,14 @@ func (d *DefaultContext) Request() *http.Request {
 
 func (d *DefaultContext) UseCsrf() bool {
 	return d.csrf
+}
+
+func (d *DefaultContext) Store() storage.Store {
+	return d.webui.Server.Store()
+}
+
+func (d *DefaultContext) Server() *server.Server {
+	return d.webui.Server
 }
 
 type Translator interface {

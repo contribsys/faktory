@@ -8,22 +8,16 @@
   revision = "ff0f66940b829dc66c81dad34746d4349b83eb9e"
 
 [[projects]]
-  name = "github.com/chzyer/readline"
-  packages = ["."]
-  revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
-  version = "v1.4"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/contribsys/gorocksdb"
-  packages = ["."]
-  revision = "b71ec538bdb83a8809f5abaa601bff3264d64eb5"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/go-redis/redis"
+  packages = [".","internal","internal/consistenthash","internal/hashtag","internal/pool","internal/proto","internal/singleflight","internal/util"]
+  revision = "1614e579ed966441b8e0c3ccea1dd0fbbd93a6ae"
+  version = "v6.14.0"
 
 [[projects]]
   branch = "master"
@@ -52,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "823f5df8e6861ab23831b33e51dc3fbcad49dcde91a385c521c5f49a5847cff7"
+  inputs-digest = "b7f53594c872fea2b223568c41e4865421af3a3d8c340d437a38752d45583016"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -9,11 +9,10 @@ import (
 )
 
 func ego_debug(w io.Writer, req *http.Request) {
-  stats := defaultServer.Store().Stats()
+  stats := ctx(req).Store().Stats()
   var m runtime.MemStats
   runtime.ReadMemStats(&m)
 %>
-
 <% ego_layout(w, req, func() { %>
 
 <h3><%= t(req, "Debugging") %></h3>
@@ -24,9 +23,9 @@ func ego_debug(w io.Writer, req *http.Request) {
         <th><%= t(req, "Locale") %></th>
         <td>
           <select name="locales" id="faktory_locale">
-            <% for _,locale := range sortedLocaleNames(locales) { %>
-              <option name="<%= locale %>" <% if locale == req.Context().(*DefaultContext).locale { %> selected <% } %> > <%= locale %> </option>
-            <% } %>
+            <% sortedLocaleNames(req, func(locale string, current bool) { %>
+              <option name="<%= locale %>" <% if current { %> selected <% } %> > <%= locale %> </option>
+            <% }) %>
           </select>
           <span style="font-size: small">
             Want to help us improve the translations?
@@ -69,7 +68,7 @@ func ego_debug(w io.Writer, req *http.Request) {
 
 <h3><%= t(req, "Redis Info") %></h3>
 <pre>
-<%= redis_info() %>
+<%= redis_info(req) %>
 </pre>
 
 <h3><%= t(req, "Disk Usage") %></h3>

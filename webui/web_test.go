@@ -14,9 +14,9 @@ import (
 )
 
 func TestLiveServer(t *testing.T) {
-	bootRuntime(t, "webui", func(s *server.Server, t *testing.T) {
+	bootRuntime(t, "webui", func(ui *WebUI, s *server.Server, t *testing.T) {
 		t.Run("StaticAssets", func(t *testing.T) {
-			req, err := NewRequest("GET", "http://localhost:7420/static/application.js", nil)
+			req, err := ui.NewRequest("GET", "http://localhost:7420/static/application.js", nil)
 			assert.NoError(t, err)
 
 			w := httptest.NewRecorder()
@@ -26,7 +26,7 @@ func TestLiveServer(t *testing.T) {
 		})
 
 		t.Run("Debug", func(t *testing.T) {
-			req, err := NewRequest("GET", "http://localhost:7420/debug", nil)
+			req, err := ui.NewRequest("GET", "http://localhost:7420/debug", nil)
 			assert.NoError(t, err)
 
 			w := httptest.NewRecorder()
@@ -74,15 +74,13 @@ func TestLiveServer(t *testing.T) {
 	})
 }
 
-func bootRuntime(t *testing.T, name string, fn func(*server.Server, *testing.T)) {
+func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *testing.T)) {
 	dir := fmt.Sprintf("/tmp/faktory-test-%s", name)
 	defer os.RemoveAll(dir)
 
 	sock := fmt.Sprintf("%s/redis.sock", dir)
 	storage.BootRedis(dir, sock)
 	defer storage.StopRedis(sock)
-
-	InitialSetup("")
 
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          "localhost:7418",
@@ -106,7 +104,9 @@ func bootRuntime(t *testing.T, name string, fn func(*server.Server, *testing.T))
 		}
 	}()
 
-	fn(s, t)
+	web := NewWeb(s, DefaultOptions())
+
+	fn(web, s, t)
 }
 
 func fakeJob() (string, []byte) {

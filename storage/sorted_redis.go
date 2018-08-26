@@ -62,7 +62,7 @@ func (rs *redisSorted) AddElement(timestamp string, jid string, payload []byte) 
 func decompose(key []byte) (float64, string, error) {
 	slice := strings.Split(string(key), "|")
 	if len(slice) != 2 {
-		return 0, "", errors.New("Invalid key, expected \"timestamp|jid\"")
+		return 0, "", errors.New(fmt.Sprintf("Invalid key, expected \"timestamp|jid\", not %s", string(key)))
 	}
 	timestamp := slice[0]
 	tim, err := util.ParseTime(timestamp)
@@ -83,7 +83,7 @@ func (rs *redisSorted) getScore(score float64) ([]string, error) {
 }
 
 // key is "timestamp|jid"
-func (rs *redisSorted) Get(key []byte) ([]byte, error) {
+func (rs *redisSorted) Get(key []byte) (SortedEntry, error) {
 	time_f, jid, err := decompose(key)
 	if err != nil {
 		return nil, err
@@ -96,12 +96,12 @@ func (rs *redisSorted) Get(key []byte) ([]byte, error) {
 		return nil, nil
 	}
 	if len(elms) == 1 {
-		return []byte(elms[0]), nil
+		return NewEntry(time_f, []byte(elms[0])), nil
 	}
 
 	for _, elm := range elms {
 		if strings.Index(elm, jid) > 0 {
-			return []byte(elm), nil
+			return NewEntry(time_f, []byte(elm)), nil
 		}
 	}
 	return nil, nil
@@ -261,9 +261,19 @@ func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
 	return results, nil
 }
 
-// Move the given key from this SortedSet to the given
-// SortedSet atomically.  The given func may mutate the payload and
-// return a new tstamp.
-func (rs *redisSorted) MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error {
-	return nil
+func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error {
+	job, err := entry.Job()
+	if err != nil {
+		return err
+	}
+
+	cnt, err := rs.store.rclient.ZRem(rs.name, string(entry.Value())).Result()
+	if err != nil {
+		return err
+	}
+	if cnt != 1 {
+		return errors.New("did not remove 1 expected element!")
+	}
+
+	return sset.AddElement(util.Thens(newtime), job.Jid, entry.Value())
 }

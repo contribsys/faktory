@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/go-redis/redis"
@@ -55,13 +56,8 @@ type Queue interface {
 	BPop(context.Context) ([]byte, error)
 	Clear() (uint64, error)
 
-	// Please note that k/vs are NOT safe to use outside of the func.
-	// You must copy the values if you want to stash them for later use.
-	//
-	//	  cpy = make([]byte, len(k))
-	//	  copy(cpy, k)
-	Each(func(index int, k, v []byte) error) error
-	Page(int64, int64, func(index int, k, v []byte) error) error
+	Each(func(index int, data []byte) error) error
+	Page(start int64, count int64, fn func(index int, data []byte) error) error
 
 	Delete(keys [][]byte) error
 }
@@ -80,7 +76,7 @@ type SortedSet interface {
 	Add(job *client.Job) error
 	AddElement(timestamp string, jid string, payload []byte) error
 
-	Get(key []byte) ([]byte, error)
+	Get(key []byte) (SortedEntry, error)
 	Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error)
 	Each(fn func(idx int, e SortedEntry) error) error
 
@@ -91,7 +87,7 @@ type SortedSet interface {
 	// Move the given key from this SortedSet to the given
 	// SortedSet atomically.  The given func may mutate the payload and
 	// return a new tstamp.
-	MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error
+	MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error
 }
 
 func Open(dbtype string, path string) (Store, error) {

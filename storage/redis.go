@@ -3,7 +3,6 @@ package storage
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -311,13 +310,12 @@ func (store *redisStore) EnqueueAll(sset SortedSet) error {
 }
 
 func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
-	data, err := sset.Get(key)
+	entry, err := sset.Get(key)
 	if err != nil {
 		return err
 	}
 
-	var job client.Job
-	err = json.Unmarshal(data, &job)
+	job, err := entry.Job()
 	if err != nil {
 		return err
 	}
@@ -332,7 +330,7 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 		return err
 	}
 
-	return q.Add(&job)
+	return q.Add(job)
 }
 
 const (

@@ -3,7 +3,6 @@ package webui
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -105,14 +104,14 @@ func uintWithDelimiter(val uint64) string {
 }
 
 func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, key, data []byte) error {
+	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
 		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
 		}
-		fn(idx, key, &job)
+		fn(idx, data, &job)
 		return nil
 	})
 	if err != nil {
@@ -215,15 +214,13 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		if len(keys) == 1 && keys[0] == "all" {
 			return ctx(req).Store().EnqueueAll(set)
 		} else {
-			expiry := util.Thens(time.Now().Add(180 * 24 * time.Hour))
+			expiry := time.Now().Add(180 * 24 * time.Hour)
 			for _, key := range keys {
-				elms := strings.Split(key, "|")
-				if len(elms) < 2 {
-					return errors.New("Invalid input " + key)
+				entry, err := set.Get([]byte(key))
+				if err != nil {
+					return err
 				}
-				err := set.MoveTo(ctx(req).Store().Dead(), elms[0], elms[1], func(data []byte) (string, []byte, error) {
-					return expiry, data, nil
-				})
+				err = set.MoveTo(ctx(req).Store().Dead(), entry, expiry)
 				if err != nil {
 					return err
 				}

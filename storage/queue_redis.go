@@ -32,12 +32,12 @@ func (q *redisQueue) Name() string {
 	return q.name
 }
 
-func (q *redisQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
+func (q *redisQueue) Page(start int64, count int64, fn func(index int, data []byte) error) error {
 	index := 0
 
-	slice, err := q.store.rclient.LRange(q.name, start-1, -(start + count)).Result()
+	slice, err := q.store.rclient.LRange(q.name, start, start+count).Result()
 	for _, job := range slice {
-		err = fn(index, nil, []byte(job))
+		err = fn(index, []byte(job))
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (q *redisQueue) Page(start int64, count int64, fn func(index int, k, v []by
 	return err
 }
 
-func (q *redisQueue) Each(fn func(index int, k, v []byte) error) error {
+func (q *redisQueue) Each(fn func(index int, data []byte) error) error {
 	return q.Page(0, -1, fn)
 }
 

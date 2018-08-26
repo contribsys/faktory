@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
@@ -16,28 +17,30 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.EqualValues(t, 0, sset.Size())
 
 			time := util.Nows()
-			jid := util.RandomJid()
-			err := sset.AddElement(time, jid, []byte("some data"))
+			jid, data := fakeJob()
+			err := sset.AddElement(time, jid, data)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, sset.Size())
 
 			key := fmt.Sprintf("%s|%s", time, jid)
-			data, err := sset.Get([]byte(key))
+			entry, err := sset.Get([]byte(key))
 			assert.NoError(t, err)
-			assert.Equal(t, "some data", string(data))
+			assert.NotNil(t, entry)
+			job, err := entry.Job()
+			assert.NoError(t, err)
+			assert.Equal(t, jid, job.Jid)
 
 			// add a second job with exact same time to handle edge case of
 			// sorted set entries with same score.
-			newjid := util.RandomJid()
-			payload := []byte(fmt.Sprintf("some data%s", newjid))
+			newjid, payload := fakeJob()
 			err = sset.AddElement(time, newjid, payload)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 2, sset.Size())
 
 			newkey := fmt.Sprintf("%s|%s", time, newjid)
-			data, err = sset.Get([]byte(newkey))
+			entry, err = sset.Get([]byte(newkey))
 			assert.NoError(t, err)
-			assert.Equal(t, payload, data)
+			assert.Equal(t, payload, entry.Value())
 
 			err = sset.Remove([]byte(newkey))
 			assert.NoError(t, err)
@@ -109,6 +112,31 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.NoError(t, err)
 			assert.EqualValues(t, 2, q.Size())
 			assert.EqualValues(t, 0, sset.Size())
+
+			job = client.NewJob("CronType", 1, 2, 3)
+			job.At = util.Nows()
+			err = sset.Add(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
+
+			err = sset.Each(func(idx int, entry SortedEntry) error {
+				k, err := entry.Key()
+				assert.NoError(t, err)
+				jkey = k
+				return nil
+			})
+
+			entry, err := sset.Get(jkey)
+			assert.NoError(t, err)
+
+			expiry := time.Now().Add(180 * 24 * time.Hour)
+
+			assert.EqualValues(t, 1, sset.Size())
+			assert.EqualValues(t, 0, store.Dead().Size())
+			err = sset.MoveTo(store.Dead(), entry, expiry)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, sset.Size())
+			assert.EqualValues(t, 1, store.Dead().Size())
 
 		})
 	})

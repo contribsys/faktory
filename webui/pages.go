@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 )
 
@@ -161,8 +160,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job client.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -172,7 +170,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Job %s is not a retry", job.Jid), http.StatusInternalServerError)
 		return
 	}
-	ego_retry(w, r, key, &job)
+	ego_retry(w, r, key, job)
 }
 
 func scheduledHandler(w http.ResponseWriter, r *http.Request) {
@@ -229,18 +227,13 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job client.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if job.At == "" {
-		http.Error(w, fmt.Sprintf("Job %s is not scheduled", job.Jid), http.StatusInternalServerError)
-		return
-	}
-	ego_scheduled_job(w, r, key, &job)
+	ego_scheduled_job(w, r, key, job)
 }
 
 func morgueHandler(w http.ResponseWriter, r *http.Request) {
@@ -296,14 +289,13 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job client.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ego_dead(w, r, key, &job)
+	ego_dead(w, r, key, job)
 }
 
 func busyHandler(w http.ResponseWriter, r *http.Request) {

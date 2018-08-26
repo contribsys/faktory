@@ -78,6 +78,7 @@ func TestPages(t *testing.T) {
 			q, _ := str.GetQueue("foobar")
 			q.Clear()
 			q.Push(5, []byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+			assert.EqualValues(t, 1, q.Size())
 
 			w := httptest.NewRecorder()
 			queueHandler(w, req)
@@ -85,7 +86,6 @@ func TestPages(t *testing.T) {
 			assert.True(t, strings.Contains(w.Body.String(), "1l23j12l3"), w.Body.String())
 			assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
 
-			assert.EqualValues(t, 1, q.Size())
 			payload := url.Values{
 				"action": {"delete"},
 			}
@@ -105,18 +105,18 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			str := s.Store()
-			q := str.Retries()
-			q.Clear()
+			retries := str.Retries()
+			retries.Clear()
 			jid1, data := fakeJob()
-			err = q.AddElement(util.Nows(), jid1, data)
+			err = retries.AddElement(util.Nows(), jid1, data)
 			assert.NoError(t, err)
 
 			jid2, data := fakeJob()
-			err = q.AddElement(util.Nows(), jid2, data)
+			err = retries.AddElement(util.Nows(), jid2, data)
 			assert.NoError(t, err)
 
 			var key []byte
-			q.Each(func(idx int, entry storage.SortedEntry) error {
+			retries.Each(func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -136,9 +136,9 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, sz, cnt)
 
 			assert.EqualValues(t, 0, def.Size())
-			assert.EqualValues(t, 2, q.Size())
+			assert.EqualValues(t, 2, retries.Size())
 			payload := url.Values{
-				"key":    {keys, "abadone"},
+				"key":    {keys},
 				"action": {"retry"},
 			}
 			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
@@ -149,10 +149,10 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, retries.Size())
 			assert.EqualValues(t, 1, def.Size())
 
-			err = q.Each(func(idx int, entry storage.SortedEntry) error {
+			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -170,8 +170,9 @@ func TestPages(t *testing.T) {
 			w = httptest.NewRecorder()
 			retriesHandler(w, req)
 
+			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, retries.Size())
 			assert.EqualValues(t, 1, str.Dead().Size())
 		})
 

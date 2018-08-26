@@ -77,15 +77,39 @@ func TestBasicSortedOps(t *testing.T) {
 			expectedTypes := []string{"SomeType", "OtherType"}
 			actualTypes := []string{}
 
-			sset.Each(func(idx int, entry SortedEntry) error {
+			err = sset.Each(func(idx int, entry SortedEntry) error {
 				j, err := entry.Job()
-				if err != nil {
-					return err
-				}
+				assert.NoError(t, err)
 				actualTypes = append(actualTypes, j.Type)
 				return nil
 			})
+			assert.NoError(t, err)
 			assert.Equal(t, expectedTypes, actualTypes)
+
+			var jkey []byte
+			err = sset.Each(func(idx int, entry SortedEntry) error {
+				k, err := entry.Key()
+				assert.NoError(t, err)
+				jkey = k
+				return nil
+			})
+			assert.NoError(t, err)
+
+			q, err := store.GetQueue("default")
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 2, sset.Size())
+
+			err = store.EnqueueFrom(sset, jkey)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, sset.Size())
+
+			err = store.EnqueueAll(sset)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 2, q.Size())
+			assert.EqualValues(t, 0, sset.Size())
+
 		})
 	})
 }

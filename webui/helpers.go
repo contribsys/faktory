@@ -145,14 +145,17 @@ func filtering(set string) string {
 }
 
 func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	err := set.Page(int64((currentPage-1)*count), int64(count), func(idx int, key []byte, data []byte) error {
-		var job client.Job
-		err := json.Unmarshal(data, &job)
+	_, err := set.Page(int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
+		job, err := entry.Job()
 		if err != nil {
-			util.Warnf("Error parsing JSON: %s", string(data))
+			util.Warnf("Error parsing JSON: %s", string(entry.Value()))
 			return err
 		}
-		fn(idx, key, &job)
+		key, err := entry.Key()
+		if err != nil {
+			return err
+		}
+		fn(idx, key, job)
 		return nil
 	})
 	if err != nil {
@@ -161,9 +164,9 @@ func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, 
 }
 
 func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
-	err := ctx(req).Store().Working().Each(func(idx int, key []byte, data []byte) error {
+	err := ctx(req).Store().Working().Each(func(idx int, entry storage.SortedEntry) error {
 		var res manager.Reservation
-		err := json.Unmarshal(data, &res)
+		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
 			util.Error("Cannot unmarshal reservation", err)
 		} else {

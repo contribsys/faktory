@@ -3,6 +3,7 @@ package storage
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 
 	"regexp"
 
-	faktory "github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/go-redis/redis"
 )
@@ -30,8 +31,8 @@ type redisStore struct {
 	dead      *redisSorted
 	working   *redisSorted
 
-	client *redis.Client
-	DB     int
+	rclient *redis.Client
+	DB      int
 }
 
 var (
@@ -68,19 +69,19 @@ func BootRedis(path string, sock string) {
 		panic(err)
 	}
 
-	client := redis.NewClient(&redis.Options{
+	rclient := redis.NewClient(&redis.Options{
 		Network: "unix",
 		Addr:    sock,
 	})
 
-	_, err = client.Ping().Result()
+	_, err = rclient.Ping().Result()
 	if err != nil {
 		util.Debugf("Redis not alive, booting... -- %s", err)
 
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
-				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, faktory.Version)), 0444)
+				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
 				if err != nil {
 					panic(err)
 				}
@@ -126,12 +127,12 @@ func BootRedis(path string, sock string) {
 		util.Debugf("Redis booted in %s", done.Sub(start))
 	}
 
-	_, err = client.Ping().Result()
+	_, err = rclient.Ping().Result()
 	if err != nil {
 		panic(err)
 	}
 
-	infos, err := client.Info().Result()
+	infos, err := rclient.Info().Result()
 	if err != nil {
 		panic(err)
 	}
@@ -148,7 +149,7 @@ func BootRedis(path string, sock string) {
 	}
 
 	util.Infof("Running Redis v%s", version)
-	err = client.Close()
+	err = rclient.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -170,12 +171,12 @@ func OpenRedis(sock string) (Store, error) {
 	}
 	rs.initSorted()
 
-	rs.client = redis.NewClient(&redis.Options{
+	rs.rclient = redis.NewClient(&redis.Options{
 		Network: "unix",
 		Addr:    sock,
 		DB:      db,
 	})
-	_, err := rs.client.Ping().Result()
+	_, err := rs.rclient.Ping().Result()
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func OpenRedis(sock string) (Store, error) {
 
 func (store *redisStore) Stats() map[string]string {
 	return map[string]string{
-		"stats": store.client.Info().String(),
+		"stats": store.rclient.Info().String(),
 		"name":  store.Name,
 	}
 }
@@ -196,12 +197,8 @@ func (store *redisStore) EachQueue(x func(Queue)) {
 	}
 }
 
-func (store *redisStore) Compact() error {
-	return nil
-}
-
 func (store *redisStore) Flush() error {
-	return store.client.FlushDB().Err()
+	return store.rclient.FlushDB().Err()
 }
 
 var (
@@ -244,7 +241,7 @@ func (store *redisStore) Close() error {
 }
 
 func (store *redisStore) Redis() *redis.Client {
-	return store.client
+	return store.rclient
 }
 
 func StopRedis(sock string) error {
@@ -288,11 +285,54 @@ func (store *redisStore) Dead() SortedSet {
 }
 
 func (store *redisStore) EnqueueAll(sset SortedSet) error {
-	return errors.New("EnqueueAll not implemented")
+	return sset.Each(func(_ int, entry SortedEntry) error {
+		j, err := entry.Job()
+		if err != nil {
+			return err
+		}
+
+		k, err := entry.Key()
+		if err != nil {
+			return err
+		}
+
+		q, err := store.GetQueue(j.Queue)
+		if err != nil {
+			return err
+		}
+
+		err = sset.Remove(k)
+		if err != nil {
+			return err
+		}
+
+		return q.Add(j)
+	})
 }
 
 func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
-	return errors.New("EnqueueFrom not implemented")
+	data, err := sset.Get(key)
+	if err != nil {
+		return err
+	}
+
+	var job client.Job
+	err = json.Unmarshal(data, &job)
+	if err != nil {
+		return err
+	}
+
+	q, err := store.GetQueue(job.Queue)
+	if err != nil {
+		return err
+	}
+
+	err = sset.Remove(key)
+	if err != nil {
+		return err
+	}
+
+	return q.Add(&job)
 }
 
 const (

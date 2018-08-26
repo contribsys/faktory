@@ -26,7 +26,7 @@ func (s *redisStore) Raw() KV {
 }
 
 func (kv *redisKV) Get(key string) ([]byte, error) {
-	value, err := kv.store.client.Get(key).Result()
+	value, err := kv.store.rclient.Get(key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
@@ -40,7 +40,7 @@ func (kv *redisKV) Set(key string, value []byte) error {
 	if value == nil {
 		return ErrNilValue
 	}
-	err := kv.store.client.Set(key, value, 0).Err()
+	err := kv.store.rclient.Set(key, value, 0).Err()
 	if err != nil {
 		return err
 	}

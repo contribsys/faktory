@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
@@ -133,7 +134,12 @@ func (e *setEntry) Key() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.key = []byte(fmt.Sprintf("%.6f|%s", e.score, j.Jid))
+
+	secs := int64(e.score)
+	nsecs := int64((e.score - float64(secs)) * 1000000000)
+	tim := time.Unix(secs, nsecs)
+
+	e.key = []byte(fmt.Sprintf("%s|%s", util.Thens(tim), j.Jid))
 	return e.key, nil
 }
 

@@ -2,8 +2,10 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/go-redis/redis"
 )
@@ -33,7 +35,7 @@ func (q *redisQueue) Name() string {
 func (q *redisQueue) Page(start int64, count int64, fn func(index int, k, v []byte) error) error {
 	index := 0
 
-	slice, err := q.store.client.LRange(q.name, start-1, -(start + count)).Result()
+	slice, err := q.store.rclient.LRange(q.name, start-1, -(start + count)).Result()
 	for _, job := range slice {
 		err = fn(index, nil, []byte(job))
 		if err != nil {
@@ -49,7 +51,7 @@ func (q *redisQueue) Each(fn func(index int, k, v []byte) error) error {
 }
 
 func (q *redisQueue) Clear() (uint64, error) {
-	q.store.client.Del(q.name)
+	q.store.rclient.Del(q.name)
 	return 0, nil
 }
 
@@ -59,11 +61,21 @@ func (q *redisQueue) init() error {
 }
 
 func (q *redisQueue) Size() uint64 {
-	return uint64(q.store.client.LLen(q.name).Val())
+	return uint64(q.store.rclient.LLen(q.name).Val())
+}
+
+func (q *redisQueue) Add(job *client.Job) error {
+	job.EnqueuedAt = util.Nows()
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	return q.Push(job.Priority, data)
 }
 
 func (q *redisQueue) Push(priority uint8, payload []byte) error {
-	q.store.client.LPush(q.name, payload)
+	q.store.rclient.LPush(q.name, payload)
 	return nil
 }
 
@@ -77,7 +89,7 @@ func (q *redisQueue) Pop() ([]byte, error) {
 }
 
 func (q *redisQueue) _pop() ([]byte, error) {
-	val, err := q.store.client.RPop(q.name).Result()
+	val, err := q.store.rclient.RPop(q.name).Result()
 	if val == "" {
 		return nil, nil
 	}
@@ -85,7 +97,7 @@ func (q *redisQueue) _pop() ([]byte, error) {
 }
 
 func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
-	val, err := q.store.client.BRPop(2*time.Second, q.name).Result()
+	val, err := q.store.rclient.BRPop(2*time.Second, q.name).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
@@ -98,7 +110,7 @@ func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
 
 func (q *redisQueue) Delete(vals [][]byte) error {
 	for _, val := range vals {
-		err := q.store.client.LRem(q.name, 1, val).Err()
+		err := q.store.rclient.LRem(q.name, 1, val).Err()
 		if err != nil {
 			return err
 		}

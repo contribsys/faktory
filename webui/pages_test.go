@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,6 +70,7 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("Queue", func(t *testing.T) {
+			s.Store().Flush()
 			req, err := ui.NewRequest("GET", "http://localhost:7420/queues/foobar", nil)
 			assert.NoError(t, err)
 
@@ -98,6 +100,7 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("Retries", func(t *testing.T) {
+			s.Store().Flush()
 			req, err := ui.NewRequest("GET", "http://localhost:7420/retries", nil)
 			assert.NoError(t, err)
 
@@ -113,10 +116,9 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			var key []byte
-			q.Each(func(idx int, k, v []byte) error {
-				key = make([]byte, len(k))
-				copy(key, k)
-				return nil
+			q.Each(func(idx int, entry storage.SortedEntry) error {
+				key, err = entry.Key()
+				return err
 			})
 			keys := string(key)
 
@@ -145,19 +147,18 @@ func TestPages(t *testing.T) {
 			w = httptest.NewRecorder()
 			retriesHandler(w, req)
 
+			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
 			assert.EqualValues(t, 1, q.Size())
 			assert.EqualValues(t, 1, def.Size())
 
-			err = q.Each(func(idx int, k, v []byte) error {
-				key = make([]byte, len(k))
-				copy(key, k)
-				return nil
+			err = q.Each(func(idx int, entry storage.SortedEntry) error {
+				key, err = entry.Key()
+				return err
 			})
 			assert.NoError(t, err)
 
 			keys = string(key)
-			assert.Equal(t, "mike", keys)
 			payload = url.Values{
 				"key":    {keys},
 				"action": {"kill"},
@@ -205,10 +206,9 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			var key []byte
-			q.Each(func(idx int, k, v []byte) error {
-				key = make([]byte, len(k))
-				copy(key, k)
-				return nil
+			q.Each(func(idx int, entry storage.SortedEntry) error {
+				key, err = entry.Key()
+				return err
 			})
 			keys := string(key)
 

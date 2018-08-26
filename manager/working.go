@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -56,9 +57,9 @@ func (m *manager) loadWorkingSet() error {
 	defer m.workingMutex.Unlock()
 
 	addedCount := 0
-	err := m.store.Working().Each(func(_ int, _ []byte, data []byte) error {
+	err := m.store.Working().Each(func(idx int, entry storage.SortedEntry) error {
 		var res Reservation
-		err := json.Unmarshal(data, &res)
+		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
 			return err
 		}

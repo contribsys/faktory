@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/go-redis/redis"
 )
 
@@ -32,16 +33,9 @@ type Store interface {
 	TotalProcessed() uint64
 	TotalFailures() uint64
 
-	// creates a backup of the current database
-	//Backup() error
-	//EachBackup(func(bi BackupInfo)) error
-	//RestoreFromLatest() error
-	//PurgeOldBackups(int) error
-
 	// Clear the database of all job data.
 	// Equivalent to Redis's FLUSHDB
 	Flush() error
-	Compact() error
 
 	Raw() KV
 }
@@ -53,7 +47,10 @@ type Redis interface {
 type Queue interface {
 	Name() string
 	Size() uint64
-	Push(uint8, []byte) error
+
+	Add(job *client.Job) error
+	Push(priority uint8, data []byte) error
+
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
 	Clear() (uint64, error)
@@ -69,16 +66,23 @@ type Queue interface {
 	Delete(keys [][]byte) error
 }
 
+type SortedEntry interface {
+	Value() []byte
+	Key() ([]byte, error)
+	Job() (*client.Job, error)
+}
+
 type SortedSet interface {
 	Name() string
 	Size() uint64
 	Clear() error
 
+	Add(job *client.Job) error
 	AddElement(timestamp string, jid string, payload []byte) error
 
 	Get(key []byte) ([]byte, error)
-	Page(int64, int64, func(index int, key []byte, data []byte) error) error
-	Each(func(idx int, key []byte, data []byte) error) error
+	Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error)
+	Each(fn func(idx int, e SortedEntry) error) error
 
 	Remove(key []byte) error
 	RemoveElement(timestamp string, jid string) error

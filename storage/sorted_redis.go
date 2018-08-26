@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/go-redis/redis"
 )
@@ -26,11 +29,23 @@ func (rs *redisSorted) Name() string {
 }
 
 func (rs *redisSorted) Size() uint64 {
-	return uint64(rs.store.client.ZCard(rs.name).Val())
+	return uint64(rs.store.rclient.ZCard(rs.name).Val())
 }
 
 func (rs *redisSorted) Clear() error {
-	return rs.store.client.Del(rs.name).Err()
+	return rs.store.rclient.Del(rs.name).Err()
+}
+
+func (rs *redisSorted) Add(job *client.Job) error {
+	if job.At == "" {
+		return errors.New("Job does not have an At timestamp")
+	}
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	return rs.AddElement(job.At, job.Jid, data)
 }
 
 func (rs *redisSorted) AddElement(timestamp string, jid string, payload []byte) error {
@@ -39,7 +54,7 @@ func (rs *redisSorted) AddElement(timestamp string, jid string, payload []byte) 
 		return err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
-	_, err = rs.store.client.ZAdd(rs.name, redis.Z{Score: time_f, Member: payload}).Result()
+	_, err = rs.store.rclient.ZAdd(rs.name, redis.Z{Score: time_f, Member: payload}).Result()
 	return err
 }
 
@@ -59,7 +74,7 @@ func decompose(key []byte) (float64, string, error) {
 
 func (rs *redisSorted) getScore(score float64) ([]string, error) {
 	strf := strconv.FormatFloat(score, 'f', -1, 64)
-	elms, err := rs.store.client.ZRangeByScore(rs.name, redis.ZRangeBy{Min: strf, Max: strf}).Result()
+	elms, err := rs.store.rclient.ZRangeByScore(rs.name, redis.ZRangeBy{Min: strf, Max: strf}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -91,32 +106,84 @@ func (rs *redisSorted) Get(key []byte) ([]byte, error) {
 	return nil, nil
 }
 
-func (rs *redisSorted) Page(int64, int64, func(index int, key []byte, data []byte) error) error {
-	return errors.New("ZBoom")
+type setEntry struct {
+	value []byte
+	score float64
+	// these two are lazy-loaded
+	job *client.Job
+	key []byte
 }
 
-func (rs *redisSorted) Each(fn func(idx int, key []byte, data []byte) error) error {
-	idx := 0
-	zcursor := uint64(0)
+func NewEntry(score float64, value []byte) *setEntry {
+	return &setEntry{
+		value: value,
+		score: score,
+	}
+}
+
+func (e *setEntry) Value() []byte {
+	return e.value
+}
+
+func (e *setEntry) Key() ([]byte, error) {
+	if e.key != nil {
+		return e.key, nil
+	}
+	j, err := e.Job()
+	if err != nil {
+		return nil, err
+	}
+	e.key = []byte(fmt.Sprintf("%.6f|%s", e.score, j.Jid))
+	return e.key, nil
+}
+
+func (e *setEntry) Job() (*client.Job, error) {
+	if e.job != nil {
+		return e.job, nil
+	}
+
+	var job client.Job
+	err := json.Unmarshal(e.value, &job)
+	if err != nil {
+		return nil, err
+	}
+
+	e.job = &job
+	return e.job, nil
+}
+
+func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error) {
+	zs, err := rs.store.rclient.ZRangeWithScores(rs.name, int64(start), int64(start+count)).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	for idx, z := range zs {
+		err = fn(idx, NewEntry(z.Score, []byte(z.Member.(string))))
+		if err != nil {
+			return idx, err
+		}
+	}
+	return len(zs), nil
+}
+
+func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
 
 	for {
-		jobs, cursor, err := rs.store.client.ZScan(rs.name, zcursor, "*", 50).Result()
+		count := 50
+		current := 0
+
+		elms, err := rs.Page(current, count, fn)
 		if err != nil {
 			return err
 		}
-		for _, job := range jobs {
-			err = fn(idx, nil, []byte(job))
-			if err != nil {
-				return err
-			}
-			idx += 1
+
+		if elms < count {
+			// last page, done iterating
+			return nil
 		}
-		if cursor == 0 {
-			break
-		}
-		zcursor = cursor
+		current += count
 	}
-	return nil
 }
 
 func (rs *redisSorted) rem(time_f float64, jid string) error {
@@ -128,12 +195,12 @@ func (rs *redisSorted) rem(time_f float64, jid string) error {
 		return nil
 	}
 	if len(elms) == 1 {
-		return rs.store.client.ZRem(rs.name, elms[0]).Err()
+		return rs.store.rclient.ZRem(rs.name, elms[0]).Err()
 	}
 
 	for _, elm := range elms {
 		if strings.Index(elm, jid) > 0 {
-			return rs.store.client.ZRem(rs.name, elm).Err()
+			return rs.store.rclient.ZRem(rs.name, elm).Err()
 		}
 	}
 	return nil
@@ -165,7 +232,7 @@ func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
 	var vals *redis.StringSliceCmd
-	_, err = rs.store.client.TxPipelined(func(pipe redis.Pipeliner) error {
+	_, err = rs.store.rclient.TxPipelined(func(pipe redis.Pipeliner) error {
 		vals = pipe.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf})
 		pipe.ZRemRangeByScore(rs.name, "-inf", strf)
 		return nil

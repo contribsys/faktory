@@ -47,7 +47,19 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:$(VERSION) /faktory -b 0.0.0.0:7419 -e production
+		contribsys/faktory:$(VERSION) /faktory -w 0.0.0.0:7420 -b 0.0.0.0:7419 -e production
+
+dmon: ## Run Faktory in a local Docker image, see also "make dimg"
+	docker run --rm -it \
+		-v faktory-data:/var/lib/faktory \
+		contribsys/faktory:$(VERSION) /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock
+
+#dinsp:
+	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
+		#-p 127.0.0.1:7419:7419 \
+		#-p 127.0.0.1:7420:7420 \
+		#-v faktory-data:/var/lib/faktory \
+		#contribsys/faktory:$(VERSION) /bin/bash
 
 dpush: tag
 	docker push contribsys/faktory:$(VERSION)
@@ -61,15 +73,15 @@ cover:
 	go tool cover -html=cover.out -o coverage.html
 	open coverage.html
 
-# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
-# we can't cross-compile when using cgo <cry>
-#	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+	go build -o faktory cmd/faktory/daemon.go
+
+mon:
+	redis-cli -s ~/.faktory/db/redis.sock
 
 # this is a separate target because loadtest doesn't need rocksdb or webui
 build_load:
-	go build -ldflags="-s -w" -o loadtest test/load/main.go
+	go build -o loadtest test/load/main.go
 
 load: # not war
 	go run test/load/main.go 30000 10

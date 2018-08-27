@@ -1,13 +1,13 @@
 PATH
   remote: ../../../../../fwr
   specs:
-    faktory_worker_ruby (0.6.1)
+    faktory_worker_ruby (0.7.1)
       connection_pool (~> 2.2, >= 2.2.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    connection_pool (2.2.1)
+    connection_pool (2.2.2)
 
 PLATFORMS
   ruby

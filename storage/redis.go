@@ -81,7 +81,6 @@ func BootRedis(path string, sock string) (func(), error) {
 		if err != nil {
 			return nil, err
 		}
-		util.Debugf("Booting Redis found at %s", binary)
 
 		loglevel := "notice"
 		if util.LogDebug {
@@ -97,6 +96,8 @@ func BootRedis(path string, sock string) (func(), error) {
 			"--dir",
 			path,
 		}
+
+		util.Debugf("Booting Redis: %s", strings.Join(arguments, " "))
 
 		cmd := exec.Command(arguments[0], arguments[1:]...)
 		instances[sock] = cmd
@@ -334,7 +335,6 @@ const (
 # DO NOT EDIT
 # Created by Faktory %s
 bind 127.0.0.1 ::1
-protected-mode yes
 port 0
 tcp-backlog 128
 
@@ -344,7 +344,6 @@ timeout 0
 tcp-keepalive 30
 
 daemonize no
-supervised no
 
 # Specify the server verbosity level.
 # This can be one of:
@@ -353,9 +352,7 @@ supervised no
 # notice (moderately verbose, what you want in production probably)
 # warning (only very important / critical messages are logged)
 loglevel notice
-logfile /tmp/redis.log
-
-databases 16
+logfile /tmp/faktory-redis.log
 
 save 900 1
 save 300 10
@@ -364,19 +361,5 @@ stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes
 dbfilename faktory.rdb
-dir /var/lib/faktory/db
-
-slave-serve-stale-data yes
-slave-read-only yes
-slave-priority 100
-
-repl-diskless-sync no
-repl-diskless-sync-delay 5
-repl-disable-tcp-nodelay no
-
-lua-time-limit 5000
-
-slowlog-log-slower-than 10000
-slowlog-max-len 128
-	`
+`
 )

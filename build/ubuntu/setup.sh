@@ -1,21 +1,9 @@
 set -e
 cd $HOME
 
-echo === Installing necessary system libraries to build RocksDB
+echo === Installing necessary system libraries to build
 sudo apt-get update -y
-sudo apt install -y --no-install-recommends make g++
-
-echo === Building RocksDB
-# download and compile rocksdb
-if [ ! -f ~/rocksdb/librocksdb.a ]; then
-  git clone https://github.com/facebook/rocksdb
-  cd rocksdb
-  git checkout v5.14.2
-  time PORTABLE=1 make static_lib
-  # default binary is 340MB!
-  # stripped is 18MB
-  strip -g librocksdb.a
-fi
+sudo apt install -y --no-install-recommends make redis-server
 
 echo === Installing Golang
 # download and install go 1.10
@@ -30,9 +18,6 @@ mkdir -p ~/go/src/github.com/contribsys
 cd ~/go/src/github.com/contribsys && ln -s /faktory faktory && cd faktory
 
 # download project dependencies
-export ROCKSDB_HOME="$HOME/rocksdb"
-export CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-export CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 echo === Installing dependencies
 make prepare
 

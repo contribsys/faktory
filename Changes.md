@@ -2,7 +2,7 @@
 
 ## HEAD
 
-- Allow configuration of backup count with `FAKTORY_BACKUP_COUNT`
+- Switch Faktory from RocksDB to Redis for storage.
 
 ## 0.8.0
 

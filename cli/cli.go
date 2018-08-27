@@ -14,8 +14,9 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-type CmdOptions struct {
-	Binding          string
+type CliOptions struct {
+	CmdBinding       string
+	WebBinding       string
 	Environment      string
 	ConfigDirectory  string
 	LogLevel         string
@@ -23,11 +24,12 @@ type CmdOptions struct {
 	Password         string
 }
 
-func ParseArguments() CmdOptions {
-	defaults := CmdOptions{"localhost:7419", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
+func ParseArguments() CliOptions {
+	defaults := CliOptions{"localhost:7419", "localhost:7420", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
 
 	flag.Usage = help
-	flag.StringVar(&defaults.Binding, "b", "localhost:7419", "Network binding")
+	flag.StringVar(&defaults.WebBinding, "w", "localhost:7420", "WebUI binding")
+	flag.StringVar(&defaults.CmdBinding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
 	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, production)")
 
@@ -58,6 +60,7 @@ func ParseArguments() CmdOptions {
 
 func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
+	log.Println("-w [binding]\tWeb UI binding (use :7420 to listen on all interfaces), default: localhost:7420")
 	log.Println("-e [env]\tSet environment (development, production), default: development")
 	log.Println("-l [level]\tSet logging level (warn, info, debug, verbose), default: info")
 	log.Println("-v\t\tShow version and license information")

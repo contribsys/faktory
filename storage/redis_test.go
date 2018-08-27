@@ -33,18 +33,22 @@ func TestRedisKV(t *testing.T) {
 
 func withRedis(t *testing.T, name string, fn func(*testing.T, Store)) {
 	t.Parallel()
+
 	dir := fmt.Sprintf("/tmp/faktory-test-%s", name)
+	defer os.RemoveAll(dir)
+
 	sock := fmt.Sprintf("%s/redis.sock", dir)
-	BootRedis(dir, sock)
+	stopper, err := BootRedis(dir, sock)
+	if err != nil {
+		panic(err)
+	}
+	defer stopper()
 
 	store, err := OpenRedis(sock)
 	if err != nil {
 		panic(err)
 	}
+	defer store.Close()
 
 	fn(t, store)
-
-	store.Close()
-	StopRedis(sock)
-	os.RemoveAll(dir)
 }

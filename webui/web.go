@@ -59,28 +59,28 @@ func init() {
 }
 
 type WebUI struct {
-	Options WebOptions
+	Options Options
 	Server  *server.Server
 
 	mux    *http.ServeMux
 	closer func() error
 }
 
-type WebOptions struct {
+type Options struct {
 	Binding    string
 	Password   string
 	EnableCSRF bool
 }
 
-func DefaultOptions() WebOptions {
-	return WebOptions{
+func DefaultOptions() Options {
+	return Options{
 		Password:   "",
 		Binding:    ":7420",
 		EnableCSRF: true,
 	}
 }
 
-func NewWeb(s *server.Server, opts WebOptions) *WebUI {
+func NewWeb(s *server.Server, opts Options) *WebUI {
 	ui := &WebUI{
 		Options: opts,
 		Server:  s,
@@ -115,8 +115,8 @@ func (ui *WebUI) Run() (func(), error) {
 		Addr:           ui.Options.Binding,
 		ReadTimeout:    1 * time.Second,
 		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-		Handler:        http.DefaultServeMux,
+		MaxHeaderBytes: 1 << 16,
+		Handler:        ui.mux,
 	}
 
 	go func() {

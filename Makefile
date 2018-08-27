@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.8.1
+VERSION=0.9.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -27,6 +27,7 @@ prepare: ## Download all dependencies
 test: clean generate ## Execute test suite
 	GOCACHE=off go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
+		github.com/contribsys/faktory/cmd/faktory \
 		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \

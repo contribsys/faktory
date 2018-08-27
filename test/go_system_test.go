@@ -34,7 +34,7 @@ func TestSystem(t *testing.T) {
 	defer storage.StopRedis(sock)
 
 	s, err := server.NewServer(&server.ServerOptions{
-		Binding:          opts.Binding,
+		Binding:          opts.CmdBinding,
 		StorageDirectory: dir,
 		RedisSock:        sock,
 	})

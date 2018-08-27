@@ -40,32 +40,20 @@ var (
 	redisMutex = sync.Mutex{}
 )
 
-func MustBootRedis() {
-	datapath := os.Getenv("FAKTORY_REDIS_PATH")
-	if datapath == "" {
-		datapath = "/var/lib/faktory/default"
-	}
-	sock := os.Getenv("FAKTORY_REDIS_SOCK")
-	if sock == "" {
-		sock = "/var/run/faktory-default.sock"
-	}
-	BootRedis(datapath, sock)
-}
-
-func BootRedis(path string, sock string) {
+func BootRedis(path string, sock string) (func(), error) {
 	util.LogInfo = true
 	util.LogDebug = true
 
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
-		return
+		return func() { StopRedis(sock) }, nil
 	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
 	err := os.MkdirAll(path, os.ModeDir|0755)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	rclient := redis.NewClient(&redis.Options{
@@ -75,26 +63,32 @@ func BootRedis(path string, sock string) {
 
 	_, err = rclient.Ping().Result()
 	if err != nil {
-		util.Debugf("Redis not alive, booting... -- %s", err)
+		//util.Debugf("Redis not alive, booting... -- %s", err)
 
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
 				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
 				if err != nil {
-					panic(err)
+					return nil, err
 				}
 			} else {
-				panic(err)
+				return nil, err
 			}
 		}
+
+		binary, err := exec.LookPath("redis-server")
+		if err != nil {
+			return nil, err
+		}
+		util.Debugf("Booting Redis found at %s", binary)
 
 		loglevel := "notice"
 		if util.LogDebug {
 			loglevel = "verbose"
 		}
 		arguments := []string{
-			"/usr/local/bin/redis-server",
+			binary,
 			conffilename,
 			"--unixsocket",
 			sock,
@@ -106,9 +100,9 @@ func BootRedis(path string, sock string) {
 
 		cmd := exec.Command(arguments[0], arguments[1:]...)
 		instances[sock] = cmd
-		err := cmd.Start()
+		err = cmd.Start()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		// wait a few seconds for Redis to start
@@ -128,12 +122,12 @@ func BootRedis(path string, sock string) {
 
 	_, err = rclient.Ping().Result()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	infos, err := rclient.Info().Result()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	version := "Unknown"
 	scanner := bufio.NewScanner(bytes.NewBufferString(infos))
@@ -144,14 +138,16 @@ func BootRedis(path string, sock string) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	util.Infof("Running Redis v%s", version)
 	err = rclient.Close()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	return func() { StopRedis(sock) }, nil
 }
 
 func OpenRedis(sock string) (Store, error) {
@@ -340,7 +336,7 @@ const (
 bind 127.0.0.1 ::1
 protected-mode yes
 port 0
-tcp-backlog 511
+tcp-backlog 128
 
 unixsocket /tmp/faktory-redis.sock
 unixsocketperm 700
@@ -368,7 +364,7 @@ stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes
 dbfilename faktory.rdb
-dir /usr/local/var/db/redis/
+dir /var/lib/faktory/db
 
 slave-serve-stale-data yes
 slave-read-only yes

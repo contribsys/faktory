@@ -265,18 +265,23 @@ func TestManager(t *testing.T) {
 
 func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 	t.Parallel()
+
 	dir := fmt.Sprintf("/tmp/faktory-test-%s", name)
+	defer os.RemoveAll(dir)
+
 	sock := fmt.Sprintf("%s/redis.sock", dir)
-	storage.BootRedis(dir, sock)
+	stopper, err := storage.BootRedis(dir, sock)
+	if err != nil {
+		panic(err)
+	}
+	defer stopper()
 
 	store, err := storage.Open("redis", sock)
 	if err != nil {
 		panic(err)
 	}
+	defer store.Close()
 
 	fn(t, store)
 
-	store.Close()
-	storage.StopRedis(sock)
-	os.RemoveAll(dir)
 }

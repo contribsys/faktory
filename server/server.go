@@ -31,6 +31,7 @@ type ServerOptions struct {
 	RedisSock        string
 	ConfigDirectory  string
 	Environment      string
+	Password         string
 }
 
 type RuntimeStats struct {
@@ -40,9 +41,8 @@ type RuntimeStats struct {
 }
 
 type Server struct {
-	Options  *ServerOptions
-	Stats    *RuntimeStats
-	Password string
+	Options *ServerOptions
+	Stats   *RuntimeStats
 
 	listener   net.Listener
 	store      storage.Store
@@ -74,12 +74,6 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		pending: &sync.WaitGroup{},
 		closed:  false,
 	}
-
-	pwd, err := fetchPassword(s.Options)
-	if err != nil {
-		return nil, err
-	}
-	s.Password = pwd
 
 	return s, nil
 }
@@ -200,7 +194,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	var salt string
 	conn.Write([]byte(`+HI {"v":2`))
-	if s.Password != "" {
+	if s.Options.Password != "" {
 		conn.Write([]byte(`,"i":`))
 		iters := strconv.FormatInt(int64(iter), 10)
 		conn.Write([]byte(iters))
@@ -237,12 +231,12 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	if s.Password != "" {
+	if s.Options.Password != "" {
 		if client.Version < 2 {
 			iter = 1
 		}
 
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt, iter))) != 1 {
+		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
 			conn.Write([]byte("-ERR Invalid password\r\n"))
 			conn.Close()
 			return nil

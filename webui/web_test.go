@@ -79,8 +79,11 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 	defer os.RemoveAll(dir)
 
 	sock := fmt.Sprintf("%s/redis.sock", dir)
-	storage.BootRedis(dir, sock)
-	defer storage.StopRedis(sock)
+	stopper, err := storage.BootRedis(dir, sock)
+	if err != nil {
+		panic(err)
+	}
+	defer stopper()
 
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          "localhost:7418",

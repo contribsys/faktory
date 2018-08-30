@@ -69,6 +69,10 @@ func queues(req *http.Request) []Queue {
 	ctx(req).Store().EachQueue(func(q storage.Queue) {
 		queues = append(queues, Queue{q.Name(), q.Size()})
 	})
+
+	sort.Slice(queues, func(i, j int) bool {
+		return queues[i].Name < queues[j].Name
+	})
 	return queues
 }
 

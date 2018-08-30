@@ -344,6 +344,7 @@ timeout 0
 tcp-keepalive 30
 
 daemonize no
+maxmemory-policy noeviction
 
 # Specify the server verbosity level.
 # This can be one of:

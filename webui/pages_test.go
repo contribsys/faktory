@@ -368,7 +368,7 @@ func TestPages(t *testing.T) {
 			assert.False(t, wrk.IsQuiet())
 
 			// Retrieve the CSRF token needed in the future POST request
-			token, cookieToken := findCSRFTokens(w, string(w.Body.Bytes()))
+			token, cookieToken := findCSRFTokens(w, w.Body.String())
 
 			// Make the POST request without any CSRF tokens present
 			data := url.Values{

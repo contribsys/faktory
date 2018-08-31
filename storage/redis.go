@@ -134,7 +134,7 @@ func BootRedis(path string, sock string) (func(), error) {
 	scanner := bufio.NewScanner(bytes.NewBufferString(infos))
 	for scanner.Scan() {
 		txt := scanner.Text()
-		if strings.Index(txt, "redis_version") != -1 {
+		if strings.Contains(txt, "redis_version") {
 			version = strings.Split(txt, ":")[1]
 		}
 	}

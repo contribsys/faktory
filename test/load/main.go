@@ -78,7 +78,7 @@ func run() {
 	}
 
 	waiter.Wait()
-	stop := time.Now().Sub(start)
+	stop := time.Since(start)
 	fmt.Printf("Processed %d pushes and %d pops in %2f seconds, rate: %f jobs/s\n", pushes, pops, stop.Seconds(), float64(jobs)/stop.Seconds())
 	//fmt.Println(opsCount)
 }

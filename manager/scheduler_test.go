@@ -65,6 +65,7 @@ func TestScheduler(t *testing.T) {
 			assert.EqualValues(t, 1, store.Scheduled().Size())
 
 			count, err := m.EnqueueScheduledJobs()
+			assert.NoError(t, err)
 			assert.EqualValues(t, 1, count)
 			assert.EqualValues(t, 1, q.Size())
 			assert.EqualValues(t, 0, store.Scheduled().Size())
@@ -95,6 +96,7 @@ func TestScheduler(t *testing.T) {
 			assert.EqualValues(t, 3, store.Scheduled().Size())
 
 			count, err := m.EnqueueScheduledJobs()
+			assert.NoError(t, err)
 			assert.EqualValues(t, 1, count)
 			assert.EqualValues(t, 1, q.Size())
 			assert.EqualValues(t, 2, store.Scheduled().Size())
@@ -116,6 +118,7 @@ func TestScheduler(t *testing.T) {
 			assert.EqualValues(t, 1, store.Retries().Size())
 
 			count, err := m.RetryJobs()
+			assert.NoError(t, err)
 			assert.EqualValues(t, 1, count)
 			assert.EqualValues(t, 1, q.Size())
 			assert.EqualValues(t, 0, store.Retries().Size())

@@ -51,6 +51,7 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.EqualValues(t, 0, sset.Size())
 
 			err = sset.AddElement(time, newjid, payload)
+			assert.NoError(t, err)
 			assert.EqualValues(t, 1, sset.Size())
 
 			assert.Equal(t, sset.Name(), "retries")
@@ -125,6 +126,7 @@ func TestBasicSortedOps(t *testing.T) {
 				jkey = k
 				return nil
 			})
+			assert.NoError(t, err)
 
 			entry, err := sset.Get(jkey)
 			assert.NoError(t, err)

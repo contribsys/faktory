@@ -127,11 +127,7 @@ func (m *manager) Push(job *client.Job) error {
 			}
 
 			// scheduler for later
-			err = m.store.Scheduled().AddElement(job.At, job.Jid, data)
-			if err != nil {
-				return err
-			}
-			return nil
+			return m.store.Scheduled().AddElement(job.At, job.Jid, data)
 		}
 	}
 
@@ -151,12 +147,7 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	err = q.Push(job.Priority, data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return q.Push(job.Priority, data)
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {

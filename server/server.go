@@ -175,8 +175,7 @@ func (s *Server) Stop(f func()) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-	var hash [32]byte
-	hash = sha256.Sum256(bytes)
+	hash := sha256.Sum256(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
 			hash = sha256.Sum256(hash[:])

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/contribsys/faktory/server"
@@ -41,8 +40,7 @@ var (
 type localeMap map[string]map[string]string
 
 var (
-	locales     = localeMap{}
-	localeMutex = sync.Mutex{}
+	locales = localeMap{}
 )
 
 func init() {

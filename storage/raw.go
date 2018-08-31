@@ -40,9 +40,5 @@ func (kv *redisKV) Set(key string, value []byte) error {
 	if value == nil {
 		return ErrNilValue
 	}
-	err := kv.store.rclient.Set(key, value, 0).Err()
-	if err != nil {
-		return err
-	}
-	return nil
+	return kv.store.rclient.Set(key, value, 0).Err()
 }

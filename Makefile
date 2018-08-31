@@ -25,7 +25,7 @@ prepare: ## Download all dependencies
 	@echo Now you should be ready to run "make"
 
 test: clean generate ## Execute test suite
-	GOCACHE=off go test $(TEST_FLAGS) \
+	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
 		github.com/contribsys/faktory/cmd/faktory \
 		github.com/contribsys/faktory/manager \
@@ -79,7 +79,7 @@ build: clean generate
 mon:
 	redis-cli -s ~/.faktory/db/redis.sock
 
-# this is a separate target because loadtest doesn't need rocksdb or webui
+# this is a separate target because loadtest doesn't need redis or webui
 build_load:
 	go build -o loadtest test/load/main.go
 
@@ -95,11 +95,6 @@ fmt: ## Format the code
 
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
-
-# Go 1.10 has lots of build cache consistency issues if we change native
-# library versions.  This blows it all away on macOS. See also "GOCACHE=off"
-rmcache:
-	rm -rf $(HOME)/Library/Caches/go-build
 
 clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go

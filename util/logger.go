@@ -12,17 +12,15 @@ import (
 
 // colors.
 const (
-	none   = 0
 	red    = 31
 	green  = 32
 	yellow = 33
 	blue   = 34
-	gray   = 37
 )
 
 // Colors mapping.
 var Colors = [...]int{
-	alog.DebugLevel: gray,
+	alog.DebugLevel: green,
 	alog.InfoLevel:  blue,
 	alog.WarnLevel:  yellow,
 	alog.ErrorLevel: red,

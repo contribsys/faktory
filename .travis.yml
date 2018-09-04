@@ -7,20 +7,11 @@ go:
 
 cache:
   directories:
-    - $HOME/rocksdb-$ROCKSDB_VERSION
     - $HOME/faktory/vendor
-
-env:
-  global:
-    - ROCKSDB_VERSION="v5.14.2"
-    - ROCKSDB_HOME="$HOME/rocksdb-$ROCKSDB_VERSION"
-    - CGO_CFLAGS="-I${ROCKSDB_HOME}/include"
-    - CGO_LDFLAGS="-L${ROCKSDB_HOME}"
 
 before_script:
   - mkdir -p $HOME/faktory
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/faktory/
-  - if [ ! -f "$ROCKSDB_HOME/librocksdb.a" ]; then sudo apt-get remove -y libbz2-dev zlib1g-dev && rm -rf $ROCKSDB_HOME && git clone https://github.com/facebook/rocksdb.git --depth 1 --branch $ROCKSDB_VERSION $ROCKSDB_HOME && cd $ROCKSDB_HOME && PORTABLE=1 make static_lib -j4 && strip -g librocksdb.a; fi
   - mkdir -p $GOPATH/src/github.com/contribsys && ln -s $HOME/faktory $GOPATH/src/github.com/contribsys/faktory
   - cd $GOPATH/src/github.com/contribsys/faktory && make prepare
 

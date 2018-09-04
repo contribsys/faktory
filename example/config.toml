@@ -1,0 +1,15 @@
+[queues]
+# disable backpressure by default
+backpressure = 0
+
+[queues.default]
+# the default queue will allow up to 100,000 jobs.  After that,
+# further PUSHes will get an error until the queue is drained
+# below that threshold.
+backpressure = 100000
+
+[security]
+
+[security.tls]
+public_key = "/etc/faktory/tls/public.crt"
+private_key = "/etc/faktory/tls/private.crt"

@@ -32,6 +32,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	Password         string
+	GlobalConfig     map[string]interface{}
 }
 
 type RuntimeStats struct {

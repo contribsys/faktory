@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
@@ -15,6 +17,45 @@ import (
 	"github.com/contribsys/faktory/util"
 	"github.com/contribsys/faktory/webui"
 )
+
+// Read all config files in:
+//   /etc/faktory/conf.d/*.toml (in production)
+//   ~/.faktory/conf.d/*.toml (in development)
+//
+// They are read in alphabetical order.
+// File contents are shallow merged, a latter file
+// can override a value from an earlier file.
+func readConfig(cdir string, env string) (map[string]interface{}, error) {
+	hash := map[string]interface{}{}
+
+	globs := []string{
+		fmt.Sprintf("%s/conf.d/*.toml", cdir),
+	}
+
+	for _, glob := range globs {
+		matches, err := filepath.Glob(glob)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, file := range matches {
+			util.Debugf("Reading configuration in %s", file)
+			fileBytes, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			err = toml.Unmarshal(fileBytes, &hash)
+			if err != nil {
+				util.Warnf("Unable to parse TOML file at %s", file)
+				return nil, err
+			}
+		}
+	}
+
+	util.Debug("Merged configuration")
+	util.Debugf("%v", hash)
+	return hash, nil
+}
 
 func main() {
 	log.SetFlags(0)
@@ -28,6 +69,12 @@ func main() {
 	// extra powers for adding fields, errors to log output.
 	util.InitLogger(opts.LogLevel)
 	util.Debugf("Options: %v", opts)
+
+	globalConfig, err := readConfig(opts.ConfigDirectory, opts.Environment)
+	if err != nil {
+		util.Error("Error in configuration", err)
+		return
+	}
 
 	pwd, err := fetchPassword(opts.ConfigDirectory, opts.Environment)
 	if err != nil {
@@ -43,6 +90,7 @@ func main() {
 		Environment:      opts.Environment,
 		RedisSock:        sock,
 		Password:         pwd,
+		GlobalConfig:     globalConfig,
 	})
 	if err != nil {
 		util.Error("Unable to create a new server", err)

@@ -21,6 +21,10 @@ import (
 // Read all config files in:
 //   /etc/faktory/conf.d/*.toml (in production)
 //   ~/.faktory/conf.d/*.toml (in development)
+//
+// They are read in alphabetical order.
+// File contents are shallow merged, a latter file
+// can override a value from an earlier file.
 func readConfig(cdir string, env string) (map[string]interface{}, error) {
 	hash := map[string]interface{}{}
 

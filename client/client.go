@@ -1,4 +1,4 @@
-package faktory
+package client
 
 import (
 	"bufio"
@@ -21,6 +21,18 @@ const (
 	ExpectedProtocolVersion = 2
 )
 
+var (
+	// Set this to a non-empty value in a consumer process
+	// e.g. see how faktory_worker_go sets this.
+	RandomProcessWid = ""
+)
+
+// The Client structure represents a thread-unsafe connection
+// to a Faktory server.  It is recommended to use a connection pool
+// of Clients in a multi-threaded process.  See faktory_worker_go's
+// internal connection pool for example.
+//
+// TODO Provide a connection pool as part of this package?
 type Client struct {
 	Location string
 	Options  *ClientData
@@ -52,33 +64,22 @@ type ClientData struct {
 }
 
 type Server struct {
-	Network string
-	Address string
-	Timeout time.Duration
+	Network  string
+	Address  string
+	Password string
+	Timeout  time.Duration
+	TLS      *tls.Config
 }
 
-var (
-	// Set this to a non-empty value in a consumer process
-	RandomProcessWid = ""
-)
-
-func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", 1 * time.Second}
+func (s *Server) Open() (*Client, error) {
+	return Dial(s, s.Password)
 }
 
-// Open connects to a Faktory server based on the
-// environment variable conventions:
-//
-// • Use FAKTORY_PROVIDER to point to a custom URL variable.
-//
-// • Use FAKTORY_URL as a catch-all default.
-func Open() (*Client, error) {
-	srv := DefaultServer()
-
+func (s *Server) ReadFromEnv() error {
 	val, ok := os.LookupEnv("FAKTORY_PROVIDER")
 	if ok {
 		if strings.Contains(val, ":") {
-			return nil, fmt.Errorf(`Error: FAKTORY_PROVIDER is not a URL. It is the name of the ENV var that contains the URL:
+			return fmt.Errorf(`Error: FAKTORY_PROVIDER is not a URL. It is the name of the ENV var that contains the URL:
 
 FAKTORY_PROVIDER=FOO_URL
 FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
@@ -88,41 +89,64 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 		if ok {
 			uri, err := url.Parse(uval)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			srv.Network = uri.Scheme
-			srv.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
-			pwd := ""
+			s.Network = uri.Scheme
+			s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 			if uri.User != nil {
-				pwd, _ = uri.User.Password()
+				s.Password, _ = uri.User.Password()
 			}
-			return Dial(srv, pwd)
+			return nil
 		}
-		return nil, fmt.Errorf("FAKTORY_PROVIDER set to invalid value: %s", val)
+		return fmt.Errorf("FAKTORY_PROVIDER set to invalid value: %s", val)
 	}
 
 	uval, ok := os.LookupEnv("FAKTORY_URL")
 	if ok {
 		uri, err := url.Parse(uval)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		srv.Network = uri.Scheme
-		srv.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
-		pwd := ""
+		s.Network = uri.Scheme
+		s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 		if uri.User != nil {
-			pwd, _ = uri.User.Password()
+			s.Password, _ = uri.User.Password()
 		}
-		return Dial(srv, pwd)
+		return nil
 	}
 
+	return nil
+}
+
+func DefaultServer() *Server {
+	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{}}
+}
+
+// Open connects to a Faktory server based on
+// environment variable conventions:
+//
+// • Use FAKTORY_PROVIDER to point to a custom URL variable.
+// • Use FAKTORY_URL as a catch-all default.
+//
+// Use the URL to configure any necessary password:
+//
+//    tcp://:mypassword@localhost:7419
+//
+// By default Open assumes localhost with no password
+// which is appropriate for local development.
+func Open() (*Client, error) {
+	srv := DefaultServer()
+	err := srv.ReadFromEnv()
+	if err != nil {
+		return nil, err
+	}
 	// Connect to default localhost
-	return Dial(srv, "")
+	return srv.Open()
 }
 
 // Dial connects to the remote faktory server.
 //
-//   faktory.Dial(faktory.Localhost, "topsecret")
+//   client.Dial(client.Localhost, "topsecret")
 //
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
@@ -130,18 +154,18 @@ func Dial(srv *Server, password string) (*Client, error) {
 	var err error
 	var conn net.Conn
 	dial := &net.Dialer{Timeout: srv.Timeout}
-	if srv.Network == "tcp" {
+	if srv.Network == "tcp+tls" {
+		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, srv.TLS)
+		if err != nil {
+			return nil, err
+		}
+	} else {
 		conn, err = dial.Dial(srv.Network, srv.Address)
 		if err != nil {
 			return nil, err
 		}
 		if x, ok := conn.(*net.TCPConn); ok {
 			x.SetKeepAlive(true)
-		}
-	} else {
-		conn, err = tls.DialWithDialer(dial, srv.Network, srv.Address, &tls.Config{})
-		if err != nil {
-			return nil, err
 		}
 	}
 
@@ -230,6 +254,10 @@ func (c *Client) Push(job *Job) error {
 }
 
 func (c *Client) Fetch(q ...string) (*Job, error) {
+	if len(q) == 0 {
+		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
+	}
+
 	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
 	if err != nil {
 		return nil, err
@@ -449,8 +477,7 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-	var hash [32]byte
-	hash = sha256.Sum256(bytes)
+	hash := sha256.Sum256(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
 			hash = sha256.Sum256(hash[:])

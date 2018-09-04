@@ -164,7 +164,7 @@ func Backtrace(size int) []string {
 	for i := 0; i < size; i++ {
 		frame, more := frames.Next()
 		str[i] = fmt.Sprintf("in %s:%d %s", frame.File, frame.Line, frame.Function)
-		count += 1
+		count++
 		if !more {
 			break
 		}

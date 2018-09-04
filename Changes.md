@@ -1,3 +1,30 @@
+# Faktory Changelog
+
+## HEAD
+
+- Switch Faktory from RocksDB to Redis for storage.
+
+## 0.8.0
+
+- Workaround for negative busy/retry/scheduled/dead counts [#148]
+- Fix slow index page rendering under heavy load [#156]
+- Upgrade to Go 1.10.3
+- Upgrade to RocksDB 5.14.2
+
+## 0.7.0
+
+- Upgrade RocksDB from 5.7.3 to 5.9.2
+- Add CSRF protection to Web UI [#92, vosmith]
+- Faktory in production mode now requires a password by default [#113]
+- Orphaned jobs now use the retry process so they don't re-enqueue forever [#99]
+- Implement automated backups, default once per hour and keeping 24. [#106]
+- Implement `purge` command for faktory-cli, to remove old backups.
+
+## 0.6.1
+
+- Fix job reservation [#94, jweslley]
+- Send exhausted jobs to the morgue [#86, jweslley]
+
 ## 0.6.0
 
 - Add support for job priorities [#68, andrewstucki]

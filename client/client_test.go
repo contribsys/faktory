@@ -1,4 +1,4 @@
-package faktory
+package client
 
 import (
 	"bufio"
@@ -13,12 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	util.LogInfo = true
+	//util.LogInfo = true
 	//util.LogDebug = true
 	go stacks()
 }
@@ -63,8 +62,12 @@ func TestClientOperations(t *testing.T) {
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
 
+		job, err := cl.Fetch()
+		assert.Error(t, err)
+		assert.Nil(t, job)
+
 		resp <- "$0\r\n\r\n"
-		job, err := cl.Fetch("default")
+		job, err = cl.Fetch("default")
 		assert.NoError(t, err)
 		assert.Nil(t, job)
 		assert.Contains(t, <-req, "FETCH")

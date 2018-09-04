@@ -4,7 +4,7 @@ package webui
 import (
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
   "github.com/contribsys/faktory/storage"
 )
 
@@ -48,7 +48,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
             <th><%= t(req, "Error") %></th>
           </tr>
         </thead>
-        <% setJobs(set, count, currentPage, func(idx int, key []byte, job *faktory.Job) { %>
+        <% setJobs(set, count, currentPage, func(idx int, key []byte, job *client.Job) { %>
           <tr>
             <td class="table-checkbox">
               <label>
@@ -63,7 +63,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
               <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
             </td>
             <td><code><%= job.Type %></code></td>
-            <td><code><%= job.GetPriority() %></code></td>
+            <td><code><%= job.Priority %></code></td>
             <td>
               <div class="args"><code><%= job.Args %></code></div>
             </td>

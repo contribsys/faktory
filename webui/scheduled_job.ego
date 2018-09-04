@@ -4,10 +4,10 @@ package webui
 import (
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
 )
 
-func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *faktory.Job) {
+func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *client.Job) {
   ego_layout(w, req, func() { %>
 
 <% ego_job_info(w, req, job) %>

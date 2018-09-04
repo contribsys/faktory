@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strconv"
 )
@@ -23,9 +24,12 @@ func (c *Connection) Close() {
 }
 
 func (c *Connection) Error(cmd string, err error) error {
-	x := internalError(err)
-	//util.Error(fmt.Sprintf("Error processing line: %s", cmd), err, x.Stack)
-	_, err = c.conn.Write([]byte("-ERR " + x.Error.Error() + "\r\n"))
+	re, ok := err.(*taggedError)
+	if ok {
+		_, err = c.conn.Write([]byte(fmt.Sprintf("-%s\r\n", re.Error())))
+	} else {
+		_, err = c.conn.Write([]byte(fmt.Sprintf("-ERR %s\r\n", err.Error())))
+	}
 	return err
 }
 

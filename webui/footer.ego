@@ -2,26 +2,27 @@
 package webui
 
 import (
-  "github.com/contribsys/faktory"
+  "net/http"
+  "github.com/contribsys/faktory/client"
 )
 
-func ego_footer(w io.Writer) {
+func ego_footer(w io.Writer, req *http.Request) {
 %>
 <div class="navbar navbar-fixed-bottom navbar-inverse ltr">
   <div class="navbar-inner">
     <div class="container text-center">
         <ul class="nav">
           <li>
-            <p class="navbar-text product-version"><%= faktory.Name %> <%= faktory.Version %></p>
+            <p class="navbar-text product-version"><%= client.Name %> <%= client.Version %></p>
           </li>
           <li>
-            <p class="navbar-text faktory-url"><%= serverLocation() %></p>
+            <p class="navbar-text faktory-url"><%= serverLocation(req) %></p>
           </li>
           <li>
             <p class="navbar-text server-utc-time"><%= serverUtcTime() %></p>
           </li>
           <li>
-            <p class="navbar-text"><%= defaultServer.Options.Environment %></p>
+            <p class="navbar-text"><%= ctx(req).Server().Options.Environment %></p>
           </li>
           <li>
             <p class="navbar-text"><a style="color: #666" href="/debug">debug</a></p>

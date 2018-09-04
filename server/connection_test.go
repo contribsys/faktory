@@ -22,6 +22,9 @@ func TestConnectionBasics(t *testing.T) {
 	dc.Number(123)
 	assert.Equal(t, ":123\r\n", output(dc))
 
+	dc.Result(nil)
+	assert.Equal(t, "$-1\r\n", output(dc))
+
 	dc.Result([]byte("{some:jobjson}"))
 	assert.Equal(t, "$14\r\n{some:jobjson}\r\n", output(dc))
 

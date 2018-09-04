@@ -14,11 +14,11 @@ echo "source /opt/rh/devtoolset-2/enable" >> ~/.bash_profile
 source /opt/rh/devtoolset-2/enable
 
 echo === Building RocksDB
-# download and compile rocksdb 5.7.3
+# download and compile rocksdb
 if [ ! -f ~/rocksdb/librocksdb.a ]; then
   git clone https://github.com/facebook/rocksdb
   cd rocksdb
-  git checkout v5.7.3
+  git checkout v5.14.2
   make libsnappy.a DEBUG_LEVEL=0 PORTABLE=1
   make static_lib PORTABLE=1
   # default binary is 340MB!
@@ -27,10 +27,10 @@ if [ ! -f ~/rocksdb/librocksdb.a ]; then
 fi
 
 echo === Installing Golang
-# download and install go 1.9
+# download and install go 1.10
 if [ ! -d /usr/local/go ]; then
   cd /usr/local
-  curl https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz | sudo tar xfz -
+  curl https://storage.googleapis.com/golang/go1.10.3.linux-amd64.tar.gz | sudo tar xfz -
   echo "export PATH=/usr/local/go/bin:$HOME/go/bin:\$PATH" >> ~/.bash_profile
   export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
 fi
@@ -47,5 +47,5 @@ make prepare
 
 # build faktory
 echo === Running Faktory test suite
-make
+make test
 make build

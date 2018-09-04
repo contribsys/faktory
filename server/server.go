@@ -4,18 +4,19 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -27,31 +28,31 @@ var (
 type ServerOptions struct {
 	Binding          string
 	StorageDirectory string
+	RedisSock        string
 	ConfigDirectory  string
 	Environment      string
+	Password         string
 	GlobalConfig     map[string]interface{}
 }
 
 type RuntimeStats struct {
-	Connections int64
-	Commands    int64
+	Connections uint64
+	Commands    uint64
 	StartedAt   time.Time
 }
 
 type Server struct {
-	Options  *ServerOptions
-	Stats    *RuntimeStats
-	Password string
+	Options *ServerOptions
+	Stats   *RuntimeStats
 
 	listener   net.Listener
 	store      storage.Store
+	manager    manager.Manager
+	workers    *workers
 	taskRunner *taskRunner
 	pending    *sync.WaitGroup
 	mu         sync.Mutex
-	heartbeats map[string]*ClientData
-	hbmu       sync.RWMutex
-
-	initialized chan bool
+	closed     bool
 }
 
 // register a global handler to be called when the Server instance
@@ -69,54 +70,60 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 	}
 
 	s := &Server{
-		Options:     opts,
-		Stats:       &RuntimeStats{StartedAt: time.Now()},
-		pending:     &sync.WaitGroup{},
-		heartbeats:  make(map[string]*ClientData, 12),
-		initialized: make(chan bool, 1),
+		Options: opts,
+		Stats:   &RuntimeStats{StartedAt: time.Now()},
+		pending: &sync.WaitGroup{},
+		closed:  false,
 	}
-
-	pwd, err := fetchPassword(s.Options.ConfigDirectory)
-	if err != nil {
-		return nil, err
-	}
-	s.Password = pwd
 
 	return s, nil
 }
 
 func (s *Server) Heartbeats() map[string]*ClientData {
-	return s.heartbeats
+	return s.workers.heartbeats
 }
 
 func (s *Server) Store() storage.Store {
 	return s.store
 }
 
-func (s *Server) Start() error {
-	store, err := storage.Open("rocksdb", s.Options.StorageDirectory)
+func (s *Server) Manager() manager.Manager {
+	return s.manager
+}
+
+func (s *Server) AddTask(everySec int64, task Taskable) {
+	if s.isClosed() {
+		return
+	}
+	s.taskRunner.AddTask(everySec, task)
+}
+
+func (s *Server) Boot() error {
+	store, err := storage.Open("redis", s.Options.RedisSock)
 	if err != nil {
 		return err
 	}
-	defer store.Close()
 
 	listener, err := net.Listen("tcp", s.Options.Binding)
 	if err != nil {
+		store.Close()
 		return err
 	}
-	util.Infof("Now listening at %s, press Ctrl-C to stop", s.Options.Binding)
 
 	s.mu.Lock()
 	s.store = store
+	s.workers = newWorkers()
+	s.manager = manager.NewManager(store)
 	s.listener = listener
-	s.loadWorkingSet()
 	s.startTasks(s.pending)
-	s.startScanners(s.pending)
 	s.mu.Unlock()
 
-	s.initialized <- true
+	return nil
+}
 
-	// wait for outstanding requests to finish
+func (s *Server) Run() error {
+	// NB: defers happen in reverse order
+	defer s.store.Close()
 	defer s.pending.Wait()
 	defer s.taskRunner.Stop()
 
@@ -127,32 +134,35 @@ func (s *Server) Start() error {
 		}
 	}
 
+	util.Infof("PID %d listening at %s, press Ctrl-C to stop", os.Getpid(), s.Options.Binding)
+
 	// this is the central runtime loop for the main goroutine
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			return nil
 		}
-		s.pending.Add(1)
 		go func(conn net.Conn) {
-			defer s.pending.Done()
-
 			c := startConnection(conn, s)
 			if c == nil {
 				return
 			}
-			processLines(c, s)
+			s.processLines(c)
 		}(conn)
 	}
 }
 
-func (s *Server) WaitUntilInitialized() {
-	<-s.initialized
+func (s *Server) isClosed() bool {
+	return s.closed
 }
 
 func (s *Server) Stop(f func()) {
 	// Don't allow new network connections
 	s.mu.Lock()
+	if s.closed {
+		return
+	}
+	s.closed = true
 	if s.listener != nil {
 		s.listener.Close()
 	}
@@ -166,8 +176,7 @@ func (s *Server) Stop(f func()) {
 
 func hash(pwd, salt string, iterations int) string {
 	bytes := []byte(pwd + salt)
-	var hash [32]byte
-	hash = sha256.Sum256(bytes)
+	hash := sha256.Sum256(bytes)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
 			hash = sha256.Sum256(hash[:])
@@ -185,7 +194,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	var salt string
 	conn.Write([]byte(`+HI {"v":2`))
-	if s.Password != "" {
+	if s.Options.Password != "" {
 		conn.Write([]byte(`,"i":`))
 		iters := strconv.FormatInt(int64(iter), 10)
 		conn.Write([]byte(iters))
@@ -222,12 +231,12 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	if s.Password != "" {
+	if s.Options.Password != "" {
 		if client.Version < 2 {
 			iter = 1
 		}
 
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Password, salt, iter))) != 1 {
+		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
 			conn.Write([]byte("-ERR Invalid password\r\n"))
 			conn.Close()
 			return nil
@@ -237,7 +246,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	if client.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		updateHeartbeat(client, s.heartbeats, &s.hbmu)
+		s.workers.heartbeat(client, true)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -257,17 +266,21 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 }
 
-func processLines(conn *Connection, server *Server) {
-	atomic.AddInt64(&server.Stats.Connections, 1)
-	defer atomic.AddInt64(&server.Stats.Connections, -1)
+func (s *Server) processLines(conn *Connection) {
+	atomic.AddUint64(&s.Stats.Connections, 1)
+	defer atomic.AddUint64(&s.Stats.Connections, ^uint64(0))
 
 	for {
-		atomic.AddInt64(&server.Stats.Commands, 1)
 		cmd, e := conn.buf.ReadString('\n')
 		if e != nil {
 			if e != io.EOF {
 				util.Error("Unexpected socket error", e)
 			}
+			conn.Close()
+			return
+		}
+		if s.isClosed() {
+			conn.Error("Closing connection", newTaggedError("SHUTDOWN", fmt.Errorf("Shutdown in progress")))
 			conn.Close()
 			return
 		}
@@ -284,7 +297,8 @@ func processLines(conn *Connection, server *Server) {
 		if !ok {
 			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
-			proc(conn, server, cmd)
+			atomic.AddUint64(&s.Stats.Commands, 1)
+			proc(conn, s, cmd)
 		}
 		if verb == "END" {
 			break
@@ -292,19 +306,38 @@ func processLines(conn *Connection, server *Server) {
 	}
 }
 
-func parseJob(buf []byte) (*faktory.Job, error) {
-	var job faktory.Job
+func (s *Server) uptimeInSeconds() int {
+	return int(time.Since(s.Stats.StartedAt).Seconds())
+}
 
-	err := json.Unmarshal(buf, &job)
+func (s *Server) CurrentState() (map[string]interface{}, error) {
+	defalt, err := s.store.GetQueue("default")
 	if err != nil {
 		return nil, err
 	}
 
-	if job.CreatedAt == "" {
-		job.CreatedAt = util.Nows()
-	}
-	if job.Queue == "" {
-		job.Queue = "default"
-	}
-	return &job, nil
+	totalQueued := 0
+	totalQueues := 0
+	// queue size is cached so this should be very efficient.
+	s.store.EachQueue(func(q storage.Queue) {
+		totalQueued += int(q.Size())
+		totalQueues++
+	})
+
+	return map[string]interface{}{
+		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+		"faktory": map[string]interface{}{
+			"default_size":    defalt.Size(),
+			"total_failures":  s.store.TotalFailures(),
+			"total_processed": s.store.TotalProcessed(),
+			"total_enqueued":  totalQueued,
+			"total_queues":    totalQueues,
+			"tasks":           s.taskRunner.Stats()},
+		"server": map[string]interface{}{
+			"faktory_version": client.Version,
+			"uptime":          s.uptimeInSeconds(),
+			"connections":     atomic.LoadUint64(&s.Stats.Connections),
+			"command_count":   atomic.LoadUint64(&s.Stats.Commands),
+			"used_memory_mb":  util.MemoryUsage()},
+	}, nil
 }

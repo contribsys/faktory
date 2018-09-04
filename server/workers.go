@@ -15,7 +15,7 @@ import (
 // A client can be a producer AND/OR consumer of jobs.  Typically a process will
 // either only produce jobs (like a webapp pushing jobs) or produce/consume jobs
 // (like a faktory worker process where a job can create other jobs while
-// executing another job).
+// executing).
 //
 // Each Faktory worker process should send a BEAT command every 15 seconds.
 // Only consumers should send a BEAT.  If Faktory does not receive a BEAT from a
@@ -23,7 +23,7 @@ import (
 // page.
 //
 // From Faktory's POV, the worker can BEAT again and resume normal operations,
-// e.g.  due to a network partition.  If a process dies, it will be removed
+// e.g. due to a network partition.  If a process dies, it will be removed
 // after 1 minute and its jobs recovered after the job reservation timeout has
 // passed (typically 30 minutes).
 //
@@ -121,84 +121,65 @@ func (worker *ClientData) IsConsumer() bool {
 	return worker.Wid != ""
 }
 
-func (worker *ClientData) BusyCount() int {
-	workingMutex.Lock()
-	defer workingMutex.Unlock()
-
-	count := 0
-	for _, res := range workingMap {
-		if res.Wid == worker.Wid {
-			count += 1
-		}
-	}
-	return count
+type workers struct {
+	heartbeats map[string]*ClientData
+	mu         sync.RWMutex
 }
 
-type beatReaper struct {
-	s     *Server
-	count int
-}
-
-func (r *beatReaper) Name() string {
-	return "Workers"
-}
-
-func (r *beatReaper) Stats() map[string]interface{} {
-	r.s.hbmu.RLock()
-	defer r.s.hbmu.RUnlock()
-	return map[string]interface{}{
-		"size":   len(r.s.heartbeats),
-		"reaped": r.count,
+func newWorkers() *workers {
+	return &workers{
+		heartbeats: make(map[string]*ClientData, 12),
 	}
 }
 
-/*
- * Removes any heartbeat records over 1 minute old.
- */
-func (r *beatReaper) Execute() error {
-	r.count += reapHeartbeats(r.s.heartbeats, &r.s.hbmu)
-	return nil
+func (w *workers) Count() int {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return len(w.heartbeats)
 }
 
-func reapHeartbeats(heartbeats map[string]*ClientData, mu *sync.RWMutex) int {
+func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, bool) {
+	w.mu.RLock()
+	entry, ok := w.heartbeats[client.Wid]
+	w.mu.RUnlock()
+
+	if ok {
+		w.mu.Lock()
+		entry.lastHeartbeat = time.Now()
+		w.mu.Unlock()
+	} else if register {
+		client.StartedAt = time.Now()
+		client.lastHeartbeat = time.Now()
+		w.mu.Lock()
+		w.heartbeats[client.Wid] = client
+		w.mu.Unlock()
+		entry = client
+		ok = true
+	}
+
+	return entry, ok
+}
+
+func (w *workers) reapHeartbeats(t time.Time) int {
 	toDelete := []string{}
 
-	mu.RLock()
-	for k, worker := range heartbeats {
-		if worker.lastHeartbeat.Before(time.Now().Add(-1 * time.Minute)) {
+	w.mu.RLock()
+	for k, worker := range w.heartbeats {
+		if worker.lastHeartbeat.Before(t) {
 			toDelete = append(toDelete, k)
 		}
 	}
-	mu.RUnlock()
+	w.mu.RUnlock()
 
 	count := len(toDelete)
 	if count > 0 {
-		mu.Lock()
+		w.mu.Lock()
 		for _, k := range toDelete {
-			delete(heartbeats, k)
+			delete(w.heartbeats, k)
 		}
-		mu.Unlock()
+		w.mu.Unlock()
 
 		util.Debugf("Reaped %d worker heartbeats", count)
 	}
 	return count
-}
-
-func updateHeartbeat(client *ClientData, heartbeats map[string]*ClientData, mu *sync.RWMutex) {
-	mu.RLock()
-	val, ok := heartbeats[client.Wid]
-	mu.RUnlock()
-
-	if ok {
-		mu.Lock()
-		val.lastHeartbeat = time.Now()
-		mu.Unlock()
-	} else {
-		client.StartedAt = time.Now()
-		client.lastHeartbeat = time.Now()
-		mu.Lock()
-		heartbeats[client.Wid] = client
-		mu.Unlock()
-		val = client
-	}
 }

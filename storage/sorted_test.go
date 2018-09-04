@@ -2,140 +2,144 @@ package storage
 
 import (
 	"fmt"
-	"os"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBasicSortedSet(t *testing.T) {
-	t.Parallel()
+func TestBasicSortedOps(t *testing.T) {
+	withRedis(t, "sorted", func(t *testing.T, store Store) {
+		t.Run("junk data", func(t *testing.T) {
+			sset := store.Retries()
+			assert.EqualValues(t, 0, sset.Size())
 
-	defer os.RemoveAll("/tmp/sorted.db")
-	db, err := Open("rocksdb", "/tmp/sorted.db")
-	assert.NoError(t, err)
-	defer db.Close()
+			time := util.Nows()
+			jid, data := fakeJob()
+			err := sset.AddElement(time, jid, data)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
 
-	jid, j1 := fakeJob()
-	past := time.Now()
+			key := fmt.Sprintf("%s|%s", time, jid)
+			entry, err := sset.Get([]byte(key))
+			assert.NoError(t, err)
+			assert.NotNil(t, entry)
+			job, err := entry.Job()
+			assert.NoError(t, err)
+			assert.Equal(t, jid, job.Jid)
 
-	r := db.Retries()
-	assert.Equal(t, "retries", r.Name())
-	assert.Equal(t, int64(0), r.Size())
-	err = r.AddElement(util.Thens(past), fmt.Sprintf("0%s", jid), j1)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(1), r.Size())
+			// add a second job with exact same time to handle edge case of
+			// sorted set entries with same score.
+			newjid, payload := fakeJob()
+			err = sset.AddElement(time, newjid, payload)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 2, sset.Size())
 
-	jid, j2 := fakeJob()
-	err = r.AddElement(util.Thens(past), fmt.Sprintf("1%s", jid), j2)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(2), r.Size())
+			newkey := fmt.Sprintf("%s|%s", time, newjid)
+			entry, err = sset.Get([]byte(newkey))
+			assert.NoError(t, err)
+			assert.Equal(t, payload, entry.Value())
 
-	current := time.Now()
-	jid, j3 := fakeJob()
-	err = r.AddElement(util.Thens(current.Add(10*time.Second)), jid, j3)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(3), r.Size())
+			err = sset.Remove([]byte(newkey))
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
 
-	results, err := r.RemoveBefore(util.Thens(current.Add(1 * time.Second)))
-	assert.NoError(t, err)
-	assert.Equal(t, int64(1), r.Size())
-	assert.Equal(t, 2, len(results))
-	values := [][]byte{j1, j2}
-	assert.Equal(t, values, results)
+			err = sset.RemoveElement(time, jid)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, sset.Size())
 
-	var key []byte
-	r.Each(func(idx int, k, v []byte) error {
-		key = k
-		return nil
+			err = sset.AddElement(time, newjid, payload)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
+
+			assert.Equal(t, sset.Name(), "retries")
+			assert.NoError(t, sset.Clear())
+			assert.EqualValues(t, 0, sset.Size())
+		})
+
+		t.Run("good data", func(t *testing.T) {
+			sset := store.Scheduled()
+			job := client.NewJob("SomeType", 1, 2, 3)
+
+			assert.EqualValues(t, 0, sset.Size())
+			err := sset.Add(job)
+			assert.Error(t, err)
+
+			job.At = util.Nows()
+			err = sset.Add(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
+
+			job = client.NewJob("OtherType", 1, 2, 3)
+			job.At = util.Nows()
+			err = sset.Add(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 2, sset.Size())
+
+			expectedTypes := []string{"SomeType", "OtherType"}
+			actualTypes := []string{}
+
+			err = sset.Each(func(idx int, entry SortedEntry) error {
+				j, err := entry.Job()
+				assert.NoError(t, err)
+				actualTypes = append(actualTypes, j.Type)
+				return nil
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTypes, actualTypes)
+
+			var jkey []byte
+			err = sset.Each(func(idx int, entry SortedEntry) error {
+				k, err := entry.Key()
+				assert.NoError(t, err)
+				jkey = k
+				return nil
+			})
+			assert.NoError(t, err)
+
+			q, err := store.GetQueue("default")
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 2, sset.Size())
+
+			err = store.EnqueueFrom(sset, jkey)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, sset.Size())
+
+			err = store.EnqueueAll(sset)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 2, q.Size())
+			assert.EqualValues(t, 0, sset.Size())
+
+			job = client.NewJob("CronType", 1, 2, 3)
+			job.At = util.Nows()
+			err = sset.Add(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, sset.Size())
+
+			err = sset.Each(func(idx int, entry SortedEntry) error {
+				k, err := entry.Key()
+				assert.NoError(t, err)
+				jkey = k
+				return nil
+			})
+			assert.NoError(t, err)
+
+			entry, err := sset.Get(jkey)
+			assert.NoError(t, err)
+
+			expiry := time.Now().Add(180 * 24 * time.Hour)
+
+			assert.EqualValues(t, 1, sset.Size())
+			assert.EqualValues(t, 0, store.Dead().Size())
+			err = sset.MoveTo(store.Dead(), entry, expiry)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, sset.Size())
+			assert.EqualValues(t, 1, store.Dead().Size())
+
+		})
 	})
-
-	assert.NotNil(t, key)
-	err = r.Remove(key)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(0), r.Size())
-}
-
-func TestRocksSortedSet(b *testing.T) {
-	b.Parallel()
-	defer os.RemoveAll("/tmp/rocks.db")
-
-	db, err := Open("rocksdb", "/tmp/rocks.db")
-	assert.NoError(b, err)
-	defer db.Close()
-
-	count := int64(1000)
-	retries := db.Retries()
-	start := time.Now()
-	for i := int64(0); i < count; i++ {
-		jid, job := fakeJob()
-		ts := util.Thens(start.Add(time.Duration(10*i) * time.Second))
-		err = retries.AddElement(ts, jid, job)
-		assert.NoError(b, err)
-	}
-
-	pageSize := 12
-	given := 0
-	err = retries.Page(10, 12, func(idx int, key []byte, elm []byte) error {
-		given += 1
-		return nil
-	})
-	assert.NoError(b, err)
-	assert.Equal(b, pageSize, given)
-
-	amt := int64(0)
-	akey := []byte{}
-	err = retries.Each(func(idx int, key []byte, elm []byte) error {
-		akey = make([]byte, len(key))
-		copy(akey, key)
-
-		assert.True(b, len(key) > 40, key)
-		assert.NotNil(b, elm)
-		amt += int64(1)
-		return nil
-	})
-	assert.NoError(b, err)
-	assert.Equal(b, count, amt)
-
-	strs := strings.Split(string(akey), "|")
-	assert.Equal(b, int64(0), db.Working().Size())
-	err = retries.MoveTo(db.Working(), strs[0], strs[1], func(payload []byte) (string, []byte, error) {
-		return util.Nows(), payload, nil
-	})
-	assert.NoError(b, err)
-	assert.Equal(b, int64(1), db.Working().Size())
-	assert.Equal(b, count-1, retries.Size())
-	count -= 1
-
-	err = retries.MoveTo(db.Working(), "1231", strs[1], func(payload []byte) (string, []byte, error) {
-		return util.Nows(), payload, nil
-	})
-	assert.Error(b, err)
-
-	remd := int64(0)
-	start = time.Now()
-	for i := int64(0); i < count; i++ {
-		ts := util.Thens(start.Add(time.Duration(5*i) * time.Second))
-		elms, err := retries.RemoveBefore(ts)
-		assert.NoError(b, err)
-		remd += int64(len(elms))
-		assert.Equal(b, count-remd, retries.Size())
-		assert.True(b, len(elms) == 0 || len(elms) == 1 || len(elms) == 2)
-	}
-	assert.Equal(b, int64(499), retries.Size())
-	retries.Clear()
-	assert.Equal(b, int64(0), retries.Size())
-}
-
-func fakeJob() (string, []byte) {
-	return fakeJobWithPriority(5)
-}
-
-func fakeJobWithPriority(priority uint64) (string, []byte) {
-	jid := util.RandomJid()
-	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":%d,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, priority))
 }

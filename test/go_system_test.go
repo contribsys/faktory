@@ -14,9 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/contribsys/faktory"
 	"github.com/contribsys/faktory/cli"
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,11 +26,17 @@ func TestSystem(t *testing.T) {
 	opts := cli.ParseArguments()
 	util.InitLogger("info")
 
-	os.RemoveAll("/tmp/system.db")
-	defer os.RemoveAll("/tmp/system.db")
+	dir := "/tmp/system.db"
+	sock := fmt.Sprintf("%s/test.sock", dir)
+	defer os.RemoveAll(dir)
+
+	storage.BootRedis(dir, sock)
+	defer storage.StopRedis(sock)
+
 	s, err := server.NewServer(&server.ServerOptions{
-		Binding:          opts.Binding,
-		StorageDirectory: "/tmp/system.db",
+		Binding:          opts.CmdBinding,
+		StorageDirectory: dir,
+		RedisSock:        sock,
 	})
 	if err != nil {
 		panic(err)
@@ -40,17 +47,20 @@ func TestSystem(t *testing.T) {
 	go stacks()
 	go cli.HandleSignals(s)
 
+	err = s.Boot()
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		err = s.Start()
+		err = s.Run()
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	s.WaitUntilInitialized()
-
 	// this is a worker process so we need to set the global WID before connecting
-	faktory.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 
 	each := 10000
 	start := time.Now()
@@ -66,15 +76,15 @@ func TestSystem(t *testing.T) {
 	}
 
 	wg.Wait()
-	s.Stop(nil)
+	assert.EqualValues(t, 3*each, s.Store().TotalProcessed())
+	assert.EqualValues(t, 3*(each/100), s.Store().TotalFailures())
 
-	assert.Equal(t, int64(3*each), s.Store().Processed())
-	assert.Equal(t, int64(3*(each/100)), s.Store().Failures())
+	s.Stop(nil)
 }
 
 func pushAndPop(t *testing.T, count int) {
 	time.Sleep(300 * time.Millisecond)
-	client, err := faktory.Dial(faktory.DefaultServer(), "123456")
+	client, err := client.Dial(client.DefaultServer(), "123456")
 	if err != nil {
 		handleError(err)
 		return
@@ -119,14 +129,14 @@ func pushAndPop(t *testing.T, count int) {
 	util.Infof("%v", hash)
 }
 
-func pushJob(client *faktory.Client, idx int) error {
-	j := &faktory.Job{
+func pushJob(cl *client.Client, idx int) error {
+	j := &client.Job{
 		Jid:   util.RandomJid(),
 		Queue: "default",
 		Type:  "SomeJob",
 		Args:  []interface{}{1, "string", 3},
 	}
-	return client.Push(j)
+	return cl.Push(j)
 }
 
 func stacks() {

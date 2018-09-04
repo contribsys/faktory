@@ -1,18 +1,22 @@
 package webui
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/contribsys/faktory"
+	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/justinas/nosurf"
 )
 
 var (
@@ -23,8 +27,8 @@ func serverUtcTime() string {
 	return time.Now().UTC().Format(utcFormat)
 }
 
-func serverLocation() string {
-	return defaultServer.Options.Binding
+func serverLocation(req *http.Request) string {
+	return ctx(req).Server().Options.Binding
 }
 
 func rtl(req *http.Request) bool {
@@ -48,8 +52,8 @@ func pageparam(req *http.Request, pageValue uint64) string {
 	return fmt.Sprintf("page=%d", pageValue)
 }
 
-func currentStatus() string {
-	if defaultServer.Store().Working().Size() == 0 {
+func currentStatus(req *http.Request) string {
+	if ctx(req).Store().Working().Size() == 0 {
 		return "idle"
 	}
 	return "active"
@@ -60,25 +64,32 @@ type Queue struct {
 	Size uint64
 }
 
-func queues() []Queue {
+func queues(req *http.Request) []Queue {
 	queues := make([]Queue, 0)
-	defaultServer.Store().EachQueue(func(q storage.Queue) {
+	ctx(req).Store().EachQueue(func(q storage.Queue) {
 		queues = append(queues, Queue{q.Name(), q.Size()})
+	})
+
+	sort.Slice(queues, func(i, j int) bool {
+		return queues[i].Name < queues[j].Name
 	})
 	return queues
 }
 
-func store() storage.Store {
-	return defaultServer.Store()
+func ctx(req *http.Request) *DefaultContext {
+	return req.Context().(*DefaultContext)
 }
 
 func csrfTag(req *http.Request) string {
-	// random string :-)
-	return `<input type="hidden" name="authenticity_token" value="p8tNCpaxTOdAEgoTT3UdSzReVPdWTRJimHS8zDXAVPw="/>`
+	if ctx(req).UseCsrf() {
+		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
+	} else {
+		return ""
+	}
 }
 
-func numberWithDelimiter(val int64) string {
-	in := strconv.FormatInt(val, 10)
+func uintWithDelimiter(val uint64) string {
+	in := strconv.FormatUint(val, 10)
 	out := make([]byte, len(in)+(len(in)-2+int(in[0]/'0'))/3)
 	if in[0] == '-' {
 		in, out[0] = in[1:], '-'
@@ -96,15 +107,15 @@ func numberWithDelimiter(val int64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
-	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, key, data []byte) error {
-		var job faktory.Job
+func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
+		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
 		}
-		fn(idx, key, &job)
+		fn(idx, data, &job)
 		return nil
 	})
 	if err != nil {
@@ -112,9 +123,9 @@ func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key 
 	}
 }
 
-func enqueuedSize() uint64 {
+func enqueuedSize(req *http.Request) uint64 {
 	var total uint64
-	defaultServer.Store().EachQueue(func(q storage.Queue) {
+	ctx(req).Store().EachQueue(func(q storage.Queue) {
 		total += q.Size()
 	})
 	return total
@@ -136,15 +147,18 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *faktory.Job)) {
-	err := set.Page(int64((currentPage-1)*count), int64(count), func(idx int, key []byte, data []byte) error {
-		var job faktory.Job
-		err := json.Unmarshal(data, &job)
+func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+	_, err := set.Page(int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
+		job, err := entry.Job()
 		if err != nil {
-			util.Warnf("Error parsing JSON: %s", string(data))
+			util.Warnf("Error parsing JSON: %s", string(entry.Value()))
 			return err
 		}
-		fn(idx, key, &job)
+		key, err := entry.Key()
+		if err != nil {
+			return err
+		}
+		fn(idx, key, job)
 		return nil
 	})
 	if err != nil {
@@ -152,10 +166,10 @@ func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, 
 	}
 }
 
-func busyReservations(fn func(worker *server.Reservation)) {
-	err := defaultServer.Store().Working().Each(func(idx int, key []byte, data []byte) error {
-		var res server.Reservation
-		err := json.Unmarshal(data, &res)
+func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
+	err := ctx(req).Store().Working().Each(func(idx int, entry storage.SortedEntry) error {
+		var res manager.Reservation
+		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
 			util.Error("Cannot unmarshal reservation", err)
 		} else {
@@ -168,18 +182,17 @@ func busyReservations(fn func(worker *server.Reservation)) {
 	}
 }
 
-func busyWorkers(fn func(proc *server.ClientData)) {
-	for _, worker := range defaultServer.Heartbeats() {
+func busyWorkers(req *http.Request, fn func(proc *server.ClientData)) {
+	for _, worker := range ctx(req).Server().Heartbeats() {
 		fn(worker)
 	}
 }
 
-func actOn(set storage.SortedSet, action string, keys []string) error {
+func actOn(req *http.Request, set storage.SortedSet, action string, keys []string) error {
 	switch action {
 	case "delete":
 		if len(keys) == 1 && keys[0] == "all" {
-			_, err := set.Clear()
-			return err
+			return set.Clear()
 		} else {
 			for _, key := range keys {
 				err := set.Remove([]byte(key))
@@ -191,10 +204,10 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 		}
 	case "retry":
 		if len(keys) == 1 && keys[0] == "all" {
-			return defaultServer.Store().EnqueueAll(set)
+			return ctx(req).Store().EnqueueAll(set)
 		} else {
 			for _, key := range keys {
-				err := defaultServer.Store().EnqueueFrom(set, []byte(key))
+				err := ctx(req).Store().EnqueueFrom(set, []byte(key))
 				if err != nil {
 					return err
 				}
@@ -203,14 +216,15 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 		}
 	case "kill":
 		if len(keys) == 1 && keys[0] == "all" {
-			return defaultServer.Store().EnqueueAll(set)
+			return ctx(req).Store().EnqueueAll(set)
 		} else {
-			expiry := util.Thens(time.Now().Add(180 * 24 * time.Hour))
+			expiry := time.Now().Add(180 * 24 * time.Hour)
 			for _, key := range keys {
-				elms := strings.Split(key, "|")
-				err := set.MoveTo(defaultServer.Store().Dead(), elms[0], elms[1], func(data []byte) (string, []byte, error) {
-					return expiry, data, nil
-				})
+				entry, err := set.Get([]byte(key))
+				if err != nil {
+					return err
+				}
+				err = set.MoveTo(ctx(req).Store().Dead(), entry, expiry)
 				if err != nil {
 					return err
 				}
@@ -222,16 +236,37 @@ func actOn(set storage.SortedSet, action string, keys []string) error {
 	}
 }
 
-func uptimeInDays() string {
-	return fmt.Sprintf("%.0f", time.Since(defaultServer.Stats.StartedAt).Seconds()/float64(86400))
+func uptimeInDays(req *http.Request) string {
+	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
 }
 
-func locale(req *http.Request) string {
-	t, ok := req.Context().(Translator)
-	if ok {
-		return t.Locale()
+func redis_info(req *http.Request) string {
+	client := ctx(req).Store().(storage.Redis)
+	val, err := client.Redis().Info().Result()
+	if err != nil {
+		return fmt.Sprintf("%v", err)
 	}
-	return "en"
+	return val
+}
+func rss() string {
+	ex, err := util.FileExists("/proc/self/status")
+	if err != nil || !ex {
+		return ""
+	}
+
+	content, err := ioutil.ReadFile("/proc/self/status")
+	if err != nil {
+		return ""
+	}
+
+	lines := bytes.Split(content, []byte("\n"))
+	for line := range lines {
+		ls := string(line)
+		if strings.Contains(ls, "VmRSS") {
+			return strings.Split(ls, ":")[1]
+		}
+	}
+	return ""
 }
 
 func days(req *http.Request) int {
@@ -267,10 +302,10 @@ func daysMatches(req *http.Request, value string, defalt bool) string {
 
 func processedHistory(req *http.Request) string {
 	cnt := days(req)
-	procd := map[string]int64{}
+	procd := map[string]uint64{}
 	//faild := map[string]int64{}
 
-	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
 		//faild[daystr] = f
 	})
@@ -284,9 +319,9 @@ func processedHistory(req *http.Request) string {
 func failedHistory(req *http.Request) string {
 	cnt := days(req)
 	//procd := map[string]int64{}
-	faild := map[string]int64{}
+	faild := map[string]uint64{}
 
-	defaultServer.Store().History(cnt, func(daystr string, p, f int64) {
+	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		//procd[daystr] = p
 		faild[daystr] = f
 	})
@@ -297,13 +332,17 @@ func failedHistory(req *http.Request) string {
 	return string(str)
 }
 
-func sortedLocaleNames(locales map[string]map[string]string) []string {
+func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
+	c := ctx(req)
 	names := make(sort.StringSlice, len(locales))
 	i := 0
-	for locale, _ := range locales {
-		names[i] = locale
+	for name, _ := range locales {
+		names[i] = name
 		i++
 	}
 	names.Sort()
-	return names
+
+	for _, name := range names {
+		fn(name, name == c.locale)
+	}
 }

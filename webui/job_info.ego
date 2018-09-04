@@ -4,10 +4,10 @@ package webui
 import (
   "net/http"
 
-  "github.com/contribsys/faktory"
+  "github.com/contribsys/faktory/client"
 )
 
-func ego_job_info(w io.Writer, req *http.Request, job *faktory.Job) {
+func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 %>
 
 <header>

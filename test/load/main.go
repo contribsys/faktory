@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory"
+	faktory "github.com/contribsys/faktory/client"
 )
 
 var (
@@ -78,7 +78,7 @@ func run() {
 	}
 
 	waiter.Wait()
-	stop := time.Now().Sub(start)
+	stop := time.Since(start)
 	fmt.Printf("Processed %d pushes and %d pops in %2f seconds, rate: %f jobs/s\n", pushes, pops, stop.Seconds(), float64(jobs)/stop.Seconds())
 	//fmt.Println(opsCount)
 }
@@ -109,12 +109,12 @@ func stress(idx int64) {
 				return
 			}
 		}
-		opsCount[idx] += 1
+		opsCount[idx]++
 	}
 }
 
 func randomQueue() string {
-	return queues[rand.Intn(5)]
+	return queues[rand.Intn(len(queues))]
 }
 
 func pop(client *faktory.Client, queues []string) {
@@ -122,6 +122,9 @@ func pop(client *faktory.Client, queues []string) {
 	if err != nil {
 		handleError(err)
 		return
+	}
+	if job == nil {
+		return // timeout?
 	}
 	if rand.Intn(100) == 99 {
 		err = client.Fail(job.Jid, os.ErrClosed, nil)

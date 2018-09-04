@@ -3,6 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/contribsys/faktory/client"
+	"github.com/go-redis/redis"
 )
 
 type BackupInfo struct {
@@ -24,52 +28,57 @@ type Store interface {
 	EnqueueAll(SortedSet) error
 	EnqueueFrom(SortedSet, []byte) error
 
-	History(days int, fn func(day string, procCnt int64, failCnt int64)) error
+	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
-	Processed() int64
 	Failure() error
-	Failures() int64
-
-	// creates a backup of the current database
-	Backup() error
-	EachBackup(func(bi BackupInfo)) error
-	RestoreFromLatest() error
-	PurgeOldBackups(int) error
+	TotalProcessed() uint64
+	TotalFailures() uint64
 
 	// Clear the database of all job data.
 	// Equivalent to Redis's FLUSHDB
 	Flush() error
+
+	Raw() KV
+}
+
+type Redis interface {
+	Redis() *redis.Client
 }
 
 type Queue interface {
 	Name() string
 	Size() uint64
-	Push(uint8, []byte) error
+
+	Add(job *client.Job) error
+	Push(priority uint8, data []byte) error
+
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)
 	Clear() (uint64, error)
 
-	// Please note that k/vs are NOT safe to use outside of the func.
-	// You must copy the values if you want to stash them for later use.
-	//
-	//	  cpy = make([]byte, len(k))
-	//	  copy(cpy, k)
-	Each(func(index int, k, v []byte) error) error
-	Page(int64, int64, func(index int, k, v []byte) error) error
+	Each(func(index int, data []byte) error) error
+	Page(start int64, count int64, fn func(index int, data []byte) error) error
 
 	Delete(keys [][]byte) error
 }
 
+type SortedEntry interface {
+	Value() []byte
+	Key() ([]byte, error)
+	Job() (*client.Job, error)
+}
+
 type SortedSet interface {
 	Name() string
-	Size() int64
-	Clear() (int64, error)
+	Size() uint64
+	Clear() error
 
+	Add(job *client.Job) error
 	AddElement(timestamp string, jid string, payload []byte) error
 
-	Get(key []byte) ([]byte, error)
-	Page(int64, int64, func(index int, key []byte, data []byte) error) error
-	Each(func(idx int, key []byte, data []byte) error) error
+	Get(key []byte) (SortedEntry, error)
+	Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error)
+	Each(fn func(idx int, e SortedEntry) error) error
 
 	Remove(key []byte) error
 	RemoveElement(timestamp string, jid string) error
@@ -78,12 +87,12 @@ type SortedSet interface {
 	// Move the given key from this SortedSet to the given
 	// SortedSet atomically.  The given func may mutate the payload and
 	// return a new tstamp.
-	MoveTo(SortedSet, string, string, func([]byte) (string, []byte, error)) error
+	MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error
 }
 
 func Open(dbtype string, path string) (Store, error) {
-	if dbtype == "rocksdb" {
-		return OpenRocks(path)
+	if dbtype == "redis" {
+		return OpenRedis(path)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

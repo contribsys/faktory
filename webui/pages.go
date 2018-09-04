@@ -9,12 +9,11 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/contribsys/faktory"
 	"github.com/contribsys/faktory/server"
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := server.CurrentState(defaultServer)
+	hash, err := ctx(r).Server().CurrentState()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -31,7 +30,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if defaultServer == nil {
+	if ctx(r).Server() == nil {
 		http.Error(w, "Server not booted", http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +52,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	queueName := name[1]
-	q, err := defaultServer.Store().GetQueue(queueName)
+	q, err := ctx(r).Store().GetQueue(queueName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,12 +108,12 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func retriesHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Retries()
+	set := ctx(r).Store().Retries()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -149,7 +148,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Retries().Get([]byte(key))
+	data, err := ctx(r).Store().Retries().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -161,8 +160,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -172,16 +170,16 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Job %s is not a retry", job.Jid), http.StatusInternalServerError)
 		return
 	}
-	ego_retry(w, r, key, &job)
+	ego_retry(w, r, key, job)
 }
 
 func scheduledHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Scheduled()
+	set := ctx(r).Store().Scheduled()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -217,7 +215,7 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := defaultServer.Store().Scheduled().Get([]byte(key))
+	data, err := ctx(r).Store().Scheduled().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -229,27 +227,22 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if job.At == "" {
-		http.Error(w, fmt.Sprintf("Job %s is not scheduled", job.Jid), http.StatusInternalServerError)
-		return
-	}
-	ego_scheduled_job(w, r, key, &job)
+	ego_scheduled_job(w, r, key, job)
 }
 
 func morgueHandler(w http.ResponseWriter, r *http.Request) {
-	set := defaultServer.Store().Dead()
+	set := ctx(r).Store().Dead()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := r.Form["key"]
-		err := actOn(set, action, keys)
+		err := actOn(r, set, action, keys)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
@@ -284,7 +277,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := defaultServer.Store().Dead().Get([]byte(key))
+	data, err := ctx(r).Store().Dead().Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -296,14 +289,13 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job faktory.Job
-	err = json.Unmarshal(data, &job)
+	job, err := data.Job()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ego_dead(w, r, key, &job)
+	ego_dead(w, r, key, job)
 }
 
 func busyHandler(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +313,7 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			for _, client := range defaultServer.Heartbeats() {
+			for _, client := range ctx(r).Server().Heartbeats() {
 				if wid == "all" || wid == client.Wid {
 					client.Signal(signal)
 				}
@@ -334,21 +326,5 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func debugHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		var err error
-
-		action := r.FormValue("action")
-		switch action {
-		case "backup":
-			err = defaultServer.Store().Backup()
-		}
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Redirect(w, r, "/debug", http.StatusFound)
-		}
-		return
-	}
-
 	ego_debug(w, r)
 }

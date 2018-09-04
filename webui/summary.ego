@@ -4,43 +4,44 @@ package webui
 import "net/http"
 
 func ego_summary(w io.Writer, req *http.Request) {
+  store := ctx(req).Store()
 %>
 <ul class="list-unstyled summary row">
   <li class="processed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(defaultServer.Store().Processed()) %></span>
+    <span class="count"><%= uintWithDelimiter(store.TotalProcessed()) %></span>
     <span class="desc"><%= t(req, "Processed") %></span>
   </li>
   <li class="failed col-sm-1">
-    <span class="count"><%= numberWithDelimiter(defaultServer.Store().Failures()) %></span>
+    <span class="count"><%= uintWithDelimiter(store.TotalFailures()) %></span>
     <span class="desc"><%= t(req, "Failed") %></span>
   </li>
   <li class="busy col-sm-1">
     <a href="/busy">
-      <span class="count"><%= numberWithDelimiter(store().Working().Size()) %></span>
+      <span class="count"><%= uintWithDelimiter(store.Working().Size()) %></span>
       <span class="desc"><%= t(req, "Busy") %></span>
     </a>
   </li>
   <li class="enqueued col-sm-1">
     <a href="/queues">
-      <span class="count"><%= numberWithDelimiter(int64(enqueuedSize())) %></span>
+      <span class="count"><%= uintWithDelimiter(enqueuedSize(req)) %></span>
       <span class="desc"><%= t(req, "Enqueued") %></span>
     </a>
   </li>
   <li class="retries col-sm-1">
     <a href="/retries">
-      <span class="count"><%= numberWithDelimiter(store().Retries().Size()) %></span>
+      <span class="count"><%= uintWithDelimiter(store.Retries().Size()) %></span>
       <span class="desc"><%= t(req, "Retries") %></span>
     </a>
   </li>
   <li class="scheduled col-sm-1">
     <a href="/scheduled">
-      <span class="count"><%= numberWithDelimiter(store().Scheduled().Size()) %></span>
+      <span class="count"><%= uintWithDelimiter(store.Scheduled().Size()) %></span>
       <span class="desc"><%= t(req, "Scheduled") %></span>
     </a>
   </li>
   <li class="dead col-sm-1">
     <a href="/morgue">
-      <span class="count"><%= numberWithDelimiter(store().Dead().Size()) %></span>
+      <span class="count"><%= uintWithDelimiter(store.Dead().Size()) %></span>
       <span class="desc"><%= t(req, "Dead") %></span>
     </a>
   </li>

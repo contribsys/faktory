@@ -20,14 +20,17 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+[[constraint]]
+  name = "github.com/BurntSushi/toml"
+  version = "0.3.0"
 
 [[constraint]]
-  name = "github.com/contribsys/gorocksdb"
-  revision = "65923dcb8c3df7681d26491e7ae40abf7f3b53c5"
+  name = "github.com/go-redis/redis"
+  branch = "master"
 
 [[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.0.3"
+  name = "github.com/apex/log"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

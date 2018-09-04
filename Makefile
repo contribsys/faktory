@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.6.0
+VERSION=0.9.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -9,11 +9,6 @@ TEST_FLAGS=-parallel 4
 ifdef DETECT_RACES
 	TEST_FLAGS += -race
 endif
-
-# contains various secret or machine-specific variables.
-# DEB_PRODUCTION: hostname of a debian-based upstart machine (e.g. Ubuntu {12,14}.04 LTS)
-# RPM_PRODUCTION: hostname of a redhat-based systemd machine (e.g. CentOS 7)
-#include $(HOME)/.local.sh
 
 # TODO I'd love some help making this a proper Makefile
 # with real file dependencies.
@@ -31,27 +26,44 @@ prepare: ## Download all dependencies
 
 test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
-		github.com/contribsys/faktory \
+		github.com/contribsys/faktory/client \
+		github.com/contribsys/faktory/cmd/faktory \
+		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
-		github.com/contribsys/faktory/webui \
-		github.com/contribsys/faktory/cmd/faktory-cli
+		github.com/contribsys/faktory/webui
 
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
-	GOLANG_VERSION=1.9.1 ROCKSDB_VERSION=5.7.3 TAG=$(VERSION) docker-compose build
+	docker build \
+		--build-arg GOLANG_VERSION=1.10.3  \
+		--tag contribsys/faktory:$(VERSION) \
+		--tag contribsys/faktory:latest .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:$(VERSION) -b 0.0.0.0:7419 -e production
+		contribsys/faktory:$(VERSION) /faktory -w 0.0.0.0:7420 -b 0.0.0.0:7419 -e production
+
+dmon: ## Run Faktory in a local Docker image, see also "make dimg"
+	docker run --rm -it \
+		-v faktory-data:/var/lib/faktory \
+		contribsys/faktory:$(VERSION) /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock
+
+#dinsp:
+	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
+		#-p 127.0.0.1:7419:7419 \
+		#-p 127.0.0.1:7420:7420 \
+		#-v faktory-data:/var/lib/faktory \
+		#contribsys/faktory:$(VERSION) /bin/bash
 
 dpush: tag
 	docker push contribsys/faktory:$(VERSION)
+	docker push contribsys/faktory:latest
 
 generate:
 	go generate github.com/contribsys/faktory/webui
@@ -59,18 +71,17 @@ generate:
 cover:
 	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
 	go tool cover -html=cover.out -o coverage.html
-	/Applications/Firefox.app/Contents/MacOS/firefox coverage.html
+	open coverage.html
 
-# https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
-# we can't cross-compile when using cgo <cry>
-#	@GOOS=linux GOARCH=amd64
 build: clean generate
-	go build -ldflags="-s -w" -o faktory-cli cmd/faktory-cli/repl.go
-	go build -ldflags="-s -w" -o faktory cmd/faktory/daemon.go
+	go build -o faktory cmd/faktory/daemon.go
 
-# this is a separate target because loadtest doesn't need rocksdb or webui
+mon:
+	redis-cli -s ~/.faktory/db/redis.sock
+
+# this is a separate target because loadtest doesn't need redis or webui
 build_load:
-	go build -ldflags="-s -w" -o loadtest test/load/main.go
+	go build -o loadtest test/load/main.go
 
 load: # not war
 	go run test/load/main.go 30000 10
@@ -88,13 +99,10 @@ work: ## Run a simple Ruby worker, see also "make run"
 clean: ## Clean the project, set it up for a new build
 	@rm -f webui/*.ego.go
 	@rm -rf tmp
-	@rm -f main faktory templates.go faktory-cli
+	@rm -f main faktory templates.go
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
-
-repl: clean generate ## Run the Faktory CLI
-	go run cmd/faktory-cli/repl.go -l debug -e development
 
 run: clean generate ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
@@ -109,7 +117,7 @@ ussh:
 # https://github.com/jordansissel/fpm/issues/576
 # brew install gnu-tar
 # ln -s /usr/local/bin/gtar /usr/local/bin/gnutar
-package: version_check clean build build_deb_systemd build_rpm_systemd
+package: deb rpm
 
 version_check:
 	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -153,10 +161,9 @@ build_rpm_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-build_rpm_systemd:
+rpm: version_check faktory
 	# gem install fpm
 	# brew install rpm
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
@@ -170,7 +177,6 @@ build_rpm_systemd:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 build_deb_upstart:
@@ -188,10 +194,9 @@ build_deb_upstart:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
-build_deb_systemd:
+deb: version_check faktory
 	# gem install fpm
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--deb-priority optional --category admin \
@@ -206,7 +211,6 @@ build_deb_systemd:
 		--iteration $(ITERATION) --license "GPL 3.0" \
 		--vendor "Contributed Systems" -a amd64 \
 		faktory=/usr/bin/faktory \
-		faktory-cli=/usr/bin/faktory-cli \
 		packaging/root/=/
 
 tag:

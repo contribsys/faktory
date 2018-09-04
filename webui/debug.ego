@@ -4,19 +4,15 @@ package webui
 import (
   "net/http"
   "runtime"
-  "time"
 
-  "github.com/contribsys/faktory"
-  "github.com/contribsys/faktory/storage"
-  "github.com/contribsys/gorocksdb"
+  "github.com/contribsys/faktory/client"
 )
 
 func ego_debug(w io.Writer, req *http.Request) {
-  stats := defaultServer.Store().Stats()
+  stats := ctx(req).Store().Stats()
   var m runtime.MemStats
   runtime.ReadMemStats(&m)
 %>
-
 <% ego_layout(w, req, func() { %>
 
 <h3><%= t(req, "Debugging") %></h3>
@@ -27,9 +23,9 @@ func ego_debug(w io.Writer, req *http.Request) {
         <th><%= t(req, "Locale") %></th>
         <td>
           <select name="locales" id="faktory_locale">
-            <% for _,locale := range sortedLocaleNames(locales) { %>
-              <option name="<%= locale %>" <% if locale == req.Context().(*DefaultContext).locale { %> selected <% } %> > <%= locale %> </option>
-            <% } %>
+            <% sortedLocaleNames(req, func(locale string, current bool) { %>
+              <option name="<%= locale %>" <% if current { %> selected <% } %> > <%= locale %> </option>
+            <% }) %>
           </select>
           <span style="font-size: small">
             Want to help us improve the translations?
@@ -39,7 +35,7 @@ func ego_debug(w io.Writer, req *http.Request) {
     </tr>
     <tr>
       <th><%= t(req, "Version") %></th>
-      <td>Faktory <%= faktory.Version %>, RocksDB <%= gorocksdb.RocksDBVersion() %></td>
+      <td>Faktory <%= client.Version %></td>
     </tr>
     <tr>
     <th><%= t(req, "Data Location") %></th>
@@ -54,6 +50,9 @@ func ego_debug(w io.Writer, req *http.Request) {
       <td>
         Alloc (KB): <%= m.Alloc / 1024 %><br/>
         Live Objects: <%= m.Mallocs - m.Frees %>
+        <% if amt := rss(); amt != "" { %>
+        <br/>RSS: <%= amt %>
+        <% } %>
       </td>
     </tr>
     <tr>
@@ -67,36 +66,10 @@ func ego_debug(w io.Writer, req *http.Request) {
 </table>
 </div>
 
-<h3><%= t(req, "Backups") %></h3>
-<div class="table_container">
-<table class="error table table-bordered table-striped">
-  <thead>
-    <tr>
-      <th>Id</th>
-      <th>Files</th>
-      <th>Size</th>
-      <th>Timestamp</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% err := defaultServer.Store().EachBackup(func(bi storage.BackupInfo) { %>
-    <tr>
-      <td><%= bi.Id %></td>
-      <td><%= bi.FileCount %></td>
-      <td><%= numberWithDelimiter(bi.Size) %></td>
-      <td><%= time.Unix(bi.Timestamp, 0).UTC() %></td>
-    </tr>
-    <% }) %>
-    <% if err != nil { %><%= err.Error() %><% } %>
-  </tbody>
-</table>
-<form action="/debug" method="post">
-  <%== csrfTag(req) %>
-  <div class="btn-group pull-left flip">
-    <button class="btn btn-primary" type="submit" name="action" value="backup"><%= t(req, "Backup") %></button>
-  </div>
-</form>
-</div>
+<h3><%= t(req, "Redis Info") %></h3>
+<pre>
+<%= redis_info(req) %>
+</pre>
 
 <h3><%= t(req, "Disk Usage") %></h3>
 <pre>
@@ -104,10 +77,5 @@ func ego_debug(w io.Writer, req *http.Request) {
 <%= df_h() %>
 </pre>
 
-<h3><%= t(req, "RocksDB Statistics") %></h3>
-<div class="table_container">
-<pre>
-<%= stats["stats"] %>
-</pre>
 <% }) %>
 <% } %>

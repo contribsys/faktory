@@ -1,106 +1,58 @@
 package storage
 
 import (
-	"encoding/binary"
 	"fmt"
-	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/gorocksdb"
+	"github.com/go-redis/redis"
 )
 
-type processingHistory struct {
-	TotalProcessed int64
-	TotalFailures  int64
-}
-
-var (
-	ONE          = make([]byte, 8)
-	writeOptions = gorocksdb.NewDefaultWriteOptions()
-)
-
-func init() {
-	binary.PutVarint(ONE, 1)
-}
-
-func (store *rocksStore) Success() error {
-	atomic.AddInt64(&store.history.TotalProcessed, 1)
+func (store *redisStore) Success() error {
 	daystr := time.Now().Format("2006-01-02")
-	store.db.MergeCF(writeOptions, store.stats, []byte(fmt.Sprintf("Processed:%s", daystr)), ONE)
-	store.db.MergeCF(writeOptions, store.stats, []byte("Processed"), ONE)
+	store.rclient.Incr(fmt.Sprintf("processed:%s", daystr))
+	store.rclient.Incr("processed")
 	return nil
 }
 
-func (store *rocksStore) Failure() error {
-	atomic.AddInt64(&store.history.TotalProcessed, 1)
-	atomic.AddInt64(&store.history.TotalFailures, 1)
-	store.db.MergeCF(writeOptions, store.stats, []byte("Processed"), ONE)
-	store.db.MergeCF(writeOptions, store.stats, []byte("Failures"), ONE)
+func (store *redisStore) TotalProcessed() uint64 {
+	return uint64(store.rclient.IncrBy("processed", 0).Val())
+}
+func (store *redisStore) TotalFailures() uint64 {
+	return uint64(store.rclient.IncrBy("failures", 0).Val())
+}
+
+func (store *redisStore) Failure() error {
+	store.rclient.Incr("processed")
+	store.rclient.Incr("failures")
 
 	daystr := time.Now().Format("2006-01-02")
-	store.db.MergeCF(writeOptions, store.stats, []byte(fmt.Sprintf("Processed:%s", daystr)), ONE)
-	store.db.MergeCF(writeOptions, store.stats, []byte(fmt.Sprintf("Failures:%s", daystr)), ONE)
+	store.rclient.Incr(fmt.Sprintf("processed:%s", daystr))
+	store.rclient.Incr(fmt.Sprintf("failures:%s", daystr))
 	return nil
 }
 
-func (store *rocksStore) History(days int, fn func(day string, procCnt int64, failCnt int64)) error {
+func (store *redisStore) History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error {
 	ts := time.Now()
+	daystrs := make([]string, days)
+	fails := make([]*redis.IntCmd, days)
+	procds := make([]*redis.IntCmd, days)
 
-	ro := gorocksdb.NewDefaultReadOptions()
-	defer ro.Destroy()
+	_, err := store.rclient.Pipelined(func(pipe redis.Pipeliner) error {
+		for idx := 0; idx < days; idx++ {
+			daystr := ts.Format("2006-01-02")
+			daystrs[idx] = daystr
+			procds[idx] = pipe.IncrBy(fmt.Sprintf("processed:%s", daystr), 0)
+			fails[idx] = pipe.IncrBy(fmt.Sprintf("failures:%s", daystr), 0)
+			ts = ts.Add(-24 * time.Hour)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
 
-	var proc int64
-	var failed int64
-	for i := 0; i < days; i++ {
-		daystr := ts.Format("2006-01-02")
-		value, err := store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Processed:%s", daystr)))
-		if err != nil {
-			return err
-		}
-		if value != nil {
-			proc, _ = binary.Varint(value)
-		}
-		value, err = store.db.GetBytesCF(ro, store.stats, []byte(fmt.Sprintf("Failures:%s", daystr)))
-		if err != nil {
-			return err
-		}
-		if value != nil {
-			failed, _ = binary.Varint(value)
-		}
-		fn(daystr, proc, failed)
-		proc = 0
-		failed = 0
-		ts = ts.Add(-24 * time.Hour)
+	for idx := 0; idx < days; idx++ {
+		fn(daystrs[idx], uint64(procds[idx].Val()), uint64(fails[idx].Val()))
 	}
 	return nil
-}
-
-///////////////////////////
-
-type int64CounterMerge struct {
-}
-
-func (m *int64CounterMerge) FullMerge(key, existingValue []byte, operands [][]byte) ([]byte, bool) {
-	eint, _ := binary.Varint(existingValue)
-	for _, val := range operands {
-		oint, _ := binary.Varint(val)
-		eint += oint
-	}
-
-	newval := make([]byte, 8)
-	binary.PutVarint(newval, eint)
-	return newval, true
-}
-
-func (m *int64CounterMerge) PartialMerge(key, left, right []byte) ([]byte, bool) {
-	aint, _ := binary.Varint(left)
-	bint, _ := binary.Varint(right)
-
-	data := make([]byte, 8)
-	binary.PutVarint(data, aint+bint)
-	return data, true
-}
-
-func (m *int64CounterMerge) Name() string {
-	return "faktory stats counters"
 }

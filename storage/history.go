@@ -3,6 +3,8 @@ package storage
 import (
 	"fmt"
 	"time"
+
+	"github.com/go-redis/redis"
 )
 
 func (store *redisStore) Success() error {
@@ -31,38 +33,26 @@ func (store *redisStore) Failure() error {
 
 func (store *redisStore) History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error {
 	ts := time.Now()
-	daystr := ts.Format("2006-01-02")
+	daystrs := make([]string, days)
+	fails := make([]*redis.IntCmd, days)
+	procds := make([]*redis.IntCmd, days)
 
-	var proc uint64
-	var failed uint64
-	value, err := store.rclient.IncrBy(fmt.Sprintf("processed:%s", daystr), 0).Result()
+	_, err := store.rclient.Pipelined(func(pipe redis.Pipeliner) error {
+		for idx := 0; idx < days; idx++ {
+			daystr := ts.Format("2006-01-02")
+			daystrs[idx] = daystr
+			procds[idx] = pipe.IncrBy(fmt.Sprintf("processed:%s", daystr), 0)
+			fails[idx] = pipe.IncrBy(fmt.Sprintf("failures:%s", daystr), 0)
+			ts = ts.Add(-24 * time.Hour)
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
-	proc = uint64(value)
-	value, err = store.rclient.IncrBy(fmt.Sprintf("failures:%s", daystr), 0).Result()
-	if err != nil {
-		return err
-	}
-	failed = uint64(value)
-	fn(daystr, proc, failed)
-	proc = 0
-	failed = 0
 
-	for i := 1; i < days; i++ {
-		ts = ts.Add(-24 * time.Hour)
-		daystr = ts.Format("2006-01-02")
-		proc, err := store.rclient.IncrBy(fmt.Sprintf("processed:%s", daystr), 0).Result()
-		if err != nil {
-			return err
-		}
-		failed, err := store.rclient.IncrBy(fmt.Sprintf("failures:%s", daystr), 0).Result()
-		if err != nil {
-			return err
-		}
-		fn(daystr, uint64(proc), uint64(failed))
-		proc = 0
-		failed = 0
+	for idx := 0; idx < days; idx++ {
+		fn(daystrs[idx], uint64(procds[idx].Val()), uint64(fails[idx].Val()))
 	}
 	return nil
 }

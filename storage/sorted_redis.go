@@ -192,38 +192,42 @@ func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
 	}
 }
 
-func (rs *redisSorted) rem(time_f float64, jid string) error {
+func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
 	elms, err := rs.getScore(time_f)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if len(elms) == 0 {
-		return nil
+		return false, nil
 	}
 	if len(elms) == 1 {
-		return rs.store.rclient.ZRem(rs.name, elms[0]).Err()
+		count, err := rs.store.rclient.ZRem(rs.name, elms[0]).Result()
+		return count == 1, err
 	}
 
 	for _, elm := range elms {
 		if strings.Index(elm, jid) > 0 {
-			return rs.store.rclient.ZRem(rs.name, elm).Err()
+			count, err := rs.store.rclient.ZRem(rs.name, elm).Result()
+			return count == 1, err
 		}
 	}
-	return nil
+	return false, nil
 }
 
-func (rs *redisSorted) Remove(key []byte) error {
+// bool = was it removed?
+// err = any error
+func (rs *redisSorted) Remove(key []byte) (bool, error) {
 	time_f, jid, err := decompose(key)
 	if err != nil {
-		return err
+		return false, err
 	}
 	return rs.rem(time_f, jid)
 }
 
-func (rs *redisSorted) RemoveElement(timestamp string, jid string) error {
+func (rs *redisSorted) RemoveElement(timestamp string, jid string) (bool, error) {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
-		return err
+		return false, err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
 	return rs.rem(time_f, jid)
@@ -271,8 +275,9 @@ func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Ti
 	if err != nil {
 		return err
 	}
-	if cnt != 1 {
-		return errors.New("did not remove 1 expected element!")
+	if cnt == 0 {
+		// race condition, element was removed or moved elsewhere
+		return nil
 	}
 
 	return sset.AddElement(util.Thens(newtime), job.Jid, entry.Value())

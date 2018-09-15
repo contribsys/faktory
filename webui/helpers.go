@@ -195,7 +195,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 			return set.Clear()
 		} else {
 			for _, key := range keys {
-				err := set.Remove([]byte(key))
+				_, err := set.Remove([]byte(key))
+				// ok doesn't really matter
 				if err != nil {
 					return err
 				}
@@ -224,9 +225,11 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 				if err != nil {
 					return err
 				}
-				err = set.MoveTo(ctx(req).Store().Dead(), entry, expiry)
-				if err != nil {
-					return err
+				if entry != nil {
+					err = set.MoveTo(ctx(req).Store().Dead(), entry, expiry)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			return nil

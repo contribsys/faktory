@@ -127,7 +127,10 @@ func (m *manager) ack(jid string) (*client.Job, error) {
 		return nil, nil
 	}
 
-	err := m.store.Working().RemoveElement(res.Expiry, jid)
+	ok, err := m.store.Working().RemoveElement(res.Expiry, jid)
+	if !ok {
+		// doesn't matter, might not have acknowledged in time
+	}
 	return res.Job, err
 }
 

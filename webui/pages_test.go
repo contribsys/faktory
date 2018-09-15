@@ -115,6 +115,10 @@ func TestPages(t *testing.T) {
 			err = retries.AddElement(util.Nows(), jid2, data)
 			assert.NoError(t, err)
 
+			jid3, data := fakeJob()
+			err = retries.AddElement(util.Nows(), jid3, data)
+			assert.NoError(t, err)
+
 			var key []byte
 			retries.Each(func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
@@ -136,7 +140,7 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, sz, cnt)
 
 			assert.EqualValues(t, 0, def.Size())
-			assert.EqualValues(t, 2, retries.Size())
+			assert.EqualValues(t, 3, retries.Size())
 			payload := url.Values{
 				"key":    {keys},
 				"action": {"retry"},
@@ -149,7 +153,7 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 1, retries.Size())
+			assert.EqualValues(t, 2, retries.Size())
 			assert.EqualValues(t, 1, def.Size())
 
 			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
@@ -164,6 +168,31 @@ func TestPages(t *testing.T) {
 				"action": {"kill"},
 			}
 			assert.EqualValues(t, 0, str.Dead().Size())
+			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
+			assert.NoError(t, err)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			w = httptest.NewRecorder()
+			retriesHandler(w, req)
+
+			assert.Equal(t, "", w.Body.String())
+			assert.Equal(t, 302, w.Code)
+			assert.EqualValues(t, 1, retries.Size())
+			assert.EqualValues(t, 1, str.Dead().Size())
+
+			// Now try to operate on an element which disappears by clearing the sset
+			// manually before submitting
+			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
+				key, err = entry.Key()
+				return err
+			})
+			assert.NoError(t, err)
+
+			keys = string(key)
+			payload = url.Values{
+				"key":    {keys},
+				"action": {"kill"},
+			}
+			retries.Clear() // clear it under us!
 			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

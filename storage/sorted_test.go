@@ -42,13 +42,15 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, payload, entry.Value())
 
-			err = sset.Remove([]byte(newkey))
+			ok, err := sset.Remove([]byte(newkey))
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, sset.Size())
+			assert.True(t, ok)
 
-			err = sset.RemoveElement(time, jid)
+			ok, err = sset.RemoveElement(time, jid)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, sset.Size())
+			assert.True(t, ok)
 
 			err = sset.AddElement(time, newjid, payload)
 			assert.NoError(t, err)

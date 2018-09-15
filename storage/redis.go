@@ -297,9 +297,12 @@ func (store *redisStore) EnqueueAll(sset SortedSet) error {
 			return err
 		}
 
-		err = sset.Remove(k)
+		ok, err := sset.Remove(k)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 
 		return q.Add(j)
@@ -310,6 +313,10 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 	entry, err := sset.Get(key)
 	if err != nil {
 		return err
+	}
+	if entry == nil {
+		// race condition, element was removed already
+		return nil
 	}
 
 	job, err := entry.Job()
@@ -322,9 +329,12 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 		return err
 	}
 
-	err = sset.Remove(key)
+	ok, err := sset.Remove(key)
 	if err != nil {
 		return err
+	}
+	if !ok {
+		return nil
 	}
 
 	return q.Add(job)

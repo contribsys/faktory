@@ -80,8 +80,11 @@ type SortedSet interface {
 	Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error)
 	Each(fn func(idx int, e SortedEntry) error) error
 
-	Remove(key []byte) error
-	RemoveElement(timestamp string, jid string) error
+	// bool is whether or not the element was actually removed from the sset.
+	// the scheduler and other things can be operating on the sset concurrently
+	// so we need to be careful about the data changing under us.
+	Remove(key []byte) (bool, error)
+	RemoveElement(timestamp string, jid string) (bool, error)
 	RemoveBefore(timestamp string) ([][]byte, error)
 
 	// Move the given key from this SortedSet to the given

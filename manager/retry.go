@@ -81,9 +81,16 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		return fmt.Errorf("Job not found %s", jid)
 	}
 
-	err := m.store.Working().RemoveElement(res.Expiry, jid)
-	if err != nil {
-		return err
+	// when expiring overdue jobs in the working set, we remove in
+	// bulk so this job is no longer in the working set already.
+	if failure != JobReservationExpired {
+		ok, err := m.store.Working().RemoveElement(res.Expiry, jid)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
 	}
 
 	m.store.Failure()

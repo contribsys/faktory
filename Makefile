@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.9.0
+VERSION=0.9.0-beta2
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -40,7 +40,8 @@ dimg: ## Make a Docker image for the current version
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3  \
 		--tag contribsys/faktory:$(VERSION) \
-		--tag contribsys/faktory:latest .
+		.
+		#--tag contribsys/faktory:latest \
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
@@ -63,7 +64,7 @@ dmon: ## Run Faktory in a local Docker image, see also "make dimg"
 
 dpush: tag
 	docker push contribsys/faktory:$(VERSION)
-	docker push contribsys/faktory:latest
+	#docker push contribsys/faktory:latest
 
 generate:
 	go generate github.com/contribsys/faktory/webui

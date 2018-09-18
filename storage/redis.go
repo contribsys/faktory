@@ -119,6 +119,14 @@ func BootRedis(path string, sock string) (func(), error) {
 		}
 		done := time.Now()
 		util.Debugf("Redis booted in %s", done.Sub(start))
+
+		// This will panic and crash Faktory if Redis dies for some reason.
+		go func() {
+			err := cmd.Wait()
+			if err != nil {
+				panic(err)
+			}
+		}()
 	}
 
 	_, err = rclient.Ping().Result()
@@ -142,7 +150,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		return nil, err
 	}
 
-	util.Infof("Running Redis v%s", version)
+	util.Debugf("Running Redis v%s", version)
 	err = rclient.Close()
 	if err != nil {
 		return nil, err
@@ -249,7 +257,7 @@ func StopRedis(sock string) error {
 		return errors.New("No such redis instance " + sock)
 	}
 
-	util.Infof("Shutting down Redis PID %d", cmd.Process.Pid)
+	util.Debugf("Shutting down Redis PID %d", cmd.Process.Pid)
 	p := cmd.Process
 	err := p.Signal(syscall.SIGTERM)
 	if err != nil {

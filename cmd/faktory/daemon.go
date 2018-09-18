@@ -83,6 +83,13 @@ func main() {
 	}
 
 	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
+	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
+	if err != nil {
+		util.Error("Unable to boot Redis", err)
+		return
+	}
+	defer stopper()
+
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          opts.CmdBinding,
 		StorageDirectory: opts.StorageDirectory,
@@ -96,34 +103,19 @@ func main() {
 		util.Error("Unable to create a new server", err)
 		return
 	}
-
-	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
-	if err != nil {
-		util.Error("Unable to boot Redis", err)
-		return
-	}
-	defer stopper()
+	s.Register(webui.Subsystem)
 
 	err = s.Boot()
 	if err != nil {
 		util.Error("Unable to boot the command server", err)
 		return
 	}
-	uiopts := webui.DefaultOptions()
-	uiopts.Binding = opts.WebBinding
-	uiopts.Password = pwd
-
-	ui := webui.NewWeb(s, uiopts)
-	stopui, err := ui.Run()
-	if err != nil {
-		util.Error("Unable to start the UI", err)
-		return
-	}
-	defer stopui()
 
 	go cli.HandleSignals(s)
+	go s.Run()
 
-	s.Run()
+	<-s.Stopper()
+	s.Stop(nil)
 }
 
 func fetchPassword(configDir string, env string) (string, error) {

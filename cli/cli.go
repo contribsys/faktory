@@ -95,8 +95,5 @@ func HandleSignals(s *server.Server) {
 func exit(s *server.Server) {
 	util.Debugf("%s shutting down", client.Name)
 
-	s.Stop(func() {
-		util.Info("Goodbye")
-		os.Exit(0)
-	})
+	close(s.Stopper())
 }

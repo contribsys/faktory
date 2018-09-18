@@ -70,7 +70,7 @@ func (l *Lifecycle) Start(s *server.Server) error {
 
 	l.uiopts = uiopts
 	l.WebUI = NewWeb(s, uiopts)
-	closer, err := l.webui.Run()
+	closer, err := l.WebUI.Run()
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (l *Lifecycle) Shutdown(s *server.Server) error {
 		util.Debug("Stopping WebUI")
 		l.closer()
 		l.closer = nil
-		l.webui = nil
+		l.WebUI = nil
 	}
 	return nil
 }

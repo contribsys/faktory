@@ -2,15 +2,20 @@ package cli
 
 import (
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"syscall"
 
+	"github.com/BurntSushi/toml"
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -96,4 +101,112 @@ func exit(s *server.Server) {
 	util.Debugf("%s shutting down", client.Name)
 
 	close(s.Stopper())
+}
+
+func BuildServer(opts CliOptions) (*server.Server, func(), error) {
+	globalConfig, err := readConfig(opts.ConfigDirectory, opts.Environment)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pwd, err := fetchPassword(opts.ConfigDirectory, opts.Environment)
+	if err != nil {
+		util.Error("Invalid password configuration", err)
+		return nil, nil, err
+	}
+
+	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
+	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
+	if err != nil {
+		util.Error("Unable to boot Redis", err)
+		return nil, nil, err
+	}
+
+	s, err := server.NewServer(&server.ServerOptions{
+		Binding:          opts.CmdBinding,
+		StorageDirectory: opts.StorageDirectory,
+		ConfigDirectory:  opts.ConfigDirectory,
+		Environment:      opts.Environment,
+		RedisSock:        sock,
+		Password:         pwd,
+		GlobalConfig:     globalConfig,
+	})
+	if err != nil {
+		util.Error("Unable to create a new server", err)
+		stopper()
+		return nil, nil, err
+	}
+
+	return s, stopper, nil
+}
+
+// Read all config files in:
+//   /etc/faktory/conf.d/*.toml (in production)
+//   ~/.faktory/conf.d/*.toml (in development)
+//
+// They are read in alphabetical order.
+// File contents are shallow merged, a latter file
+// can override a value from an earlier file.
+func readConfig(cdir string, env string) (map[string]interface{}, error) {
+	hash := map[string]interface{}{}
+
+	globs := []string{
+		fmt.Sprintf("%s/conf.d/*.toml", cdir),
+	}
+
+	for _, glob := range globs {
+		matches, err := filepath.Glob(glob)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, file := range matches {
+			util.Debugf("Reading configuration in %s", file)
+			fileBytes, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			err = toml.Unmarshal(fileBytes, &hash)
+			if err != nil {
+				util.Warnf("Unable to parse TOML file at %s", file)
+				return nil, err
+			}
+		}
+	}
+
+	util.Debug("Merged configuration")
+	util.Debugf("%v", hash)
+	return hash, nil
+}
+
+func fetchPassword(configDir string, env string) (string, error) {
+	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
+	if ok {
+		return val, nil
+	}
+
+	pwd := configDir + "/password"
+	exists, err := util.FileExists(pwd)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		data, err := ioutil.ReadFile(pwd)
+		if err != nil {
+			util.Error("Unable to read file "+pwd, err)
+			return "", err
+		}
+		return strings.TrimSpace(string(data)), nil
+	}
+
+	if env == "production" && !skip() {
+		return "", fmt.Errorf("Faktory requires a password to be set in production mode, see the Security wiki page")
+	}
+
+	return "", nil
+}
+
+func skip() bool {
+	val, ok := os.LookupEnv("FAKTORY_SKIP_PASSWORD")
+	return ok && (val == "1" || val == "true" || val == "yes")
 }

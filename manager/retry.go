@@ -116,10 +116,12 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	if job.Failure.RetryCount < job.Retry {
-		return retryLater(m.store, job)
-	}
-	return sendToMorgue(m.store, job)
+	return callMiddleware(m.failChain, job, func() error {
+		if job.Failure.RetryCount < job.Retry {
+			return retryLater(m.store, job)
+		}
+		return sendToMorgue(m.store, job)
+	})
 }
 
 func retryLater(store storage.Store, job *client.Job) error {

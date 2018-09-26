@@ -68,26 +68,47 @@ type Manager interface {
 	RetryJobs() (int64, error)
 
 	BusyCount(wid string) int
+
+	AddMiddleware(fntype string, fn MiddlewareFunc)
 }
 
 func NewManager(s storage.Store) Manager {
 	m := &manager{
 		store:      s,
 		workingMap: map[string]*Reservation{},
+		pushChain:  make(MiddlewareChain, 0),
+		failChain:  make(MiddlewareChain, 0),
+		ackChain:   make(MiddlewareChain, 0),
 	}
 	m.loadWorkingSet()
 	return m
+}
+
+func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {
+	switch fntype {
+	case "push":
+		m.pushChain = append(m.pushChain, fn)
+	case "ack":
+		m.ackChain = append(m.ackChain, fn)
+	case "fail":
+		m.failChain = append(m.failChain, fn)
+	default:
+		panic(fmt.Sprintf("Unknown middleware type: %s", fntype))
+	}
 }
 
 type manager struct {
 	store storage.Store
 
 	// Hold the working set in memory so we don't need to burn CPU
-	// marshalling between Rocks and memory when doing 1000s of jobs/sec.
+	// when doing 1000s of jobs/sec.
 	// When client ack's JID, we can lookup reservation
-	// and remove Rocks entry quickly.
+	// and remove stored entry quickly.
 	workingMap   map[string]*Reservation
 	workingMutex sync.RWMutex
+	pushChain    MiddlewareChain
+	failChain    MiddlewareChain
+	ackChain     MiddlewareChain
 }
 
 func (m *manager) Push(job *client.Job) error {
@@ -147,7 +168,9 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	return q.Push(job.Priority, data)
+	return callMiddleware(m.pushChain, job, func() error {
+		return q.Push(job.Priority, data)
+	})
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {

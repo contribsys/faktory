@@ -142,8 +142,12 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 
 	if job != nil {
 		m.store.Success()
+		err = callMiddleware(m.ackChain, job, func() error {
+			return nil
+		})
 	}
-	return job, nil
+
+	return job, err
 }
 
 func (m *manager) ReapExpiredJobs(timestamp string) (int, error) {

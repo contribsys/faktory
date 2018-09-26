@@ -21,20 +21,6 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-var (
-	EventHandlers = make([]func(*Server) error, 0)
-)
-
-type ServerOptions struct {
-	Binding          string
-	StorageDirectory string
-	RedisSock        string
-	ConfigDirectory  string
-	Environment      string
-	Password         string
-	GlobalConfig     map[string]interface{}
-}
-
 type RuntimeStats struct {
 	Connections uint64
 	Commands    uint64
@@ -42,23 +28,18 @@ type RuntimeStats struct {
 }
 
 type Server struct {
-	Options *ServerOptions
-	Stats   *RuntimeStats
+	Options    *ServerOptions
+	Stats      *RuntimeStats
+	Subsystems []Subsystem
 
 	listener   net.Listener
 	store      storage.Store
 	manager    manager.Manager
 	workers    *workers
 	taskRunner *taskRunner
-	pending    *sync.WaitGroup
 	mu         sync.Mutex
+	stopper    chan bool
 	closed     bool
-}
-
-// register a global handler to be called when the Server instance
-// has finished booting but before it starts listening.
-func OnStart(x func(*Server) error) {
-	EventHandlers = append(EventHandlers, x)
 }
 
 func NewServer(opts *ServerOptions) (*Server, error) {
@@ -70,9 +51,11 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 	}
 
 	s := &Server{
-		Options: opts,
-		Stats:   &RuntimeStats{StartedAt: time.Now()},
-		pending: &sync.WaitGroup{},
+		Options:    opts,
+		Stats:      &RuntimeStats{StartedAt: time.Now()},
+		Subsystems: []Subsystem{},
+
+		stopper: make(chan bool),
 		closed:  false,
 	}
 
@@ -92,9 +75,6 @@ func (s *Server) Manager() manager.Manager {
 }
 
 func (s *Server) AddTask(everySec int64, task Taskable) {
-	if s.isClosed() {
-		return
-	}
 	s.taskRunner.AddTask(everySec, task)
 }
 
@@ -115,20 +95,20 @@ func (s *Server) Boot() error {
 	s.workers = newWorkers()
 	s.manager = manager.NewManager(store)
 	s.listener = listener
-	s.startTasks(s.pending)
+	s.stopper = make(chan bool)
+	s.startTasks()
 	s.mu.Unlock()
 
 	return nil
 }
 
 func (s *Server) Run() error {
-	// NB: defers happen in reverse order
-	defer s.store.Close()
-	defer s.pending.Wait()
-	defer s.taskRunner.Stop()
+	if s.store == nil {
+		panic("Server hasn't been booted")
+	}
 
-	for _, x := range EventHandlers {
-		err := x(s)
+	for _, x := range s.Subsystems {
+		err := x.Start(s)
 		if err != nil {
 			return err
 		}
@@ -136,7 +116,7 @@ func (s *Server) Run() error {
 
 	util.Infof("PID %d listening at %s, press Ctrl-C to stop", os.Getpid(), s.Options.Binding)
 
-	// this is the central runtime loop for the main goroutine
+	// this is the runtime loop for the command server
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
@@ -152,26 +132,26 @@ func (s *Server) Run() error {
 	}
 }
 
-func (s *Server) isClosed() bool {
-	return s.closed
+func (s *Server) Stopper() chan bool {
+	return s.stopper
 }
 
 func (s *Server) Stop(f func()) {
 	// Don't allow new network connections
 	s.mu.Lock()
-	if s.closed {
-		return
-	}
 	s.closed = true
 	if s.listener != nil {
 		s.listener.Close()
 	}
 	s.mu.Unlock()
+
 	time.Sleep(100 * time.Millisecond)
 
 	if f != nil {
 		f()
 	}
+
+	s.store.Close()
 }
 
 func hash(pwd, salt string, iterations int) string {
@@ -279,7 +259,7 @@ func (s *Server) processLines(conn *Connection) {
 			conn.Close()
 			return
 		}
-		if s.isClosed() {
+		if s.closed {
 			conn.Error("Closing connection", newTaggedError("SHUTDOWN", fmt.Errorf("Shutdown in progress")))
 			conn.Close()
 			return

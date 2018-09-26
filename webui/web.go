@@ -40,7 +40,8 @@ var (
 type localeMap map[string]map[string]string
 
 var (
-	locales = localeMap{}
+	locales   = localeMap{}
+	Subsystem = &Lifecycle{}
 )
 
 func init() {
@@ -56,12 +57,63 @@ func init() {
 	//util.Debugf("Initialized %d locales", len(localeFiles))
 }
 
+type Lifecycle struct {
+	WebUI  *WebUI
+	uiopts Options
+	closer func()
+}
+
+func (l *Lifecycle) Start(s *server.Server) error {
+	uiopts := DefaultOptions()
+	uiopts.Binding = s.Options.String("web", "binding", ":7420")
+	uiopts.Password = s.Options.String("web", "password", "")
+
+	l.uiopts = uiopts
+	l.WebUI = NewWeb(s, uiopts)
+	closer, err := l.WebUI.Run()
+	if err != nil {
+		return err
+	}
+	l.closer = closer
+	return nil
+}
+
+func (l *Lifecycle) Reload(s *server.Server) error {
+	uiopts := DefaultOptions()
+	uiopts.Binding = s.Options.String("web", "binding", "localhost:7420")
+	uiopts.Password = s.Options.String("web", "password", "")
+
+	if uiopts != l.uiopts {
+		util.Infof("Reloading web interface")
+		l.closer()
+
+		l.uiopts = uiopts
+		l.WebUI = NewWeb(s, uiopts)
+		closer, err := l.WebUI.Run()
+		if err != nil {
+			return err
+		}
+		l.closer = closer
+		return nil
+	}
+	return nil
+}
+
+func (l *Lifecycle) Shutdown(s *server.Server) error {
+	if l.closer != nil {
+		util.Debug("Stopping WebUI")
+		l.closer()
+		l.closer = nil
+		l.WebUI = nil
+	}
+	return nil
+}
+
 type WebUI struct {
 	Options Options
 	Server  *server.Server
 
-	mux    *http.ServeMux
-	closer func() error
+	mux *http.ServeMux
 }
 
 type Options struct {
@@ -104,11 +156,12 @@ func NewWeb(s *server.Server, opts Options) *WebUI {
 	return ui
 }
 
-func (ui *WebUI) Stop() error {
-	return ui.closer()
-}
-
 func (ui *WebUI) Run() (func(), error) {
+	if ui.Options.Binding == ":0" {
+		// disable webui
+		return nil, nil
+	}
+
 	s := &http.Server{
 		Addr:           ui.Options.Binding,
 		ReadTimeout:    1 * time.Second,

@@ -18,8 +18,7 @@ import (
  * ts.Run(...)
  */
 type taskRunner struct {
-	stopping chan interface{}
-	tasks    []*task
+	tasks []*task
 
 	walltimeNs int64
 	cycles     int64
@@ -42,8 +41,7 @@ type Taskable interface {
 
 func newTaskRunner() *taskRunner {
 	return &taskRunner{
-		stopping: make(chan interface{}),
-		tasks:    make([]*task, 0),
+		tasks: make([]*task, 0),
 	}
 }
 
@@ -56,11 +54,8 @@ func (ts *taskRunner) AddTask(sec int64, thing Taskable) {
 	ts.mutex.Unlock()
 }
 
-func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
-	waiter.Add(1)
+func (ts *taskRunner) Run(stopper chan bool) {
 	go func() {
-		defer waiter.Done()
-
 		// add random jitter so the runner goroutine doesn't fire at 000ms
 		time.Sleep(time.Duration(rand.Float64()) * time.Second)
 		timer := time.NewTicker(1 * time.Second)
@@ -70,7 +65,8 @@ func (ts *taskRunner) Run(waiter *sync.WaitGroup) {
 			ts.cycle()
 			select {
 			case <-timer.C:
-			case <-ts.stopping:
+			case <-stopper:
+				util.Debug("Stopping scheduled tasks")
 				return
 			}
 		}
@@ -86,11 +82,6 @@ func (ts *taskRunner) Stats() map[string]map[string]interface{} {
 		data[task.runner.Name()] = task.runner.Stats()
 	}
 	return data
-}
-
-func (ts *taskRunner) Stop() {
-	util.Debug("Stopping scheduled tasks")
-	close(ts.stopping)
 }
 
 func (ts *taskRunner) cycle() {
@@ -120,7 +111,7 @@ func (ts *taskRunner) cycle() {
 	atomic.AddInt64(&ts.walltimeNs, end.Sub(start).Nanoseconds())
 }
 
-func (s *Server) startTasks(waiter *sync.WaitGroup) {
+func (s *Server) startTasks() {
 	ts := newTaskRunner()
 	// scan the various sets, looking for things to do
 	ts.AddTask(5, &scanner{name: "Scheduled", set: s.store.Scheduled(), task: s.manager.EnqueueScheduledJobs})
@@ -132,6 +123,6 @@ func (s *Server) startTasks(waiter *sync.WaitGroup) {
 	// reaps workers who have not heartbeated
 	ts.AddTask(15, &beatReaper{s.workers, 0})
 
-	ts.Run(waiter)
+	ts.Run(s.Stopper())
 	s.taskRunner = ts
 }

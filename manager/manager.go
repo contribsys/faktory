@@ -79,6 +79,7 @@ func NewManager(s storage.Store) Manager {
 		pushChain:  make(MiddlewareChain, 0),
 		failChain:  make(MiddlewareChain, 0),
 		ackChain:   make(MiddlewareChain, 0),
+		fetchChain: make(MiddlewareChain, 0),
 	}
 	m.loadWorkingSet()
 	return m
@@ -92,6 +93,8 @@ func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {
 		m.ackChain = append(m.ackChain, fn)
 	case "fail":
 		m.failChain = append(m.failChain, fn)
+	case "fetch":
+		m.fetchChain = append(m.fetchChain, fn)
 	default:
 		panic(fmt.Sprintf("Unknown middleware type: %s", fntype))
 	}
@@ -107,6 +110,7 @@ type manager struct {
 	workingMap   map[string]*Reservation
 	workingMutex sync.RWMutex
 	pushChain    MiddlewareChain
+	fetchChain   MiddlewareChain
 	failChain    MiddlewareChain
 	ackChain     MiddlewareChain
 }
@@ -174,6 +178,7 @@ func (m *manager) enqueue(job *client.Job) error {
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
+restart:
 	var first storage.Queue
 
 	for idx, qname := range queues {
@@ -192,7 +197,14 @@ func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*cli
 			if err != nil {
 				return nil, err
 			}
-			err = m.reserve(wid, &job)
+			err = callMiddleware(m.fetchChain, &job, func() error {
+				return m.reserve(wid, &job)
+			})
+			if h, ok := err.(Halt); ok {
+				// middleware halted the fetch, for whatever reason
+				util.Debugf("JID %s: %s", job.Jid, h.Error())
+				goto restart
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -221,7 +233,14 @@ func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*cli
 		if err != nil {
 			return nil, err
 		}
-		err = m.reserve(wid, &job)
+		err = callMiddleware(m.fetchChain, &job, func() error {
+			return m.reserve(wid, &job)
+		})
+		if h, ok := err.(Halt); ok {
+			// middleware halted the fetch, for whatever reason
+			util.Debugf("JID %s: %s", job.Jid, h.Error())
+			goto restart
+		}
 		if err != nil {
 			return nil, err
 		}

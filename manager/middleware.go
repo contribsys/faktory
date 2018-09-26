@@ -1,11 +1,21 @@
 package manager
 
 import (
+	"fmt"
+
 	"github.com/contribsys/faktory/client"
 )
 
 type MiddlewareFunc func(next func() error, job *client.Job) error
 type MiddlewareChain []MiddlewareFunc
+
+type Halt struct {
+	msg string
+}
+
+func (h Halt) Error() string {
+	return fmt.Sprintf("Halt: %s", h.msg)
+}
 
 // Run the given job through the given middleware chain.
 // `final` is the function called if the entire chain passes the job along.

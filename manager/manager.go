@@ -200,7 +200,7 @@ restart:
 			err = callMiddleware(m.fetchChain, &job, func() error {
 				return m.reserve(wid, &job)
 			})
-			if h, ok := err.(Halt); ok {
+			if h, ok := err.(halt); ok {
 				// middleware halted the fetch, for whatever reason
 				util.Debugf("JID %s: %s", job.Jid, h.Error())
 				goto restart
@@ -236,7 +236,7 @@ restart:
 		err = callMiddleware(m.fetchChain, &job, func() error {
 			return m.reserve(wid, &job)
 		})
-		if h, ok := err.(Halt); ok {
+		if h, ok := err.(halt); ok {
 			// middleware halted the fetch, for whatever reason
 			util.Debugf("JID %s: %s", job.Jid, h.Error())
 			goto restart

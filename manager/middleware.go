@@ -9,11 +9,15 @@ import (
 type MiddlewareFunc func(next func() error, job *client.Job) error
 type MiddlewareChain []MiddlewareFunc
 
-type Halt struct {
+func Halt(msg string) error {
+	return halt{msg: msg}
+}
+
+type halt struct {
 	msg string
 }
 
-func (h Halt) Error() string {
+func (h halt) Error() string {
 	return fmt.Sprintf("Halt: %s", h.msg)
 }
 

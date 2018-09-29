@@ -63,10 +63,21 @@ type Lifecycle struct {
 	closer func()
 }
 
-func (l *Lifecycle) Start(s *server.Server) error {
+func (l *Lifecycle) opts(s *server.Server) Options {
 	uiopts := DefaultOptions()
 	uiopts.Binding = s.Options.String("web", "binding", ":7420")
-	uiopts.Password = s.Options.String("web", "password", "")
+	// Allow the Web UI to have a different password from the command port
+	// so you can rotate user-used passwords and machine-used passwords separately
+	pwd := s.Options.String("web", "password", "")
+	if pwd == "" {
+		pwd = s.Options.Password
+	}
+	uiopts.Password = pwd
+	return uiopts
+}
+
+func (l *Lifecycle) Start(s *server.Server) error {
+	uiopts := l.opts(s)
 
 	l.uiopts = uiopts
 	l.WebUI = NewWeb(s, uiopts)
@@ -79,9 +90,7 @@ func (l *Lifecycle) Start(s *server.Server) error {
 }
 
 func (l *Lifecycle) Reload(s *server.Server) error {
-	uiopts := DefaultOptions()
-	uiopts.Binding = s.Options.String("web", "binding", "localhost:7420")
-	uiopts.Password = s.Options.String("web", "password", "")
+	uiopts := l.opts(s)
 
 	if uiopts != l.uiopts {
 		util.Infof("Reloading web interface")

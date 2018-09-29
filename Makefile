@@ -27,7 +27,7 @@ prepare: ## Download all dependencies
 test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
-		github.com/contribsys/faktory/cmd/faktory \
+		github.com/contribsys/faktory/cli \
 		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \

@@ -32,13 +32,13 @@ func main() {
 	}
 	defer stopper()
 
-	s.Register(webui.Subsystem)
-
 	err = s.Boot()
 	if err != nil {
 		util.Error("Unable to boot the command server", err)
 		return
 	}
+
+	s.Register(webui.Subsystem)
 
 	go cli.HandleSignals(s)
 	go s.Run()

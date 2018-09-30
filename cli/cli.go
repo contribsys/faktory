@@ -108,17 +108,24 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 		return nil, nil, err
 	}
 
+	pwd, err := fetchPassword(globalConfig, opts.Environment)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	defsock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
 	sock := stringConfig(globalConfig, "faktory", "sockpath", defsock)
 
 	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
 	if err != nil {
-		return nil, nil, err
+		return nil, stopper, err
 	}
 
-	pwd, err := fetchPassword(globalConfig, opts.Environment)
-	if err != nil {
-		return nil, nil, err
+	// allow binding config element if no CLI arg spec'd:
+	// [faktory]
+	//   binding = "0.0.0.0:7419"
+	if opts.CmdBinding == "localhost:7419" {
+		opts.CmdBinding = stringConfig(globalConfig, "faktory", "binding", "localhost:7419")
 	}
 
 	sopts := &server.ServerOptions{
@@ -135,14 +142,9 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 	util.Debug("Merged configuration")
 	util.Debugf("%v", globalConfig)
 
-	if err != nil {
-		return nil, nil, err
-	}
-
 	s, err := server.NewServer(sopts)
 	if err != nil {
-		stopper()
-		return nil, nil, err
+		return nil, stopper, err
 	}
 
 	return s, stopper, nil

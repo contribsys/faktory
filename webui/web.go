@@ -65,7 +65,7 @@ type Lifecycle struct {
 
 func (l *Lifecycle) opts(s *server.Server) Options {
 	uiopts := DefaultOptions()
-	uiopts.Binding = s.Options.String("web", "binding", ":7420")
+	uiopts.Binding = s.Options.String("web", "binding", "localhost:7420")
 	// Allow the Web UI to have a different password from the command port
 	// so you can rotate user-used passwords and machine-used passwords separately
 	pwd := s.Options.String("web", "password", "")

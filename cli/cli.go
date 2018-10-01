@@ -78,7 +78,7 @@ var (
 	SignalHandlers = map[os.Signal]func(*server.Server){
 		Term:         exit,
 		os.Interrupt: exit,
-		//Hup:          reload,
+		Hup:          reload,
 	}
 )
 
@@ -94,6 +94,19 @@ func HandleSignals(s *server.Server) {
 		funk := SignalHandlers[sig]
 		funk(s)
 	}
+}
+
+func reload(s *server.Server) {
+	util.Debugf("%s reloading", client.Name)
+
+	globalConfig, err := readConfig(s.Options.ConfigDirectory, s.Options.Environment)
+	if err != nil {
+		util.Warnf("Unable to reload config: %v", err)
+		return
+	}
+
+	s.Options.GlobalConfig = globalConfig
+	s.Reload()
 }
 
 func exit(s *server.Server) {

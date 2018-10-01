@@ -38,7 +38,7 @@ test: clean generate ## Execute test suite
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--build-arg GOLANG_VERSION=1.10.3  \
+		--build-arg GOLANG_VERSION=1.11.0  \
 		--tag contribsys/faktory:$(VERSION) \
 		.
 		#--tag contribsys/faktory:latest \

@@ -1,5 +1,5 @@
 ARG GOLANG_VERSION
-FROM golang:${GOLANG_VERSION}-alpine3.7 AS build
+FROM golang:${GOLANG_VERSION}-alpine3.8 AS build
 
 RUN apk add --no-cache build-base git ca-certificates redis
 

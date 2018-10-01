@@ -86,6 +86,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		if util.LogDebug {
 			loglevel = "verbose"
 		}
+		logfile := fmt.Sprintf("%s/redis.log", path)
 		arguments := []string{
 			binary,
 			conffilename,
@@ -95,6 +96,8 @@ func BootRedis(path string, sock string) (func(), error) {
 			loglevel,
 			"--dir",
 			path,
+			"--logfile",
+			logfile,
 		}
 
 		util.Debugf("Booting Redis: %s", strings.Join(arguments, " "))

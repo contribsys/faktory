@@ -41,7 +41,7 @@ func main() {
 		return
 	}
 
-	s.Register(webui.Subsystem)
+	s.Register(webui.Subsystem(opts.WebBinding))
 
 	go cli.HandleSignals(s)
 	go s.Run()

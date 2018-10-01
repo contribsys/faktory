@@ -387,8 +387,8 @@ func TestPages(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// Wrap the handler with CSRF protection
-			var hndlr http.HandlerFunc = Setup(ui, busyHandler, false)
-			csrfBusyHandler := Protect(true, hndlr)
+			var hndlr http.HandlerFunc = setup(ui, busyHandler, false)
+			csrfBusyHandler := protect(true, hndlr)
 			csrfBusyHandler.ServeHTTP(w, req)
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
@@ -452,8 +452,8 @@ func TestPages(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// Wrap the handler with CSRF protection
-			var hndlr http.HandlerFunc = Setup(ui, busyHandler, false)
-			csrfBusyHandler := Protect(false, hndlr)
+			var hndlr http.HandlerFunc = setup(ui, busyHandler, false)
+			csrfBusyHandler := protect(false, hndlr)
 			csrfBusyHandler.ServeHTTP(w, req)
 			assert.Equal(t, 200, w.Code)
 

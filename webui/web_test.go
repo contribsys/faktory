@@ -108,7 +108,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 		}
 	}()
 
-	web := NewWeb(s, DefaultOptions())
+	web := newWeb(s, defaultOptions())
 
 	fn(web, s, t)
 }

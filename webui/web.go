@@ -31,7 +31,7 @@ var (
 	}
 
 	// these are used in testing only
-	staticHandler = Cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	staticHandler = cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
 )
 
 //go:generate ego .
@@ -40,8 +40,7 @@ var (
 type localeMap map[string]map[string]string
 
 var (
-	locales   = localeMap{}
-	Subsystem = &Lifecycle{}
+	locales = localeMap{}
 )
 
 func init() {
@@ -63,24 +62,82 @@ type Lifecycle struct {
 	closer func()
 }
 
+func Subsystem(binding string) *Lifecycle {
+	opts := defaultOptions()
+	opts.Binding = binding
+	return &Lifecycle{
+		uiopts: opts,
+	}
+}
+
+type WebUI struct {
+	Options Options
+	Server  *server.Server
+
+	mux *http.ServeMux
+}
+
+type Options struct {
+	Binding    string
+	Password   string
+	EnableCSRF bool
+}
+
+func defaultOptions() Options {
+	return Options{
+		Password:   "",
+		Binding:    "localhost:7420",
+		EnableCSRF: true,
+	}
+}
+
+func newWeb(s *server.Server, opts Options) *WebUI {
+	ui := &WebUI{
+		Options: opts,
+		Server:  s,
+
+		mux: http.NewServeMux(),
+	}
+
+	ui.mux.HandleFunc("/static/", staticHandler)
+	ui.mux.HandleFunc("/stats", debugLog(ui, statsHandler))
+
+	ui.mux.HandleFunc("/", log(ui, getOnly(indexHandler)))
+	ui.mux.HandleFunc("/queues", log(ui, queuesHandler))
+	ui.mux.HandleFunc("/queues/", log(ui, queueHandler))
+	ui.mux.HandleFunc("/retries", log(ui, retriesHandler))
+	ui.mux.HandleFunc("/retries/", log(ui, retryHandler))
+	ui.mux.HandleFunc("/scheduled", log(ui, scheduledHandler))
+	ui.mux.HandleFunc("/scheduled/", log(ui, scheduledJobHandler))
+	ui.mux.HandleFunc("/morgue", log(ui, morgueHandler))
+	ui.mux.HandleFunc("/morgue/", log(ui, deadHandler))
+	ui.mux.HandleFunc("/busy", log(ui, busyHandler))
+	ui.mux.HandleFunc("/debug", log(ui, debugHandler))
+
+	return ui
+}
+
 func (l *Lifecycle) opts(s *server.Server) Options {
-	uiopts := DefaultOptions()
-	uiopts.Binding = s.Options.String("web", "binding", "localhost:7420")
+	opts := defaultOptions()
+	opts.Binding = l.uiopts.Binding
+	if opts.Binding == "localhost:7420" {
+		opts.Binding = s.Options.String("web", "binding", "localhost:7420")
+	}
 	// Allow the Web UI to have a different password from the command port
 	// so you can rotate user-used passwords and machine-used passwords separately
 	pwd := s.Options.String("web", "password", "")
 	if pwd == "" {
 		pwd = s.Options.Password
 	}
-	uiopts.Password = pwd
-	return uiopts
+	opts.Password = pwd
+	return opts
 }
 
 func (l *Lifecycle) Start(s *server.Server) error {
 	uiopts := l.opts(s)
 
 	l.uiopts = uiopts
-	l.WebUI = NewWeb(s, uiopts)
+	l.WebUI = newWeb(s, uiopts)
 	closer, err := l.WebUI.Run()
 	if err != nil {
 		return err
@@ -97,7 +154,7 @@ func (l *Lifecycle) Reload(s *server.Server) error {
 		l.closer()
 
 		l.uiopts = uiopts
-		l.WebUI = NewWeb(s, uiopts)
+		l.WebUI = newWeb(s, uiopts)
 		closer, err := l.WebUI.Run()
 		if err != nil {
 			return err
@@ -116,53 +173,6 @@ func (l *Lifecycle) Shutdown(s *server.Server) error {
 		l.WebUI = nil
 	}
 	return nil
-}
-
-type WebUI struct {
-	Options Options
-	Server  *server.Server
-
-	mux *http.ServeMux
-}
-
-type Options struct {
-	Binding    string
-	Password   string
-	EnableCSRF bool
-}
-
-func DefaultOptions() Options {
-	return Options{
-		Password:   "",
-		Binding:    ":7420",
-		EnableCSRF: true,
-	}
-}
-
-func NewWeb(s *server.Server, opts Options) *WebUI {
-	ui := &WebUI{
-		Options: opts,
-		Server:  s,
-
-		mux: http.NewServeMux(),
-	}
-
-	ui.mux.HandleFunc("/static/", staticHandler)
-	ui.mux.HandleFunc("/stats", DebugLog(ui, statsHandler))
-
-	ui.mux.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
-	ui.mux.HandleFunc("/queues", Log(ui, queuesHandler))
-	ui.mux.HandleFunc("/queues/", Log(ui, queueHandler))
-	ui.mux.HandleFunc("/retries", Log(ui, retriesHandler))
-	ui.mux.HandleFunc("/retries/", Log(ui, retryHandler))
-	ui.mux.HandleFunc("/scheduled", Log(ui, scheduledHandler))
-	ui.mux.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
-	ui.mux.HandleFunc("/morgue", Log(ui, morgueHandler))
-	ui.mux.HandleFunc("/morgue/", Log(ui, deadHandler))
-	ui.mux.HandleFunc("/busy", Log(ui, busyHandler))
-	ui.mux.HandleFunc("/debug", Log(ui, debugHandler))
-
-	return ui
 }
 
 func (ui *WebUI) Run() (func(), error) {
@@ -267,15 +277,15 @@ func localeFromHeader(value string) string {
 
 // The stats handler is hit a lot and adds much noise to the log,
 // quiet it down.
-func DebugLog(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
-	return Setup(ui, pass, true)
+func debugLog(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
+	return setup(ui, pass, true)
 }
 
-func Log(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
-	return Protect(ui.Options.EnableCSRF, Setup(ui, pass, false))
+func log(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
+	return protect(ui.Options.EnableCSRF, setup(ui, pass, false))
 }
 
-func Setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
+func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 	genericSetup := func(w http.ResponseWriter, r *http.Request) {
 		// this is the entry point for every dynamic request
 		// static assets bypass all this hubbub
@@ -316,12 +326,12 @@ func Setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 		}
 	}
 	if ui.Options.Password != "" {
-		return BasicAuth(ui.Options.Password, genericSetup)
+		return basicAuth(ui.Options.Password, genericSetup)
 	}
 	return genericSetup
 }
 
-func BasicAuth(pwd string, pass http.HandlerFunc) http.HandlerFunc {
+func basicAuth(pwd string, pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, password, ok := r.BasicAuth()
 		if !ok {
@@ -338,7 +348,7 @@ func BasicAuth(pwd string, pass http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func GetOnly(h http.HandlerFunc) http.HandlerFunc {
+func getOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			h(w, r)
@@ -348,7 +358,7 @@ func GetOnly(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func PostOnly(h http.HandlerFunc) http.HandlerFunc {
+func postOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			h(w, r)
@@ -358,14 +368,14 @@ func PostOnly(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func Cache(h http.Handler) http.HandlerFunc {
+func cache(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "public, max-age=3600")
 		h.ServeHTTP(w, r)
 	}
 }
 
-func Protect(enabled bool, h http.HandlerFunc) http.HandlerFunc {
+func protect(enabled bool, h http.HandlerFunc) http.HandlerFunc {
 	hndlr := nosurf.New(h)
 	hndlr.ExemptFunc(func(r *http.Request) bool {
 		return !enabled

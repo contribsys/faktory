@@ -127,6 +127,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		go func() {
 			err := cmd.Wait()
 			if err != nil {
+				util.Warnf("Redis at %s crashed: %s", path, err)
 				panic(err)
 			}
 		}()
@@ -263,10 +264,6 @@ func StopRedis(sock string) error {
 	util.Debugf("Shutting down Redis PID %d", cmd.Process.Pid)
 	p := cmd.Process
 	err := p.Signal(syscall.SIGTERM)
-	if err != nil {
-		return err
-	}
-	_, err = p.Wait()
 	if err != nil {
 		return err
 	}

@@ -126,8 +126,8 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 		return nil, nil, err
 	}
 
-	defsock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
-	stopper, err := storage.BootRedis(opts.StorageDirectory, defsock)
+	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
+	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
 	if err != nil {
 		return nil, stopper, err
 	}

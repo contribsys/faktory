@@ -82,11 +82,11 @@ func BootRedis(path string, sock string) (func(), error) {
 			return nil, err
 		}
 
-		loglevel := "notice"
-		if util.LogDebug {
-			loglevel = "verbose"
-		}
 		logfile := fmt.Sprintf("%s/redis.log", path)
+		loglevel := "warning"
+		if util.LogDebug {
+			loglevel = "notice"
+		}
 		arguments := []string{
 			binary,
 			conffilename,
@@ -103,6 +103,8 @@ func BootRedis(path string, sock string) (func(), error) {
 		util.Debugf("Booting Redis: %s", strings.Join(arguments, " "))
 
 		cmd := exec.Command(arguments[0], arguments[1:]...)
+		//cmd.Stdout = os.Stdout
+		//cmd.Stderr = os.Stderr
 		instances[sock] = cmd
 		err = cmd.Start()
 		if err != nil {
@@ -262,12 +264,28 @@ func StopRedis(sock string) error {
 	}
 
 	util.Debugf("Shutting down Redis PID %d", cmd.Process.Pid)
+	before := time.Now()
 	p := cmd.Process
+	pid := p.Pid
 	err := p.Signal(syscall.SIGTERM)
 	if err != nil {
 		return err
 	}
 	delete(instances, sock)
+
+	// Test suite hack: Redis will not exit if we
+	// don't give it enough time to reopen the RDB
+	// file before deleting the entire storage directory.
+	//time.Sleep(100 * time.Millisecond)
+	i := 500
+	for ; i > 0; i-- {
+		time.Sleep(2 * time.Millisecond)
+		err := syscall.Kill(pid, syscall.Signal(0))
+		if err == syscall.ESRCH {
+			util.Debugf("Redis dead in %v", time.Now().Sub(before))
+			return nil
+		}
+	}
 
 	return nil
 }

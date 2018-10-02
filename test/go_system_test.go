@@ -16,9 +16,8 @@ import (
 
 	"github.com/contribsys/faktory/cli"
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/server"
-	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/contribsys/faktory/webui"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,17 +26,15 @@ func TestSystem(t *testing.T) {
 	util.InitLogger("info")
 
 	dir := "/tmp/system.db"
-	sock := fmt.Sprintf("%s/test.sock", dir)
 	defer os.RemoveAll(dir)
 
-	storage.BootRedis(dir, sock)
-	defer storage.StopRedis(sock)
+	opts.ConfigDirectory = "."
+	opts.StorageDirectory = dir
+	s, stopper, err := cli.BuildServer(opts)
+	if stopper != nil {
+		defer stopper()
+	}
 
-	s, err := server.NewServer(&server.ServerOptions{
-		Binding:          opts.CmdBinding,
-		StorageDirectory: dir,
-		RedisSock:        sock,
-	})
 	if err != nil {
 		panic(err)
 	}
@@ -51,18 +48,14 @@ func TestSystem(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	s.Register(webui.Subsystem(opts.WebBinding))
 
-	go func() {
-		err = s.Run()
-		if err != nil {
-			panic(err)
-		}
-	}()
+	go s.Run()
 
 	// this is a worker process so we need to set the global WID before connecting
 	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
 
-	each := 10000
+	each := 5000
 	start := time.Now()
 
 	var wg sync.WaitGroup

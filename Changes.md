@@ -1,8 +1,10 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.0-beta
 
-- Switch Faktory from RocksDB to Redis for storage.
+- Switch Faktory from RocksDB to Redis for storage. [#160]
+- Implement Faktory-internal middleware hooks [#168]
+- Integrate TOML config system [#169]
 
 ## 0.8.0
 

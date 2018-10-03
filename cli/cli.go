@@ -26,11 +26,10 @@ type CliOptions struct {
 	ConfigDirectory  string
 	LogLevel         string
 	StorageDirectory string
-	Password         string
 }
 
 func ParseArguments() CliOptions {
-	defaults := CliOptions{"localhost:7419", "localhost:7420", "development", "/etc/faktory", "info", "/var/lib/faktory/db", ""}
+	defaults := CliOptions{"localhost:7419", "localhost:7420", "development", "/etc/faktory", "info", "/var/lib/faktory/db"}
 
 	flag.Usage = help
 	flag.StringVar(&defaults.WebBinding, "w", "localhost:7420", "WebUI binding")
@@ -79,7 +78,7 @@ var (
 	SignalHandlers = map[os.Signal]func(*server.Server){
 		Term:         exit,
 		os.Interrupt: exit,
-		//Hup:          reload,
+		Hup:          reload,
 	}
 )
 
@@ -97,6 +96,19 @@ func HandleSignals(s *server.Server) {
 	}
 }
 
+func reload(s *server.Server) {
+	util.Debugf("%s reloading", client.Name)
+
+	globalConfig, err := readConfig(s.Options.ConfigDirectory, s.Options.Environment)
+	if err != nil {
+		util.Warnf("Unable to reload config: %v", err)
+		return
+	}
+
+	s.Options.GlobalConfig = globalConfig
+	s.Reload()
+}
+
 func exit(s *server.Server) {
 	util.Debugf("%s shutting down", client.Name)
 
@@ -109,35 +121,57 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 		return nil, nil, err
 	}
 
-	pwd, err := fetchPassword(opts.ConfigDirectory, opts.Environment)
+	pwd, err := fetchPassword(globalConfig, opts.Environment)
 	if err != nil {
-		util.Error("Invalid password configuration", err)
 		return nil, nil, err
 	}
 
 	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
 	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
 	if err != nil {
-		util.Error("Unable to boot Redis", err)
-		return nil, nil, err
+		return nil, stopper, err
 	}
 
-	s, err := server.NewServer(&server.ServerOptions{
+	// allow binding config element if no CLI arg spec'd:
+	// [faktory]
+	//   binding = "0.0.0.0:7419"
+	if opts.CmdBinding == "localhost:7419" {
+		opts.CmdBinding = stringConfig(globalConfig, "faktory", "binding", "localhost:7419")
+	}
+
+	sopts := &server.ServerOptions{
 		Binding:          opts.CmdBinding,
 		StorageDirectory: opts.StorageDirectory,
 		ConfigDirectory:  opts.ConfigDirectory,
 		Environment:      opts.Environment,
 		RedisSock:        sock,
-		Password:         pwd,
 		GlobalConfig:     globalConfig,
-	})
+		Password:         pwd,
+	}
+
+	// don't log config hash until fetchPassword has had a chance to scrub the password value
+	util.Debug("Merged configuration")
+	util.Debugf("%v", globalConfig)
+
+	s, err := server.NewServer(sopts)
 	if err != nil {
-		util.Error("Unable to create a new server", err)
-		stopper()
-		return nil, nil, err
+		return nil, stopper, err
 	}
 
 	return s, stopper, nil
+}
+
+func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval string) string {
+	if mapp, ok := cfg[subsys]; ok {
+		if mappp, ok := mapp.(map[string]interface{}); ok {
+			if val, ok := mappp[elm]; ok {
+				if sval, ok := val.(string); ok {
+					return sval
+				}
+			}
+		}
+	}
+	return defval
 }
 
 // Read all config files in:
@@ -174,36 +208,52 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 		}
 	}
 
-	util.Debug("Merged configuration")
-	util.Debugf("%v", hash)
 	return hash, nil
 }
 
-func fetchPassword(configDir string, env string) (string, error) {
+// Expects a TOML file like:
+//
+// [faktory]
+// password = "foobar" # or...
+// password = "/run/secrets/my_faktory_password"
+func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
+	password := ""
+
+	// allow the password to be injected via ENV rather than committed
+	// to filesystem.  Note if this value starts with a /, then it is
+	// considered a pointer to a file on the filesystem with the password
+	// value, e.g. FAKTORY_PASSWORD=/run/secrets/my_faktory_password.
 	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
 	if ok {
-		return val, nil
+		password = val
+	} else {
+
+		val := stringConfig(cfg, "faktory", "password", "")
+		if val != "" {
+			password = val
+
+			// clear password so we can log it safely
+			x := cfg["faktory"].(map[string]interface{})
+			x["password"] = "********"
+		}
 	}
 
-	pwd := configDir + "/password"
-	exists, err := util.FileExists(pwd)
-	if err != nil {
-		return "", err
-	}
-	if exists {
-		data, err := ioutil.ReadFile(pwd)
+	if strings.HasPrefix(password, "/") {
+		// allow password value to point to a file.
+		// this is how Docker secrets work.
+		data, err := ioutil.ReadFile(password)
 		if err != nil {
-			util.Error("Unable to read file "+pwd, err)
 			return "", err
 		}
-		return strings.TrimSpace(string(data)), nil
+
+		password = strings.TrimSpace(string(data))
 	}
 
-	if env == "production" && !skip() {
+	if env == "production" && !skip() && password == "" {
 		return "", fmt.Errorf("Faktory requires a password to be set in production mode, see the Security wiki page")
 	}
 
-	return "", nil
+	return password, nil
 }
 
 func skip() bool {

@@ -27,7 +27,7 @@ prepare: ## Download all dependencies
 test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
-		github.com/contribsys/faktory/cmd/faktory \
+		github.com/contribsys/faktory/cli \
 		github.com/contribsys/faktory/manager \
 		github.com/contribsys/faktory/server \
 		github.com/contribsys/faktory/storage \
@@ -38,7 +38,7 @@ test: clean generate ## Execute test suite
 dimg: ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--build-arg GOLANG_VERSION=1.10.3  \
+		--build-arg GOLANG_VERSION=1.11.0  \
 		--tag contribsys/faktory:$(VERSION) \
 		.
 		#--tag contribsys/faktory:latest \

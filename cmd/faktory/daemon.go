@@ -26,19 +26,22 @@ func main() {
 	util.Debugf("Options: %v", opts)
 
 	s, stopper, err := cli.BuildServer(opts)
+	if stopper != nil {
+		defer stopper()
+	}
+
 	if err != nil {
 		util.Error("Unable to create Faktory server", err)
 		return
 	}
-	defer stopper()
-
-	s.Register(webui.Subsystem)
 
 	err = s.Boot()
 	if err != nil {
 		util.Error("Unable to boot the command server", err)
 		return
 	}
+
+	s.Register(webui.Subsystem(opts.WebBinding))
 
 	go cli.HandleSignals(s)
 	go s.Run()

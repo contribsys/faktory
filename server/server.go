@@ -74,6 +74,15 @@ func (s *Server) Manager() manager.Manager {
 	return s.manager
 }
 
+func (s *Server) Reload() {
+	for _, x := range s.Subsystems {
+		err := x.Reload(s)
+		if err != nil {
+			util.Warnf("Subsystem %v returned reload error: %v", x, err)
+		}
+	}
+}
+
 func (s *Server) AddTask(everySec int64, task Taskable) {
 	s.taskRunner.AddTask(everySec, task)
 }

@@ -110,7 +110,7 @@ func reload(s *server.Server) {
 }
 
 func exit(s *server.Server) {
-	util.Debugf("%s shutting down", client.Name)
+	util.Infof("%s shutting down", client.Name)
 
 	close(s.Stopper())
 }

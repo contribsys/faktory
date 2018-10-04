@@ -1,8 +1,10 @@
 package manager
 
 import (
+	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
@@ -39,11 +41,11 @@ func TestMiddlewareUsage(t *testing.T) {
 }
 
 func TestLiveMiddleware(t *testing.T) {
-	denied := errors.New("push denied")
 
 	withRedis(t, "middleware", func(t *testing.T, store storage.Store) {
 
 		t.Run("Push", func(t *testing.T) {
+			denied := errors.New("push denied")
 			store.Flush()
 			m := NewManager(store)
 			m.AddMiddleware("push", func(next func() error, job *client.Job) error {
@@ -69,5 +71,45 @@ func TestLiveMiddleware(t *testing.T) {
 			assert.Equal(t, err, denied)
 			assert.EqualValues(t, 1, q.Size())
 		})
+
+		t.Run("Fetch", func(t *testing.T) {
+			denied := errors.New("fetch denied")
+
+			store.Flush()
+			m := NewManager(store)
+			m.AddMiddleware("fetch", func(next func() error, job *client.Job) error {
+				if job.Type == "Nope" {
+					return denied
+				}
+				return next()
+			})
+
+			job := client.NewJob("Yep", 1, 2, 3)
+			q, err := store.GetQueue(job.Queue)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q.Size())
+
+			err = m.Push(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q.Size())
+
+			job = client.NewJob("Nope", 1, 2, 3)
+			err = m.Push(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 2, q.Size())
+
+			j1, err := m.Fetch(context.Background(), "12345", "default")
+			assert.NoError(t, err)
+			assert.Equal(t, "Yep", j1.Type)
+			assert.EqualValues(t, 1, q.Size())
+
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			j2, err := m.Fetch(ctx, "12345", "default")
+			assert.Equal(t, err, denied)
+			assert.Nil(t, j2)
+			assert.EqualValues(t, 0, q.Size())
+		})
+
 	})
 }

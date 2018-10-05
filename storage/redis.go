@@ -41,9 +41,6 @@ var (
 )
 
 func BootRedis(path string, sock string) (func(), error) {
-	util.LogInfo = true
-	util.LogDebug = true
-
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
@@ -166,8 +163,8 @@ func BootRedis(path string, sock string) (func(), error) {
 }
 
 func OpenRedis(sock string) (Store, error) {
-	util.LogInfo = true
-
+	redisMutex.Lock()
+	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; !ok {
 		return nil, errors.New("redis not booted, cannot start")
 	}
@@ -246,8 +243,9 @@ func (store *redisStore) Close() error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	opens -= 1
-	return nil
+	err := store.rclient.Close()
+	store.rclient = nil
+	return err
 }
 
 func (store *redisStore) Redis() *redis.Client {

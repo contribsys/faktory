@@ -1,8 +1,8 @@
 NAME=faktory
-VERSION=0.9.0-beta2
+VERSION=0.9.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
-ITERATION=1
+ITERATION=beta3
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
 TEST_FLAGS=-parallel 4
@@ -121,7 +121,7 @@ ussh:
 package: deb rpm
 
 version_check:
-	@grep -q $(VERSION) faktory.go || (echo VERSIONS OUT OF SYNC && false)
+	@grep -q $(VERSION) client/faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
 purge_deb:
 	ssh -t $(DEB_PRODUCTION) 'sudo apt-get purge -y $(NAME) && sudo rm -f /etc/faktory' || true

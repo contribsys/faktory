@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -270,6 +271,10 @@ func localeFromHeader(value string) string {
 	}
 
 	return "en"
+}
+
+func Layout(w io.Writer, req *http.Request, yield func()) {
+	return ego_layout(w, req, yield)
 }
 
 /////////////////////////////////////

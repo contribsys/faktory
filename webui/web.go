@@ -73,8 +73,7 @@ func Subsystem(binding string) *Lifecycle {
 type WebUI struct {
 	Options Options
 	Server  *server.Server
-
-	mux *http.ServeMux
+	Mux     *http.ServeMux
 }
 
 type Options struct {
@@ -96,23 +95,23 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 		Options: opts,
 		Server:  s,
 
-		mux: http.NewServeMux(),
+		Mux: http.NewServeMux(),
 	}
 
-	ui.mux.HandleFunc("/static/", staticHandler)
-	ui.mux.HandleFunc("/stats", debugLog(ui, statsHandler))
+	ui.Mux.HandleFunc("/static/", staticHandler)
+	ui.Mux.HandleFunc("/stats", DebugLog(ui, statsHandler))
 
-	ui.mux.HandleFunc("/", log(ui, getOnly(indexHandler)))
-	ui.mux.HandleFunc("/queues", log(ui, queuesHandler))
-	ui.mux.HandleFunc("/queues/", log(ui, queueHandler))
-	ui.mux.HandleFunc("/retries", log(ui, retriesHandler))
-	ui.mux.HandleFunc("/retries/", log(ui, retryHandler))
-	ui.mux.HandleFunc("/scheduled", log(ui, scheduledHandler))
-	ui.mux.HandleFunc("/scheduled/", log(ui, scheduledJobHandler))
-	ui.mux.HandleFunc("/morgue", log(ui, morgueHandler))
-	ui.mux.HandleFunc("/morgue/", log(ui, deadHandler))
-	ui.mux.HandleFunc("/busy", log(ui, busyHandler))
-	ui.mux.HandleFunc("/debug", log(ui, debugHandler))
+	ui.Mux.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
+	ui.Mux.HandleFunc("/queues", Log(ui, queuesHandler))
+	ui.Mux.HandleFunc("/queues/", Log(ui, queueHandler))
+	ui.Mux.HandleFunc("/retries", Log(ui, retriesHandler))
+	ui.Mux.HandleFunc("/retries/", Log(ui, retryHandler))
+	ui.Mux.HandleFunc("/scheduled", Log(ui, scheduledHandler))
+	ui.Mux.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
+	ui.Mux.HandleFunc("/morgue", Log(ui, morgueHandler))
+	ui.Mux.HandleFunc("/morgue/", Log(ui, deadHandler))
+	ui.Mux.HandleFunc("/busy", Log(ui, busyHandler))
+	ui.Mux.HandleFunc("/debug", Log(ui, debugHandler))
 
 	return ui
 }
@@ -186,7 +185,7 @@ func (ui *WebUI) Run() (func(), error) {
 		ReadTimeout:    1 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 16,
-		Handler:        ui.mux,
+		Handler:        ui.Mux,
 	}
 
 	go func() {
@@ -277,11 +276,11 @@ func localeFromHeader(value string) string {
 
 // The stats handler is hit a lot and adds much noise to the log,
 // quiet it down.
-func debugLog(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
+func DebugLog(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
 	return setup(ui, pass, true)
 }
 
-func log(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
+func Log(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
 	return protect(ui.Options.EnableCSRF, setup(ui, pass, false))
 }
 
@@ -348,7 +347,7 @@ func basicAuth(pwd string, pass http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func getOnly(h http.HandlerFunc) http.HandlerFunc {
+func GetOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			h(w, r)
@@ -358,7 +357,7 @@ func getOnly(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func postOnly(h http.HandlerFunc) http.HandlerFunc {
+func PostOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			h(w, r)

@@ -4,6 +4,8 @@ package webui
 import (
   "net/http"
   "strings"
+
+  "github.com/contribsys/faktory/client"
 )
 
 func ego_nav(w io.Writer, req *http.Request) {
@@ -20,7 +22,7 @@ func ego_nav(w io.Writer, req *http.Request) {
       </div>
       <a class="navbar-brand" href="/">
         <% ego_status(w, req) %>
-        faktory
+        <%= client.Name %>
       </a>
     </div>
 

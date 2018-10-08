@@ -274,7 +274,7 @@ func localeFromHeader(value string) string {
 }
 
 func Layout(w io.Writer, req *http.Request, yield func()) {
-	return ego_layout(w, req, yield)
+	ego_layout(w, req, yield)
 }
 
 /////////////////////////////////////

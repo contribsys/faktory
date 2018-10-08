@@ -39,7 +39,6 @@ var (
 //go:generate go-bindata -pkg webui -o static.go static/...
 
 type localeMap map[string]map[string]string
-
 type assetLookup func(string) ([]byte, error)
 
 var (
@@ -56,20 +55,18 @@ func init() {
 		name := strings.Split(filename, ".")[0]
 		locales[name] = nil
 	}
-	//util.Debugf("Initialized %d locales", len(localeFiles))
+	//util.Debugf("Initialized %d locales", len(files))
 }
 
 type Lifecycle struct {
-	WebUI  *WebUI
-	uiopts Options
-	closer func()
+	WebUI          *WebUI
+	defaultBinding string
+	closer         func()
 }
 
 func Subsystem(binding string) *Lifecycle {
-	opts := defaultOptions()
-	opts.Binding = binding
 	return &Lifecycle{
-		uiopts: opts,
+		defaultBinding: binding,
 	}
 }
 
@@ -121,7 +118,7 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 
 func (l *Lifecycle) opts(s *server.Server) Options {
 	opts := defaultOptions()
-	opts.Binding = l.uiopts.Binding
+	opts.Binding = l.defaultBinding
 	if opts.Binding == "localhost:7420" {
 		opts.Binding = s.Options.String("web", "binding", "localhost:7420")
 	}
@@ -138,7 +135,6 @@ func (l *Lifecycle) opts(s *server.Server) Options {
 func (l *Lifecycle) Start(s *server.Server) error {
 	uiopts := l.opts(s)
 
-	l.uiopts = uiopts
 	l.WebUI = newWeb(s, uiopts)
 	closer, err := l.WebUI.Run()
 	if err != nil {
@@ -151,12 +147,11 @@ func (l *Lifecycle) Start(s *server.Server) error {
 func (l *Lifecycle) Reload(s *server.Server) error {
 	uiopts := l.opts(s)
 
-	if uiopts != l.uiopts {
+	if uiopts != l.WebUI.Options {
 		util.Infof("Reloading web interface")
 		l.closer()
 
-		l.uiopts = uiopts
-		l.WebUI = newWeb(s, uiopts)
+		l.WebUI.Options = uiopts
 		closer, err := l.WebUI.Run()
 		if err != nil {
 			return err

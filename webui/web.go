@@ -40,20 +40,22 @@ var (
 
 type localeMap map[string]map[string]string
 
+type assetLookup func(string) ([]byte, error)
+
 var (
-	locales = localeMap{}
+	AssetLookups = []assetLookup{Asset}
+	locales      = localeMap{}
 )
 
 func init() {
-	localeFiles, err := AssetDir("static/locales")
+	files, err := AssetDir("static/locales")
 	if err != nil {
 		panic(err)
 	}
-	for _, filename := range localeFiles {
+	for _, filename := range files {
 		name := strings.Split(filename, ".")[0]
 		locales[name] = nil
 	}
-	translations("en") // eager load English
 	//util.Debugf("Initialized %d locales", len(localeFiles))
 }
 
@@ -211,17 +213,19 @@ func translations(locale string) map[string]string {
 
 	if ok {
 		//util.Debugf("Booting the %s locale", locale)
-		content, err := Asset(fmt.Sprintf("static/locales/%s.yml", locale))
-		if err != nil {
-			panic(err)
-		}
-
 		strs := map[string]string{}
-		scn := bufio.NewScanner(bytes.NewReader(content))
-		for scn.Scan() {
-			kv := strings.Split(scn.Text(), ":")
-			if len(kv) == 2 {
-				strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		for _, finder := range AssetLookups {
+			content, err := finder(fmt.Sprintf("static/locales/%s.yml", locale))
+			if err != nil {
+				continue
+			}
+
+			scn := bufio.NewScanner(bytes.NewReader(content))
+			for scn.Scan() {
+				kv := strings.Split(scn.Text(), ":")
+				if len(kv) == 2 {
+					strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+				}
 			}
 		}
 		locales[locale] = strs

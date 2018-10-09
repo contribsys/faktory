@@ -238,6 +238,13 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 		}
 	}
 
+	if env == "production" && !skip() && password == "" {
+		ok, _ := util.FileExists("/etc/faktory/password")
+		if ok {
+			password = "/etc/faktory/password"
+		}
+	}
+
 	if strings.HasPrefix(password, "/") {
 		// allow password value to point to a file.
 		// this is how Docker secrets work.

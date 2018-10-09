@@ -31,7 +31,7 @@ cat <<"TXT"
                               |___/
 
 
-Thanks for installing faktory!
+Welcome to Faktory, let's get working!
 
 TXT
 exit 0

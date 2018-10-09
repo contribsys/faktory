@@ -1,6 +1,3 @@
-#
-# systemd unit file for CentOS 7, Ubuntu bleeding edge
-#
 [Unit]
 Description=faktory
 # start us only once the network and logging subsystems are available
@@ -11,8 +8,23 @@ After=syslog.target network.target
 # http://0pointer.de/public/systemd-man/systemd.exec.html
 [Service]
 Type=simple
-ExecStart=/usr/bin/faktory -e production -b localhost:7419
-# allow `systemctl reload faktory`
+
+# required for Redis under low-memory conditions
+# alternatively you can add 'vm.overcommit_memory = 1'
+# to /etc/sysctl.conf and reboot
+ExecStartPre=/usr/sbin/sysctl vm.overcommit_memory=1
+
+# In the production environment, a password is required and created for you
+# in /etc/faktory/password.
+# -b controls the command port binding
+# -w controls the Web UI binding
+#
+# If you remove `-e production` and `/etc/faktory/password`, Faktory will
+# not require a password but also be utterly without security: achtung!
+ExecStart=/usr/bin/faktory -e production -b 0.0.0.0:7419 -w 0.0.0.0:7420
+
+# Change any config?
+# Run `systemctl reload faktory`
 ExecReload=/bin/kill -HUP $MAINPID
 Group=adm
 UMask=0002

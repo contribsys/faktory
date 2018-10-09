@@ -29,3 +29,4 @@ make build
 # sudo apt install ruby-dev --no-install-recommends -y
 # sudo gem install -N fpm
 # make deb
+# dpkg-deb -I <filename> to see details of built .DEB

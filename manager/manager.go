@@ -202,7 +202,7 @@ restart:
 			})
 			if h, ok := err.(halt); ok {
 				// middleware halted the fetch, for whatever reason
-				util.Debugf("JID %s: %s", job.Jid, h.Error())
+				util.Infof("JID %s: %s", job.Jid, h.Error())
 				goto restart
 			}
 			if err != nil {

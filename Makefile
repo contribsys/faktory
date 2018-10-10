@@ -17,6 +17,12 @@ endif
 
 all: test
 
+release: clean test package tag
+	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
+	hub release create v$(VERSION)-$(ITERATION) \
+		-a packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb \
+	  -a packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm -m "v$(VERSION)-$(ITERATION)" -p
+
 prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure

@@ -23,7 +23,7 @@ release: clean test package tag
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
 	hub release create v$(VERSION)-$(ITERATION) \
 		-a packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb \
-	  -a packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm \
+		-a packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm \
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## Download all dependencies

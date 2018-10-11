@@ -1,4 +1,5 @@
 require 'erb'
+require 'shellwords'
 
 # GitHub release notes auto-generator
 # Use like `ruby notes.rb 0.9.0`
@@ -11,7 +12,7 @@ sums = {}
 Dir["packaging/output/systemd/*"].each do |fullname|
   name = File.basename(fullname)
 
-  output = `shasum -p -a 256 #{fullname}`
+  output = `shasum -p -a 256 #{Shellwords.escape(fullname)}`
   if $?.exitstatus != 0
     raise output
   end

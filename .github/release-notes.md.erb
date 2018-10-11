@@ -1,0 +1,11 @@
+<%= title %>
+
+Notable changes can be found in the [Faktory changelog](/contribsys/faktory/blob/master/Changes.md#<%= shortver %>).
+
+| Filename | SHA256 |
+| --- | --- |
+<% sums.each do |filename, sum| -%>
+| <%= filename %> | <%= sum %> |
+<% end -%>
+
+Verify with `shasum -p -a 256 <filename>`.

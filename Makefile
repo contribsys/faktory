@@ -2,7 +2,7 @@ NAME=faktory
 VERSION=0.9.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
-ITERATION=beta3
+ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
 TEST_FLAGS=-parallel 4
@@ -18,10 +18,13 @@ endif
 all: test
 
 release: clean test package tag
+	@echo Generating release notes
+	ruby .github/notes.rb $(VERSION)
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
 	hub release create v$(VERSION)-$(ITERATION) \
 		-a packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb \
-	  -a packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm -m "v$(VERSION)-$(ITERATION)" -p
+	  -a packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm \
+	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
@@ -46,8 +49,8 @@ dimg: ## Make a Docker image for the current version
 	docker build \
 		--build-arg GOLANG_VERSION=1.10.3  \
 		--tag contribsys/faktory:$(VERSION) \
+		--tag contribsys/faktory:latest \
 		.
-		#--tag contribsys/faktory:latest \
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
@@ -70,7 +73,7 @@ dmon: ## Run Faktory in a local Docker image, see also "make dimg"
 
 dpush: tag
 	docker push contribsys/faktory:$(VERSION)
-	#docker push contribsys/faktory:latest
+	docker push contribsys/faktory:latest
 
 generate:
 	go generate github.com/contribsys/faktory/webui

@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## 0.9.0-beta
+## 0.9.0
 
 - Switch Faktory from RocksDB to Redis for storage. [#160]
 - Implement Faktory-internal middleware hooks [#168]

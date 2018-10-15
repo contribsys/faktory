@@ -17,7 +17,7 @@ endif
 
 all: test
 
-release: clean test package tag
+release: clean test package dimg tag dpush
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)

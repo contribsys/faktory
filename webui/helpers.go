@@ -53,7 +53,7 @@ func pageparam(req *http.Request, pageValue uint64) string {
 }
 
 func currentStatus(req *http.Request) string {
-	if ctx(req).Store().Working().Size() == 0 {
+	if ctx(req).Server().Manager().WorkingCount() == 0 {
 		return "idle"
 	}
 	return "active"

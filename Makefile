@@ -44,10 +44,9 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
 
-dimg: ## Make a Docker image for the current version
+dimg: xbuild ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--build-arg GOLANG_VERSION=1.10.3  \
 		--tag contribsys/faktory:$(VERSION) \
 		--tag contribsys/faktory:latest \
 		.

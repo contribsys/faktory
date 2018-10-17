@@ -12,7 +12,7 @@ Type=simple
 # required for Redis under low-memory conditions
 # alternatively you can add 'vm.overcommit_memory = 1'
 # to /etc/sysctl.conf and reboot
-ExecStartPre=/usr/sbin/sysctl vm.overcommit_memory=1
+ExecStartPre=/sbin/sysctl vm.overcommit_memory=1
 
 # In the production environment, a password is required and created for you
 # in /etc/faktory/password.

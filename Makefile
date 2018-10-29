@@ -52,16 +52,16 @@ dimg: xbuild ## Make a Docker image for the current version
 		.
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
-	docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
+	docker run --rm -it -e "FAKTORY_SKIP_PASSWORD=true" \
+		-v faktory-data:/var/lib/faktory \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:$(VERSION) /faktory -w 0.0.0.0:7420 -b 0.0.0.0:7419 -e production
+		contribsys/faktory:latest /faktory -e production
 
-dmon: ## Run Faktory in a local Docker image, see also "make dimg"
-	docker run --rm -it \
+dmon: ## Monitor Redis within the running Docker image
+	docker run --rm -it -t -i \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:$(VERSION) /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock
+		contribsys/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
 
 #dinsp:
 	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \

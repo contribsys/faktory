@@ -1,5 +1,9 @@
 # Faktory Changelog
 
+## 0.9.1
+
+- Fix crash on startup in Linux in development mode
+
 ## 0.9.0
 
 - Switch Faktory from RocksDB to Redis for storage. [#160]

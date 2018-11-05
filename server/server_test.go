@@ -21,8 +21,11 @@ func runServer(binding string, runner func()) {
 	defer os.RemoveAll(dir)
 
 	sock := fmt.Sprintf("%s/test.sock", dir)
-	storage.BootRedis(dir, sock)
-	defer storage.StopRedis(sock)
+	stopper, err := storage.BootRedis(dir, sock)
+	if err != nil {
+		panic(err)
+	}
+	defer stopper()
 
 	opts := &ServerOptions{
 		Binding:          binding,

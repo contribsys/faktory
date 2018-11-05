@@ -3,6 +3,7 @@
 ## 0.9.1
 
 - Fix crash on startup in Linux in development mode
+- Close all open connections when a worker process expires [#182]
 
 ## 0.9.0
 

@@ -136,6 +136,7 @@ func (s *Server) Run() error {
 			if c == nil {
 				return
 			}
+			defer cleanupConnection(s, c)
 			s.processLines(c)
 		}(conn)
 	}
@@ -161,6 +162,15 @@ func (s *Server) Stop(f func()) {
 	}
 
 	s.store.Close()
+}
+
+func cleanupConnection(s *Server, c *Connection) {
+	cd, ok := s.workers.heartbeats[c.client.Wid]
+	if !ok {
+		return
+	}
+	//util.Debugf("Removing client connection %v", c)
+	delete(cd.connections, c)
 }
 
 func hash(pwd, salt string, iterations int) string {
@@ -232,10 +242,17 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		}
 	}
 
+	cn := &Connection{
+		client: client,
+		conn:   conn,
+		buf:    buf,
+	}
+
 	if client.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		s.workers.heartbeat(client, true)
+		cd, _ := s.workers.heartbeat(client, true)
+		cd.connections[cn] = true
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -248,11 +265,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	// disable deadline
 	conn.SetDeadline(time.Time{})
 
-	return &Connection{
-		client: client,
-		conn:   conn,
-		buf:    buf,
-	}
+	return cn
 }
 
 func (s *Server) processLines(conn *Connection) {

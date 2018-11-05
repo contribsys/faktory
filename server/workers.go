@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"io"
 	"sync"
 	"time"
 
@@ -60,6 +61,7 @@ type ClientData struct {
 	// are sending BEAT
 	lastHeartbeat time.Time
 	state         WorkerState
+	connections   map[io.Closer]bool
 }
 
 type WorkerState int
@@ -150,10 +152,16 @@ func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, boo
 	} else if register {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
+		client.connections = map[io.Closer]bool{}
+
 		w.mu.Lock()
-		w.heartbeats[client.Wid] = client
+		if c, ok := w.heartbeats[client.Wid]; ok {
+			entry = c
+		} else {
+			w.heartbeats[client.Wid] = client
+			entry = client
+		}
 		w.mu.Unlock()
-		entry = client
 		ok = true
 	}
 
@@ -172,14 +180,24 @@ func (w *workers) reapHeartbeats(t time.Time) int {
 	w.mu.RUnlock()
 
 	count := len(toDelete)
+	conns := 0
 	if count > 0 {
 		w.mu.Lock()
 		for _, k := range toDelete {
+			cd := w.heartbeats[k]
+			for conn, _ := range cd.connections {
+				conn.Close()
+				conns += 1
+			}
 			delete(w.heartbeats, k)
 		}
 		w.mu.Unlock()
 
 		util.Debugf("Reaped %d worker heartbeats", count)
+		if conns > 0 {
+			util.Warnf("Reaped %d lingering connections, this is a sign your workers are having problems", conns)
+			util.Warn("All worker processes should send a heartbeat every 15 seconds")
+		}
 	}
 	return count
 }

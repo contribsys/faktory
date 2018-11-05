@@ -19,8 +19,8 @@ type Connection struct {
 	buf    *bufio.Reader
 }
 
-func (c *Connection) Close() {
-	c.conn.Close()
+func (c *Connection) Close() error {
+	return c.conn.Close()
 }
 
 func (c *Connection) Error(cmd string, err error) error {

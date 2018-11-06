@@ -229,7 +229,8 @@ func Dial(srv *Server, password string) (*Client, error) {
 }
 
 func (c *Client) Close() error {
-	return writeLine(c.wtr, "END", nil)
+	writeLine(c.wtr, "END", nil)
+	return c.conn.Close()
 }
 
 func (c *Client) Ack(jid string) error {

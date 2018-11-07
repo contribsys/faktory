@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+const (
+	SIGHUP  = 0x1
+	SIGINT  = 0x2
+	SIGQUIT = 0x3
+	SIGTERM = 0xF
+)
+
 var (
 	LogInfo  = false
 	LogDebug = false

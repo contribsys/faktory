@@ -100,7 +100,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		util.Debugf("Booting Redis: %s", strings.Join(arguments, " "))
 
 		cmd := exec.Command(arguments[0], arguments[1:]...)
-		util.EnsureChildShutdown(cmd) // platform-specific tuning
+		util.EnsureChildShutdown(cmd, syscall.SIGTERM) // platform-specific tuning
 		//cmd.Stdout = os.Stdout
 		//cmd.Stderr = os.Stderr
 		instances[sock] = cmd

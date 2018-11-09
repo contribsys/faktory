@@ -18,14 +18,14 @@ endif
 all: test
 
 release:
-	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).osx.tbz packaging/output/systemd
+	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
 	hub release create v$(VERSION)-$(ITERATION) \
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
-		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).osx.tbz \
+		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## Download all dependencies
@@ -128,7 +128,7 @@ ussh:
 	pushd build/ubuntu && vagrant up && vagrant ssh
 
 # gem install fpm
-# Packaging uses Go's cross compile + fpm so we can build Linux packages on OSX.
+# Packaging uses Go's cross compile + fpm so we can build Linux packages on macOS.
 package: clean xbuild deb rpm
 
 version_check:

@@ -1,10 +1,10 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.1
 
 - Fix crash on startup in Linux in development mode
 - Close all associated connections when a worker process expires [#182]
-- Fix to force Redis to shutdown if Faktory panics
+- Shutdown Redis cleanly if Faktory panics (Linux only)
 
 ## 0.9.0
 

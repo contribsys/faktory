@@ -17,6 +17,17 @@ endif
 
 all: test
 
+release:
+	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).osx.tbz packaging/output/systemd
+	@echo Generating release notes
+	ruby .github/notes.rb $(VERSION)
+	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
+	hub release create v$(VERSION)-$(ITERATION) \
+		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
+		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
+		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).osx.tbz \
+	 	-F /tmp/release-notes.md -e -o
+
 prepare: ## Download all dependencies
 	@go get github.com/golang/dep/cmd/dep
 	@dep ensure

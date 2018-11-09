@@ -1,0 +1,21 @@
+<%= title %>
+
+Notable changes can be found in the [Faktory changelog](https://github.com/contribsys/faktory/blob/master/Changes.md#<%= shortver %>).
+
+| Filename | SHA256 |
+| --- | --- |
+<% sums.keys.grep_v(/faktory-pro/).sort.each do |filename| -%>
+| <%= filename %> | <%= sums[filename] %> |
+<% end -%>
+<% sums.keys.grep(/faktory-pro/).sort.each do |filename| -%>
+| <%= filename %> | <%= sums[filename] %> |
+<% end -%>
+
+Verify with `shasum -p -a 256 <filename>`.
+
+[Installation](https://github.com/contribsys/faktory/wiki/Installation) | [Full docs](https://github.com/contribsys/faktory/wiki/)
+
+The [Faktory Pro](https://contribsys.com/faktory) OSX package is a bare binary which can replace the `faktory` binary installed by Homebrew.
+You are welcome to use it to trial the Faktory Pro functionality before purchase but it may not be used in a "production" environment.
+Linux DEB packages are only available after [purchase](https://contribsys.com/faktory).
+

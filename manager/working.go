@@ -84,13 +84,13 @@ func (m *manager) reserve(wid string, job *client.Job) error {
 	}
 
 	if timeout < 60 {
-		timeout = DefaultTimeout
 		util.Warnf("Timeout too short %d, 60 seconds minimum", timeout)
+		timeout = DefaultTimeout
 	}
 
 	if timeout > 86400 {
-		timeout = DefaultTimeout
 		util.Warnf("Timeout too long %d, one day maximum", timeout)
+		timeout = DefaultTimeout
 	}
 
 	exp := now.Add(time.Duration(timeout) * time.Second)

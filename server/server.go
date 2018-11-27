@@ -165,12 +165,8 @@ func (s *Server) Stop(f func()) {
 }
 
 func cleanupConnection(s *Server, c *Connection) {
-	cd, ok := s.workers.heartbeats[c.client.Wid]
-	if !ok {
-		return
-	}
 	//util.Debugf("Removing client connection %v", c)
-	delete(cd.connections, c)
+	s.workers.RemoveConnection(c)
 }
 
 func hash(pwd, salt string, iterations int) string {

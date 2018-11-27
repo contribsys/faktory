@@ -168,6 +168,15 @@ func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, boo
 	return entry, ok
 }
 
+func (w *workers) RemoveConnection(c *Connection) {
+	w.mu.Lock()
+	cd, ok := w.heartbeats[c.client.Wid]
+	if ok {
+		delete(cd.connections, c)
+	}
+	w.mu.Unlock()
+}
+
 func (w *workers) reapHeartbeats(t time.Time) int {
 	toDelete := []string{}
 

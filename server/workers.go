@@ -180,18 +180,18 @@ func (w *workers) RemoveConnection(c *Connection) {
 func (w *workers) reapHeartbeats(t time.Time) int {
 	toDelete := []string{}
 
-	w.mu.RLock()
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	for k, worker := range w.heartbeats {
 		if worker.lastHeartbeat.Before(t) {
 			toDelete = append(toDelete, k)
 		}
 	}
-	w.mu.RUnlock()
 
 	count := len(toDelete)
 	conns := 0
 	if count > 0 {
-		w.mu.Lock()
 		for _, k := range toDelete {
 			cd := w.heartbeats[k]
 			for conn, _ := range cd.connections {
@@ -200,7 +200,6 @@ func (w *workers) reapHeartbeats(t time.Time) int {
 			}
 			delete(w.heartbeats, k)
 		}
-		w.mu.Unlock()
 
 		util.Debugf("Reaped %d worker heartbeats", count)
 		if conns > 0 {

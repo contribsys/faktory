@@ -16,11 +16,11 @@ func TestMiddlewareUsage(t *testing.T) {
 
 	counter := 0
 
-	fn := func(next func() error, job *client.Job) error {
+	fn := func(next func() error, ctx Context) error {
 		counter += 1
 		return next()
 	}
-	fn2 := func(next func() error, job *client.Job) error {
+	fn2 := func(next func() error, ctx Context) error {
 		counter += 1
 		return next()
 	}
@@ -32,7 +32,7 @@ func TestMiddlewareUsage(t *testing.T) {
 
 	job := client.NewJob("Something", 1, 2)
 
-	err := callMiddleware(myMiddleware, job, func() error {
+	err := callMiddleware(myMiddleware, Ctx{context.Background(), job, nil}, func() error {
 		counter += 1
 		return nil
 	})
@@ -48,8 +48,8 @@ func TestLiveMiddleware(t *testing.T) {
 			denied := errors.New("push denied")
 			store.Flush()
 			m := NewManager(store)
-			m.AddMiddleware("push", func(next func() error, job *client.Job) error {
-				if job.Type == "Nope" {
+			m.AddMiddleware("push", func(next func() error, ctx Context) error {
+				if ctx.Job().Type == "Nope" {
 					return denied
 				}
 				return next()
@@ -77,8 +77,15 @@ func TestLiveMiddleware(t *testing.T) {
 
 			store.Flush()
 			m := NewManager(store)
-			m.AddMiddleware("fetch", func(next func() error, job *client.Job) error {
-				if job.Type == "Nope" {
+			m.AddMiddleware("fetch", func(next func() error, ctx Context) error {
+				kv := ctx.Manager().KV()
+
+				err := kv.Set("foo", []byte("bar"))
+				assert.NoError(t, err)
+				val, err := kv.Get("foo")
+				assert.Equal(t, "bar", string(val))
+
+				if ctx.Job().Type == "Nope" {
 					return denied
 				}
 				return next()

@@ -70,6 +70,8 @@ type Manager interface {
 	BusyCount(wid string) int
 
 	AddMiddleware(fntype string, fn MiddlewareFunc)
+
+	KV() storage.KV
 }
 
 func NewManager(s storage.Store) Manager {
@@ -83,6 +85,10 @@ func NewManager(s storage.Store) Manager {
 	}
 	m.loadWorkingSet()
 	return m
+}
+
+func (m *manager) KV() storage.KV {
+	return m.store.Raw()
 }
 
 func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {
@@ -172,7 +178,7 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	return callMiddleware(m.pushChain, job, func() error {
+	return callMiddleware(m.pushChain, Ctx{context.Background(), job, m}, func() error {
 		return q.Push(job.Priority, data)
 	})
 }
@@ -197,7 +203,7 @@ restart:
 			if err != nil {
 				return nil, err
 			}
-			err = callMiddleware(m.fetchChain, &job, func() error {
+			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
 				return m.reserve(wid, &job)
 			})
 			if h, ok := err.(halt); ok {
@@ -233,7 +239,7 @@ restart:
 		if err != nil {
 			return nil, err
 		}
-		err = callMiddleware(m.fetchChain, &job, func() error {
+		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
 			return m.reserve(wid, &job)
 		})
 		if h, ok := err.(halt); ok {

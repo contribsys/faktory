@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -142,7 +143,7 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 
 	if job != nil {
 		m.store.Success()
-		err = callMiddleware(m.ackChain, job, func() error {
+		err = callMiddleware(m.ackChain, Ctx{context.Background(), job, m}, func() error {
 			return nil
 		})
 	}

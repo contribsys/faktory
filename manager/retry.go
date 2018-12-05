@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -116,7 +117,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	return callMiddleware(m.failChain, job, func() error {
+	return callMiddleware(m.failChain, Ctx{context.Background(), job, m}, func() error {
 		if job.Failure.RetryCount < job.Retry {
 			return retryLater(m.store, job)
 		}

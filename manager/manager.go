@@ -10,6 +10,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/go-redis/redis"
 )
 
 const (
@@ -72,6 +73,7 @@ type Manager interface {
 	AddMiddleware(fntype string, fn MiddlewareFunc)
 
 	KV() storage.KV
+	Redis() *redis.Client
 }
 
 func NewManager(s storage.Store) Manager {
@@ -89,6 +91,10 @@ func NewManager(s storage.Store) Manager {
 
 func (m *manager) KV() storage.KV {
 	return m.store.Raw()
+}
+
+func (m *manager) Redis() *redis.Client {
+	return m.store.Redis()
 }
 
 func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {

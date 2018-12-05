@@ -39,6 +39,7 @@ type Store interface {
 	Flush() error
 
 	Raw() KV
+	Redis
 }
 
 type Redis interface {

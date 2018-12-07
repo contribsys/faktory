@@ -134,7 +134,7 @@ fields depending on the situation.
 | `priority`    | Integer [1-9]  | 5              | higher priority jobs are dequeued before lower priority jobs.
 | `reserve_for` | Integer [60+]  | 1800           | number of seconds a job may be held by a worker before it is considered failed.
 | `at`          | RFC3339 string | \<blank\>      | run the job at approximately this time; immediately if blank
-| `retry`       | Integer        | 25             | number of times to retry this job if it fails. -1 prevents retries.
+| `retry`       | Integer        | 25             | number of times to retry this job if it fails. 0 discards the failed job, -1 saves the failed job to the dead set.
 | `backtrace`   | Integer        | 0              | number of lines of FAIL information to preserve.
 | `created_at`  | RFC3339 string | set by server  | used to indicate the creation time of this job.
 | `custom`      | JSON hash      | `null`         | provides additional context to the worker executing the job.

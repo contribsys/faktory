@@ -1,5 +1,10 @@
 # Faktory Changelog
 
+## 0.9.2
+
+- Fix crash under load [#187]
+- First [Faktory Pro](https://contribsys.com/faktory) release
+
 ## 0.9.1
 
 - Fix crash on startup in Linux in development mode

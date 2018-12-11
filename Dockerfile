@@ -1,5 +1,5 @@
 FROM alpine:3.8
-RUN apk add --no-cache redis ca-certificates
+RUN apk add --no-cache redis ca-certificates socat
 COPY ./faktory /
 
 RUN mkdir -p /root/.faktory/db

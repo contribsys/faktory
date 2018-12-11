@@ -15,4 +15,7 @@ Vagrant.configure("2") do |config|
   #
   #   vagrant plugin install vagrant-vbguest
   config.vm.synced_folder "../..", "/faktory"
+  
+  # Run setup.sh
+  config.vm.provision "shell", path: "setup.sh"
 end

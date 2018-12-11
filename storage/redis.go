@@ -183,7 +183,7 @@ func OpenRedis(sock string) (Store, error) {
 		Network:  "unix",
 		Addr:     sock,
 		DB:       db,
-		PoolSize: 500,
+		PoolSize: 1000,
 	})
 	_, err := rs.rclient.Ping().Result()
 	if err != nil {

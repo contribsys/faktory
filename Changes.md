@@ -1,5 +1,9 @@
 # Faktory Changelog
 
+## 0.9.3
+
+- Increase maximum client count to 1000.
+
 ## 0.9.2
 
 - Fix crash under load [#187]

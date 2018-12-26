@@ -161,7 +161,7 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	worker, ok := s.workers.heartbeat(&client, false)
+	worker, ok := s.workers.heartbeat(&client, nil)
 	if !ok {
 		c.Error(cmd, fmt.Errorf("Unknown worker %s", client.Wid))
 		return

@@ -59,18 +59,18 @@ func TestWorkers(t *testing.T) {
 		connections: map[io.Closer]bool{},
 	}
 
-	entry, ok := workers.heartbeat(client, false)
+	entry, ok := workers.heartbeat(client, nil)
 	assert.Equal(t, 0, workers.Count())
 	assert.Nil(t, entry)
 	assert.False(t, ok)
 
-	entry, ok = workers.heartbeat(client, true)
+	entry, ok = workers.heartbeat(client, &cls{})
 	assert.Equal(t, 1, workers.Count())
 	assert.NotNil(t, entry)
 	assert.True(t, ok)
 
 	before := time.Now()
-	entry, ok = workers.heartbeat(client, true)
+	entry, ok = workers.heartbeat(client, &cls{})
 	after := time.Now()
 	assert.Equal(t, 1, workers.Count())
 	assert.NotNil(t, entry)

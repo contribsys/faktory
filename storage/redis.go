@@ -245,9 +245,7 @@ func (store *redisStore) Close() error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	err := store.rclient.Close()
-	store.rclient = nil
-	return err
+	return store.rclient.Close()
 }
 
 func (store *redisStore) Redis() *redis.Client {

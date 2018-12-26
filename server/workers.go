@@ -140,7 +140,7 @@ func (w *workers) Count() int {
 	return len(w.heartbeats)
 }
 
-func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, bool) {
+func (w *workers) heartbeat(client *ClientData, cls io.Closer) (*ClientData, bool) {
 	w.mu.RLock()
 	entry, ok := w.heartbeats[client.Wid]
 	w.mu.RUnlock()
@@ -149,7 +149,7 @@ func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, boo
 		w.mu.Lock()
 		entry.lastHeartbeat = time.Now()
 		w.mu.Unlock()
-	} else if register {
+	} else if cls != nil {
 		client.StartedAt = time.Now()
 		client.lastHeartbeat = time.Now()
 		client.connections = map[io.Closer]bool{}
@@ -161,6 +161,7 @@ func (w *workers) heartbeat(client *ClientData, register bool) (*ClientData, boo
 			w.heartbeats[client.Wid] = client
 			entry = client
 		}
+		entry.connections[cls] = true
 		w.mu.Unlock()
 		ok = true
 	}

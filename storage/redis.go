@@ -389,9 +389,10 @@ maxmemory-policy noeviction
 loglevel notice
 logfile /tmp/faktory-redis.log
 
-save 900 1
-save 300 10
-save 60 100
+# we're pretty aggressive on persistence to minimize data loss.
+# remember you can take backups of the RDB file with a simple 'cp'.
+save 120 1
+save 30 5
 stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes

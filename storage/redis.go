@@ -370,12 +370,12 @@ const (
 # Created by Faktory %s
 bind 127.0.0.1 ::1
 port 0
-tcp-backlog 128
 
+# Faktory's redis is only available via local Unix socket.
+# This maximizes performance and minimizes opsec risk.
 unixsocket /tmp/faktory-redis.sock
 unixsocketperm 700
 timeout 0
-tcp-keepalive 30
 
 daemonize no
 maxmemory-policy noeviction

@@ -1,5 +1,10 @@
 # Faktory Changelog
 
+## HEAD
+
+- More aggressive Redis persistence [#195]
+- Fix possible race condition panic on new connection
+
 ## 0.9.3
 
 - Increase maximum client count to 1000.

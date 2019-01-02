@@ -118,5 +118,48 @@ func TestLiveMiddleware(t *testing.T) {
 			assert.EqualValues(t, 0, q.Size())
 		})
 
+		t.Run("Ack", func(t *testing.T) {
+			store.Flush()
+			m := NewManager(store)
+			m.AddMiddleware("push", func(next func() error, ctx Context) error {
+				_, err := m.Redis().Set(ctx.Job().Jid, []byte("bar"), 1*time.Second).Result()
+				assert.NoError(t, err)
+				return next()
+			})
+			m.AddMiddleware("ack", func(next func() error, ctx Context) error {
+				val, err := m.Redis().Del(ctx.Job().Jid).Result()
+				assert.NoError(t, err)
+				assert.EqualValues(t, 1, val)
+				return next()
+			})
+
+			job := client.NewJob("Yep", 1, 2, 3)
+			q, err := store.GetQueue(job.Queue)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q.Size())
+
+			jid := job.Jid
+
+			err = m.Push(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q.Size())
+
+			val, err := m.Redis().Get(jid).Result()
+			assert.NoError(t, err)
+			assert.Equal(t, "bar", string(val))
+
+			j1, err := m.Fetch(context.Background(), "12345", "default")
+			assert.NoError(t, err)
+			assert.Equal(t, "Yep", j1.Type)
+			assert.EqualValues(t, 0, q.Size())
+
+			job, err = m.Acknowledge(j1.Jid)
+			assert.NoError(t, err)
+
+			boolint, err := m.Redis().Exists(jid).Result()
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, boolint)
+		})
+
 	})
 }

@@ -178,13 +178,13 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	job.EnqueuedAt = util.Nows()
-	data, err := json.Marshal(job)
-	if err != nil {
-		return err
-	}
-
 	return callMiddleware(m.pushChain, Ctx{context.Background(), job, m}, func() error {
+		job.EnqueuedAt = util.Nows()
+		data, err := json.Marshal(job)
+		if err != nil {
+			return err
+		}
+		util.Debugf("pushed: %+v", job)
 		return q.Push(job.Priority, data)
 	})
 }

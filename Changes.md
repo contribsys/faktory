@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.4
 
 - More aggressive Redis persistence [#195]
 - Fix possible race condition panic on new connection

@@ -83,6 +83,7 @@ func TestLiveMiddleware(t *testing.T) {
 				err := kv.Set("foo", []byte("bar"))
 				assert.NoError(t, err)
 				val, err := kv.Get("foo")
+				assert.NoError(t, err)
 				assert.Equal(t, "bar", string(val))
 
 				if ctx.Job().Type == "Nope" {
@@ -156,7 +157,7 @@ func TestLiveMiddleware(t *testing.T) {
 			job, err = m.Acknowledge(j1.Jid)
 			assert.NoError(t, err)
 
-			boolint, err := m.Redis().Exists(jid).Result()
+			boolint, err := m.Redis().Exists(job.Jid).Result()
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, boolint)
 		})

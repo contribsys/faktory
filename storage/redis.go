@@ -35,7 +35,6 @@ type redisStore struct {
 }
 
 var (
-	opens      = 0
 	instances  = map[string]*exec.Cmd{}
 	redisMutex = sync.Mutex{}
 )
@@ -280,7 +279,7 @@ func StopRedis(sock string) error {
 		time.Sleep(2 * time.Millisecond)
 		err := syscall.Kill(pid, syscall.Signal(0))
 		if err == syscall.ESRCH {
-			util.Debugf("Redis dead in %v", time.Now().Sub(before))
+			util.Debugf("Redis dead in %v", time.Since(before))
 			return nil
 		}
 	}

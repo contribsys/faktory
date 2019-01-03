@@ -184,7 +184,7 @@ func (m *manager) enqueue(job *client.Job) error {
 		if err != nil {
 			return err
 		}
-		util.Debugf("pushed: %+v", job)
+		//util.Debugf("pushed: %+v", job)
 		return q.Push(job.Priority, data)
 	})
 }

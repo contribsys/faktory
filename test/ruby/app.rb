@@ -27,15 +27,20 @@ end
 $pool = ConnectionPool.new { Faktory::Client.new(debug: true) }
 $pool.with do |faktory|
   puts faktory.push({ queue: :bulk, jobtype: 'Failer', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"], 'retry': 5 })
-  puts faktory.push({ queue: :critical, jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"] })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"], at: (Time.now.utc + 3600).iso8601 })
+
+  puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
+  puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
 end
 
 def enqueuer
   loop do
     begin
       $pool.with do |faktory|
-        puts faktory.push({ queue: :critical, jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"] })
+        begin
+          puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[26,2,3,"\r\n"], custom: { unique_for: 30 }, })
+        rescue Faktory::CommandError
+        end
       end
     rescue => ex
       # network down, faktory shut down, etc.

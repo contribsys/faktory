@@ -12,6 +12,31 @@ import (
 
 func TestBasicSortedOps(t *testing.T) {
 	withRedis(t, "sorted", func(t *testing.T, store Store) {
+
+		t.Run("large set", func(t *testing.T) {
+			sset := store.Retries()
+			sset.Clear()
+			for i := 0; i < 55; i++ {
+				job := client.NewJob("OtherType", 1, 2, 3)
+				job.At = util.Nows()
+				err := sset.Add(job)
+				assert.NoError(t, err)
+			}
+			assert.EqualValues(t, 55, sset.Size())
+
+			count := 0
+			err := sset.Each(func(idx int, entry SortedEntry) error {
+				j, err := entry.Job()
+				assert.NoError(t, err)
+				assert.NotNil(t, j)
+				count += 1
+				return nil
+			})
+			assert.NoError(t, err)
+			assert.EqualValues(t, 55, count)
+			sset.Clear()
+		})
+
 		t.Run("junk data", func(t *testing.T) {
 			sset := store.Retries()
 			assert.EqualValues(t, 0, sset.Size())

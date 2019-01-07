@@ -159,7 +159,7 @@ func (e *setEntry) Job() (*client.Job, error) {
 }
 
 func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error) {
-	zs, err := rs.store.rclient.ZRangeWithScores(rs.name, int64(start), int64(start+count)).Result()
+	zs, err := rs.store.rclient.ZRangeWithScores(rs.name, int64(start), int64(start+count-1)).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -176,7 +176,7 @@ func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEnt
 func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
 	count := 50
 	current := 0
-	
+
 	for {
 		elms, err := rs.Page(current, count, fn)
 		if err != nil {

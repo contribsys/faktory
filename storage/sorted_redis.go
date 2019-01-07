@@ -174,11 +174,10 @@ func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEnt
 }
 
 func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
-
+	count := 50
+	current := 0
+	
 	for {
-		count := 50
-		current := 0
-
 		elms, err := rs.Page(current, count, fn)
 		if err != nil {
 			return err

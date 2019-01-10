@@ -52,6 +52,35 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, float64(1234567), uid)
 		})
 
+		t.Run("Stats/Queues", func(t *testing.T) {
+			req, err := ui.NewRequest("GET", "http://localhost:7420/stats/queues", nil)
+			assert.NoError(t, err)
+
+			str := s.Store()
+			str.GetQueue("default")
+			q, _ := str.GetQueue("foobar")
+			q.Clear()
+			q.Push(5, []byte("faktory"))
+			q.Push(5, []byte("rocks"))
+			q.Push(5, []byte("!!"))
+
+			w := httptest.NewRecorder()
+			statsQueueHandler(w, req)
+			assert.Equal(t, 200, w.Code)
+			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+			var content map[string]interface{}
+			err = json.Unmarshal(w.Body.Bytes(), &content)
+			assert.NoError(t, err)
+
+			defaultQ := content["default"].(float64)
+			assert.Equal(t, 0.0, defaultQ)
+
+			foobarQ := content["foobar"].(float64)
+			assert.Equal(t, 3.0, foobarQ)
+
+		})
+
 		t.Run("Queues", func(t *testing.T) {
 			req, err := ui.NewRequest("GET", "http://localhost:7420/queues", nil)
 			assert.NoError(t, err)

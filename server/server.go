@@ -338,3 +338,12 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"used_memory_mb":  util.MemoryUsage()},
 	}, nil
 }
+
+func (s *Server) CurrentQueueState() (map[string]interface{}, error) {
+
+	queues := make(map[string]interface{})
+	s.Store().EachQueue(func(q storage.Queue) {
+		queues[string(q.Name())] = q.Size()
+	})
+	return queues, nil
+}

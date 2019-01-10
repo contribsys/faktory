@@ -100,6 +100,7 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 
 	ui.Mux.HandleFunc("/static/", staticHandler)
 	ui.Mux.HandleFunc("/stats", DebugLog(ui, statsHandler))
+	ui.Mux.HandleFunc("/stats/queues", DebugLog(ui, statsQueueHandler))
 
 	ui.Mux.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
 	ui.Mux.HandleFunc("/queues", Log(ui, queuesHandler))

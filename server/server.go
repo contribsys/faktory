@@ -315,9 +315,12 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 
 	totalQueued := 0
 	totalQueues := 0
+	queues := make(map[string]interface{})
 	// queue size is cached so this should be very efficient.
 	s.store.EachQueue(func(q storage.Queue) {
-		totalQueued += int(q.Size())
+		queueSize := int(q.Size())
+		queues[string(q.Name())] = queueSize
+		totalQueued += queueSize
 		totalQueues++
 	})
 
@@ -329,6 +332,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"total_processed": s.store.TotalProcessed(),
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
+			"queues":          queues,
 			"tasks":           s.taskRunner.Stats()},
 		"server": map[string]interface{}{
 			"faktory_version": client.Version,
@@ -337,13 +341,4 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"command_count":   atomic.LoadUint64(&s.Stats.Commands),
 			"used_memory_mb":  util.MemoryUsage()},
 	}, nil
-}
-
-func (s *Server) CurrentQueueState() (map[string]interface{}, error) {
-
-	queues := make(map[string]interface{})
-	s.Store().EachQueue(func(q storage.Queue) {
-		queues[string(q.Name())] = q.Size()
-	})
-	return queues, nil
 }

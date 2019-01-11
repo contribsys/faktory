@@ -12,23 +12,6 @@ import (
 	"github.com/contribsys/faktory/server"
 )
 
-func statsQueueHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := ctx(r).Server().CurrentQueueState()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	data, err := json.Marshal(hash)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.Header().Add("Cache-Control", "no-cache")
-	w.Write(data)
-}
-
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	hash, err := ctx(r).Server().CurrentState()
 	if err != nil {

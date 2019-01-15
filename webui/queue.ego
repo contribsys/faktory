@@ -31,14 +31,12 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
     <thead>
       <th class="checkbox-column"><input type="checkbox" class="check_all" /></th>
       <th><%= t(req, "Job") %></th>
-      <th><%= t(req, "Priority") %></th>
       <th><%= t(req, "Arguments") %></th>
     </thead>
     <% queueJobs(q, count, currentPage, func(idx int, key []byte, job *client.Job) { %>
       <tr>
         <td><input type="checkbox" name="bkey" value="<%= base64.RawURLEncoding.EncodeToString(key) %>" /></td>
         <td><%= job.Type %></td>
-        <td><%= job.Priority %></td>
         <td><div class="args"><code><%= job.Args %></code></div></td>
       </tr>
     <% }) %>

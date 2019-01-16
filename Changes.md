@@ -1,5 +1,10 @@
 # Faktory Changelog
 
+## HEAD
+
+- Add queue sizes to the INFO stats [#197, thapakazi]
+- Fix infinite loop with sorted set iteration [#196, antoinefinkelstein]
+
 ## 0.9.4
 
 - More aggressive Redis persistence [#195]

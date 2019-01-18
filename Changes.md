@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.5
 
 - Add queue sizes to the INFO stats [#197, thapakazi]
 - Fix infinite loop with sorted set iteration [#196, antoinefinkelstein]

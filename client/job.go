@@ -24,7 +24,6 @@ type Job struct {
 	Args  []interface{} `json:"args"`
 
 	// optional
-	Priority   uint8                  `json:"priority,omitempty"`
 	CreatedAt  string                 `json:"created_at,omitempty"`
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
 	At         string                 `json:"at,omitempty"`
@@ -43,7 +42,6 @@ func NewJob(jobtype string, args ...interface{}) *Job {
 		Jid:       randomJid(),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Retry:     25,
-		Priority:  5,
 	}
 }
 

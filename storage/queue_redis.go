@@ -71,10 +71,10 @@ func (q *redisQueue) Add(job *client.Job) error {
 		return err
 	}
 
-	return q.Push(job.Priority, data)
+	return q.Push(data)
 }
 
-func (q *redisQueue) Push(priority uint8, payload []byte) error {
+func (q *redisQueue) Push(payload []byte) error {
 	q.store.rclient.LPush(q.name, payload)
 	return nil
 }

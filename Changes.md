@@ -1,5 +1,9 @@
 # Faktory Changelog
 
+## HEAD
+
+- Remove legacy job priority from APIs and Job struct
+
 ## 0.9.5
 
 - Add queue sizes to the INFO stats [#197, thapakazi]

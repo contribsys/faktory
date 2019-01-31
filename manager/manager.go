@@ -137,6 +137,9 @@ func (m *manager) Push(job *client.Job) error {
 	if job.Args == nil {
 		return fmt.Errorf("All jobs must have an args parameter")
 	}
+	if job.ReserveFor > 86400 {
+		return fmt.Errorf("Jobs cannot be reserved for more than one day")
+	}
 
 	if job.CreatedAt == "" {
 		job.CreatedAt = util.Nows()
@@ -144,11 +147,6 @@ func (m *manager) Push(job *client.Job) error {
 
 	if job.Queue == "" {
 		job.Queue = "default"
-	}
-
-	// Priority can never be negative because of signedness
-	if job.Priority > 9 || job.Priority == 0 {
-		job.Priority = 5
 	}
 
 	if job.At != "" {
@@ -185,7 +183,7 @@ func (m *manager) enqueue(job *client.Job) error {
 			return err
 		}
 		//util.Debugf("pushed: %+v", job)
-		return q.Push(job.Priority, data)
+		return q.Push(data)
 	})
 }
 

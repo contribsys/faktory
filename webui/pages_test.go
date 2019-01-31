@@ -43,7 +43,7 @@ func TestPages(t *testing.T) {
 			q.Clear()
 			args := []string{"faktory", "rocks", "!!", ":)"}
 			for _, v := range args {
-				q.Push(5, []byte(v))
+				q.Push([]byte(v))
 			}
 
 			w := httptest.NewRecorder()
@@ -74,7 +74,7 @@ func TestPages(t *testing.T) {
 			str.GetQueue("default")
 			q, _ := str.GetQueue("foobar")
 			q.Clear()
-			q.Push(5, []byte("1l23j12l3"))
+			q.Push([]byte("1l23j12l3"))
 
 			w := httptest.NewRecorder()
 			queuesHandler(w, req)
@@ -91,7 +91,7 @@ func TestPages(t *testing.T) {
 			str := s.Store()
 			q, _ := str.GetQueue("foobar")
 			q.Clear()
-			q.Push(5, []byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+			q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
 			assert.EqualValues(t, 1, q.Size())
 
 			w := httptest.NewRecorder()

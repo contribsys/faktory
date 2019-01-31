@@ -24,11 +24,11 @@ func TestBasicQueueOps(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Nil(t, data)
 
-			err = q.Push(5, []byte("hello"))
+			err = q.Push([]byte("hello"))
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, q.Size())
 
-			err = q.Push(5, []byte("world"))
+			err = q.Push([]byte("world"))
 			assert.NoError(t, err)
 			assert.EqualValues(t, 2, q.Size())
 
@@ -80,19 +80,19 @@ func TestBasicQueueOps(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.EqualValues(t, 0, q.Size())
-			err = q.Push(5, []byte("first"))
+			err = q.Push([]byte("first"))
 			assert.NoError(t, err)
 			n := 5000
 			// Push N jobs to queue
 			// Get Size() each time
 			for i := 0; i < n; i++ {
 				_, data := fakeJob()
-				err = q.Push(5, data)
+				err = q.Push(data)
 				assert.NoError(t, err)
 				assert.EqualValues(t, i+2, q.Size())
 			}
 
-			err = q.Push(5, []byte("last"))
+			err = q.Push([]byte("last"))
 			assert.NoError(t, err)
 			assert.EqualValues(t, n+2, q.Size())
 
@@ -158,7 +158,7 @@ var (
 func pushAndPop(t *testing.T, n int, q Queue) {
 	for i := 0; i < n; i++ {
 		_, data := fakeJob()
-		err := q.Push(5, data)
+		err := q.Push(data)
 		assert.NoError(t, err)
 		atomic.AddInt64(&counter, 1)
 	}
@@ -172,11 +172,7 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 }
 
 func fakeJob() (string, []byte) {
-	return fakeJobWithPriority(5)
-}
-
-func fakeJobWithPriority(priority uint64) (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":%d,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, priority))
+	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":%d,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, 5))
 }

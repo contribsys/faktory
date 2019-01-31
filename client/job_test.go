@@ -9,8 +9,8 @@ import (
 
 func TestJobPriority(t *testing.T) {
 	job := NewJob("yo", 1)
-	assert.Equal(t, uint8(5), job.Priority)
+	assert.EqualValues(t, 25, job.Retry)
 	data, err := json.Marshal(job)
 	assert.NoError(t, err)
-	assert.Contains(t, string(data), "priority")
+	assert.Contains(t, string(data), "retry")
 }

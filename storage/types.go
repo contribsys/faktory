@@ -51,7 +51,7 @@ type Queue interface {
 	Size() uint64
 
 	Add(job *client.Job) error
-	Push(priority uint8, data []byte) error
+	Push(data []byte) error
 
 	Pop() ([]byte, error)
 	BPop(context.Context) ([]byte, error)

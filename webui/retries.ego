@@ -63,7 +63,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
             </td>
             <td><code><%= job.Type %></code></td>
             <td>
-              <div class="args"><code><%= job.Args %></code></div>
+              <div class="args"><%= displayArgs(job.Args) %></div>
             </td>
             <td>
               <div><%= job.Failure.ErrorType %>: <%= job.Failure.ErrorMessage %></div>

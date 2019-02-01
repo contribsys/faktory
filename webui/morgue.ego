@@ -60,7 +60,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
             </td>
             <td><code><%= job.Type %></code></td>
             <td>
-              <div class="args"><code><%= job.Args %></code></div>
+              <div class="args"><%= displayArgs(job.Args) %></div>
             </td>
             <td>
               <% if job.Failure != nil { %>

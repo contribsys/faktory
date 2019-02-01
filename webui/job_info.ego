@@ -34,7 +34,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
         <td>
           <code class="code-wrap">
             <!-- We don't want to truncate any job arguments when viewing a single job's status page -->
-            <div class="args-extended"><%= job.Args %></div>
+            <div class="args-extended"><%= displayFullArgs(job.Args) %></div>
           </code>
         </td>
       </tr>
@@ -66,11 +66,11 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
       </tr>
       <% if job.Custom != nil { %>
         <tr>
-          <th><%= t(req, "Extras") %></th>
+          <th><%= t(req, "Custom") %></th>
           <td>
-            <code>
-              <%= job.Custom %>
-            </code>
+            <% for k, v := range job.Custom { %>
+              <code><%= k %>: <%= fmt.Sprintf("%#v", v) %></code><br/>
+            <% } %>
           </td>
         </tr>
       <% } %>

@@ -349,3 +349,29 @@ func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
 		fn(name, name == c.locale)
 	}
 }
+
+func displayArgs(args []interface{}) string {
+	return displayLimitedArgs(args, 1024)
+}
+
+func displayFullArgs(args []interface{}) string {
+	return displayLimitedArgs(args, 1024*1024)
+}
+
+func displayLimitedArgs(args []interface{}, limit int) string {
+	var b strings.Builder
+	for idx, arg := range args {
+		s := fmt.Sprintf("%#v", arg)
+		if len(s) > limit {
+			fmt.Fprintf(&b, s[0:limit])
+			b.WriteRune('…')
+		} else {
+			fmt.Fprintf(&b, s)
+		}
+		if idx+1 < len(args) {
+			b.WriteRune(',')
+			b.WriteRune(' ')
+		}
+	}
+	return b.String()
+}

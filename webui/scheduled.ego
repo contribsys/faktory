@@ -56,7 +56,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
             </td>
             <td><code><%= job.Type %></code></td>
             <td>
-               <div class="args"><code><%= job.Args %></code></div>
+               <div class="args"><%= displayArgs(job.Args) %></div>
             </td>
           </tr>
         <% }) %>

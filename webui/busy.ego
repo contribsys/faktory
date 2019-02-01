@@ -108,7 +108,7 @@ func ego_busy(w io.Writer, req *http.Request) {
         </td>
         <td><code><%= job.Type %></code></td>
         <td>
-          <div class="args"><code><%= job.Args %></code></div>
+          <div class="args"><%= displayArgs(job.Args) %></div>
         </td>
         <td><%= relativeTime(res.Since) %></td>
       </tr>

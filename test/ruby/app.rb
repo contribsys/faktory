@@ -31,6 +31,23 @@ $pool.with do |faktory|
 
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
+  puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[<<~EOS
+really big arg with lots of data in it
+really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it really big arg with lots of data in it
+really big arg with lots of data in it
+really big arg with lots of data in it
+EOS
+], custom: { unique_for: 30, foo: "bar", xyz: 1234.5 }, at: (Time.now.utc + 3600).iso8601 })
 end
 
 def enqueuer

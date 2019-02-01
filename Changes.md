@@ -3,6 +3,7 @@
 ## HEAD
 
 - Remove legacy job priority from APIs and Job struct
+- Improve display of job arguments and custom elements in Web UI [#199]
 
 ## 0.9.5
 

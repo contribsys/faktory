@@ -345,6 +345,46 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	return hash, nil
 }
 
+// Page through records in the given Faktory data structure,
+// e.g. Page("retries", 0, 50)
+func (c *Client) Page(name string, offset int, size int) ([]Job, error) {
+	err := writeLine(c.wtr, fmt.Sprintf("PAGE %s %d %d", name, offset, size), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+
+	var records []Job
+	err = json.Unmarshal(resp, &records)
+	if err != nil {
+		return nil, err
+	}
+	return records, nil
+}
+
+func (c *Client) Each(name string, fn func(job Job) error) error {
+	offset := 0
+	size := 50
+	for {
+		jobs, err := c.Page(name, offset, size)
+		if err != nil {
+			return err
+		}
+		if len(jobs) == 0 {
+			break
+		}
+		for _, job := range jobs {
+			fn(job)
+		}
+		offset += size
+	}
+	return nil
+}
+
 func (c *Client) Generic(cmdline string) (string, error) {
 	err := writeLine(c.wtr, cmdline, nil)
 	if err != nil {

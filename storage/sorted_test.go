@@ -16,13 +16,16 @@ func TestBasicSortedOps(t *testing.T) {
 		t.Run("large set", func(t *testing.T) {
 			sset := store.Retries()
 			sset.Clear()
-			for i := 0; i < 55; i++ {
+			for i := 0; i < 550; i++ {
 				job := client.NewJob("OtherType", 1, 2, 3)
+				if i%100 == 0 {
+					job = client.NewJob("SpecialType", 1, 2, 3)
+				}
 				job.At = util.Nows()
 				err := sset.Add(job)
 				assert.NoError(t, err)
 			}
-			assert.EqualValues(t, 55, sset.Size())
+			assert.EqualValues(t, 550, sset.Size())
 
 			count := 0
 			err := sset.Each(func(idx int, entry SortedEntry) error {
@@ -33,7 +36,19 @@ func TestBasicSortedOps(t *testing.T) {
 				return nil
 			})
 			assert.NoError(t, err)
-			assert.EqualValues(t, 55, count)
+			assert.EqualValues(t, 550, count)
+
+			spcount := 0
+			err = sset.Find("*SpecialType*", func(idx int, entry SortedEntry) error {
+				j, err := entry.Job()
+				assert.NoError(t, err)
+				assert.NotNil(t, j)
+				assert.Equal(t, "SpecialType", j.Type)
+				spcount += 1
+				return nil
+			})
+			assert.NoError(t, err)
+			assert.EqualValues(t, 6, spcount)
 			sset.Clear()
 		})
 

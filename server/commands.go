@@ -18,18 +18,15 @@ import (
 type command func(c *Connection, s *Server, cmd string)
 
 var cmdSet = map[string]command{
-	"END":     end,
-	"PUSH":    push,
-	"FETCH":   fetch,
-	"ACK":     ack,
-	"FAIL":    fail,
-	"BEAT":    heartbeat,
-	"INFO":    info,
-	"FLUSH":   flush,
-	"PAGE":    adminPage,
-	"KILL":    adminKill,
-	"ENQUEUE": adminEnqueue,
-	"DISCARD": adminDiscard,
+	"END":    end,
+	"PUSH":   push,
+	"FETCH":  fetch,
+	"ACK":    ack,
+	"FAIL":   fail,
+	"BEAT":   heartbeat,
+	"INFO":   info,
+	"FLUSH":  flush,
+	"MUTATE": mutateCmd,
 }
 
 func flush(c *Connection, s *Server, cmd string) {

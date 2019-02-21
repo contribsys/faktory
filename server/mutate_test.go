@@ -25,7 +25,11 @@ func TestMutateCommands(t *testing.T) {
 		assert.NoError(t, err)
 		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
 
-		j := faktory.NewJob("SomeJob", "truid:67123", 3)
+		j := faktory.NewJob("AnotherJob", "truid:67123", 3)
+		j.At = util.Thens(time.Now().Add(10 * time.Second))
+		cl.Push(j)
+
+		j = faktory.NewJob("SomeJob", "truid:67123", 3)
 		j.At = util.Thens(time.Now().Add(10 * time.Second))
 		cl.Push(j)
 
@@ -35,12 +39,12 @@ func TestMutateCommands(t *testing.T) {
 
 		hash, err = cl.Info()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
 
-		cl.Discard(faktory.Scheduled, faktory.Matching("*uid:67123*"))
+		cl.Discard(faktory.Scheduled, faktory.OfType("SomeJob").Matching("*uid:67123*"))
 
 		hash, err = cl.Info()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
 	})
 }

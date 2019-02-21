@@ -56,12 +56,24 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 	if filter == nil {
 		return "*", AlwaysMatch
 	}
+
+	if filter.Regexp != "" {
+		if filter.Jobtype == "" {
+			return filter.Regexp, AlwaysMatch
+		} else {
+			// if a regexp and jobtype, pass the regexp to Redis and match jobtype
+			// here
+			typematch := fmt.Sprintf(`"jobtype":"%s"`, filter.Jobtype)
+			return filter.Regexp, func(value string) bool {
+				return strings.Index(value, typematch) > 0
+			}
+		}
+	}
+
 	if filter.Jobtype != "" {
 		return fmt.Sprintf(`*"jobtype":"%s"*`, filter.Jobtype), AlwaysMatch
 	}
-	if filter.Regexp != "" {
-		return filter.Regexp, AlwaysMatch
-	}
+
 	if len(filter.Jids) > 0 {
 		return "*", func(value string) bool {
 			for _, jid := range filter.Jids {

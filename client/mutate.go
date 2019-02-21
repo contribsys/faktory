@@ -21,6 +21,21 @@ type JobFilter struct {
 	Jobtype string   `json:"jobtype,omitempty"`
 }
 
+func (jf JobFilter) WithJids(jids ...string) JobFilter {
+	jf.Jids = jids
+	return jf
+}
+
+func (jf JobFilter) Matching(pattern string) JobFilter {
+	jf.Regexp = pattern
+	return jf
+}
+
+func (jf JobFilter) OfType(jobtype string) JobFilter {
+	jf.Jobtype = jobtype
+	return jf
+}
+
 const (
 	Scheduled Structure = "scheduled"
 	Retries   Structure = "retry"
@@ -91,7 +106,7 @@ type AdminClient interface {
 	// Move the given jobs from structure to the Dead set.
 	// Faktory will not touch them anymore but you can still see them in the Web UI.
 	//
-	// Kill(Retries, WithJids("abc", "123"))
+	// Kill(Retries, OfType("DataSyncJob").WithJids("abc", "123"))
 	Kill(name Structure, filter JobFilter) error
 
 	// Move the given jobs to their associated queue so they can be immediately
@@ -121,7 +136,7 @@ func (c *Client) Discard(name Structure, filter JobFilter) error {
 }
 
 func (c *Client) Clear(name Structure) error {
-	return c.mutate(Operation{Cmd: "discard", Target: name, Filter: &Everything})
+	return c.mutate(Operation{Cmd: "discard", Target: name, Filter: nil})
 }
 
 func (c *Client) mutate(op Operation) error {

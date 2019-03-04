@@ -29,9 +29,11 @@ func mutatePage(c *Connection, s *Server, cmd string) {
 func mutateKill(store storage.Store, op client.Operation) error {
 	return nil
 }
+
 func mutateRequeue(store storage.Store, op client.Operation) error {
 	return nil
 }
+
 func mutateDiscard(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if op.Filter == nil {
@@ -87,7 +89,7 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 	return "*", AlwaysMatch
 }
 
-func mutateCmd(c *Connection, s *Server, cmd string) {
+func mutate(c *Connection, s *Server, cmd string) {
 	util.Info(cmd)
 	parts := strings.Split(cmd, " ")
 	if len(parts) != 2 {

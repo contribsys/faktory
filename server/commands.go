@@ -26,7 +26,7 @@ var cmdSet = map[string]command{
 	"BEAT":   heartbeat,
 	"INFO":   info,
 	"FLUSH":  flush,
-	"MUTATE": mutateCmd,
+	"MUTATE": mutate,
 }
 
 func flush(c *Connection, s *Server, cmd string) {

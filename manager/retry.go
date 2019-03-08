@@ -117,7 +117,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	return callMiddleware(m.failChain, Ctx{context.Background(), job, m}, func() error {
+	return callMiddleware(m.failChain, Ctx{context.Background(), job, m, res}, func() error {
 		if job.Failure.RetryCount < job.Retry {
 			return retryLater(m.store, job)
 		}

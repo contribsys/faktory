@@ -32,7 +32,7 @@ func TestMiddlewareUsage(t *testing.T) {
 
 	job := client.NewJob("Something", 1, 2)
 
-	err := callMiddleware(myMiddleware, Ctx{context.Background(), job, nil}, func() error {
+	err := callMiddleware(myMiddleware, Ctx{context.Background(), job, nil, nil}, func() error {
 		counter += 1
 		return nil
 	})

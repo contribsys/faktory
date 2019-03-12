@@ -15,6 +15,7 @@ type Context interface {
 
 	Job() *client.Job
 	Manager() Manager
+	Reservation() *Reservation
 }
 
 type Ctx struct {
@@ -22,6 +23,11 @@ type Ctx struct {
 
 	job *client.Job
 	mgr *manager
+	res *Reservation
+}
+
+func (c Ctx) Reservation() *Reservation {
+	return c.res
 }
 
 func (c Ctx) Job() *client.Job {

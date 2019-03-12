@@ -26,6 +26,14 @@ type Reservation struct {
 	texpiry time.Time
 }
 
+func (res *Reservation) ReservedAt() time.Time {
+	return res.tsince
+}
+
+func (res *Reservation) ExpiresAt() time.Time {
+	return res.texpiry
+}
+
 func (m *manager) WorkingCount() int {
 	m.workingMutex.RLock()
 	defer m.workingMutex.RUnlock()
@@ -121,7 +129,7 @@ func (m *manager) reserve(wid string, job *client.Job) error {
 	return nil
 }
 
-func (m *manager) ack(jid string) (*client.Job, error) {
+func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	res := m.clearReservation(jid)
 	if res == nil {
 		util.Infof("No such job to acknowledge %s", jid)
@@ -130,23 +138,18 @@ func (m *manager) ack(jid string) (*client.Job, error) {
 
 	// doesn't matter, might not have acknowledged in time
 	_, err := m.store.Working().RemoveElement(res.Expiry, jid)
-	return res.Job, err
-}
-
-func (m *manager) Acknowledge(jid string) (*client.Job, error) {
-	job, err := m.ack(jid)
 	if err != nil {
 		return nil, err
 	}
 
-	if job != nil {
+	if res.Job != nil {
 		m.store.Success()
-		err = callMiddleware(m.ackChain, Ctx{context.Background(), job, m}, func() error {
+		err = callMiddleware(m.ackChain, Ctx{context.Background(), res.Job, m, res}, func() error {
 			return nil
 		})
 	}
 
-	return job, err
+	return res.Job, err
 }
 
 func (m *manager) ReapExpiredJobs(timestamp string) (int, error) {

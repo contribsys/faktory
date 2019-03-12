@@ -4,5 +4,5 @@ const (
 	Name      = "Faktory"
 	License   = "GPLv3"
 	Licensing = "Licensed under the GNU Public License 3.0"
-	Version   = "0.9.6"
+	Version   = "0.9.7"
 )

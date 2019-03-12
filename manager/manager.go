@@ -176,7 +176,7 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	return callMiddleware(m.pushChain, Ctx{context.Background(), job, m}, func() error {
+	return callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
 		job.EnqueuedAt = util.Nows()
 		data, err := json.Marshal(job)
 		if err != nil {
@@ -207,7 +207,7 @@ restart:
 			if err != nil {
 				return nil, err
 			}
-			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
+			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
 				return m.reserve(wid, &job)
 			})
 			if h, ok := err.(halt); ok {
@@ -243,7 +243,7 @@ restart:
 		if err != nil {
 			return nil, err
 		}
-		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
+		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
 			return m.reserve(wid, &job)
 		})
 		if h, ok := err.(halt); ok {

@@ -3,7 +3,7 @@
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
-## HEAD
+## 0.9.6
 
 - Fix non-deterministic unique locks when jobs have map arguments. [#203]
 

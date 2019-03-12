@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.6
 
 - Remove legacy job priority from APIs and Job struct
 - Improve display of job arguments and custom elements in Web UI [#199]

@@ -40,6 +40,7 @@ func TestMutateCommands(t *testing.T) {
 		j = faktory.NewJob("FooJob", "445", 5)
 		j.At = util.Thens(time.Now().Add(10 * time.Second))
 		cl.Push(j)
+		targetJid := j.Jid
 
 		j = faktory.NewJob("FooJob", "445", 5)
 		cl.Push(j)
@@ -63,12 +64,18 @@ func TestMutateCommands(t *testing.T) {
 		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
 		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
 
-		cl.Requeue(faktory.Scheduled, faktory.Everything)
+		cl.Requeue(faktory.Scheduled, faktory.WithJids(targetJid))
 
 		hash, err = cl.Info()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
-		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
+		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
+		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+
+		cl.Clear(faktory.Dead)
+		hash, err = cl.Info()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
 
 	})
 }

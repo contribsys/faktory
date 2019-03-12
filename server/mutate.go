@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
@@ -22,7 +23,7 @@ func mutateKill(store storage.Store, op client.Operation) error {
 	match, matchfn := matchForFilter(op.Filter)
 	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
-			return ss.MoveTo(store.Dead(), ent, time.Now().Add(time.Hour*24*180))
+			return ss.MoveTo(store.Dead(), ent, time.Now().Add(manager.DeadTTL))
 		}
 		return nil
 	})
@@ -141,14 +142,8 @@ func mutateClear(store storage.Store, target string) error {
 	ss := setForTarget(store, target)
 	if ss != nil {
 		return ss.Clear()
-	} else {
-		q, err := store.GetQueue(target)
-		if err != nil {
-			return err
-		}
-		_, err = q.Clear()
-		return err
 	}
+	return fmt.Errorf("Cannot clear, invalid set: %s", target)
 }
 
 func setForTarget(store storage.Store, name string) storage.SortedSet {

@@ -125,6 +125,16 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(stats))
 
+		conn.Write([]byte(fmt.Sprintf("BEAT {\"wid\":\"%s\"}\n", client.Wid)))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "+OK\r\n", result)
+
+		conn.Write([]byte(fmt.Sprintf("FLUSH\n")))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "+OK\r\n", result)
+
 		conn.Write([]byte("END\n"))
 		//result, err = buf.ReadString('\n')
 		//assert.NoError(t, err)

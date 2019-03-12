@@ -136,7 +136,7 @@ func (c *Client) Discard(name Structure, filter JobFilter) error {
 }
 
 func (c *Client) Clear(name Structure) error {
-	return c.mutate(Operation{Cmd: "discard", Target: name, Filter: nil})
+	return c.mutate(Operation{Cmd: "clear", Target: name, Filter: nil})
 }
 
 func (c *Client) mutate(op Operation) error {

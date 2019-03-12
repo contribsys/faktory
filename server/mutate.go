@@ -4,34 +4,51 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
-// PAGE [structure] [offset] [size]
-func mutatePage(c *Connection, s *Server, cmd string) {
-	util.Info(cmd)
-	parts := strings.Split(cmd, " ")
-	if len(parts) < 2 || len(parts) > 3 {
-		c.Error(cmd, fmt.Errorf("Invalid PAGE"))
-		return
+var (
+	AlwaysMatch = func(value string) bool {
+		return true
 	}
-	structure := parts[0]
-	if structure == "retries" || structure == "dead" {
-		//zPage(structure, parts[1], 50)
-	} else {
-		//lPage(structure, parts[1], 50)
-	}
+)
 
-}
 func mutateKill(store storage.Store, op client.Operation) error {
-	return nil
+	ss := setForTarget(store, string(op.Target))
+	match, matchfn := matchForFilter(op.Filter)
+	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
+		if matchfn(string(ent.Value())) {
+			return ss.MoveTo(store.Dead(), ent, time.Now().Add(time.Hour*24*180))
+		}
+		return nil
+	})
 }
 
 func mutateRequeue(store storage.Store, op client.Operation) error {
-	return nil
+	ss := setForTarget(store, string(op.Target))
+	match, matchfn := matchForFilter(op.Filter)
+	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
+		if matchfn(string(ent.Value())) {
+			j, err := ent.Job()
+			if err != nil {
+				return err
+			}
+			q, err := store.GetQueue(j.Queue)
+			if err != nil {
+				return err
+			}
+			err = q.Push(ent.Value())
+			if err != nil {
+				return err
+			}
+			return ss.RemoveEntry(ent)
+		}
+		return nil
+	})
 }
 
 func mutateDiscard(store storage.Store, op client.Operation) error {
@@ -47,12 +64,6 @@ func mutateDiscard(store storage.Store, op client.Operation) error {
 		return nil
 	})
 }
-
-var (
-	AlwaysMatch = func(value string) bool {
-		return true
-	}
-)
 
 func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) {
 	if filter == nil {
@@ -151,5 +162,4 @@ func setForTarget(store storage.Store, name string) storage.SortedSet {
 	default:
 		return nil
 	}
-
 }

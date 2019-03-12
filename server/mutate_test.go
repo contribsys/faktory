@@ -37,14 +37,38 @@ func TestMutateCommands(t *testing.T) {
 		j.At = util.Thens(time.Now().Add(10 * time.Second))
 		cl.Push(j)
 
+		j = faktory.NewJob("FooJob", "445", 5)
+		j.At = util.Thens(time.Now().Add(10 * time.Second))
+		cl.Push(j)
+
+		j = faktory.NewJob("FooJob", "445", 5)
+		cl.Push(j)
+
 		hash, err = cl.Info()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 4, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
 
 		cl.Discard(faktory.Scheduled, faktory.OfType("SomeJob").Matching("*uid:67123*"))
 
 		hash, err = cl.Info()
 		assert.NoError(t, err)
+		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+
+		cl.Kill(faktory.Scheduled, faktory.OfType("AnotherJob"))
+
+		hash, err = cl.Info()
+		assert.NoError(t, err)
 		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
+
+		cl.Requeue(faktory.Scheduled, faktory.Everything)
+
+		hash, err = cl.Info()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
+
 	})
 }

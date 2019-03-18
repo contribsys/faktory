@@ -1,5 +1,11 @@
 # Faktory Changelog
 
+## HEAD
+
+- Add new MUTATE command which allows bulk manipulation of Faktory's
+  persistent sets (i.e. scheduled, retries, dead) [#205]
+  See https://github.com/contribsys/faktory/wiki/Mutate-API
+
 ## 0.9.6
 
 - Remove legacy job priority from APIs and Job struct

@@ -97,12 +97,6 @@ func pushAndPop(t *testing.T, count int) {
 	}
 	util.Info("Popping")
 
-	//jobs, err := client.Page("default", 0, 50)
-	//if err != nil {
-	//handleError(err)
-	//return
-	//}
-
 	for i := 0; i < count; i++ {
 		job, err := client.Fetch("default")
 		if err != nil {

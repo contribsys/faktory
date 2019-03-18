@@ -5,12 +5,12 @@ import (
 )
 
 //
-// Faktory's Admin API allows clients to directly mutate the various
-// data structures within Faktory. These use cases are typically for
+// Faktory's Mutate API allows clients to directly mutate the various
+// persistent sets within Faktory. These use cases are typically for
 // repair or data migration purposes.
 //
 // THESE APIs SHOULD NEVER BE USED WITHIN APP LOGIC.
-// Many Admin API use cases will have poor performance:
+// Many Mutate API use cases will have poor performance:
 // O(N), O(N log N), or even O(M*N).
 
 type Structure string
@@ -38,7 +38,7 @@ func (jf JobFilter) OfType(jobtype string) JobFilter {
 
 const (
 	Scheduled Structure = "scheduled"
-	Retries   Structure = "retry"
+	Retries   Structure = "retries"
 	Dead      Structure = "dead"
 )
 
@@ -101,7 +101,7 @@ type Operation struct {
 //
 // Generally these operations are O(n) or worse.  They will get slower as your
 // data gets bigger.
-type AdminClient interface {
+type MutateClient interface {
 
 	// Move the given jobs from structure to the Dead set.
 	// Faktory will not touch them anymore but you can still see them in the Web UI.

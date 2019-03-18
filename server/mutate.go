@@ -9,7 +9,6 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
-	"github.com/contribsys/faktory/util"
 )
 
 var (
@@ -102,7 +101,6 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 }
 
 func mutate(c *Connection, s *Server, cmd string) {
-	util.Info(cmd)
 	parts := strings.Split(cmd, " ")
 	if len(parts) != 2 {
 		c.Error(cmd, fmt.Errorf("Invalid format"))
@@ -148,7 +146,7 @@ func mutateClear(store storage.Store, target string) error {
 
 func setForTarget(store storage.Store, name string) storage.SortedSet {
 	switch name {
-	case "retry":
+	case "retries":
 		return store.Retries()
 	case "dead":
 		return store.Dead()

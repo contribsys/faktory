@@ -139,7 +139,6 @@ func pop(client *faktory.Client, queues []string) {
 
 func push(client *faktory.Client, queue string) {
 	j := faktory.NewJob("SomeJob", []interface{}{1, "string", 3})
-	j.Priority = uint8(rand.Intn(9) + 1)
 	j.Queue = queue
 	err := client.Push(j)
 	if err != nil {

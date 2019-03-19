@@ -122,6 +122,7 @@ func (s *Server) Run() error {
 		if err != nil {
 			util.Error(fmt.Sprintf("Subsystem %s halted server", x.Name()), err)
 			close(s.Stopper())
+			return err
 		}
 	}
 

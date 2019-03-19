@@ -79,7 +79,7 @@ func (s *Server) Reload() {
 	for _, x := range s.Subsystems {
 		err := x.Reload(s)
 		if err != nil {
-			util.Warnf("Subsystem %v returned reload error: %v", x, err)
+			util.Warnf("Subsystem %s returned reload error: %v", x.Name(), err)
 		}
 	}
 }

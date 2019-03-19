@@ -1,6 +1,8 @@
 package server
 
 type Subsystem interface {
+	Name() string
+
 	// Called when the server is configured but before it starts accepting client connections.
 	Start(*Server) error
 

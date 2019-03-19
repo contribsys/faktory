@@ -144,6 +144,10 @@ func (l *Lifecycle) Start(s *server.Server) error {
 	return nil
 }
 
+func (l *Lifecycle) Name() string {
+	return "Web UI"
+}
+
 func (l *Lifecycle) Reload(s *server.Server) error {
 	uiopts := l.opts(s)
 

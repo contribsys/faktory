@@ -120,7 +120,7 @@ func (s *Server) Run() error {
 	for _, x := range s.Subsystems {
 		err := x.Start(s)
 		if err != nil {
-			util.Error(fmt.Sprintf("Subsystem %s halted server", x.Name()), err)
+			util.Error("Subsystem failed to start", err)
 			close(s.Stopper())
 			return err
 		}

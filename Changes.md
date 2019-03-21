@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 0.9.7
 
 - Add new MUTATE command which allows bulk manipulation of Faktory's
   persistent sets (i.e. scheduled, retries, dead) [#205]

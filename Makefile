@@ -35,6 +35,9 @@ prepare: ## Download all dependencies
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
+tags: clean ## Create tags file for vim, etc
+	find . -name "*.go" | grep -v "./vendor" | gotags -L - > tags
+
 test: clean generate ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \

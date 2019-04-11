@@ -361,7 +361,14 @@ func displayFullArgs(args []interface{}) string {
 func displayLimitedArgs(args []interface{}, limit int) string {
 	var b strings.Builder
 	for idx, arg := range args {
-		s := fmt.Sprintf("%#v", arg)
+		var s string
+		bytes, err := json.Marshal(arg)
+		if err != nil {
+			util.Warnf("Unable to marshal argument for display: %s", err)
+			s = fmt.Sprintf("%#v", arg)
+		} else {
+			s = string(bytes)
+		}
 		if len(s) > limit {
 			fmt.Fprintf(&b, s[0:limit])
 			b.WriteRune('…')

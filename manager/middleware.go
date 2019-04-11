@@ -45,6 +45,13 @@ func Halt(code string, msg string) error {
 	return ExpectedError(code, msg)
 }
 
+// Middleware can use this to restart the fetch process.  Useful if the job
+// fetched from Redis is invalid and should be discarded rather than returned
+// to the worker.
+func Discard(msg string) error {
+	return ExpectedError("DISCARD", msg)
+}
+
 // Run the given job through the given middleware chain.
 // `final` is the function called if the entire chain passes the job along.
 func callMiddleware(chain MiddlewareChain, ctx Context, final func() error) error {

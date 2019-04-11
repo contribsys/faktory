@@ -218,6 +218,7 @@ func (m *manager) enqueue(job *client.Job) error {
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
+restart:
 	var first storage.Queue
 
 	for idx, qname := range queues {
@@ -241,6 +242,9 @@ func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*cli
 			})
 			if h, ok := err.(KnownError); ok {
 				util.Infof("JID %s: %s", job.Jid, h.Error())
+				if h.Code() == "DISCARD" {
+					goto restart
+				}
 				return nil, err
 			}
 			if err != nil {
@@ -276,6 +280,9 @@ func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*cli
 		})
 		if h, ok := err.(KnownError); ok {
 			util.Debugf("JID %s: %s", job.Jid, h.Error())
+			if h.Code() == "DISCARD" {
+				goto restart
+			}
 			return nil, err
 		}
 		if err != nil {

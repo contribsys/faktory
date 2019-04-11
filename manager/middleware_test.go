@@ -88,6 +88,9 @@ func TestLiveMiddleware(t *testing.T) {
 				if ctx.Job().Type == "Nope" {
 					return denied
 				}
+				if ctx.Job().Type == "Bad" {
+					return Discard("Job is bad")
+				}
 				return next()
 			})
 
@@ -100,15 +103,20 @@ func TestLiveMiddleware(t *testing.T) {
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, q.Size())
 
-			job = client.NewJob("Nope", 1, 2, 3)
+			job = client.NewJob("Bad", 1, 2, 3)
 			err = m.Push(job)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 2, q.Size())
 
+			job = client.NewJob("Nope", 1, 2, 3)
+			err = m.Push(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 3, q.Size())
+
 			j1, err := m.Fetch(context.Background(), "12345", "default")
 			assert.NoError(t, err)
 			assert.Equal(t, "Yep", j1.Type)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 2, q.Size())
 
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()

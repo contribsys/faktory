@@ -1,5 +1,11 @@
 # Faktory Changelog
 
+## HEAD
+
+- Support known, specific errors to be returned to clients [#208]
+- All jobs now default to `"retry":25` if not specified when pushed [#211]
+- Update job arguments within Web UI to show as JSON, not native Go [#210]
+
 ## 0.9.7
 
 - Add new MUTATE command which allows bulk manipulation of Faktory's

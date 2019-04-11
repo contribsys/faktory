@@ -96,6 +96,7 @@ func TestServerStart(t *testing.T) {
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Regexp(t, "12345678901234567890abcd", result)
+		assert.Regexp(t, "\"retry\":", result)
 
 		hash := make(map[string]interface{})
 		err = json.Unmarshal([]byte(result), &hash)

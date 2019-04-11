@@ -206,7 +206,7 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	err := callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+	err = callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
 		job.EnqueuedAt = util.Nows()
 		data, err := json.Marshal(job)
 		if err != nil {

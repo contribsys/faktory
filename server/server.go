@@ -342,6 +342,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"tasks":           s.taskRunner.Stats(),
 		},
 		"server": map[string]interface{}{
+			"description":     client.Name,
 			"faktory_version": client.Version,
 			"uptime":          s.uptimeInSeconds(),
 			"connections":     atomic.LoadUint64(&s.Stats.Connections),

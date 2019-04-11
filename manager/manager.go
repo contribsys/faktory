@@ -23,6 +23,36 @@ const (
 	DeadTTL = 180 * 24 * time.Hour
 )
 
+// A KnownError is one that returns a specific error code to the client
+// such that it can be handled explicitly.  For example, the unique job feature
+// will return a NOTUNIQUE error when the client tries to push() a job that already
+// exists in Faktory.
+//
+// Unexpected errors will always use "ERR" as their code, for instance any
+// malformed data, network errors, IO errors, etc.  Clients are expected to
+// raise an exception for any ERR response.
+type KnownError interface {
+	error
+	Code() string
+}
+
+type codedError struct {
+	code string
+	msg  string
+}
+
+func (t *codedError) Error() string {
+	return fmt.Sprintf("%s %s", t.code, t.msg)
+}
+
+func (t *codedError) Code() string {
+	return t.code
+}
+
+func ExpectedError(code string, msg string) error {
+	return &codedError{code: code, msg: msg}
+}
+
 type Manager interface {
 	Push(job *client.Job) error
 
@@ -188,7 +218,6 @@ func (m *manager) enqueue(job *client.Job) error {
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
-restart:
 	var first storage.Queue
 
 	for idx, qname := range queues {
@@ -210,10 +239,9 @@ restart:
 			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
 				return m.reserve(wid, &job)
 			})
-			if h, ok := err.(halt); ok {
-				// middleware halted the fetch, for whatever reason
+			if h, ok := err.(KnownError); ok {
 				util.Infof("JID %s: %s", job.Jid, h.Error())
-				goto restart
+				return nil, err
 			}
 			if err != nil {
 				return nil, err
@@ -246,10 +274,9 @@ restart:
 		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
 			return m.reserve(wid, &job)
 		})
-		if h, ok := err.(halt); ok {
-			// middleware halted the fetch, for whatever reason
+		if h, ok := err.(KnownError); ok {
 			util.Debugf("JID %s: %s", job.Jid, h.Error())
-			goto restart
+			return nil, err
 		}
 		if err != nil {
 			return nil, err

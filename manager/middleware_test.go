@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ func TestLiveMiddleware(t *testing.T) {
 	withRedis(t, "middleware", func(t *testing.T, store storage.Store) {
 
 		t.Run("Push", func(t *testing.T) {
-			denied := errors.New("push denied")
+			denied := ExpectedError("DENIED", "push denied")
 			store.Flush()
 			m := NewManager(store)
 			m.AddMiddleware("push", func(next func() error, ctx Context) error {
@@ -73,7 +72,7 @@ func TestLiveMiddleware(t *testing.T) {
 		})
 
 		t.Run("Fetch", func(t *testing.T) {
-			denied := errors.New("fetch denied")
+			denied := ExpectedError("DENIED", "fetch denied")
 
 			store.Flush()
 			m := NewManager(store)
@@ -114,7 +113,7 @@ func TestLiveMiddleware(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			j2, err := m.Fetch(ctx, "12345", "default")
-			assert.Equal(t, err, denied)
+			assert.Equal(t, denied, err)
 			assert.Nil(t, j2)
 			assert.EqualValues(t, 0, q.Size())
 		})

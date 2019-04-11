@@ -280,7 +280,7 @@ func (s *Server) processLines(conn *Connection) {
 			return
 		}
 		if s.closed {
-			conn.Error("Closing connection", newTaggedError("SHUTDOWN", fmt.Errorf("Shutdown in progress")))
+			conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
 			conn.Close()
 			return
 		}

@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/contribsys/faktory/client"
 )
@@ -38,16 +37,12 @@ func (c Ctx) Manager() Manager {
 	return c.mgr
 }
 
-func Halt(msg string) error {
-	return halt{msg: msg}
-}
-
-type halt struct {
-	msg string
-}
-
-func (h halt) Error() string {
-	return fmt.Sprintf("Halt: %s", h.msg)
+// Returning a Halt error in a middleware will stop the middleware execution
+// chain.  The server will return the Halt to the client.  You can use "ERR"
+// for the code to signal an unexpected error or use a well-defined code for
+// an error case which the client might be interested in, e.g. "NOTUNIQUE".
+func Halt(code string, msg string) error {
+	return ExpectedError(code, msg)
 }
 
 // Run the given job through the given middleware chain.

@@ -54,7 +54,7 @@ func push(c *Connection, s *Server, cmd string) {
 	var job client.Job
 	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
-		c.Error(cmd, newTaggedError("MALFORMED", err))
+		c.Error(cmd, fmt.Errorf("Invalid JSON: %s", err))
 		return
 	}
 

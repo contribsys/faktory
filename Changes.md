@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 1.0.0
 
 - Support known, specific errors to be returned to clients [#208]
 - All jobs now default to `"retry":25` if not specified when pushed [#211]

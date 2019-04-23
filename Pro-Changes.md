@@ -3,6 +3,11 @@
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
+## 1.0.0
+
+- Allow for TOML-defined queue latency metrics [#206]
+- Better middleware error handling [#208]
+
 ## 0.9.7
 
 - Add [Statsd metrics](/contribsys/faktory/wiki/Pro-Metrics) feature

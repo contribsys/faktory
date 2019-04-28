@@ -29,8 +29,6 @@ release:
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## Download all dependencies
-	@go get github.com/golang/dep/cmd/dep
-	@dep ensure
 	@go get github.com/benbjohnson/ego/cmd/ego
 	@go get github.com/jteeuwen/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"

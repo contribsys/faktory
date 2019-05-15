@@ -90,13 +90,13 @@ type Manager interface {
 	ReapExpiredJobs(timestamp string) (int, error)
 
 	// Purge deletes all dead jobs
-	Purge() (int64, error)
+	Purge(when time.Time) (int64, error)
 
 	// EnqueueScheduledJobs enqueues scheduled jobs
-	EnqueueScheduledJobs() (int64, error)
+	EnqueueScheduledJobs(when time.Time) (int64, error)
 
 	// RetryJobs enqueues failed jobs
-	RetryJobs() (int64, error)
+	RetryJobs(when time.Time) (int64, error)
 
 	BusyCount(wid string) int
 

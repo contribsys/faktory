@@ -8,7 +8,7 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-type scannerTask func() (int64, error)
+type scannerTask func(time.Time) (int64, error)
 
 type scanner struct {
 	name     string
@@ -26,7 +26,7 @@ func (s *scanner) Name() string {
 func (s *scanner) Execute() error {
 	start := time.Now()
 
-	count, err := s.task()
+	count, err := s.task(start)
 	if err != nil {
 		return err
 	}

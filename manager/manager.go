@@ -196,8 +196,15 @@ func (m *manager) Push(job *client.Job) error {
 		}
 	}
 
-	// enqueue immediately
-	return m.enqueue(job)
+	err := callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+		return m.enqueue(job)
+	})
+	if err != nil {
+		if k, ok := err.(KnownError); ok {
+			util.Infof("JID %s: %s", job.Jid, k.Error())
+		}
+	}
+	return err
 }
 
 func (m *manager) enqueue(job *client.Job) error {
@@ -206,21 +213,13 @@ func (m *manager) enqueue(job *client.Job) error {
 		return err
 	}
 
-	err = callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
-		job.EnqueuedAt = util.Nows()
-		data, err := json.Marshal(job)
-		if err != nil {
-			return err
-		}
-		//util.Debugf("pushed: %+v", job)
-		return q.Push(data)
-	})
+	job.EnqueuedAt = util.Nows()
+	data, err := json.Marshal(job)
 	if err != nil {
-		if k, ok := err.(KnownError); ok {
-			util.Infof("JID %s: %s", job.Jid, k.Error())
-		}
+		return err
 	}
-	return err
+	//util.Debugf("pushed: %+v", job)
+	return q.Push(data)
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {

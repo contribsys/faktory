@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/contribsys/faktory/util"
 )
 
 const (
@@ -27,18 +29,12 @@ var (
 	RandomProcessWid = ""
 )
 
-// The Client structure represents a thread-unsafe connection
-// to a Faktory server.  It is recommended to use a connection pool
-// of Clients in a multi-threaded process.  See faktory_worker_go's
-// internal connection pool for example.
-//
-// TODO Provide a connection pool as part of this package?
+// The Client structure represents a thread-safe connection
+// to a Faktory server.
 type Client struct {
 	Location string
 	Options  *ClientData
-	rdr      *bufio.Reader
-	wtr      *bufio.Writer
-	conn     net.Conn
+	util.Pool
 }
 
 // ClientData is serialized to JSON and sent
@@ -64,11 +60,13 @@ type ClientData struct {
 }
 
 type Server struct {
-	Network  string
-	Address  string
-	Password string
-	Timeout  time.Duration
-	TLS      *tls.Config
+	Network         string
+	Address         string
+	Password        string
+	Timeout         time.Duration
+	TLS             *tls.Config
+	InitialPoolSize int
+	MaxPoolSize     int
 }
 
 func (s *Server) Open() (*Client, error) {
@@ -119,7 +117,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 }
 
 func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{}}
+	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{}, 0, 1}
 }
 
 // Open connects to a Faktory server based on
@@ -144,37 +142,56 @@ func Open() (*Client, error) {
 	return srv.Open()
 }
 
+func OpenPool(poolSize int) (*Client, error) {
+	srv := DefaultServer()
+	srv.MaxPoolSize = poolSize
+	err := srv.ReadFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	// Connect to default localhost
+	return srv.Open()
+}
+
 // Dial connects to the remote faktory server.
 //
 //   client.Dial(client.Localhost, "topsecret")
 //
 func Dial(srv *Server, password string) (*Client, error) {
-	client := emptyClientData()
+	clientData := emptyClientData()
 
 	var err error
-	var conn net.Conn
+	var pool util.Pool
 	dial := &net.Dialer{Timeout: srv.Timeout}
 	if srv.Network == "tcp+tls" {
-		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, srv.TLS)
+		pool, err = util.NewChannelPool(srv.InitialPoolSize, srv.MaxPoolSize, func() (util.Closeable, error) { return tls.DialWithDialer(dial, "tcp", srv.Address, srv.TLS) })
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		conn, err = dial.Dial(srv.Network, srv.Address)
-		if err != nil {
-			return nil, err
-		}
-		if x, ok := conn.(*net.TCPConn); ok {
-			x.SetKeepAlive(true)
-		}
+		pool, err = util.NewChannelPool(srv.InitialPoolSize, srv.MaxPoolSize, func() (util.Closeable, error) {
+			conn, err := dial.Dial(srv.Network, srv.Address)
+			if err != nil {
+				return nil, err
+			}
+			if x, ok := conn.(*net.TCPConn); ok {
+				x.SetKeepAlive(false)
+			}
+
+			return conn, nil
+		})
 	}
 
-	r := bufio.NewReader(conn)
-	w := bufio.NewWriter(conn)
-
-	line, err := readString(r)
+	tcpConn, err := getTCPConn(pool)
 	if err != nil {
-		conn.Close()
+		return nil, err
+	}
+
+	rdr := bufio.NewReader(tcpConn)
+
+	line, err := readString(rdr)
+	if err != nil {
+		pool.Close()
 		return nil, err
 	}
 	if strings.HasPrefix(line, "HI ") {
@@ -183,7 +200,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 		var hi map[string]interface{}
 		err = json.Unmarshal([]byte(str), &hi)
 		if err != nil {
-			conn.Close()
+			pool.Close()
 			return nil, err
 		}
 		v, ok := hi["v"].(float64)
@@ -201,45 +218,58 @@ func Dial(srv *Server, password string) (*Client, error) {
 				iter = int(iterVal.(float64))
 			}
 
-			client.PasswordHash = hash(password, salt, iter)
+			clientData.PasswordHash = hash(password, salt, iter)
 		}
 	} else {
-		conn.Close()
+		pool.Close()
 		return nil, fmt.Errorf("Expecting HI but got: %s", line)
 	}
 
-	data, err := json.Marshal(client)
+	data, err := json.Marshal(clientData)
 	if err != nil {
 		return nil, err
 	}
 
-	err = writeLine(w, "HELLO", data)
+	err = writeLine(bufio.NewWriter(tcpConn), "HELLO", data)
 	if err != nil {
-		conn.Close()
+		pool.Close()
 		return nil, err
 	}
 
-	err = ok(r)
+	err = ok(rdr)
 	if err != nil {
-		conn.Close()
+		pool.Close()
 		return nil, err
 	}
 
-	return &Client{Options: client, Location: srv.Address, conn: conn, rdr: r, wtr: w}, nil
+	return &Client{Options: clientData, Location: srv.Address, Pool: pool}, nil
 }
 
 func (c *Client) Close() error {
-	writeLine(c.wtr, "END", nil)
-	return c.conn.Close()
-}
-
-func (c *Client) Ack(jid string) error {
-	err := writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	if err := writeLine(bufio.NewWriter(tcpConn), "END", nil); err != nil {
+		return err
+	}
+
+	c.Pool.Close()
+	return nil
+}
+
+func (c *Client) Ack(jid string) error {
+	tcpConn, err := getTCPConn(c.Pool)
+	if err != nil {
+		return err
+	}
+
+	if err := writeLine(bufio.NewWriter(tcpConn), "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid))); err != nil {
+		return err
+	}
+
+	return ok(bufio.NewReader(tcpConn))
 }
 
 func (c *Client) Push(job *Job) error {
@@ -247,11 +277,16 @@ func (c *Client) Push(job *Job) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "PUSH", jobytes)
+
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+
+	if err := writeLine(bufio.NewWriter(tcpConn), "PUSH", jobytes); err != nil {
+		return err
+	}
+	return ok(bufio.NewReader(tcpConn))
 }
 
 func (c *Client) Fetch(q ...string) (*Job, error) {
@@ -259,12 +294,16 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
 	}
 
-	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	if err := writeLine(bufio.NewWriter(tcpConn), "FETCH", []byte(strings.Join(q, " "))); err != nil {
+		return nil, err
+	}
+
+	data, err := readResponse(bufio.NewReader(tcpConn))
 	if err != nil {
 		return nil, err
 	}
@@ -302,33 +341,49 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 		bt := strings.Split(str, "\n")
 		failure["backtrace"] = bt[3:]
 	}
+
 	failbytes, err := json.Marshal(failure)
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "FAIL", failbytes)
+
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+
+	err = writeLine(bufio.NewWriter(tcpConn), "FAIL", failbytes)
+	if err != nil {
+		return err
+	}
+
+	return ok(bufio.NewReader(tcpConn))
 }
 
 func (c *Client) Flush() error {
-	err := writeLine(c.wtr, "FLUSH", nil)
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	if err := writeLine(bufio.NewWriter(tcpConn), "FLUSH", nil); err != nil {
+		return err
+	}
+
+	return ok(bufio.NewReader(tcpConn))
 }
 
 func (c *Client) Info() (map[string]interface{}, error) {
-	err := writeLine(c.wtr, "INFO", nil)
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	if err := writeLine(bufio.NewWriter(tcpConn), "INFO", nil); err != nil {
+		return nil, err
+	}
+
+	data, err := readResponse(bufio.NewReader(tcpConn))
 	if err != nil {
 		return nil, err
 	}
@@ -346,12 +401,16 @@ func (c *Client) Info() (map[string]interface{}, error) {
 }
 
 func (c *Client) Generic(cmdline string) (string, error) {
-	err := writeLine(c.wtr, cmdline, nil)
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return "", err
 	}
 
-	return readString(c.rdr)
+	if err := writeLine(bufio.NewWriter(tcpConn), cmdline, nil); err != nil {
+		return "", err
+	}
+
+	return readString(bufio.NewReader(tcpConn))
 }
 
 func (c *Client) Beat() (string, error) {
@@ -359,6 +418,7 @@ func (c *Client) Beat() (string, error) {
 	if val == "OK" {
 		return "", nil
 	}
+
 	return val, err
 }
 
@@ -378,23 +438,23 @@ func emptyClientData() *ClientData {
 	return client
 }
 
-func writeLine(io *bufio.Writer, op string, payload []byte) error {
+func writeLine(w *bufio.Writer, op string, payload []byte) error {
 	//util.Debugf("> %s %s", op, string(payload))
 
-	_, err := io.Write([]byte(op))
+	_, err := w.Write([]byte(op))
 	if payload != nil {
 		if err == nil {
-			_, err = io.Write([]byte(" "))
+			_, err = w.Write([]byte(" "))
 		}
 		if err == nil {
-			_, err = io.Write(payload)
+			_, err = w.Write(payload)
 		}
 	}
 	if err == nil {
-		_, err = io.Write([]byte("\r\n"))
+		_, err = w.Write([]byte("\r\n"))
 	}
 	if err == nil {
-		err = io.Flush()
+		err = w.Flush()
 	}
 	return err
 }
@@ -485,4 +545,19 @@ func hash(pwd, salt string, iterations int) string {
 		}
 	}
 	return fmt.Sprintf("%x", hash)
+}
+
+func getTCPConn(pool util.Pool) (*net.TCPConn, error) {
+	poolConn, err := pool.Get()
+	if err != nil {
+		return nil, err
+	}
+	defer poolConn.Close()
+
+	tcpConn, validConn := poolConn.(*util.PoolConn).Closeable.(*net.TCPConn)
+	if !validConn {
+		return nil, fmt.Errorf("Invalid connection type")
+	}
+
+	return tcpConn, nil
 }

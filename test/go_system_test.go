@@ -77,7 +77,9 @@ func TestSystem(t *testing.T) {
 
 func pushAndPop(t *testing.T, count int) {
 	time.Sleep(300 * time.Millisecond)
-	client, err := client.Dial(client.DefaultServer(), "123456")
+	srv := client.DefaultServer()
+	srv.MaxPoolSize = 10
+	client, err := client.Dial(srv, "123456")
 	if err != nil {
 		handleError(err)
 		return

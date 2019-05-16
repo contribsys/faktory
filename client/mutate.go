@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bufio"
 	"encoding/json"
 )
 
@@ -144,10 +145,16 @@ func (c *Client) mutate(op Operation) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "MUTATE", json)
+
+	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	err = writeLine(bufio.NewWriter(tcpConn), "MUTATE", json)
+	if err != nil {
+		return err
+	}
+
+	return ok(bufio.NewReader(tcpConn))
 }

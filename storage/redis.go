@@ -132,9 +132,20 @@ func BootRedis(path string, sock string) (func(), error) {
 		}()
 	}
 
-	_, err = rclient.Ping().Result()
-	if err != nil {
-		return nil, err
+	secs := 60
+	for {
+		_, err = rclient.Ping().Result()
+		if err == nil {
+			break
+		} else if secs == 0 {
+			return nil, err
+		} else if strings.HasPrefix(err.Error(), "LOADING") {
+			secs -= 1
+			util.Infof("Faktory is waiting for Redis to load...")
+			time.Sleep(1 * time.Second)
+		} else {
+			return nil, err
+		}
 	}
 
 	infos, err := rclient.Info().Result()

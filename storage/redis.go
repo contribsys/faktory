@@ -141,7 +141,7 @@ func BootRedis(path string, sock string) (func(), error) {
 			return nil, err
 		} else if strings.HasPrefix(err.Error(), "LOADING") {
 			secs -= 1
-			util.Infof("Faktory is waiting for Redis to load...")
+			util.Info("Faktory is waiting for Redis to load...")
 			time.Sleep(1 * time.Second)
 		} else {
 			return nil, err

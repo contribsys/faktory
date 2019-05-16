@@ -1,5 +1,9 @@
 # Faktory Changelog
 
+## HEAD
+
+- Pause Faktory boot and wait upon any `LOADING` errors from Redis
+
 ## 1.0.0
 
 - Support known, specific errors to be returned to clients [#208]

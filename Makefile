@@ -5,7 +5,7 @@ VERSION=1.0.0
 ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
-TEST_FLAGS=-parallel 4
+TEST_FLAGS=-parallel 4 -timeout 30s
 ifdef DETECT_RACES
 	TEST_FLAGS += -race
 endif

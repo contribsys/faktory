@@ -174,5 +174,5 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 func fakeJob() (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","priority":%d,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, 5))
+	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows, 5))
 }

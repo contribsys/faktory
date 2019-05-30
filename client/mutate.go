@@ -150,6 +150,7 @@ func (c *Client) mutate(op Operation) error {
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	err = writeLine(bufio.NewWriter(tcpConn), "MUTATE", json)
 	if err != nil {

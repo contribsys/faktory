@@ -117,7 +117,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 }
 
 func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{}, 0, 1}
+	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{}, 1, 1}
 }
 
 // Open connects to a Faktory server based on
@@ -145,6 +145,7 @@ func Open() (*Client, error) {
 func OpenPool(poolSize int) (*Client, error) {
 	srv := DefaultServer()
 	srv.MaxPoolSize = poolSize
+	srv.InitialPoolSize = 0
 	err := srv.ReadFromEnv()
 	if err != nil {
 		return nil, err
@@ -175,11 +176,14 @@ func Dial(srv *Server, password string) (*Client, error) {
 				return nil, err
 			}
 			if x, ok := conn.(*net.TCPConn); ok {
-				x.SetKeepAlive(false)
+				x.SetKeepAlive(true)
 			}
 
 			return conn, nil
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tcpConn, err := getTCPConn(pool)
@@ -227,17 +231,16 @@ func Dial(srv *Server, password string) (*Client, error) {
 
 	data, err := json.Marshal(clientData)
 	if err != nil {
-		return nil, err
-	}
-
-	err = writeLine(bufio.NewWriter(tcpConn), "HELLO", data)
-	if err != nil {
 		pool.Close()
 		return nil, err
 	}
 
-	err = ok(rdr)
-	if err != nil {
+	if err := writeLine(bufio.NewWriter(tcpConn), "HELLO", data); err != nil {
+		pool.Close()
+		return nil, err
+	}
+
+	if err := ok(rdr); err != nil {
 		pool.Close()
 		return nil, err
 	}
@@ -246,16 +249,18 @@ func Dial(srv *Server, password string) (*Client, error) {
 }
 
 func (c *Client) Close() error {
+	defer c.Pool.Close()
+
 	tcpConn, err := getTCPConn(c.Pool)
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "END", nil); err != nil {
 		return err
 	}
 
-	c.Pool.Close()
 	return nil
 }
 
@@ -264,6 +269,7 @@ func (c *Client) Ack(jid string) error {
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid))); err != nil {
 		return err
@@ -282,6 +288,7 @@ func (c *Client) Push(job *Job) error {
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "PUSH", jobytes); err != nil {
 		return err
@@ -298,6 +305,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "FETCH", []byte(strings.Join(q, " "))); err != nil {
 		return nil, err
@@ -351,6 +359,7 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	err = writeLine(bufio.NewWriter(tcpConn), "FAIL", failbytes)
 	if err != nil {
@@ -365,6 +374,7 @@ func (c *Client) Flush() error {
 	if err != nil {
 		return err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "FLUSH", nil); err != nil {
 		return err
@@ -378,6 +388,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), "INFO", nil); err != nil {
 		return nil, err
@@ -405,6 +416,7 @@ func (c *Client) Generic(cmdline string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer tcpConn.Close()
 
 	if err := writeLine(bufio.NewWriter(tcpConn), cmdline, nil); err != nil {
 		return "", err
@@ -552,7 +564,6 @@ func getTCPConn(pool util.Pool) (*net.TCPConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer poolConn.Close()
 
 	tcpConn, validConn := poolConn.(*util.PoolConn).Closeable.(*net.TCPConn)
 	if !validConn {

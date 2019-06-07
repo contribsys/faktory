@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 1.0.1
 
 - Pause Faktory boot and wait upon any `LOADING` errors from Redis
 

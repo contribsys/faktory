@@ -11,11 +11,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:317998b1359366dda9f69cdbd108c39c7b3813a69002246fac4e3548646c1620"
+  digest = "1:d743f5ff04492330917b701b421bb60c8a865362ad51b1af867787b9afda5d26"
   name = "github.com/apex/log"
   packages = ["."]
   pruneopts = ""
-  revision = "941dea75d3ebfbdd905a5d8b7b232965c5e5c684"
+  revision = "d6c5facec1f2ae23a97782ab0ee18af58734346f"
 
 [[projects]]
   digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
@@ -26,8 +26,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4ddd02ffe30259f19d986198ea26cd993b9ed8c5855cc3334dbf6579aa73a2fe"
+  digest = "1:c2db84082861ca42d0b00580d28f4b31aceec477a00a38e1a057fb3da75c8adc"
   name = "github.com/go-redis/redis"
   packages = [
     ".",
@@ -36,27 +35,27 @@
     "internal/hashtag",
     "internal/pool",
     "internal/proto",
-    "internal/singleflight",
     "internal/util",
   ]
   pruneopts = ""
-  revision = "daf101bd7905b61ae654bc88ec1163be6914979e"
+  revision = "75795aa4236dc7341eefac3bbe945e68c99ef9df"
+  version = "v6.15.3"
 
 [[projects]]
   branch = "master"
-  digest = "1:1b8a9fc38d01f3adb81bc640d57495d3d1bfedd95bd200d32fc8cb439dc5c94d"
+  digest = "1:b3328b1cb82bf4fc91abdfe1c1c5976e8412ddbd074fc2b81b167b1c12fd2cf3"
   name = "github.com/justinas/nosurf"
   packages = ["."]
   pruneopts = ""
-  revision = "7182011986c42c33f0a79fd4b07e41edc784532b"
+  revision = "05988550ea1890c49b702363e53b3afa7aad2b4b"
 
 [[projects]]
-  digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
+  digest = "1:1d7e1867c49a6dd9856598ef7c3123604ea3daabf5b83f303ff457bcbc410b1d"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = ""
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
 
 [[projects]]
   digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
@@ -67,12 +66,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:c587772fb8ad29ad4db67575dad25ba17a51f072ff18a22b4f0257a4d9c24f75"
+  digest = "1:381bcbeb112a51493d9d998bbba207a529c73dbb49b3fd789e48c63fac1f192c"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   pruneopts = ""
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
 
 [solve-meta]
   analyzer-name = "dep"

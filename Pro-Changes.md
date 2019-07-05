@@ -3,6 +3,12 @@
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
+## HEAD
+
+- The canonical copy of each cron job was mutable, leading to
+  inconsistent cron jobs over time [#234]
+- Fix display of Next Run to use UTC [#234]
+
 ## 1.0.1
 
 - Fix unique jobs cannot be retried [#220]

@@ -72,8 +72,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
       </table>
     </div>
     <div class="pull-left flip">
-      <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
-      <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
+      <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
+      <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
     </div>
   </form>
 
@@ -82,8 +82,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
       <div class="pull-right flip">
-        <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryAll") %></button>
-        <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
+        <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryAll") %></button>
+        <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
       </div>
     </form>
   <% } %>

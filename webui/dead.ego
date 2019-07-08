@@ -48,8 +48,8 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
   <%== csrfTag(req) %>
   <div class="pull-left flip">
     <a class="btn btn-default" href="/morgue"><%= t(req, "GoBack") %></a>
-    <button class="btn btn-primary btn-xs" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
-    <button class="btn btn-danger btn-xs" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
   </div>
 </form>
 <% }) %>

@@ -62,9 +62,9 @@ func ego_busy(w io.Writer, req *http.Request) {
               <input type="hidden" name="wid" value="<%= worker.Wid %>"/>
               <div class="pull-right flip">
                 <% if !worker.IsQuiet() { %>
-                  <button class="btn btn-primary btn-xs" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
+                  <button class="btn btn-primary btn-sm" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
                 <% } %>
-                <button class="btn btn-danger btn-xs" type="submit" name="signal" value="terminate"><%= t(req, "Stop") %></button>
+                <button class="btn btn-danger btn-sm" type="submit" name="signal" value="terminate"><%= t(req, "Stop") %></button>
               </div>
             </form>
           </div>

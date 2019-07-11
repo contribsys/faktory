@@ -165,7 +165,7 @@ deb: xbuild
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis-server \
 		--deb-priority optional --category admin \
-		--deb-compression bzip2 \
+		--deb-compression gz \
 		--no-deb-no-default-config-files \
 	 	--after-install packaging/scripts/postinst.deb.systemd \
 	 	--before-remove packaging/scripts/prerm.deb.systemd \

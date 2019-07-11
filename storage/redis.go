@@ -13,7 +13,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
+        "strconv"
 	"regexp"
 
 	"github.com/contribsys/faktory/client"
@@ -131,8 +131,11 @@ func BootRedis(path string, sock string) (func(), error) {
 			}
 		}()
 	}
-
-	secs := 60
+        secs_env, isset := os.LookupEnv("FAKTORY_REDIS_TIMEOUT")
+	secs := 120
+	if isset {
+		secs, err = strconv.Atoi(secs_env)
+	}
 	for {
 		_, err = rclient.Ping().Result()
 		if err == nil {

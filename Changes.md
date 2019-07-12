@@ -1,5 +1,10 @@
 # Faktory Changelog
 
+## HEAD
+
+- Rework fetching jobs from queues to be more efficient. [#235]
+
+
 ## 1.0.1
 
 - Pause Faktory boot and wait upon any `LOADING` errors from Redis

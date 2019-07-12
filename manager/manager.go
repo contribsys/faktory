@@ -116,6 +116,7 @@ func NewManager(s storage.Store) Manager {
 		fetchChain: make(MiddlewareChain, 0),
 	}
 	m.loadWorkingSet()
+	m.fetcher = BasicFetcher(m)
 	return m
 }
 
@@ -155,6 +156,7 @@ type manager struct {
 	fetchChain   MiddlewareChain
 	failChain    MiddlewareChain
 	ackChain     MiddlewareChain
+	fetcher      Fetcher
 }
 
 func (m *manager) Push(job *client.Job) error {
@@ -220,81 +222,4 @@ func (m *manager) enqueue(job *client.Job) error {
 	}
 	//util.Debugf("pushed: %+v", job)
 	return q.Push(data)
-}
-
-func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
-restart:
-	var first storage.Queue
-
-	for idx, qname := range queues {
-		q, err := m.store.GetQueue(qname)
-		if err != nil {
-			return nil, err
-		}
-
-		data, err := q.Pop()
-		if err != nil {
-			return nil, err
-		}
-		if data != nil {
-			var job client.Job
-			err = json.Unmarshal(data, &job)
-			if err != nil {
-				return nil, err
-			}
-			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
-				return m.reserve(wid, &job)
-			})
-			if h, ok := err.(KnownError); ok {
-				util.Infof("JID %s: %s", job.Jid, h.Error())
-				if h.Code() == "DISCARD" {
-					goto restart
-				}
-				return nil, err
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &job, nil
-		}
-		if idx == 0 {
-			first = q
-		}
-	}
-
-	if first == nil {
-		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
-	}
-
-	// scanned through our queues, no jobs were available
-	// we should block for a moment, awaiting a job to be
-	// pushed.  this allows us to pick up new jobs in µs
-	// rather than seconds.
-	data, err := first.BPop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if data != nil {
-		var job client.Job
-		err = json.Unmarshal(data, &job)
-		if err != nil {
-			return nil, err
-		}
-		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
-			return m.reserve(wid, &job)
-		})
-		if h, ok := err.(KnownError); ok {
-			util.Debugf("JID %s: %s", job.Jid, h.Error())
-			if h.Code() == "DISCARD" {
-				goto restart
-			}
-			return nil, err
-		}
-		if err != nil {
-			return nil, err
-		}
-		return &job, nil
-	}
-
-	return nil, nil
 }

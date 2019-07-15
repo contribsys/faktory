@@ -2,6 +2,7 @@
 
 ## HEAD
 
+- Fix "Add to Queue" button on the Scheduled page [#236]
 - Rework fetching jobs from queues to be more efficient. [#235]
 
 

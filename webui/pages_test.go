@@ -265,7 +265,7 @@ func TestPages(t *testing.T) {
 			assert.EqualValues(t, 1, q.Size())
 			payload := url.Values{
 				"key":    {keys},
-				"action": {"delete"},
+				"action": {"add_to_queue"},
 			}
 			req, err = ui.NewRequest("POST", "http://localhost:7420/scheduled", strings.NewReader(payload.Encode()))
 			assert.NoError(t, err)

@@ -203,7 +203,7 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 			}
 			return nil
 		}
-	case "retry":
+	case "add_to_queue", "retry":
 		if len(keys) == 1 && keys[0] == "all" {
 			return ctx(req).Store().EnqueueAll(set)
 		} else {

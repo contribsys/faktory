@@ -44,10 +44,10 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
   </table>
 </div>
 
-<form class="form-horizontal" action="/retries/<%= key %>" method="post">
+<form class="form-horizontal" action="<%= root(req) %>/retries/<%= key %>" method="post">
   <%== csrfTag(req) %>
   <div class="pull-left flip">
-    <a class="btn btn-default" href="/retries"><%= t(req, "GoBack") %></a>
+    <a class="btn btn-default" href="<%= root(req) %>/retries"><%= t(req, "GoBack") %></a>
     <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
     <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
   </div>

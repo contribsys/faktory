@@ -98,22 +98,52 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 		Mux: http.NewServeMux(),
 	}
 
-	ui.Mux.HandleFunc("/static/", staticHandler)
-	ui.Mux.HandleFunc("/stats", DebugLog(ui, statsHandler))
+	app := http.NewServeMux()
+	app.HandleFunc("/static/", staticHandler)
+	app.HandleFunc("/stats", DebugLog(ui, statsHandler))
 
-	ui.Mux.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
-	ui.Mux.HandleFunc("/queues", Log(ui, queuesHandler))
-	ui.Mux.HandleFunc("/queues/", Log(ui, queueHandler))
-	ui.Mux.HandleFunc("/retries", Log(ui, retriesHandler))
-	ui.Mux.HandleFunc("/retries/", Log(ui, retryHandler))
-	ui.Mux.HandleFunc("/scheduled", Log(ui, scheduledHandler))
-	ui.Mux.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
-	ui.Mux.HandleFunc("/morgue", Log(ui, morgueHandler))
-	ui.Mux.HandleFunc("/morgue/", Log(ui, deadHandler))
-	ui.Mux.HandleFunc("/busy", Log(ui, busyHandler))
-	ui.Mux.HandleFunc("/debug", Log(ui, debugHandler))
+	app.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
+	app.HandleFunc("/queues", Log(ui, queuesHandler))
+	app.HandleFunc("/queues/", Log(ui, queueHandler))
+	app.HandleFunc("/retries", Log(ui, retriesHandler))
+	app.HandleFunc("/retries/", Log(ui, retryHandler))
+	app.HandleFunc("/scheduled", Log(ui, scheduledHandler))
+	app.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
+	app.HandleFunc("/morgue", Log(ui, morgueHandler))
+	app.HandleFunc("/morgue/", Log(ui, deadHandler))
+	app.HandleFunc("/busy", Log(ui, busyHandler))
+	app.HandleFunc("/debug", Log(ui, debugHandler))
+
+	ui.Mux.HandleFunc("/", Proxy(ui, app))
 
 	return ui
+}
+
+func Proxy(ui *WebUI, app *http.ServeMux) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		///////
+		// Support transparent proxying with nginx's proxy_pass.
+		// Note that's super critical that location == X-Script-Name
+		// Example config:
+		/*
+		   location /faktory {
+		       proxy_set_header X-Script-Name /faktory;
+
+		       proxy_pass   http://127.0.0.1:7420;
+		       proxy_set_header Host $host;
+		       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		       proxy_set_header X-Scheme $scheme;
+		       proxy_set_header X-Real-IP $remote_addr;
+		   }
+		*/
+
+		prefix := r.Header.Get("X-Script-Name")
+		if prefix != "" {
+			r.RequestURI = strings.Replace(r.RequestURI, prefix, "", 1)
+			r.URL.Path = r.RequestURI
+		}
+		app.ServeHTTP(w, r)
+	}
 }
 
 func (l *Lifecycle) opts(s *server.Server) Options {
@@ -323,6 +353,7 @@ func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 			locale:   locale,
 			strings:  translations(locale),
 			csrf:     ui.Options.EnableCSRF,
+			root:     r.Header.Get("X-Script-Name"),
 		}
 
 		pass(w, r.WithContext(dctx))

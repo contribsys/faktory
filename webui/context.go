@@ -24,6 +24,7 @@ type DefaultContext struct {
 	locale   string
 	strings  map[string]string
 	csrf     bool
+	root     string
 }
 
 func (d *DefaultContext) Response() http.ResponseWriter {

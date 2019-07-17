@@ -12,23 +12,23 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 <% if total_size > count { %>
   <ul class="pagination pull-right flip">
     <li class="<% if current_page == 1 { %>disabled<% } %>">
-      <a href="<%= url %>?page=1">&laquo;</a>
+      <a href="<%= relative(req, url) %>?page=1">&laquo;</a>
     </li>
     <% if current_page > 1 { %>
       <li>
-        <a href="<%= url %>?<%= pageparam(req, current_page - 1) %>"><%= current_page - 1 %></a>
+        <a href="<%= relative(req, url) %>?<%= pageparam(req, current_page - 1) %>"><%= current_page - 1 %></a>
       </li>
     <% } %>
     <li class="disabled">
-      <a href="<%= url %>?<%= pageparam(req, current_page) %>"><%= current_page %></a>
+      <a href="<%= relative(req, url) %>?<%= pageparam(req, current_page) %>"><%= current_page %></a>
     </li>
     <% if total_size > current_page * count { %>
       <li>
-        <a href="<%= url %>?<%= pageparam(req, current_page + 1) %>"><%= current_page + 1 %></a>
+        <a href="<%= relative(req, url) %>?<%= pageparam(req, current_page + 1) %>"><%= current_page + 1 %></a>
       </li>
     <% } %>
     <li class="<% if total_size <= current_page * count { %>disabled<% } %>">
-      <a href="<%= url %>?<%= pageparam(req, uint64(math.Ceil(float64(total_size) / float64(count)))) %>">&raquo;</a>
+      <a href="<%= relative(req, url) %>?<%= pageparam(req, uint64(math.Ceil(float64(total_size) / float64(count)))) %>">&raquo;</a>
     </li>
   </ul>
 <% } %>

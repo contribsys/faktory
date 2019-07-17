@@ -25,7 +25,7 @@ func ego_footer(w io.Writer, req *http.Request) {
             <p class="navbar-text"><%= ctx(req).Server().Options.Environment %></p>
           </li>
           <li>
-            <p class="navbar-text"><a style="color: #666" href="/debug">debug</a></p>
+            <p class="navbar-text"><a style="color: #666" href="<%= relative(req, "/debug") %>">debug</a></p>
           </li>
         </ul>
     </div>

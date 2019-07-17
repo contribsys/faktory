@@ -355,7 +355,6 @@ img.smallogo {
 }
 
 .status-sprite {
-  background-image: url(/static/img/status.png);
   height: 32px; 
   width: 32px;
   display: inline-block;

@@ -85,10 +85,10 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			http.Redirect(w, r, "/queues", http.StatusFound)
+			Redirect(w, r, "/queues", http.StatusFound)
 			return
 		}
-		http.Redirect(w, r, "/queues/"+queueName, http.StatusFound)
+		Redirect(w, r, "/queues/"+queueName, http.StatusFound)
 		return
 	}
 
@@ -117,7 +117,7 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			http.Redirect(w, r, "/retries", http.StatusFound)
+			Redirect(w, r, "/retries", http.StatusFound)
 		}
 		return
 	}
@@ -156,7 +156,7 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 	if data == nil {
 		// retry has disappeared?  possibly requeued while the user was sitting on the /retries page
-		http.Redirect(w, r, "/retries", http.StatusTemporaryRedirect)
+		Redirect(w, r, "/retries", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -183,7 +183,7 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			http.Redirect(w, r, "/scheduled", http.StatusFound)
+			Redirect(w, r, "/scheduled", http.StatusFound)
 		}
 		return
 	}
@@ -223,7 +223,7 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 
 	if data == nil {
 		// retry has disappeared?  possibly requeued while the user was sitting on the /retries page
-		http.Redirect(w, r, "/scheduled", http.StatusTemporaryRedirect)
+		Redirect(w, r, "/scheduled", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -246,7 +246,7 @@ func morgueHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			http.Redirect(w, r, "/morgue", http.StatusFound)
+			Redirect(w, r, "/morgue", http.StatusFound)
 		}
 		return
 	}
@@ -285,7 +285,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 
 	if data == nil {
 		// retry has disappeared?  possibly requeued while the user was sitting on the listing page
-		http.Redirect(w, r, "/morgue", http.StatusTemporaryRedirect)
+		Redirect(w, r, "/morgue", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -319,7 +319,7 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		http.Redirect(w, r, "/busy", http.StatusFound)
+		Redirect(w, r, "/busy", http.StatusFound)
 		return
 	}
 	ego_busy(w, r)
@@ -327,4 +327,8 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 
 func debugHandler(w http.ResponseWriter, r *http.Request) {
 	ego_debug(w, r)
+}
+
+func Redirect(w http.ResponseWriter, r *http.Request, path string, code int) {
+	http.Redirect(w, r, relative(r, path), code)
 }

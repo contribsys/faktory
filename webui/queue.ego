@@ -23,7 +23,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
   </div>
 </header>
 
-<form action="/queues/<%= q.Name() %>" method="post">
+<form action="<%= root(req) %>/queues/<%= q.Name() %>" method="post">
   <%== csrfTag(req) %>
 
 <div class="table_container">

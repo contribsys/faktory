@@ -12,10 +12,10 @@ func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *client.J
 
 <% ego_job_info(w, req, job) %>
 
-<form class="form-horizontal" action="/scheduled/<%= key %>" method="post">
+<form class="form-horizontal" action="<%= root(req) %>/scheduled/<%= key %>" method="post">
   <%== csrfTag(req) %>
   <div class="flip">
-    <a class="btn btn-default" href="/scheduled"><%= t(req, "GoBack") %></a>
+    <a class="btn btn-default" href="<%= root(req) %>/scheduled"><%= t(req, "GoBack") %></a>
     <button class="btn btn-primary" type="submit" name="action" value="add_to_queue"><%= t(req, "AddToQueue") %></button>
     <button class="btn btn-danger" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
   </div>

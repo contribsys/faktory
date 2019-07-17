@@ -16,31 +16,31 @@ func ego_summary(w io.Writer, req *http.Request) {
     <span class="desc"><%= t(req, "Failed") %></span>
   </li>
   <li class="busy col-sm-1">
-    <a href="/busy">
+    <a href="<%= relative(req, "/busy") %>">
       <span class="count"><%= uintWithDelimiter(store.Working().Size()) %></span>
       <span class="desc"><%= t(req, "Busy") %></span>
     </a>
   </li>
   <li class="enqueued col-sm-1">
-    <a href="/queues">
+    <a href="<%= relative(req, "/queues") %>">
       <span class="count"><%= uintWithDelimiter(enqueuedSize(req)) %></span>
       <span class="desc"><%= t(req, "Enqueued") %></span>
     </a>
   </li>
   <li class="retries col-sm-1">
-    <a href="/retries">
+    <a href="<%= relative(req, "/retries") %>">
       <span class="count"><%= uintWithDelimiter(store.Retries().Size()) %></span>
       <span class="desc"><%= t(req, "Retries") %></span>
     </a>
   </li>
   <li class="scheduled col-sm-1">
-    <a href="/scheduled">
+    <a href="<%= relative(req, "/scheduled") %>">
       <span class="count"><%= uintWithDelimiter(store.Scheduled().Size()) %></span>
       <span class="desc"><%= t(req, "Scheduled") %></span>
     </a>
   </li>
   <li class="dead col-sm-1">
-    <a href="/morgue">
+    <a href="<%= relative(req, "/morgue") %>">
       <span class="count"><%= uintWithDelimiter(store.Dead().Size()) %></span>
       <span class="desc"><%= t(req, "Dead") %></span>
     </a>

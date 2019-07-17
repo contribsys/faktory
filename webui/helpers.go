@@ -23,6 +23,14 @@ var (
 	utcFormat = "15:04:05 UTC"
 )
 
+func root(req *http.Request) string {
+	return ctx(req).root
+}
+
+func relative(req *http.Request, relpath string) string {
+	return fmt.Sprintf("%s%s", ctx(req).root, relpath)
+}
+
 func serverUtcTime() string {
 	return time.Now().UTC().Format(utcFormat)
 }

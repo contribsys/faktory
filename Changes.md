@@ -4,7 +4,18 @@
 
 - Fix "Add to Queue" button on the Scheduled page [#236]
 - Rework fetching jobs from queues to be more efficient. [#235]
+- You can now put nginx in front of Faktory's Web UI using `proxy_pass`:
+```nginx
+location /faktory {
+   proxy_set_header X-Script-Name /faktory;
 
+   proxy_pass   http://127.0.0.1:7420;
+   proxy_set_header Host $host;
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header X-Scheme $scheme;
+   proxy_set_header X-Real-IP $remote_addr;
+}
+```
 
 ## 1.0.1
 

@@ -73,7 +73,8 @@ func Subsystem(binding string) *Lifecycle {
 type WebUI struct {
 	Options Options
 	Server  *server.Server
-	Mux     *http.ServeMux
+	App     *http.ServeMux
+	proxy   *http.ServeMux
 }
 
 type Options struct {
@@ -94,8 +95,6 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	ui := &WebUI{
 		Options: opts,
 		Server:  s,
-
-		Mux: http.NewServeMux(),
 	}
 
 	app := http.NewServeMux()
@@ -113,13 +112,16 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	app.HandleFunc("/morgue/", Log(ui, deadHandler))
 	app.HandleFunc("/busy", Log(ui, busyHandler))
 	app.HandleFunc("/debug", Log(ui, debugHandler))
+	ui.App = app
 
-	ui.Mux.HandleFunc("/", Proxy(ui, app))
+	proxy := http.NewServeMux()
+	proxy.HandleFunc("/", Proxy(ui))
+	ui.proxy = proxy
 
 	return ui
 }
 
-func Proxy(ui *WebUI, app *http.ServeMux) http.HandlerFunc {
+func Proxy(ui *WebUI) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		///////
 		// Support transparent proxying with nginx's proxy_pass.
@@ -142,7 +144,7 @@ func Proxy(ui *WebUI, app *http.ServeMux) http.HandlerFunc {
 			r.RequestURI = strings.Replace(r.RequestURI, prefix, "", 1)
 			r.URL.Path = r.RequestURI
 		}
-		app.ServeHTTP(w, r)
+		ui.App.ServeHTTP(w, r)
 	}
 }
 
@@ -217,7 +219,7 @@ func (ui *WebUI) Run() (func(), error) {
 		ReadTimeout:    1 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 16,
-		Handler:        ui.Mux,
+		Handler:        ui.proxy,
 	}
 
 	go func() {

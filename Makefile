@@ -52,8 +52,8 @@ test: clean generate ## Execute test suite
 dimg: xbuild ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--tag contribsys/faktory:$(VERSION) \
-		--tag contribsys/faktory:latest \
+		--tag instabug/faktory:$(VERSION) \
+		--tag instabug/faktory:latest \
 		.
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
@@ -61,12 +61,12 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		-v faktory-data:/var/lib/faktory \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		contribsys/faktory:latest /faktory -e production
+		instabug/faktory:latest /faktory -e production
 
 dmon: ## Monitor Redis within the running Docker image
 	docker run --rm -it -t -i \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
+		instabug/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
 
 #dinsp:
 	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
@@ -76,8 +76,8 @@ dmon: ## Monitor Redis within the running Docker image
 		#contribsys/faktory:$(VERSION) /bin/bash
 
 dpush: tag
-	docker push contribsys/faktory:$(VERSION)
-	docker push contribsys/faktory:latest
+	docker push instabug/faktory:$(VERSION)
+	docker push instabug/faktory:latest
 
 generate:
 	go generate github.com/contribsys/faktory/webui

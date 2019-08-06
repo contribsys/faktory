@@ -53,10 +53,6 @@ func ExpectedError(code string, msg string) error {
 	return &codedError{code: code, msg: msg}
 }
 
-type Fetcher interface {
-	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
-}
-
 type Manager interface {
 	Push(job *client.Job) error
 

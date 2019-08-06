@@ -12,7 +12,7 @@ import (
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
 restart:
-	data, err := m.fetcher.fetch(wid, queues...)
+	data, err := m.fetcher.Fetch(ctx, wid, queues...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ restart:
 }
 
 type Fetcher interface {
-	fetch(wid string, queues ...string) ([]byte, error)
+	Fetch(ctx context.Context, wid string, queues ...string) ([]byte, error)
 }
 
 type BasicFetch struct {
@@ -53,7 +53,7 @@ func BasicFetcher(m *manager) Fetcher {
 	return &BasicFetch{m: m}
 }
 
-func (f *BasicFetch) fetch(wid string, queues ...string) ([]byte, error) {
+func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) ([]byte, error) {
 	return brpop(f.m, queues...)
 }
 

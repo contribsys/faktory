@@ -53,6 +53,10 @@ func ExpectedError(code string, msg string) error {
 	return &codedError{code: code, msg: msg}
 }
 
+type Fetcher interface {
+	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
+}
+
 type Manager interface {
 	Push(job *client.Job) error
 
@@ -104,6 +108,7 @@ type Manager interface {
 
 	KV() storage.KV
 	Redis() *redis.Client
+	SetFetcher(f Fetcher)
 }
 
 func NewManager(s storage.Store) Manager {
@@ -118,6 +123,10 @@ func NewManager(s storage.Store) Manager {
 	m.loadWorkingSet()
 	m.fetcher = BasicFetcher(m)
 	return m
+}
+
+func (m *manager) SetFetcher(f Fetcher) {
+	m.fetcher = f
 }
 
 func (m *manager) KV() storage.KV {

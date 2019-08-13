@@ -94,10 +94,10 @@ var realtimeGraph = function(updatePath) {
 
       if (i === 0) {
         var processed = data.faktory.total_processed;
-        var failed = data.faktory.total_failed;
+        var failed = data.faktory.total_failures;
       } else {
         var processed = data.faktory.total_processed - Faktory.processed;
-        var failed = data.faktory.total_failed - Faktory.failed;
+        var failed = data.faktory.total_failures - Faktory.failed;
       }
 
       dataPoint = {};
@@ -108,7 +108,7 @@ var realtimeGraph = function(updatePath) {
       graph.render();
 
       Faktory.processed = data.faktory.total_processed;
-      Faktory.failed = data.faktory.total_failed;
+      Faktory.failed = data.faktory.total_failures;
 
       updateStatsSummary(data.faktory);
       updateServerStats(data.server);

@@ -28,12 +28,14 @@ type Job struct {
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
 	At         string                 `json:"at,omitempty"`
 	ReserveFor int                    `json:"reserve_for,omitempty"`
-	Retry      int                    `json:"retry,omitempty"`
+	Retry      int                    `json:"retry"`
 	Backtrace  int                    `json:"backtrace,omitempty"`
 	Failure    *Failure               `json:"failure,omitempty"`
 	Custom     map[string]interface{} `json:"custom,omitempty"`
 }
 
+// Clients should use this constructor to build a Job, not allocate
+// a bare struct directly.
 func NewJob(jobtype string, args ...interface{}) *Job {
 	return &Job{
 		Type:      jobtype,

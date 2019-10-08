@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.13
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -19,5 +19,4 @@ jobs:
 
       # specify any bash command here prefixed with `run: `
       - run: sudo apt-get install redis-server
-      - run: make prepare
       - run: make test

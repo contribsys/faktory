@@ -29,7 +29,7 @@ release:
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## install build prereqs
-	go install github.com/benbjohnson/ego
+	go install github.com/benbjohnson/ego/cmd/ego
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc

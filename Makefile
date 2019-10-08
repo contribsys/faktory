@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=1.0.1
+VERSION=1.0.2
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -28,9 +28,7 @@ release:
 		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
-prepare: ## Download all dependencies
-	@go get github.com/benbjohnson/ego/cmd/ego
-	@go get github.com/jteeuwen/go-bindata/go-bindata
+prepare: ## legacy, can remove
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc

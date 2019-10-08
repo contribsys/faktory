@@ -28,7 +28,8 @@ release:
 		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
-prepare: ## legacy, can remove
+prepare: ## install build prereqs
+	go install github.com/benbjohnson/ego
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc

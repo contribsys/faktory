@@ -112,7 +112,6 @@ work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
 clean: ## Clean the project, set it up for a new build
-	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go
 	@rm -rf packaging/output

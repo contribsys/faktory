@@ -7,6 +7,15 @@ import (
 	"time"
 )
 
+const ISO8601 = "2006-01-02T15:04:05Z"
+
+type UniqueUntil string
+
+const (
+	UniqueUntilSuccess UniqueUntil = "success"
+	UniqueUntilStart   UniqueUntil = "start"
+)
+
 type Failure struct {
 	RetryCount   int      `json:"retry_count"`
 	FailedAt     string   `json:"failed_at"`
@@ -72,4 +81,19 @@ func (j *Job) SetCustom(name string, value interface{}) {
 	}
 
 	j.Custom[name] = value
+}
+
+func (j *Job) SetUniqueFor(seconds uint) *Job {
+	j.SetCustom("unique_for", seconds)
+	return j
+}
+
+func (j *Job) SetUniqueUntil(until UniqueUntil) *Job {
+	j.SetCustom("unique_until", until)
+	return j
+}
+
+func (j *Job) SetExpiresAt(expiresAt time.Time) *Job {
+	j.SetCustom("expires_at", expiresAt.Format(ISO8601))
+	return j
 }

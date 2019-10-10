@@ -2,8 +2,11 @@
 
 ## HEAD
 
+- Upgrade Go runtime from 1.10 to 1.13.
+- Faktory, Faktory Pro and faktory\_worker\_go are now using Go modules [#216, ClaytonNorthey92]
 - Fix "Add to Queue" button on the Scheduled page [#236]
 - Rework fetching jobs from queues to be more efficient. [#235]
+- Add several helper APIs to configure Faktory Pro features. [#251, tylerb]
 - You can now put nginx in front of Faktory's Web UI using `proxy_pass`:
 ```nginx
 location /faktory {

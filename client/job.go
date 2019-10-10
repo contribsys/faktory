@@ -7,13 +7,11 @@ import (
 	"time"
 )
 
-const ISO8601 = "2006-01-02T15:04:05Z"
-
 type UniqueUntil string
 
 const (
-	UniqueUntilSuccess UniqueUntil = "success"
-	UniqueUntilStart   UniqueUntil = "start"
+	UntilSuccess UniqueUntil = "success" // default
+	UntilStart   UniqueUntil = "start"
 )
 
 type Failure struct {
@@ -75,25 +73,40 @@ func (j *Job) GetCustom(name string) (interface{}, bool) {
 	return val, ok
 }
 
-func (j *Job) SetCustom(name string, value interface{}) {
+func (j *Job) SetCustom(name string, value interface{}) *Job {
 	if j.Custom == nil {
 		j.Custom = map[string]interface{}{}
 	}
 
 	j.Custom[name] = value
-}
-
-func (j *Job) SetUniqueFor(seconds uint) *Job {
-	j.SetCustom("unique_for", seconds)
 	return j
 }
 
-func (j *Job) SetUniqueUntil(until UniqueUntil) *Job {
-	j.SetCustom("unique_until", until)
-	return j
+////////////////////////////////////////////
+// Faktory Pro helpers
+//
+// These helpers allow you to configure several Faktory Pro features.
+// They will have no effect unless you are running Faktory Pro.
+
+// Configure this job to be unique for +secs+ seconds or until the job
+// has been successfully processed.
+func (j *Job) SetUniqueFor(secs uint) *Job {
+	return j.SetCustom("unique_for", secs)
 }
 
+// Configure the uniqueness deadline for this job, legal values
+// are:
+//
+// - "success" - the job will be considered unique until it has successfully processed
+//   or the +unique_for+ TTL has passed, this is the default value.
+// - "start" - the job will be considered unique until it starts processing. Retries
+//   may lead to multiple copies of the job running.
+func (j *Job) SetUniqueness(until UniqueUntil) *Job {
+	return j.SetCustom("unique_until", until)
+}
+
+// Configure the TTL for this job. After this point in time, the job will be
+// discarded rather than executed.
 func (j *Job) SetExpiresAt(expiresAt time.Time) *Job {
-	j.SetCustom("expires_at", expiresAt.Format(ISO8601))
-	return j
+	return j.SetCustom("expires_at", expiresAt.Format(time.RFC3339Nano))
 }

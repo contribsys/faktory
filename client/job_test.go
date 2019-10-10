@@ -20,10 +20,10 @@ func TestJobCustomOptions(t *testing.T) {
 	job := NewJob("yo", 1)
 	expiresAt := time.Now().Add(1 * time.Hour)
 	job.SetUniqueFor(100).
-		SetUniqueUntil(UniqueUntilStart).
+		SetUniqueness(UntilStart).
 		SetExpiresAt(expiresAt)
 
 	assert.EqualValues(t, 100, job.Custom["unique_for"])
-	assert.EqualValues(t, UniqueUntilStart, job.Custom["unique_until"])
-	assert.EqualValues(t, expiresAt.Format(ISO8601), job.Custom["expires_at"])
+	assert.EqualValues(t, UntilStart, job.Custom["unique_until"])
+	assert.EqualValues(t, expiresAt.Format(time.RFC3339Nano), job.Custom["expires_at"])
 }

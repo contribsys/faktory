@@ -1,18 +1,14 @@
-package pool
+package client
 
 import (
-	"bufio"
-	"fmt"
-	"net"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPool(t *testing.T) {
-	p, err := New(10)
+func TestPoolCloseConnection(t *testing.T) {
+	p, err := NewPool(10)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
 
@@ -41,14 +37,37 @@ func TestPool(t *testing.T) {
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
 
-		// // Closing the client should return it to the pool, not close the connection
-		// assert.NoError(t, cl.Close())
-		//
-		// resp <- "+OK\r\n"
-		// res, err = cl.Beat()
-		// assert.NoError(t, err)
-		// assert.Equal(t, "", res)
-		// assert.Contains(t, <-req, "BEAT")
+		// Closing the client should return it to the pool, not close the connection
+		assert.NoError(t, cl.Close())
+
+		resp <- "+OK\r\n"
+		res, err = cl.Beat()
+		assert.NoError(t, err)
+		assert.Equal(t, "", res)
+		assert.Contains(t, <-req, "BEAT")
+
+	})
+
+}
+
+func TestPoolConnectionError(t *testing.T) {
+	p, err := NewPool(10)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	withFakeServer(t, func(req, resp chan string, addr string) {
+		err = os.Setenv("FAKTORY_PROVIDER", "MIKE_URL")
+		assert.NoError(t, err)
+		err = os.Setenv("MIKE_URL", "tcp://:foobar@"+addr)
+		assert.NoError(t, err)
+
+		resp <- "+OK\r\n"
+		cl, err := p.Get()
+		assert.NoError(t, err)
+		assert.NotNil(t, cl)
+		s := <-req
+		assert.Contains(t, s, "HELLO")
+		assert.Contains(t, s, "pwdhash")
 
 		// I can't figure out how to test this. I need the server to send an error response so the
 		// pool client can detect it and mark the connection as unusable
@@ -66,6 +85,12 @@ func TestPool(t *testing.T) {
 		// res, err = cl.Beat()
 		// assert.Error(t, err)
 	})
+}
+
+func TestPoolClosePool(t *testing.T) {
+	p, err := NewPool(10)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
 
 	withFakeServer(t, func(req, resp chan string, addr string) {
 		err = os.Setenv("FAKTORY_PROVIDER", "MIKE_URL")
@@ -103,40 +128,4 @@ func TestPool(t *testing.T) {
 		assert.Nil(t, cl)
 		assert.Error(t, err)
 	})
-}
-
-func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
-	binding := "localhost:44434"
-
-	addr, err := net.ResolveTCPAddr("tcp", binding)
-	assert.NoError(t, err)
-	listener, err := net.ListenTCP("tcp", addr)
-	assert.NoError(t, err)
-
-	req := make(chan string, 1)
-	resp := make(chan string, 1)
-
-	go func() {
-		conn, err := listener.Accept()
-		assert.NoError(t, err)
-		conn.SetDeadline(time.Now().Add(1 * time.Second))
-		conn.Write([]byte("+HI {\"v\":2,\"s\":\"123\",\"i\":123}\r\n"))
-		for {
-			buf := bufio.NewReader(conn)
-			line, err := buf.ReadString('\n')
-			if err != nil {
-				fmt.Println(err)
-				conn.Close()
-				break
-			}
-			// util.Infof("> %s", line)
-			req <- line
-			rsp := <-resp
-			// util.Infof("< %s", rsp)
-			conn.Write([]byte(rsp))
-		}
-	}()
-
-	fn(req, resp, binding)
-	listener.Close()
 }

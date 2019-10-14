@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/contribsys/faktory/internal/pool"
 )
 
 const (
@@ -32,13 +34,13 @@ var (
 // of Clients in a multi-threaded process.  See faktory_worker_go's
 // internal connection pool for example.
 //
-// TODO Provide a connection pool as part of this package?
 type Client struct {
 	Location string
 	Options  *ClientData
 	rdr      *bufio.Reader
 	wtr      *bufio.Writer
 	conn     net.Conn
+	poolConn *pool.PoolConn
 }
 
 // ClientData is serialized to JSON and sent
@@ -234,24 +236,24 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Ack(jid string) error {
-	err := writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
+	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Push(job *Job) error {
-	jobytes, err := json.Marshal(job)
+	jobBytes, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "PUSH", jobytes)
+	err = c.writeLine(c.wtr, "PUSH", jobBytes)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Fetch(q ...string) (*Job, error) {
@@ -259,12 +261,12 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
 	}
 
-	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
+	err := c.writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	data, err := c.readResponse(c.rdr)
 	if err != nil {
 		return nil, err
 	}
@@ -306,29 +308,29 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "FAIL", failbytes)
+	err = c.writeLine(c.wtr, "FAIL", failbytes)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Flush() error {
-	err := writeLine(c.wtr, "FLUSH", nil)
+	err := c.writeLine(c.wtr, "FLUSH", nil)
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Info() (map[string]interface{}, error) {
-	err := writeLine(c.wtr, "INFO", nil)
+	err := c.writeLine(c.wtr, "INFO", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	data, err := c.readResponse(c.rdr)
 	if err != nil {
 		return nil, err
 	}
@@ -346,12 +348,12 @@ func (c *Client) Info() (map[string]interface{}, error) {
 }
 
 func (c *Client) Generic(cmdline string) (string, error) {
-	err := writeLine(c.wtr, cmdline, nil)
+	err := c.writeLine(c.wtr, cmdline, nil)
 	if err != nil {
 		return "", err
 	}
 
-	return readString(c.rdr)
+	return c.readString(c.rdr)
 }
 
 func (c *Client) Beat() (string, error) {
@@ -360,6 +362,47 @@ func (c *Client) Beat() (string, error) {
 		return "", nil
 	}
 	return val, err
+}
+
+func (c *Client) writeLine(io *bufio.Writer, op string, payload []byte) error {
+	err := writeLine(io, op, payload)
+	if err != nil {
+		c.markUnusable()
+	}
+	return err
+}
+
+func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
+	data, err := readResponse(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return data, err
+}
+
+func (c *Client) ok(rdr *bufio.Reader) error {
+	err := ok(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return err
+}
+
+func (c *Client) readString(rdr *bufio.Reader) (string, error) {
+	s, err := readString(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return s, err
+}
+
+func (c *Client) markUnusable() {
+	if c.poolConn == nil {
+		// if this client was not created as part of a pool,
+		// this call becomes a no-op
+		return
+	}
+	c.poolConn.MarkUnusable()
 }
 
 //////////////////////////////////////////////////

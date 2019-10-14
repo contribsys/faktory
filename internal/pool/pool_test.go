@@ -17,16 +17,16 @@ func TestPool(t *testing.T) {
 	pool, err := NewChannelPool(0, 10, func() (Closeable, error) { return Thing{}, nil })
 	assert.NoError(t, err)
 	assert.NotNil(t, pool)
-	assert.Equal(t, 0, Len())
+	assert.Equal(t, 0, pool.Len())
 
-	thng, err := Get()
+	thng, err := pool.Get()
 	assert.NoError(t, err)
 	assert.NotNil(t, thng)
-	assert.Equal(t, 0, Len())
+	assert.Equal(t, 0, pool.Len())
 
-	Close()
-	assert.Equal(t, 1, Len())
+	thng.Close()
+	assert.Equal(t, 1, pool.Len())
 
-	Close()
-	assert.Equal(t, 0, Len())
+	pool.Close()
+	assert.Equal(t, 0, pool.Len())
 }

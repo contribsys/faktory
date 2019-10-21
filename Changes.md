@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-## HEAD
+## 1.1.0
 
 - Upgrade Go runtime from 1.10 to 1.13.
 - Faktory, Faktory Pro and faktory\_worker\_go are now using Go modules [#216, ClaytonNorthey92]

@@ -2,7 +2,7 @@ NAME=faktory
 VERSION=1.1.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
-ITERATION=1
+ITERATION=2
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
 TEST_FLAGS=-parallel 4
@@ -146,7 +146,8 @@ reload_deb:
 rpm: xbuild
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis \
-		--rpm-compression bzip2 --rpm-os linux \
+		--rpm-compression bzip2 \
+	 	--rpm-os linux \
 	 	--after-install packaging/scripts/postinst.rpm.systemd \
 	 	--before-remove packaging/scripts/prerm.rpm.systemd \
 		--after-remove packaging/scripts/postrm.rpm.systemd \
@@ -162,7 +163,6 @@ deb: xbuild
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis-server \
 		--deb-priority optional --category admin \
-		--deb-compression bzip2 \
 		--no-deb-no-default-config-files \
 	 	--after-install packaging/scripts/postinst.deb.systemd \
 	 	--before-remove packaging/scripts/prerm.deb.systemd \

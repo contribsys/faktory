@@ -43,7 +43,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:36
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "History"))))
 //line index.ego:36
-		_, _ = io.WriteString(w, "</span>\n    <a href=\"/?days=7\" class=\"history-graph ")
+		_, _ = io.WriteString(w, "</span>\n    <a href=\"")
+//line index.ego:37
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/?days=7"))))
+//line index.ego:37
+		_, _ = io.WriteString(w, "\" class=\"history-graph ")
 //line index.ego:37
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(daysMatches(req, "7", false))))
 //line index.ego:37
@@ -51,7 +55,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:37
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "OneWeek"))))
 //line index.ego:37
-		_, _ = io.WriteString(w, "</a>\n    <a href=\"/\" class=\"history-graph ")
+		_, _ = io.WriteString(w, "</a>\n    <a href=\"")
+//line index.ego:38
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/"))))
+//line index.ego:38
+		_, _ = io.WriteString(w, "\" class=\"history-graph ")
 //line index.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(daysMatches(req, "30", true))))
 //line index.ego:38
@@ -59,7 +67,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "OneMonth"))))
 //line index.ego:38
-		_, _ = io.WriteString(w, "</a>\n    <a href=\"/?days=90\" class=\"history-graph ")
+		_, _ = io.WriteString(w, "</a>\n    <a href=\"")
+//line index.ego:39
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/?days=90"))))
+//line index.ego:39
+		_, _ = io.WriteString(w, "\" class=\"history-graph ")
 //line index.ego:39
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(daysMatches(req, "90", false))))
 //line index.ego:39
@@ -67,7 +79,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:39
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ThreeMonths"))))
 //line index.ego:39
-		_, _ = io.WriteString(w, "</a>\n    <a href=\"/?days=180\" class=\"history-graph ")
+		_, _ = io.WriteString(w, "</a>\n    <a href=\"")
+//line index.ego:40
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/?days=180"))))
+//line index.ego:40
+		_, _ = io.WriteString(w, "\" class=\"history-graph ")
 //line index.ego:40
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(daysMatches(req, "180", false))))
 //line index.ego:40
@@ -91,7 +107,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:43
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(failedHistory(req))))
 //line index.ego:43
-		_, _ = io.WriteString(w, "\" data-update-url=\"/stats\"></div>\n  <div id=\"history-legend\"></div>\n</div>\n\n<br/>\n<h5>Faktory</h5>\n<div class=\"faktory-wrapper\">\n  <div class=\"stats-container\">\n    <div class=\"stat\">\n      <h3 class=\"faktory_version\">")
+		_, _ = io.WriteString(w, "\" data-update-url=\"")
+//line index.ego:43
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/stats"))))
+//line index.ego:43
+		_, _ = io.WriteString(w, "\"></div>\n  <div id=\"history-legend\"></div>\n</div>\n\n<br/>\n<h5>Faktory</h5>\n<div class=\"faktory-wrapper\">\n  <div class=\"stats-container\">\n    <div class=\"stat\">\n      <h3 class=\"faktory_version\">")
 //line index.ego:52
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
 //line index.ego:52

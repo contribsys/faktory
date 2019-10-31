@@ -10,7 +10,6 @@ import (
 )
 
 func TestMutateCommands(t *testing.T) {
-	util.LogInfo = true
 	runServer(":7419", func() {
 		cl, err := faktory.Open()
 		assert.NoError(t, err)

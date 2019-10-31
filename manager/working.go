@@ -24,6 +24,7 @@ type Reservation struct {
 	Wid     string      `json:"wid"`
 	tsince  time.Time
 	texpiry time.Time
+	lease   Lease
 }
 
 func (res *Reservation) ReservedAt() time.Time {
@@ -85,25 +86,27 @@ func (m *manager) loadWorkingSet() error {
 	return err
 }
 
-func (m *manager) reserve(wid string, job *client.Job) error {
+func (m *manager) reserve(wid string, lease Lease) error {
 	now := time.Now()
+	job, _ := lease.Job()
 	timeout := job.ReserveFor
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
 
 	if timeout < 60 {
-		util.Warnf("Timeout too short %d, 60 seconds minimum", timeout)
-		timeout = DefaultTimeout
+		util.Debugf("Timeout too short %d, 60 seconds minimum", timeout)
+		timeout = 60
 	}
 
 	if timeout > 86400 {
-		util.Warnf("Timeout too long %d, one day maximum", timeout)
-		timeout = DefaultTimeout
+		util.Debugf("Timeout too long %d, one day maximum", timeout)
+		timeout = 86400
 	}
 
 	exp := now.Add(time.Duration(timeout) * time.Second)
 	var res = &Reservation{
+		lease:   lease,
 		Job:     job,
 		Since:   util.Thens(now),
 		Expiry:  util.Thens(exp),
@@ -140,6 +143,10 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	_, err := m.store.Working().RemoveElement(res.Expiry, jid)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.lease != nil {
+		res.lease.Release()
 	}
 
 	if res.Job != nil {

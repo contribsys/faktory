@@ -14,34 +14,36 @@ func TestLoadWorkingSet(t *testing.T) {
 	withRedis(t, "working", func(t *testing.T, store storage.Store) {
 		t.Run("LoadWorkingSet", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)
 			job.ReserveFor = 600
 			assert.EqualValues(t, 0, store.Working().Size())
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			err := m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+			err := m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size())
 			assert.EqualValues(t, 1, m.WorkingCount())
 
-			m2 := NewManager(store).(*manager)
+			m2 := newManager(store)
 			assert.EqualValues(t, 1, store.Working().Size())
 			assert.EqualValues(t, 1, m2.WorkingCount())
 		})
 
 		t.Run("ManagerReserve", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)
 			job.ReserveFor = 600
 			assert.EqualValues(t, 0, store.Working().Size())
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			err := m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+			err := m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size())
@@ -50,7 +52,7 @@ func TestLoadWorkingSet(t *testing.T) {
 
 		t.Run("ReserveWithInvalidTimeout", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			timeouts := []int{0, 20, 50, 59, 86401, 100000}
 			for _, timeout := range timeouts {
@@ -59,7 +61,8 @@ func TestLoadWorkingSet(t *testing.T) {
 				assert.EqualValues(t, 0, store.Working().Size())
 
 				// doesn't return an error but resets to default timeout
-				err := m.reserve("workerId", job)
+				lease := &simpleLease{job: job}
+				err := m.reserve("workerId", lease)
 
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, store.Working().Size())
@@ -69,7 +72,7 @@ func TestLoadWorkingSet(t *testing.T) {
 
 		t.Run("ManagerAcknowledge", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job, err := m.Acknowledge("")
 			assert.NoError(t, err)
@@ -84,7 +87,8 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.TotalProcessed())
 			assert.EqualValues(t, 0, store.TotalFailures())
 
-			err = m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+			err = m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, q.Size())
@@ -112,7 +116,7 @@ func TestLoadWorkingSet(t *testing.T) {
 
 		t.Run("ManagerReapExpiredJobs", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)
 			q, err := store.GetQueue(job.Queue)
@@ -121,7 +125,8 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.Working().Size())
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			err = m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+			err = m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, q.Size())

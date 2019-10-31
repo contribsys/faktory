@@ -128,7 +128,7 @@ func TestLiveMiddleware(t *testing.T) {
 
 		t.Run("Ack", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store)
+			m := newManager(store)
 			m.AddMiddleware("push", func(next func() error, ctx Context) error {
 				_, err := m.Redis().Set(ctx.Job().Jid, []byte("bar"), 1*time.Second).Result()
 				assert.NoError(t, err)
@@ -163,6 +163,7 @@ func TestLiveMiddleware(t *testing.T) {
 
 			job, err = m.Acknowledge(j1.Jid)
 			assert.NoError(t, err)
+			assert.NotNil(t, job)
 
 			boolint, err := m.Redis().Exists(job.Jid).Result()
 			assert.NoError(t, err)

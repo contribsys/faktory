@@ -108,6 +108,10 @@ type Manager interface {
 }
 
 func NewManager(s storage.Store) Manager {
+	return newManager(s)
+}
+
+func newManager(s storage.Store) *manager {
 	m := &manager{
 		store:      s,
 		workingMap: map[string]*Reservation{},
@@ -117,7 +121,7 @@ func NewManager(s storage.Store) Manager {
 		fetchChain: make(MiddlewareChain, 0),
 	}
 	m.loadWorkingSet()
-	m.fetcher = BasicFetcher(m)
+	m.fetcher = BasicFetcher(m.Redis())
 	return m
 }
 
@@ -146,6 +150,12 @@ func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {
 	default:
 		panic(fmt.Sprintf("Unknown middleware type: %s", fntype))
 	}
+}
+
+type Lease interface {
+	Release() error
+	Payload() []byte
+	Job() (*client.Job, error)
 }
 
 type manager struct {

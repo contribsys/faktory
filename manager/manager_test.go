@@ -223,6 +223,7 @@ func TestManager(t *testing.T) {
 
 			fetchedJob, err := m.Fetch(context.Background(), "workerId", queues...)
 			assert.NoError(t, err)
+			assert.NotNil(t, fetchedJob)
 			assert.EqualValues(t, job.Jid, fetchedJob.Jid)
 			assert.EqualValues(t, 0, q1.Size())
 			assert.EqualValues(t, 1, q2.Size())

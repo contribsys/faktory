@@ -13,12 +13,14 @@ func TestRetry(t *testing.T) {
 
 		t.Run("fail", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
 			job.Retry = 1
 
-			err := m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+
+			err := m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size())
@@ -39,7 +41,7 @@ func TestRetry(t *testing.T) {
 			assert.EqualValues(t, 1, store.TotalFailures())
 
 			// retry job
-			err = m.reserve("workerId", job)
+			err = m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size())
@@ -62,12 +64,13 @@ func TestRetry(t *testing.T) {
 
 		t.Run("FailOneShotJob", func(t *testing.T) {
 			store.Flush()
-			m := NewManager(store).(*manager)
+			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
 			job.Retry = 0
 
-			err := m.reserve("workerId", job)
+			lease := &simpleLease{job: job}
+			err := m.reserve("workerId", lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size())

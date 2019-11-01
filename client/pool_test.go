@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPoolCloseConnection(t *testing.T) {
+func TestPoolGetPut(t *testing.T) {
 	p, err := NewPool(10)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
@@ -37,15 +37,7 @@ func TestPoolCloseConnection(t *testing.T) {
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
 
-		// Closing the client should return it to the pool, not close the connection
-		assert.NoError(t, cl.Close())
-
-		resp <- "+OK\r\n"
-		res, err = cl.Beat()
-		assert.NoError(t, err)
-		assert.Equal(t, "", res)
-		assert.Contains(t, <-req, "BEAT")
-
+		p.Put(cl)
 	})
 
 }
@@ -69,21 +61,16 @@ func TestPoolConnectionError(t *testing.T) {
 		assert.Contains(t, s, "HELLO")
 		assert.Contains(t, s, "pwdhash")
 
-		// I can't figure out how to test this. I need the server to send an error response so the
-		// pool client can detect it and mark the connection as unusable
+		// I can't figure out how to test this. I need the server to have a transport-level error, like the connection
+		// being closed by the server, in order to test this.
 
-		// An error response should mark the client as unusable, thus closing it when returned to the pool.
-		// resp <- "-ERR bad request\r\n"
-		// res, err = cl.Beat()
+		// fakeServer.Shutdown() ??
+		// res,err = cl.Beat()
 		// assert.Error(t, err)
-		// assert.Equal(t, "", res)
-		// assert.Contains(t, <-req, "bad request")
 
-		// assert.NoError(t, cl.Close())
+		// p.Put(cl)
 
-		// should fail because it is closed
-		// res, err = cl.Beat()
-		// assert.Error(t, err)
+		// assert.Equal(t, p.Len(), 0)
 	})
 }
 
@@ -114,10 +101,12 @@ func TestPoolClosePool(t *testing.T) {
 		assert.Contains(t, <-req, "BEAT")
 
 		// Return the client to the pool
-		cl.Close()
+		p.Put(cl)
 
 		// Closing the pool should close the client
+		assert.Equal(t, p.Len(), 1)
 		p.Close()
+		assert.Equal(t, p.Len(), 0)
 
 		resp <- "+OK\r\n"
 		res, err = cl.Beat()

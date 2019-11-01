@@ -10,6 +10,12 @@ type Pool struct {
 	pool.Pool
 }
 
+// NewPool creates a new Pool object through which multiple clients will be managed on your behalf.
+//
+// Call Get() to retrieve a client instance and Put() to return it to the pool. If you do not call
+// Put(), the connection will be leaked, and the pool will stop working once it hits capacity.
+//
+// Do NOT call Close() on the client, as the lifecycle is managed internally.
 func NewPool(capacity int) (*Pool, error) {
 	var p Pool
 	var err error
@@ -17,7 +23,9 @@ func NewPool(capacity int) (*Pool, error) {
 	return &p, err
 }
 
-func (p *Pool) Get() (*PoolClient, error) {
+// Get retrieves a Client from the pool. This Client is created, internally, by calling
+// the Open() function, and has all the same behaviors.
+func (p *Pool) Get() (*Client, error) {
 	conn, err := p.Pool.Get()
 	if err != nil {
 		return nil, err
@@ -29,19 +37,10 @@ func (p *Pool) Get() (*PoolClient, error) {
 		panic(fmt.Sprintf("Connection is not a Faktory client instance: %+v", conn))
 	}
 	client.poolConn = pc
-	return &PoolClient{Client: client, poolConn: pc}, nil
+	return client, nil
 }
 
-func (p *Pool) Close() error {
-	p.Pool.Close()
-	return nil
-}
-
-type PoolClient struct {
-	*Client
-	poolConn *pool.PoolConn
-}
-
-func (c *PoolClient) Close() error {
-	return c.poolConn.Close()
+// Put returns a client to the pool.
+func (p *Pool) Put(client *Client) {
+	client.poolConn.Close()
 }

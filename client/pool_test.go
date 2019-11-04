@@ -29,17 +29,19 @@ func TestPoolGetPut(t *testing.T) {
 		s := <-req
 		assert.Contains(t, s, "HELLO")
 		assert.Contains(t, s, "pwdhash")
-
-		// Should be able to use the client like normal
-		resp <- "+OK\r\n"
-		res, err := cl.Beat()
-		assert.NoError(t, err)
-		assert.Equal(t, "", res)
-		assert.Contains(t, <-req, "BEAT")
-
 		p.Put(cl)
-	})
 
+		err = p.With(func(conn *Client) error {
+			// Should be able to use the client like normal
+			resp <- "+OK\r\n"
+			res, err := cl.Beat()
+			assert.NoError(t, err)
+			assert.Equal(t, "", res)
+			assert.Contains(t, <-req, "BEAT")
+			return nil
+		})
+		assert.NoError(t, err)
+	})
 }
 
 func TestPoolConnectionError(t *testing.T) {

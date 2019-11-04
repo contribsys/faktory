@@ -44,3 +44,12 @@ func (p *Pool) Get() (*Client, error) {
 func (p *Pool) Put(client *Client) {
 	client.poolConn.Close()
 }
+
+func (p *Pool) With(fn func(conn *Client) error) error {
+	conn, err := p.Get()
+	if err != nil {
+		return err
+	}
+	defer p.Put(conn)
+	return fn(conn)
+}

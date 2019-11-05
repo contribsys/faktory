@@ -82,6 +82,11 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		return fmt.Errorf("Job not found %s", jid)
 	}
 
+	err := res.lease.Release()
+	if err != nil {
+		return err
+	}
+
 	// when expiring overdue jobs in the working set, we remove in
 	// bulk so this job is no longer in the working set already.
 	if failure != JobReservationExpired {

@@ -96,6 +96,7 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 1, m.WorkingCount())
 			assert.EqualValues(t, 0, store.TotalProcessed())
 			assert.EqualValues(t, 0, store.TotalFailures())
+			assert.False(t, lease.released)
 
 			assert.EqualValues(t, 1, m.BusyCount("workerId"))
 			assert.EqualValues(t, 0, m.BusyCount("fakeId"))
@@ -106,6 +107,7 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 1, store.TotalProcessed())
 			assert.EqualValues(t, 0, store.TotalFailures())
 			assert.EqualValues(t, 0, m.BusyCount("workerId"))
+			assert.True(t, lease.released)
 
 			aJob, err = m.Acknowledge(job.Jid)
 			assert.NoError(t, err)

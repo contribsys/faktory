@@ -30,6 +30,7 @@ func TestRetry(t *testing.T) {
 			assert.EqualValues(t, 0, store.Retries().Size())
 			assert.EqualValues(t, 0, store.TotalProcessed())
 			assert.EqualValues(t, 0, store.TotalFailures())
+			assert.False(t, lease.released)
 
 			fail := failure(job.Jid, "uh no", "SomeError", nil)
 			err = m.Fail(fail)
@@ -39,6 +40,7 @@ func TestRetry(t *testing.T) {
 			assert.EqualValues(t, 1, store.Retries().Size())
 			assert.EqualValues(t, 1, store.TotalProcessed())
 			assert.EqualValues(t, 1, store.TotalFailures())
+			assert.True(t, lease.released)
 
 			// retry job
 			err = m.reserve("workerId", lease)

@@ -1,8 +1,6 @@
 package webui
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"crypto/subtle"
 	"fmt"
@@ -232,82 +230,6 @@ func (ui *WebUI) Run() (func(), error) {
 	return func() { s.Shutdown(context.Background()) }, nil
 }
 
-func translations(locale string) map[string]string {
-	strs, ok := locales[locale]
-	if strs != nil {
-		return strs
-	}
-
-	if !ok {
-		return nil
-	}
-
-	if ok {
-		//util.Debugf("Booting the %s locale", locale)
-		strs := map[string]string{}
-		for _, finder := range AssetLookups {
-			content, err := finder(fmt.Sprintf("static/locales/%s.yml", locale))
-			if err != nil {
-				continue
-			}
-
-			scn := bufio.NewScanner(bytes.NewReader(content))
-			for scn.Scan() {
-				kv := strings.Split(scn.Text(), ":")
-				if len(kv) == 2 {
-					strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-				}
-			}
-		}
-		locales[locale] = strs
-		return strs
-	}
-
-	panic("Shouldn't get here")
-}
-
-func acceptableLanguages(header string) []string {
-	langs := []string{}
-	pairs := strings.Split(header, ",")
-	// we ignore the q weighting and just assume the
-	// values are sorted by acceptability
-	for _, pair := range pairs {
-		trimmed := strings.Trim(pair, " ")
-		split := strings.Split(trimmed, ";")
-		langs = append(langs, strings.ToLower(split[0]))
-	}
-	return langs
-}
-
-func localeFromHeader(value string) string {
-	if value == "" {
-		return "en"
-	}
-
-	langs := acceptableLanguages(value)
-	//util.Debugf("A-L: %s %v", value, langs)
-	for _, lang := range langs {
-		strs := translations(lang)
-		if strs != nil {
-			return lang
-		}
-	}
-
-	// fallback by checking the language component of any dialect pairs, e.g. "sv-se"
-	for _, lang := range langs {
-		pair := strings.Split(lang, "-")
-		if len(pair) == 2 {
-			baselang := pair[0]
-			strs := translations(baselang)
-			if strs != nil {
-				return baselang
-			}
-		}
-	}
-
-	return "en"
-}
-
 func Layout(w io.Writer, req *http.Request, yield func()) {
 	ego_layout(w, req, yield)
 }
@@ -330,33 +252,7 @@ func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 		// static assets bypass all this hubbub
 		start := time.Now()
 
-		// negotiate the language to be used for rendering
-
-		// set locale via cookie
-		localeCookie, _ := r.Cookie("faktory_locale")
-
-		var locale string
-		if localeCookie != nil {
-			locale = localeCookie.Value
-		}
-
-		if locale == "" {
-			// fall back to browser language
-			locale = localeFromHeader(r.Header.Get("Accept-Language"))
-		}
-
-		w.Header().Set("Content-Language", locale)
-
-		dctx := &DefaultContext{
-			Context:  r.Context(),
-			webui:    ui,
-			response: w,
-			request:  r,
-			locale:   locale,
-			strings:  translations(locale),
-			csrf:     ui.Options.EnableCSRF,
-			root:     r.Header.Get("X-Script-Name"),
-		}
+		dctx := NewContext(ui, r, w)
 
 		pass(w, r.WithContext(dctx))
 		if debug {

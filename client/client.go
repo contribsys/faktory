@@ -235,6 +235,75 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
+func (c *Client) BatchCommit(bid string) error {
+	err := c.writeLine(c.wtr, "BATCH COMMIT", []byte(bid))
+	if err != nil {
+		return err
+	}
+
+	return c.ok(c.rdr)
+}
+
+func (c *Client) BatchNew(def *Batch) (*Batch, error) {
+	if def.bid != "" {
+		return nil, fmt.Errorf("BID must be blank when creating a new Batch, cannot specify it")
+	}
+	bbytes, err := json.Marshal(def)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.writeLine(c.wtr, "BATCH NEW", bbytes)
+	if err != nil {
+		return nil, err
+	}
+
+	bid, err := c.readString(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	def.bid = bid
+	def.faktory = c
+	return def, nil
+}
+
+func (c *Client) BatchStatus(bid string) (*BatchStatus, error) {
+	err := c.writeLine(c.wtr, "BATCH STATUS", []byte(bid))
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := c.readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+
+	var stat BatchStatus
+	err = json.Unmarshal(data, &stat)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stat, nil
+}
+
+func (c *Client) BatchOpen(bid string) (*Batch, error) {
+	err := c.writeLine(c.wtr, "BATCH OPEN", []byte(bid))
+	if err != nil {
+		return nil, err
+	}
+
+	bbid, err := c.readString(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	b := &Batch{
+		bid:     bbid,
+		faktory: c,
+	}
+	return b, nil
+}
+
 func (c *Client) Ack(jid string) error {
 	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
 	if err != nil {

@@ -293,7 +293,7 @@ func (s *Server) processLines(conn *Connection) {
 		if idx >= 0 {
 			verb = cmd[0:idx]
 		}
-		proc, ok := cmdSet[verb]
+		proc, ok := CommandSet[verb]
 		if !ok {
 			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {

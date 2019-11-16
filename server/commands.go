@@ -17,7 +17,7 @@ import (
 // Commands should not have business logic.
 type command func(c *Connection, s *Server, cmd string)
 
-var cmdSet = map[string]command{
+var CommandSet = map[string]command{
 	"END":    end,
 	"PUSH":   push,
 	"FETCH":  fetch,
@@ -27,6 +27,11 @@ var cmdSet = map[string]command{
 	"INFO":   info,
 	"FLUSH":  flush,
 	"MUTATE": mutate,
+	"BATCH":  batch,
+}
+
+func batch(c *Connection, s *Server, cmd string) {
+	c.Error(cmd, fmt.Errorf("The BATCH subsystem is only available in Faktory Enterprise"))
 }
 
 func flush(c *Connection, s *Server, cmd string) {

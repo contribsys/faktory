@@ -145,6 +145,8 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 		return nil, err
 	}
 
+	// Lease is in-memory only
+	// A reservation can have a nil Lease if we restarted
 	if res.lease != nil {
 		res.lease.Release()
 	}

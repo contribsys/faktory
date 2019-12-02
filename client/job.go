@@ -48,13 +48,13 @@ func NewJob(jobtype string, args ...interface{}) *Job {
 		Type:      jobtype,
 		Queue:     "default",
 		Args:      args,
-		Jid:       randomJid(),
+		Jid:       RandomJid(),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Retry:     25,
 	}
 }
 
-func randomJid() string {
+func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
 	if err != nil {
@@ -73,6 +73,9 @@ func (j *Job) GetCustom(name string) (interface{}, bool) {
 	return val, ok
 }
 
+// Set custom metadata for this job. Faktory reserves all
+// element names starting with "_" for internal use, e.g.
+// SetCustom("_txid", "12345")
 func (j *Job) SetCustom(name string, value interface{}) *Job {
 	if j.Custom == nil {
 		j.Custom = map[string]interface{}{}

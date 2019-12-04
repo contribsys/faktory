@@ -245,7 +245,7 @@ func (c *Client) BatchCommit(bid string) error {
 }
 
 func (c *Client) BatchNew(def *Batch) (*Batch, error) {
-	if def.bid != "" {
+	if def.Bid != "" {
 		return nil, fmt.Errorf("BID must be blank when creating a new Batch, cannot specify it")
 	}
 	bbytes, err := json.Marshal(def)
@@ -262,7 +262,8 @@ func (c *Client) BatchNew(def *Batch) (*Batch, error) {
 	if err != nil {
 		return nil, err
 	}
-	def.bid = bid
+	def.Bid = bid
+	def.new = false
 	def.faktory = c
 	return def, nil
 }
@@ -298,7 +299,8 @@ func (c *Client) BatchOpen(bid string) (*Batch, error) {
 		return nil, err
 	}
 	b := &Batch{
-		bid:     bbid,
+		Bid:     bbid,
+		new:     false,
 		faktory: c,
 	}
 	return b, nil

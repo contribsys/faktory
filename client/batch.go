@@ -5,26 +5,27 @@ import (
 )
 
 type BatchStatus struct {
-	Bid         string
-	ParentBid   string
-	Description string
-	CreatedAt   string
-	Total       int64
-	Pending     int64
-	Failed      int64
-	Succeeded   bool
-	Completed   bool
+	Bid         string `json:"bid"`
+	ParentBid   string `json:"parent_bid,omitempty"`
+	Description string `json:"description,omitempty"`
+	CreatedAt   string `json:"created_at"`
+	Total       int64  `json:"total"`
+	Pending     int64  `json:"pending"`
+	Failed      int64  `json:"failed"`
+	Succeeded   bool   `json:"succeeded"`
+	Completed   bool   `json:"completed"`
 }
 
 type Batch struct {
 	// Unique identifier for each batch.
 	// NB: the caller should not set this, it is generated
 	// by Faktory when the batch is persisted to Redis.
-	Bid         string
-	ParentBid   string
-	Description string
-	Success     *Job
-	Complete    *Job
+	Bid string `json:"bid"`
+
+	ParentBid   string `json:"parent_bid,omitempty"`
+	Description string `json:"description,omitempty"`
+	Success     *Job   `json:"success,omitempty"`
+	Complete    *Job   `json:"complete,omitempty"`
 
 	faktory   *Client
 	committed bool
@@ -67,7 +68,11 @@ func (b *Batch) Jobs(fn func() error) error {
 		return BatchNotOpen
 	}
 
-	return fn()
+	err := fn()
+	if err == nil {
+		return b.Commit()
+	}
+	return err
 }
 
 func (b *Batch) Push(job *Job) error {

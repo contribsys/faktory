@@ -24,11 +24,11 @@ var (
 )
 
 func root(req *http.Request) string {
-	return ctx(req).root
+	return ctx(req).Root
 }
 
 func relative(req *http.Request, relpath string) string {
-	return fmt.Sprintf("%s%s", ctx(req).root, relpath)
+	return fmt.Sprintf("%s%s", root(req), relpath)
 }
 
 func serverUtcTime() string {

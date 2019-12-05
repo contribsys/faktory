@@ -28,7 +28,7 @@ type DefaultContext struct {
 	locale   string
 	strings  map[string]string
 	csrf     bool
-	root     string
+	Root     string
 }
 
 func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *DefaultContext {
@@ -55,7 +55,7 @@ func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *Default
 		locale:   locale,
 		strings:  translations(locale),
 		csrf:     ui.Options.EnableCSRF,
-		root:     req.Header.Get("X-Script-Name"),
+		Root:     req.Header.Get("X-Script-Name"),
 	}
 }
 

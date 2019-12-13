@@ -3,6 +3,10 @@
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
+## HEAD
+
+- No substantive changes
+
 ## 1.1.0
 
 - The canonical copy of each cron job was mutable, leading to

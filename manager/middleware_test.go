@@ -7,6 +7,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,7 +48,10 @@ func TestLiveMiddleware(t *testing.T) {
 			denied := ExpectedError("DENIED", "push denied")
 			store.Flush()
 			m := NewManager(store)
+			counter := 0
+
 			m.AddMiddleware("push", func(next func() error, ctx Context) error {
+				counter += 1
 				if ctx.Job().Type == "Nope" {
 					return denied
 				}
@@ -63,12 +67,21 @@ func TestLiveMiddleware(t *testing.T) {
 			err = m.Push(job)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, counter)
 			assert.NotEmpty(t, job.EnqueuedAt)
 
 			job = client.NewJob("Nope", 1, 2, 3)
 			err = m.Push(job)
 			assert.Equal(t, err, denied)
 			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 2, counter)
+
+			job = client.NewJob("Yep", 1, 2, 3)
+			job.At = util.Thens(time.Now().Add(1 * time.Minute))
+			err = m.Push(job)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 3, counter)
 		})
 
 		t.Run("Fetch", func(t *testing.T) {

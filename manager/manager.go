@@ -196,24 +196,27 @@ func (m *manager) Push(job *client.Job) error {
 		job.Queue = "default"
 	}
 
+	var err error
+	var t time.Time
 	if job.At != "" {
-		t, err := util.ParseTime(job.At)
+		t, err = util.ParseTime(job.At)
 		if err != nil {
 			return fmt.Errorf("Invalid timestamp for 'at': '%s'", job.At)
 		}
-
-		if t.After(time.Now()) {
-			data, err := json.Marshal(job)
-			if err != nil {
-				return err
-			}
-
-			// scheduler for later
-			return m.store.Scheduled().AddElement(job.At, job.Jid, data)
-		}
 	}
 
-	err := callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+	err = callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+		if job.At != "" {
+			if t.After(time.Now()) {
+				data, err := json.Marshal(job)
+				if err != nil {
+					return err
+				}
+
+				// scheduler for later
+				return m.store.Scheduled().AddElement(job.At, job.Jid, data)
+			}
+		}
 		return m.enqueue(job)
 	})
 	if err != nil {

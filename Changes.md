@@ -1,5 +1,11 @@
 # Faktory Changelog
 
+## HEAD
+
+- Add connection pool support for `client` Go package.
+- Refactor manager package for Pro/Ent integration.
+- Scheduled jobs now go through `push` middleware when pushed [#260]
+
 ## 1.1.0
 
 - Upgrade Go runtime from 1.10 to 1.13.

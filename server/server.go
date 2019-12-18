@@ -89,7 +89,7 @@ func (s *Server) AddTask(everySec int64, task Taskable) {
 }
 
 func (s *Server) Boot() error {
-	store, err := storage.Open("redis", s.Options.RedisSock)
+	store, err := storage.Open("redis", s.Options.RedisSock, s.Options.PoolSize)
 	if err != nil {
 		return err
 	}

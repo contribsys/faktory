@@ -154,6 +154,7 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 		RedisSock:        sock,
 		GlobalConfig:     globalConfig,
 		Password:         pwd,
+		PoolSize:         1000,
 	}
 
 	// don't log config hash until fetchPassword has had a chance to scrub the password value

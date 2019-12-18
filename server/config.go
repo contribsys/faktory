@@ -9,6 +9,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	Password         string
+	PoolSize         int
 	GlobalConfig     map[string]interface{}
 }
 

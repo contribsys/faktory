@@ -279,7 +279,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 		panic(err)
 	}
 
-	store, err := storage.Open("redis", sock)
+	store, err := storage.Open("redis", sock, 10)
 	if err != nil {
 		panic(err)
 	}

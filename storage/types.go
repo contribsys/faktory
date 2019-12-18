@@ -97,9 +97,9 @@ type SortedSet interface {
 	MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error
 }
 
-func Open(dbtype string, path string) (Store, error) {
+func Open(dbtype string, path string, size int) (Store, error) {
 	if dbtype == "redis" {
-		return OpenRedis(path)
+		return OpenRedis(path, size)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

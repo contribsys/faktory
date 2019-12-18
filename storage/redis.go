@@ -173,7 +173,7 @@ func BootRedis(path string, sock string) (func(), error) {
 	return func() { StopRedis(sock) }, nil
 }
 
-func OpenRedis(sock string) (Store, error) {
+func OpenRedis(sock string, poolSize int) (Store, error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; !ok {
@@ -193,7 +193,7 @@ func OpenRedis(sock string) (Store, error) {
 		Network:  "unix",
 		Addr:     sock,
 		DB:       db,
-		PoolSize: 1000,
+		PoolSize: poolSize,
 	})
 	_, err := rs.rclient.Ping().Result()
 	if err != nil {

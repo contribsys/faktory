@@ -10,92 +10,97 @@ import "html"
 import "io"
 import "context"
 import "net/http"
+import "github.com/contribsys/faktory/client"
 
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 
-//line layout.ego:7
+//line layout.ego:8
 	_, _ = io.WriteString(w, "\n<!doctype html>\n<html dir=\"")
-//line layout.ego:8
+//line layout.ego:9
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(textDir(req))))
-//line layout.ego:8
-	_, _ = io.WriteString(w, "\">\n  <head>\n    <title>Faktory</title>\n    <meta charset=\"utf8\" />\n    <link rel=\"shortcut icon\" href=\"")
-//line layout.ego:12
+//line layout.ego:9
+	_, _ = io.WriteString(w, "\">\n  <head>\n    <title>")
+//line layout.ego:11
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
+//line layout.ego:11
+	_, _ = io.WriteString(w, "</title>\n    <meta charset=\"utf8\" />\n    <link rel=\"shortcut icon\" href=\"")
+//line layout.ego:13
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon.ico"))))
-//line layout.ego:12
+//line layout.ego:13
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"mask-icon\" href=\"")
-//line layout.ego:13
+//line layout.ego:14
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon.svg"))))
-//line layout.ego:13
+//line layout.ego:14
 	_, _ = io.WriteString(w, "\" color=\"#000000\">\n    <link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"")
-//line layout.ego:14
+//line layout.ego:15
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/apple-touch-icon.png"))))
-//line layout.ego:14
+//line layout.ego:15
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"")
-//line layout.ego:15
+//line layout.ego:16
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon-32x32.png"))))
-//line layout.ego:15
+//line layout.ego:16
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"")
-//line layout.ego:16
+//line layout.ego:17
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon-16x16.png"))))
-//line layout.ego:16
+//line layout.ego:17
 	_, _ = io.WriteString(w, "\">\n\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\" />\n\n    <link href=\"")
-//line layout.ego:20
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap.css"))))
-//line layout.ego:20
-	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
 //line layout.ego:21
-	if rtl(req) {
-//line layout.ego:22
-		_, _ = io.WriteString(w, "\n    <link href=\"")
-//line layout.ego:22
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap-rtl.min.css"))))
-//line layout.ego:22
-		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\"/>\n    ")
-//line layout.ego:23
-	}
-//line layout.ego:24
-	_, _ = io.WriteString(w, "\n\n    <link href=\"")
-//line layout.ego:25
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application.css"))))
-//line layout.ego:25
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap.css"))))
+//line layout.ego:21
 	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
-//line layout.ego:26
+//line layout.ego:22
 	if rtl(req) {
-//line layout.ego:27
+//line layout.ego:23
 		_, _ = io.WriteString(w, "\n    <link href=\"")
-//line layout.ego:27
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application-rtl.css"))))
-//line layout.ego:27
-		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
-//line layout.ego:28
+//line layout.ego:23
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap-rtl.min.css"))))
+//line layout.ego:23
+		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\"/>\n    ")
+//line layout.ego:24
 	}
+//line layout.ego:25
+	_, _ = io.WriteString(w, "\n\n    <link href=\"")
+//line layout.ego:26
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application.css"))))
+//line layout.ego:26
+	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
+//line layout.ego:27
+	if rtl(req) {
+//line layout.ego:28
+		_, _ = io.WriteString(w, "\n    <link href=\"")
+//line layout.ego:28
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application-rtl.css"))))
+//line layout.ego:28
+		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
 //line layout.ego:29
+	}
+//line layout.ego:30
 	_, _ = io.WriteString(w, "\n\n    <script type=\"text/javascript\" src=\"")
-//line layout.ego:30
+//line layout.ego:31
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application.js"))))
-//line layout.ego:30
+//line layout.ego:31
 	_, _ = io.WriteString(w, "\"></script>\n    <meta name=\"google\" content=\"notranslate\" />\n  </head>\n  <body class=\"admin\" data-locale=\"")
-//line layout.ego:33
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).locale)))
-//line layout.ego:33
-	_, _ = io.WriteString(w, "\" data-poll-path=\"\">\n    ")
 //line layout.ego:34
-	ego_nav(w, req)
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).locale)))
+//line layout.ego:34
+	_, _ = io.WriteString(w, "\" data-poll-path=\"\">\n    ")
 //line layout.ego:35
+	ego_nav(w, req)
+//line layout.ego:36
 	_, _ = io.WriteString(w, "\n    <div id=\"page\">\n      <div class=\"container\">\n        <div class=\"row\">\n          <div class=\"col-sm-12 summary_bar\">\n            ")
-//line layout.ego:39
-	ego_summary(w, req)
 //line layout.ego:40
+	ego_summary(w, req)
+//line layout.ego:41
 	_, _ = io.WriteString(w, "\n          </div>\n\n          <div class=\"col-sm-12\">\n            ")
-//line layout.ego:43
-	yield()
 //line layout.ego:44
+	yield()
+//line layout.ego:45
 	_, _ = io.WriteString(w, "\n          </div>\n        </div>\n      </div>\n    </div>\n    ")
-//line layout.ego:48
-	ego_footer(w, req)
 //line layout.ego:49
+	ego_footer(w, req)
+//line layout.ego:50
 	_, _ = io.WriteString(w, "\n  </body>\n</html>\n")
-//line layout.ego:51
+//line layout.ego:52
 }
 
 var _ fmt.Stringer

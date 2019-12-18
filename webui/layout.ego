@@ -1,13 +1,14 @@
 <%
 package webui
 import "net/http"
+import "github.com/contribsys/faktory/client"
 
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
 <html dir="<%= textDir(req) %>">
   <head>
-    <title>Faktory</title>
+    <title><%= client.Name %></title>
     <meta charset="utf8" />
     <link rel="shortcut icon" href="<%= relative(req, "/static/img/favicon.ico") %>">
     <link rel="mask-icon" href="<%= relative(req, "/static/img/favicon.svg") %>" color="#000000">

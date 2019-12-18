@@ -12,8 +12,12 @@ type BatchStatus struct {
 	Total       int64  `json:"total"`
 	Pending     int64  `json:"pending"`
 	Failed      int64  `json:"failed"`
-	Succeeded   bool   `json:"succeeded"`
-	Completed   bool   `json:"completed"`
+
+	// "" if pending,
+	// "1" if callback enqueued,
+	// "2" if callback finished successfully
+	CompleteState string `json:"complete_st"`
+	SuccessState  string `json:"success_st"`
 }
 
 type Batch struct {

@@ -1,11 +1,13 @@
 # Faktory Pro Changelog
 
+Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.md) || Faktory Pro || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
+
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
 ## 1.2.0
 
-- **BREAKING** Deprecate some statsd metrics [#261]
+- **BREAKING** Deprecate some statsd metrics, see issue for details [#261]
 - Add some new statsd metrics for job expiration, uniqueness and cron. [#261]
 
 ## 1.1.0

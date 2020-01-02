@@ -1,7 +1,11 @@
 # Faktory Changelog
 
-## HEAD
+Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.2.0
+
+- **Faktory Enterprise** is now available with [Batches and Queue Throttling](https://github.com/contribsys/faktory/wiki#faktory-enterprise).
+- Upgrade Docker image to Alpine 3.10
 - Add connection pool support for `client` Go package.
 - Refactor manager package for Pro/Ent integration.
 - Scheduled jobs now go through `push` middleware when pushed [#260]

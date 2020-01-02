@@ -27,6 +27,7 @@ var (
 	// Set this to a non-empty value in a consumer process
 	// e.g. see how faktory_worker_go sets this.
 	RandomProcessWid = ""
+	Labels           = []string{"golang"}
 )
 
 // The Client structure represents a thread-unsafe connection
@@ -487,7 +488,7 @@ func emptyClientData() *ClientData {
 	client.Hostname = hs
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
-	client.Labels = []string{"golang"}
+	client.Labels = Labels
 	client.Version = ExpectedProtocolVersion
 	return client
 }

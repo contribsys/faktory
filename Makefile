@@ -2,7 +2,7 @@ NAME=faktory
 VERSION=1.2.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
-ITERATION=2
+ITERATION=1
 BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
 TEST_FLAGS=-parallel 4

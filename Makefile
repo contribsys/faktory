@@ -19,6 +19,7 @@ all: test
 
 release:
 	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
+	cp /tmp/faktory-ent_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
@@ -26,6 +27,7 @@ release:
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
 		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
+		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## install build prereqs

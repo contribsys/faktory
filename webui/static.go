@@ -220,7 +220,7 @@ func staticDashboardJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/dashboard.js", size: 238444, mode: os.FileMode(420), modTime: time.Unix(1566945156, 0)}
+	info := bindataFileInfo{name: "static/dashboard.js", size: 238444, mode: os.FileMode(420), modTime: time.Unix(1571355237, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

@@ -5,6 +5,23 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
+## HEAD
+
+* Allow cron jobs to specify static arguments:
+```toml
+[[cron]]
+  schedule = "* * * * *"
+  [cron.job]
+    type = "SomeWorker"
+    args = ["minutely"]
+
+[[cron]]
+  schedule = "0 * * * *"
+  [cron.job]
+    type = "SomeWorker"
+    args = ["hourly"]
+```
+
 ## 1.2.0
 
 - **BREAKING** Deprecate some statsd metrics, see issue for details [#261]

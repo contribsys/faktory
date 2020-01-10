@@ -83,6 +83,17 @@ func stateString(state WorkerState) string {
 	}
 }
 
+func stateFromString(state string) WorkerState {
+	switch state {
+	case "quiet":
+		return Quiet
+	case "terminate":
+		return Terminate
+	default:
+		return Running
+	}
+}
+
 func clientDataFromHello(data string) (*ClientData, error) {
 	var client ClientData
 	err := json.Unmarshal([]byte(data), &client)
@@ -102,6 +113,10 @@ func (worker *ClientData) IsQuiet() bool {
  * worker process.  Other signals are undefined.
  */
 func (worker *ClientData) Signal(newstate WorkerState) {
+	if worker.state == newstate {
+		return
+	}
+
 	if worker.state == Running {
 		worker.state = newstate
 		return
@@ -140,32 +155,51 @@ func (w *workers) Count() int {
 	return len(w.heartbeats)
 }
 
-func (w *workers) heartbeat(client *ClientData, cls io.Closer) (*ClientData, bool) {
+func (w *workers) setupHeartbeat(client *ClientData, cls io.Closer) (*ClientData, bool) {
 	w.mu.RLock()
 	entry, ok := w.heartbeats[client.Wid]
 	w.mu.RUnlock()
 
 	if ok {
-		w.mu.Lock()
-		entry.lastHeartbeat = time.Now()
-		w.mu.Unlock()
-	} else if cls != nil {
-		client.StartedAt = time.Now()
-		client.lastHeartbeat = time.Now()
-		client.connections = map[io.Closer]bool{}
-
-		w.mu.Lock()
-		if c, ok := w.heartbeats[client.Wid]; ok {
-			entry = c
-		} else {
-			w.heartbeats[client.Wid] = client
-			entry = client
-		}
-		entry.connections[cls] = true
-		w.mu.Unlock()
-		ok = true
+		return entry, ok
 	}
 
+	client.StartedAt = time.Now()
+	client.lastHeartbeat = time.Now()
+	client.connections = map[io.Closer]bool{}
+
+	w.mu.Lock()
+	if c, ok := w.heartbeats[client.Wid]; ok {
+		entry = c
+	} else {
+		w.heartbeats[client.Wid] = client
+		entry = client
+	}
+	entry.connections[cls] = true
+	w.mu.Unlock()
+
+	return entry, ok
+}
+
+func (w *workers) heartbeat(client *ClientBeat) (*ClientData, bool) {
+	w.mu.RLock()
+	entry, ok := w.heartbeats[client.Wid]
+	w.mu.RUnlock()
+
+	if !ok {
+		return nil, ok
+	}
+
+	newst := entry.state
+	if client.CurrentState != "" {
+		newst = stateFromString(client.CurrentState)
+	}
+	w.mu.Lock()
+	entry.lastHeartbeat = time.Now()
+	if entry.state != newst {
+		entry.Signal(newst)
+	}
+	w.mu.Unlock()
 	return entry, ok
 }
 

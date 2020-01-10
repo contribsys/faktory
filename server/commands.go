@@ -161,19 +161,24 @@ func info(c *Connection, s *Server, cmd string) {
 	c.Result(bytes)
 }
 
+type ClientBeat struct {
+	CurrentState string `json:"current_state"`
+	Wid          string `json:"wid"`
+}
+
 func heartbeat(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
-	var client ClientData
-	err := json.Unmarshal([]byte(data), &client)
+	var beat ClientBeat
+	err := json.Unmarshal([]byte(data), &beat)
 	if err != nil {
 		c.Error(cmd, fmt.Errorf("Invalid BEAT %s", data))
 		return
 	}
 
-	worker, ok := s.workers.heartbeat(&client, nil)
+	worker, ok := s.workers.heartbeat(&beat)
 	if !ok {
-		c.Error(cmd, fmt.Errorf("Unknown worker %s", client.Wid))
+		c.Error(cmd, fmt.Errorf("Unknown worker %s", beat.Wid))
 		return
 	}
 

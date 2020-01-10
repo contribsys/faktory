@@ -250,7 +250,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	if client.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		s.workers.heartbeat(client, cn)
+		s.workers.setupHeartbeat(client, cn)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))

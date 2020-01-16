@@ -2,6 +2,11 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Allow workers to send their current process state as part of BEAT [#266]
+
+
 ## 1.2.0
 
 - **Faktory Enterprise** is now available with [Batches and Queue Throttling](https://github.com/contribsys/faktory/wiki#faktory-enterprise).

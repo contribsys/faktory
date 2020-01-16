@@ -4,8 +4,6 @@ package webui
 import (
   "net/http"
   "strings"
-
-  "github.com/contribsys/faktory/client"
 )
 
 func ego_nav(w io.Writer, req *http.Request) {
@@ -25,7 +23,7 @@ func ego_nav(w io.Writer, req *http.Request) {
           <% x := currentStatus(req) %>
           <i class="status-sprite status-<%= x %>" style="background-image: url(<%= root(req) %>/static/img/status.png);"></i>
         </span>
-        <%= client.Name %>
+        <%= productTitle(req) %>
       </a>
     </div>
 

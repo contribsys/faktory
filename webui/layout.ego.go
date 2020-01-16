@@ -10,70 +10,73 @@ import "html"
 import "io"
 import "context"
 import "net/http"
-import "github.com/contribsys/faktory/client"
 
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 
-//line layout.ego:8
+//line layout.ego:7
 	_, _ = io.WriteString(w, "\n<!doctype html>\n<html dir=\"")
-//line layout.ego:9
+//line layout.ego:8
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(textDir(req))))
-//line layout.ego:9
+//line layout.ego:8
 	_, _ = io.WriteString(w, "\">\n  <head>\n    <title>")
-//line layout.ego:11
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
-//line layout.ego:11
+//line layout.ego:10
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(productTitle(req))))
+//line layout.ego:10
 	_, _ = io.WriteString(w, "</title>\n    <meta charset=\"utf8\" />\n    <link rel=\"shortcut icon\" href=\"")
-//line layout.ego:13
+//line layout.ego:12
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon.ico"))))
-//line layout.ego:13
+//line layout.ego:12
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"mask-icon\" href=\"")
-//line layout.ego:14
+//line layout.ego:13
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon.svg"))))
-//line layout.ego:14
+//line layout.ego:13
 	_, _ = io.WriteString(w, "\" color=\"#000000\">\n    <link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"")
-//line layout.ego:15
+//line layout.ego:14
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/apple-touch-icon.png"))))
-//line layout.ego:15
+//line layout.ego:14
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"")
-//line layout.ego:16
+//line layout.ego:15
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon-32x32.png"))))
-//line layout.ego:16
+//line layout.ego:15
 	_, _ = io.WriteString(w, "\">\n    <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"")
-//line layout.ego:17
+//line layout.ego:16
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/img/favicon-16x16.png"))))
-//line layout.ego:17
+//line layout.ego:16
 	_, _ = io.WriteString(w, "\">\n\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\" />\n\n    <link href=\"")
-//line layout.ego:21
+//line layout.ego:20
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap.css"))))
+//line layout.ego:20
+	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
 //line layout.ego:21
-	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
+	if rtl(req) {
 //line layout.ego:22
-	if rtl(req) {
-//line layout.ego:23
 		_, _ = io.WriteString(w, "\n    <link href=\"")
-//line layout.ego:23
+//line layout.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/bootstrap-rtl.min.css"))))
-//line layout.ego:23
+//line layout.ego:22
 		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\"/>\n    ")
+//line layout.ego:23
+	}
 //line layout.ego:24
-	}
-//line layout.ego:25
 	_, _ = io.WriteString(w, "\n\n    <link href=\"")
-//line layout.ego:26
+//line layout.ego:25
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application.css"))))
-//line layout.ego:26
+//line layout.ego:25
 	_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
-//line layout.ego:27
+//line layout.ego:26
 	if rtl(req) {
-//line layout.ego:28
+//line layout.ego:27
 		_, _ = io.WriteString(w, "\n    <link href=\"")
-//line layout.ego:28
+//line layout.ego:27
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/static/application-rtl.css"))))
-//line layout.ego:28
+//line layout.ego:27
 		_, _ = io.WriteString(w, "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />\n    ")
-//line layout.ego:29
+//line layout.ego:28
 	}
+//line layout.ego:29
+	_, _ = io.WriteString(w, "\n    ")
+//line layout.ego:29
+	_, _ = fmt.Fprint(w, extraCss(req))
 //line layout.ego:30
 	_, _ = io.WriteString(w, "\n\n    <script type=\"text/javascript\" src=\"")
 //line layout.ego:31

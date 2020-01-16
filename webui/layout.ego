@@ -1,14 +1,13 @@
 <%
 package webui
 import "net/http"
-import "github.com/contribsys/faktory/client"
 
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
 <html dir="<%= textDir(req) %>">
   <head>
-    <title><%= client.Name %></title>
+    <title><%= productTitle(req) %></title>
     <meta charset="utf8" />
     <link rel="shortcut icon" href="<%= relative(req, "/static/img/favicon.ico") %>">
     <link rel="mask-icon" href="<%= relative(req, "/static/img/favicon.svg") %>" color="#000000">
@@ -27,6 +26,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <% if rtl(req) { %>
     <link href="<%= relative(req, "/static/application-rtl.css") %>" media="screen" rel="stylesheet" type="text/css" />
     <% } %>
+    <%== extraCss(req) %>
 
     <script type="text/javascript" src="<%= relative(req, "/static/application.js") %>"></script>
     <meta name="google" content="notranslate" />

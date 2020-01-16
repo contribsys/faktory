@@ -13,41 +13,51 @@ import "context"
 import (
 	"net/http"
 	"strings"
-
-	"github.com/contribsys/faktory/client"
 )
 
 func ego_nav(w io.Writer, req *http.Request) {
 
-//line nav.ego:13
+//line nav.ego:11
 	_, _ = io.WriteString(w, "\n<div class=\"navbar navbar-default navbar-fixed-top\">\n  <div class=\"container-fluid\">\n    <div class=\"navbar-header\" data-navbar=\"static\">\n      <button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\"#navbar-menu\">\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n      </button>\n      <div class=\"navbar-toggle collapsed navbar-livereload\">\n      </div>\n      <a class=\"navbar-brand\" href=\"")
-//line nav.ego:23
+//line nav.ego:21
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(root(req))))
-//line nav.ego:23
+//line nav.ego:21
 	_, _ = io.WriteString(w, "/\">\n        <span class=\"status\">\n          ")
-//line nav.ego:25
+//line nav.ego:23
 	x := currentStatus(req)
-//line nav.ego:26
+//line nav.ego:24
 	_, _ = io.WriteString(w, "\n          <i class=\"status-sprite status-")
-//line nav.ego:26
+//line nav.ego:24
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(x)))
-//line nav.ego:26
+//line nav.ego:24
 	_, _ = io.WriteString(w, "\" style=\"background-image: url(")
-//line nav.ego:26
+//line nav.ego:24
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(root(req))))
-//line nav.ego:26
+//line nav.ego:24
 	_, _ = io.WriteString(w, "/static/img/status.png);\"></i>\n        </span>\n        ")
-//line nav.ego:28
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
-//line nav.ego:29
+//line nav.ego:26
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(productTitle(req))))
+//line nav.ego:27
 	_, _ = io.WriteString(w, "\n      </a>\n    </div>\n\n    <div class=\"collapse navbar-collapse\" id=\"navbar-menu\">\n      <ul class=\"nav navbar-nav\" data-navbar=\"static\">\n        ")
-//line nav.ego:34
+//line nav.ego:32
 	for _, tab := range DefaultTabs {
 		if tab.Path == "/" {
+//line nav.ego:34
+			_, _ = io.WriteString(w, "\n            <li class=\"")
+//line nav.ego:34
+			if req.RequestURI == "/" {
+//line nav.ego:34
+				_, _ = io.WriteString(w, "active")
+//line nav.ego:34
+			}
+//line nav.ego:34
+			_, _ = io.WriteString(w, "\">\n          ")
+//line nav.ego:35
+		} else {
 //line nav.ego:36
 			_, _ = io.WriteString(w, "\n            <li class=\"")
 //line nav.ego:36
-			if req.RequestURI == "/" {
+			if strings.HasPrefix(req.RequestURI, tab.Path) {
 //line nav.ego:36
 				_, _ = io.WriteString(w, "active")
 //line nav.ego:36
@@ -55,42 +65,30 @@ func ego_nav(w io.Writer, req *http.Request) {
 //line nav.ego:36
 			_, _ = io.WriteString(w, "\">\n          ")
 //line nav.ego:37
-		} else {
-//line nav.ego:38
-			_, _ = io.WriteString(w, "\n            <li class=\"")
-//line nav.ego:38
-			if strings.HasPrefix(req.RequestURI, tab.Path) {
-//line nav.ego:38
-				_, _ = io.WriteString(w, "active")
-//line nav.ego:38
-			}
-//line nav.ego:38
-			_, _ = io.WriteString(w, "\">\n          ")
-//line nav.ego:39
 		}
-//line nav.ego:40
+//line nav.ego:38
 		_, _ = io.WriteString(w, "\n            <a href=\"")
-//line nav.ego:40
+//line nav.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, tab.Path))))
-//line nav.ego:40
+//line nav.ego:38
 		_, _ = io.WriteString(w, "\">")
-//line nav.ego:40
+//line nav.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, tab.Name))))
-//line nav.ego:40
+//line nav.ego:38
 		_, _ = io.WriteString(w, "</a>\n          </li>\n        ")
-//line nav.ego:42
+//line nav.ego:40
 	}
-//line nav.ego:43
+//line nav.ego:41
 	_, _ = io.WriteString(w, "\n      </ul>\n      <ul class=\"nav navbar-nav navbar-right navbar-livereload\" data-navbar=\"static\">\n        <li>\n        </li>\n      </ul>\n    </div>\n    <span class=\"status-text\">\n      <i class=\"status-icon status-")
-//line nav.ego:50
+//line nav.ego:48
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(x)))
-//line nav.ego:50
+//line nav.ego:48
 	_, _ = io.WriteString(w, "\"></i>\n      ")
-//line nav.ego:51
+//line nav.ego:49
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, x))))
-//line nav.ego:52
+//line nav.ego:50
 	_, _ = io.WriteString(w, "\n    </span>\n  </div>\n</div>\n")
-//line nav.ego:55
+//line nav.ego:53
 }
 
 var _ fmt.Stringer

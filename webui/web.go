@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
 	"github.com/justinas/nosurf"
@@ -69,10 +70,13 @@ func Subsystem(binding string) *Lifecycle {
 }
 
 type WebUI struct {
-	Options Options
-	Server  *server.Server
-	App     *http.ServeMux
-	proxy   *http.ServeMux
+	Options     Options
+	Server      *server.Server
+	App         *http.ServeMux
+	Title       string
+	ExtraCssUrl string
+
+	proxy *http.ServeMux
 }
 
 type Options struct {
@@ -93,6 +97,7 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	ui := &WebUI{
 		Options: opts,
 		Server:  s,
+		Title:   client.Name,
 	}
 
 	app := http.NewServeMux()

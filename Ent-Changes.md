@@ -9,6 +9,7 @@ Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
 - Allow custom WebUI tweaks for OEM whitelabeling by customers looking
   to integrate Faktory into their own product. [#270]
+- Fix crash when pushing batch jobs [#274]
 
 ## 1.2.0
 

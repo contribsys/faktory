@@ -136,15 +136,30 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 1, m.WorkingCount())
 
 			exp := time.Now().Add(time.Duration(10) * time.Second)
-			count, err := m.ReapExpiredJobs(util.Thens(exp))
+			count, err := m.ReapExpiredJobs(exp)
 			assert.NoError(t, err)
-			assert.Equal(t, 0, count)
+			assert.EqualValues(t, 0, count)
 			assert.EqualValues(t, 0, store.Retries().Size())
 
-			exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)
-			count, err = m.ReapExpiredJobs(util.Thens(exp))
+			err = m.ExtendReservation("nosuch", 50*time.Hour)
 			assert.NoError(t, err)
-			assert.Equal(t, 1, count)
+
+			util.LogInfo = true
+			util.LogDebug = true
+			util.Infof("Extending %s", job.Jid)
+			err = m.ExtendReservation(job.Jid, 50*time.Hour)
+			assert.NoError(t, err)
+
+			exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)
+			count, err = m.ReapExpiredJobs(exp)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, count)
+			assert.EqualValues(t, 0, store.Retries().Size())
+
+			exp = time.Now().Add(51 * time.Hour)
+			count, err = m.ReapExpiredJobs(exp)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, count)
 			assert.EqualValues(t, 1, store.Retries().Size())
 		})
 	})

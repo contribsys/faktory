@@ -18,13 +18,14 @@ var (
 )
 
 type Reservation struct {
-	Job     *client.Job `json:"job"`
-	Since   string      `json:"reserved_at"`
-	Expiry  string      `json:"expires_at"`
-	Wid     string      `json:"wid"`
-	tsince  time.Time
-	texpiry time.Time
-	lease   Lease
+	Job       *client.Job `json:"job"`
+	Since     string      `json:"reserved_at"`
+	Expiry    string      `json:"expires_at"`
+	Wid       string      `json:"wid"`
+	tsince    time.Time
+	texpiry   time.Time
+	extension time.Time
+	lease     Lease
 }
 
 func (res *Reservation) ReservedAt() time.Time {
@@ -33,6 +34,17 @@ func (res *Reservation) ReservedAt() time.Time {
 
 func (res *Reservation) ExpiresAt() time.Time {
 	return res.texpiry
+}
+
+func (m *manager) ExtendReservation(jid string, amt time.Duration) error {
+	val := time.Now().Add(amt)
+
+	m.workingMutex.Lock()
+	if localres, ok := m.workingMap[jid]; ok {
+		localres.extension = val
+	}
+	m.workingMutex.Unlock()
+	return nil
 }
 
 func (m *manager) WorkingCount() int {
@@ -161,8 +173,8 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return res.Job, err
 }
 
-func (m *manager) ReapExpiredJobs(timestamp string) (int, error) {
-	elms, err := m.store.Working().RemoveBefore(timestamp)
+func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
+	elms, err := m.store.Working().RemoveBefore(util.Thens(when))
 	if err != nil {
 		return 0, err
 	}
@@ -173,6 +185,22 @@ func (m *manager) ReapExpiredJobs(timestamp string) (int, error) {
 		err := json.Unmarshal(elm, &res)
 		if err != nil {
 			util.Error("Unable to read reservation", err)
+			continue
+		}
+
+		jid := res.Job.Jid
+		m.workingMutex.Lock()
+		localres, ok := m.workingMap[jid]
+		m.workingMutex.Unlock()
+
+		// the user has extended the job reservation.
+		// Since modifying the score of a SortedSet member
+		// is an expensive operation in Redis, we keep
+		// the latest deadline in memory and extend the
+		// reservation when it expires, in this method.
+		if ok && when.Before(localres.extension) {
+			util.Debugf("Auto-extending reservation time for %s", jid)
+			m.store.Working().AddElement(util.Thens(localres.extension), jid, elm)
 			continue
 		}
 

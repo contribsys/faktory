@@ -85,9 +85,11 @@ type Manager interface {
 
 	Fail(fail *FailPayload) error
 
+	ExtendReservation(jid string, amt time.Duration) error
+
 	WorkingCount() int
 
-	ReapExpiredJobs(timestamp string) (int, error)
+	ReapExpiredJobs(when time.Time) (int, error)
 
 	// Purge deletes all dead jobs
 	Purge(when time.Time) (int64, error)

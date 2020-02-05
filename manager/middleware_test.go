@@ -148,7 +148,7 @@ func TestLiveMiddleware(t *testing.T) {
 				return next()
 			})
 			m.AddMiddleware("ack", func(next func() error, ctx Context) error {
-				val, err := m.Redis().Del(ctx.Job().Jid).Result()
+				val, err := m.Redis().Unlink(ctx.Job().Jid).Result()
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, val)
 				return next()

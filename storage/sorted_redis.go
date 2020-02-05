@@ -34,7 +34,7 @@ func (rs *redisSorted) Size() uint64 {
 }
 
 func (rs *redisSorted) Clear() error {
-	return rs.store.rclient.Del(rs.name).Err()
+	return rs.store.rclient.Unlink(rs.name).Err()
 }
 
 func (rs *redisSorted) Add(job *client.Job) error {

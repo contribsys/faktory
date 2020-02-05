@@ -141,13 +141,13 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, count)
 			assert.EqualValues(t, 0, store.Retries().Size())
 
-			err = m.ExtendReservation("nosuch", 50*time.Hour)
+			err = m.ExtendReservation("nosuch", time.Now().Add(50*time.Hour))
 			assert.NoError(t, err)
 
 			util.LogInfo = true
 			util.LogDebug = true
 			util.Infof("Extending %s", job.Jid)
-			err = m.ExtendReservation(job.Jid, 50*time.Hour)
+			err = m.ExtendReservation(job.Jid, time.Now().Add(50*time.Hour))
 			assert.NoError(t, err)
 
 			exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)

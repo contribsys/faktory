@@ -36,12 +36,12 @@ func (res *Reservation) ExpiresAt() time.Time {
 	return res.texpiry
 }
 
-func (m *manager) ExtendReservation(jid string, amt time.Duration) error {
-	val := time.Now().Add(amt)
-
+func (m *manager) ExtendReservation(jid string, until time.Time) error {
 	m.workingMutex.Lock()
 	if localres, ok := m.workingMap[jid]; ok {
-		localres.extension = val
+		if localres.texpiry.Before(until) {
+			localres.extension = until
+		}
 	}
 	m.workingMutex.Unlock()
 	return nil
@@ -200,7 +200,9 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
 		// reservation when it expires, in this method.
 		if ok && when.Before(localres.extension) {
 			util.Debugf("Auto-extending reservation time for %s", jid)
-			m.store.Working().AddElement(util.Thens(localres.extension), jid, elm)
+			localres.texpiry = localres.extension
+			localres.Expiry = util.Thens(localres.extension)
+			m.store.Working().AddElement(localres.Expiry, jid, elm)
 			continue
 		}
 

@@ -85,7 +85,10 @@ type Manager interface {
 
 	Fail(fail *FailPayload) error
 
-	ExtendReservation(jid string, amt time.Duration) error
+	// Allows arbitrary extension of a job's current reservation
+	// This is a no-op if you set the time before the current
+	// reservation expiry.
+	ExtendReservation(jid string, until time.Time) error
 
 	WorkingCount() int
 

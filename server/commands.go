@@ -28,10 +28,15 @@ var CommandSet = map[string]command{
 	"FLUSH":  flush,
 	"MUTATE": mutate,
 	"BATCH":  batch,
+	"TRACK":  track,
+}
+
+func track(c *Connection, s *Server, cmd string) {
+	c.Error(cmd, fmt.Errorf("The Tracking subsystem is only available in Faktory Enterprise"))
 }
 
 func batch(c *Connection, s *Server, cmd string) {
-	c.Error(cmd, fmt.Errorf("The BATCH subsystem is only available in Faktory Enterprise"))
+	c.Error(cmd, fmt.Errorf("The Batch subsystem is only available in Faktory Enterprise"))
 }
 
 func flush(c *Connection, s *Server, cmd string) {

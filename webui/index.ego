@@ -9,6 +9,7 @@ import (
 
 func ego_index(w io.Writer, req *http.Request) {
   ego_layout(w, req, func() { %>
+    <%== LicenseStatus(w, req) %>
 <script type="text/javascript" src="<%= relative(req, "/static/dashboard.js") %>"></script>
 <div class= "dashboard clearfix">
   <h3 >

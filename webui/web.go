@@ -32,6 +32,10 @@ var (
 
 	// these are used in testing only
 	staticHandler = cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+
+	LicenseStatus = func(w io.Writer, req *http.Request) string {
+		return ""
+	}
 )
 
 //go:generate ego .

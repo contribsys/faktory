@@ -132,7 +132,7 @@ func Proxy(ui *WebUI) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		///////
 		// Support transparent proxying with nginx's proxy_pass.
-		// Note that's super critical that location == X-Script-Name
+		// Note that it's super critical that location == X-Script-Name
 		// Example config:
 		/*
 		   location /faktory {

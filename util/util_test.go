@@ -35,4 +35,7 @@ func TestBacktrace(t *testing.T) {
 	//for _, str := range ex {
 	//fmt.Println(str)
 	//}
+
+	LogInfo = true
+	PrintBacktrace()
 }

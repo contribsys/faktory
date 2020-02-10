@@ -9,6 +9,7 @@ import (
 	mathrand "math/rand"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -178,4 +179,10 @@ func Backtrace(size int) []string {
 	}
 
 	return str[0:count]
+}
+
+func PrintBacktrace() {
+	lines := Backtrace(100)
+	Info("Location:")
+	Info("\n" + strings.Join(lines, "\n"))
 }

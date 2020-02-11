@@ -428,8 +428,12 @@ func (c *Client) Generic(cmdline string) (string, error) {
 	return c.readString(c.rdr)
 }
 
-func (c *Client) Beat() (string, error) {
-	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"}`, RandomProcessWid))
+func (c *Client) Beat(state string) (string, error) {
+	extra := ""
+	if state != "" {
+		extra = fmt.Sprintf(`,"current_state":"%s"`, state)
+	}
+	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"%s}`, RandomProcessWid, extra))
 	if val == "OK" {
 		return "", nil
 	}

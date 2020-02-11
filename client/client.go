@@ -428,7 +428,12 @@ func (c *Client) Generic(cmdline string) (string, error) {
 	return c.readString(c.rdr)
 }
 
-func (c *Client) Beat(state string) (string, error) {
+func (c *Client) Beat(args ...string) (string, error) {
+	state := ""
+	if len(args) > 0 {
+		state = args[0]
+	}
+
 	extra := ""
 	if state != "" {
 		extra = fmt.Sprintf(`,"current_state":"%s"`, state)

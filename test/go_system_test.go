@@ -84,7 +84,7 @@ func pushAndPop(t *testing.T, count int) {
 	}
 	defer client.Close()
 
-	sig, err := client.Beat("")
+	sig, err := client.Beat()
 	assert.Equal(t, "", sig)
 	assert.NoError(t, err)
 

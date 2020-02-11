@@ -1152,44 +1152,6 @@ div.interval-slider input {
   }
 }
 
-.redis-url, .redis-namespace {
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-@media (min-width: 768px) {
-  .redis-url {
-    max-width: 200px;
-  }
-
-  .redis-namespace {
-    max-width: 150px;
-  }
-}
-
-@media (min-width: 992px) {
-  .redis-url {
-    max-width: 390px;
-  }
-
-  .redis-namespace {
-    max-width: 300px;
-  }
-}
-@media (min-width: 1200px) {
-  .redis-url {
-    max-width: 480px;
-  }
-
-  .redis-namespace {
-    max-width: 350px;
-  }
-}
-
-.redis-url {
-  text-overflow: ellipsis;
-}
-
 .product-version {
   color:white;
 }

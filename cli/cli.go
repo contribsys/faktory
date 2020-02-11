@@ -81,11 +81,13 @@ func help() {
 var (
 	Term os.Signal = syscall.SIGTERM
 	Hup  os.Signal = syscall.SIGHUP
+	Info os.Signal = syscall.SIGTTIN
 
 	SignalHandlers = map[os.Signal]func(*server.Server){
 		Term:         exit,
 		os.Interrupt: exit,
 		Hup:          reload,
+		Info:         threadDump,
 	}
 )
 
@@ -120,6 +122,10 @@ func exit(s *server.Server) {
 	util.Infof("%s shutting down", client.Name)
 
 	close(s.Stopper())
+}
+
+func threadDump(s *server.Server) {
+	util.DumpProcessTrace()
 }
 
 func BuildServer(opts CliOptions) (*server.Server, func(), error) {

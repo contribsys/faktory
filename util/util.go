@@ -9,7 +9,6 @@ import (
 	mathrand "math/rand"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -181,8 +180,9 @@ func Backtrace(size int) []string {
 	return str[0:count]
 }
 
-func PrintBacktrace() {
-	lines := Backtrace(100)
-	Info("Location:")
-	Info("\n" + strings.Join(lines, "\n"))
+func DumpProcessTrace() {
+	buf := make([]byte, 64*1024)
+	_ = runtime.Stack(buf, true)
+	Info("FULL PROCESS THREAD DUMP:")
+	Info(string(buf))
 }

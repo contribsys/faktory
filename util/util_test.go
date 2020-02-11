@@ -37,5 +37,5 @@ func TestBacktrace(t *testing.T) {
 	//}
 
 	LogInfo = true
-	PrintBacktrace()
+	DumpProcessTrace()
 }

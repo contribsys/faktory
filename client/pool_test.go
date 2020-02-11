@@ -34,7 +34,7 @@ func TestPoolGetPut(t *testing.T) {
 		err = p.With(func(conn *Client) error {
 			// Should be able to use the client like normal
 			resp <- "+OK\r\n"
-			res, err := cl.Beat()
+			res, err := cl.Beat("")
 			assert.NoError(t, err)
 			assert.Equal(t, "", res)
 			assert.Contains(t, <-req, "BEAT")
@@ -97,7 +97,7 @@ func TestPoolClosePool(t *testing.T) {
 
 		// Should be able to use the client like normal
 		resp <- "+OK\r\n"
-		res, err := cl.Beat()
+		res, err := cl.Beat("")
 		assert.NoError(t, err)
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
@@ -111,7 +111,7 @@ func TestPoolClosePool(t *testing.T) {
 		assert.Equal(t, p.Len(), 0)
 
 		resp <- "+OK\r\n"
-		res, err = cl.Beat()
+		res, err = cl.Beat("")
 		assert.Error(t, err)
 
 		// Pool should return an error when trying to get another client

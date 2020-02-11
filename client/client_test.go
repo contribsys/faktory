@@ -57,7 +57,7 @@ func TestClientOperations(t *testing.T) {
 		assert.Contains(t, s, "pwdhash")
 
 		resp <- "+OK\r\n"
-		res, err := cl.Beat()
+		res, err := cl.Beat("")
 		assert.NoError(t, err)
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")

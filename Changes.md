@@ -5,7 +5,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 ## HEAD
 
 - Allow workers to send their current process state as part of BEAT [#266]
-
+- Faktory will now dump all thread stacktraces when sent the TTIN signal
 
 ## 1.2.0
 

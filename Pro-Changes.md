@@ -7,6 +7,7 @@ Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
 ## HEAD
 
+* Validate statsd tags, per Datadog docs [#283]
 * Add periodic job history and details page [#265]
 * Allow cron jobs to specify static arguments:
 ```toml

@@ -152,12 +152,12 @@ header.row .pagination {
   padding: 0 0 2px 0;
   width: 100%;
   color: #777;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
 }
 
 
-@media (max-width: 767px) and (min-width: 400px) {
+@media (max-width: 767px) and (min-width: 100px) {
   .summary.row {
     padding-bottom: 8px;
   }

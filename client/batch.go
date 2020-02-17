@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -110,3 +111,77 @@ var (
 	BatchAlreadyCommitted = fmt.Errorf("Batch has already been committed, must reopen")
 	BatchNotOpen          = fmt.Errorf("Batch must be opened before it can be used")
 )
+
+/////////////////////////////////////////////
+// Low-level command API
+
+func (c *Client) BatchCommit(bid string) error {
+	err := c.writeLine(c.wtr, "BATCH COMMIT", []byte(bid))
+	if err != nil {
+		return err
+	}
+
+	return c.ok(c.rdr)
+}
+
+func (c *Client) BatchNew(def *Batch) (*Batch, error) {
+	if def.Bid != "" {
+		return nil, fmt.Errorf("BID must be blank when creating a new Batch, cannot specify it")
+	}
+	bbytes, err := json.Marshal(def)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.writeLine(c.wtr, "BATCH NEW", bbytes)
+	if err != nil {
+		return nil, err
+	}
+
+	bid, err := c.readString(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	def.Bid = bid
+	def.new = false
+	def.faktory = c
+	return def, nil
+}
+
+func (c *Client) BatchStatus(bid string) (*BatchStatus, error) {
+	err := c.writeLine(c.wtr, "BATCH STATUS", []byte(bid))
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := c.readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+
+	var stat BatchStatus
+	err = json.Unmarshal(data, &stat)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stat, nil
+}
+
+func (c *Client) BatchOpen(bid string) (*Batch, error) {
+	err := c.writeLine(c.wtr, "BATCH OPEN", []byte(bid))
+	if err != nil {
+		return nil, err
+	}
+
+	bbid, err := c.readString(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	b := &Batch{
+		Bid:     bbid,
+		new:     false,
+		faktory: c,
+	}
+	return b, nil
+}

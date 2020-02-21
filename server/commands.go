@@ -68,7 +68,7 @@ func push(c *Connection, s *Server, cmd string) {
 
 	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid JSON: %s", err))
+		c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
 		return
 	}
 

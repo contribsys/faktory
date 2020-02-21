@@ -128,7 +128,7 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 		conn, err := factory()
 		if err != nil {
 			c.Close()
-			return nil, fmt.Errorf("factory is not able to fill the pool: %s", err)
+			return nil, fmt.Errorf("factory is not able to fill the pool: %w", err)
 		}
 		c.conns <- conn
 	}

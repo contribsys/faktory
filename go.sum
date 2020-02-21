@@ -12,8 +12,6 @@ github.com/go-bindata/go-bindata v3.1.2+incompatible h1:5vjJMVhowQdPzjE1LdxyFF7Y
 github.com/go-bindata/go-bindata v3.1.2+incompatible/go.mod h1:xK8Dsgwmeed+BBsSy2XTopBn/8uK2HWuGSnA11C3Joo=
 github.com/go-redis/redis v0.0.0-20181009075230-daf101bd7905 h1:7UBzGO4inqiIU5fo0Z4efN9QLVXMVFRwtXLSoNcplKs=
 github.com/go-redis/redis v0.0.0-20181009075230-daf101bd7905/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
-github.com/jteeuwen/go-bindata v3.0.7+incompatible h1:91Uy4d9SYVr1kyTJ15wJsog+esAZZl7JmEfTkwmhJts=
-github.com/jteeuwen/go-bindata v3.0.7+incompatible/go.mod h1:JVvhzYOiGBnFSYRyV00iY8q7/0PThjIYav1p9h5dmKs=
 github.com/justinas/nosurf v0.0.0-20171023064657-7182011986c4 h1:zL6nij8mNcIiohuVdHfNDSVZOlVTSsUZXkb5v1Kudqk=
 github.com/justinas/nosurf v0.0.0-20171023064657-7182011986c4/go.mod h1:Aucr5I5chr4OCuuVB4LTuHVrKHBuyRSo7vM2hqrcb7E=
 github.com/pkg/errors v0.8.0 h1:WdK/asTD0HN+q6hsWO3/vpuAkAr+tw6aNJNDFFf0+qw=

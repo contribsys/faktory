@@ -208,6 +208,10 @@ func (w *workers) RemoveConnection(c *Connection) {
 	cd, ok := w.heartbeats[c.client.Wid]
 	if ok {
 		delete(cd.connections, c)
+		if len(cd.connections) == 0 {
+			//util.Debugf("All worker connections closed, reaping %s", c.client.Wid)
+			delete(w.heartbeats, c.client.Wid)
+		}
 	}
 	w.mu.Unlock()
 }

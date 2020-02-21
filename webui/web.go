@@ -31,7 +31,7 @@ var (
 	}
 
 	// these are used in testing only
-	staticHandler = cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	staticHandler = cache(http.FileServer(AssetFile()))
 
 	LicenseStatus = func(w io.Writer, req *http.Request) string {
 		return ""
@@ -39,7 +39,7 @@ var (
 )
 
 //go:generate ego .
-//go:generate go-bindata -pkg webui -o static.go static/...
+//go:generate go-bindata -fs -pkg webui -o static.go static/...
 
 type localeMap map[string]map[string]string
 type assetLookup func(string) ([]byte, error)

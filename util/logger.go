@@ -2,12 +2,9 @@ package util
 
 import (
 	"fmt"
-	"io"
+	"log"
 	"os"
-	"sync"
 	"time"
-
-	alog "github.com/apex/log"
 )
 
 // colors.
@@ -18,61 +15,58 @@ const (
 	blue   = 34
 )
 
-// Colors mapping.
-var Colors = [...]int{
-	alog.DebugLevel: green,
-	alog.InfoLevel:  blue,
-	alog.WarnLevel:  yellow,
-	alog.ErrorLevel: red,
-	alog.FatalLevel: red,
+type Level int
+
+// Log levels.
+const (
+	InvalidLevel Level = iota - 1
+	DebugLevel
+	InfoLevel
+	WarnLevel
+	ErrorLevel
+	FatalLevel
+)
+
+var levelNames = [...]string{
+	DebugLevel: "debug",
+	InfoLevel:  "info",
+	WarnLevel:  "warn",
+	ErrorLevel: "error",
+	FatalLevel: "fatal",
+}
+
+var levelStrings = map[string]Level{
+	"debug": DebugLevel,
+	"info":  InfoLevel,
+	"warn":  WarnLevel,
+	"error": ErrorLevel,
+	"fatal": FatalLevel,
 }
 
 // Strings mapping.
 var Strings = [...]string{
-	alog.DebugLevel: "D",
-	alog.InfoLevel:  "I",
-	alog.WarnLevel:  "W",
-	alog.ErrorLevel: "E",
-	alog.FatalLevel: "F",
+	DebugLevel: "D",
+	InfoLevel:  "I",
+	WarnLevel:  "W",
+	ErrorLevel: "E",
+	FatalLevel: "F",
 }
 
-type LogHandler struct {
-	mu     sync.Mutex
-	writer io.Writer
-	tty    bool
-}
+var (
+	LogInfo  = false
+	LogDebug = false
+	logg     = log.New(os.Stdout, "", 0)
+)
 
 const (
 	TimeFormat = "2006-01-02T15:04:05.000Z"
 )
 
-func (h *LogHandler) HandleLog(e *alog.Entry) error {
-	color := Colors[e.Level]
-	level := Strings[e.Level]
-	names := e.Fields.Names()
+func llog(lvl Level, msg string) {
+	level := Strings[lvl]
 	ts := time.Now().UTC().Format(TimeFormat)
 
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if h.tty {
-		fmt.Fprintf(h.writer, "\033[%dm%s\033[0m %s ", color, level, ts)
-	} else {
-		fmt.Fprintf(h.writer, "%s %s ", level, ts)
-	}
-
-	for _, name := range names {
-		fmt.Fprintf(h.writer, "%s=%v ", name, e.Fields.Get(name))
-	}
-	fmt.Fprintln(h.writer, e.Message)
-
-	return nil
-}
-
-func NewLogger(level string, production bool) Logger {
-	alog.SetHandler(&LogHandler{writer: os.Stdout, tty: isTTY(int(os.Stdout.Fd()))})
-	alog.SetLevelFromString(level)
-	return alog.Log
+	logg.Printf("%s %s %s\n", level, ts, msg)
 }
 
 // This generic logging interface hide
@@ -92,17 +86,62 @@ type Logger interface {
 
 	// Log with fmt.Printf-like formatting and terminate process (unrecoverable)
 	Fatalf(format string, args ...interface{})
+}
 
-	// Set key/value context for further logging with the returned logger
-	WithField(key string, value interface{}) *alog.Entry
+//
+// Logging functions
+//
 
-	// Set key/value context for further logging with the returned logger
-	WithFields(keyValues alog.Fielder) *alog.Entry
+func InitLogger(level string) {
+	if level == "info" {
+		LogInfo = true
+	}
 
-	// Return a logger with the specified error set, to be included in a subsequent normal logging call
-	WithError(err error) *alog.Entry
+	if level == "debug" {
+		LogInfo = true
+		LogDebug = true
+	}
+}
 
-	// Return map fields associated with this logger, if any (i.e. if this logger was returned from WithField[s])
-	// If no fields are set, returns nil
-	//Fields() map[string]interface{}
+func Error(msg string, err error) {
+	llog(ErrorLevel, fmt.Sprintf("%s: %s", msg, err))
+}
+
+// Uh oh, not good but not worthy of process death
+func Warn(arg string) {
+	llog(WarnLevel, arg)
+}
+
+func Warnf(msg string, args ...interface{}) {
+	llog(WarnLevel, fmt.Sprintf(msg, args...))
+}
+
+// Typical logging output, the default level
+func Info(arg string) {
+	if LogInfo {
+		llog(InfoLevel, arg)
+	}
+}
+
+// Typical logging output, the default level
+func Infof(msg string, args ...interface{}) {
+	if LogInfo {
+		llog(InfoLevel, fmt.Sprintf(msg, args...))
+	}
+}
+
+// Verbosity level helps track down production issues:
+//  -l debug
+func Debug(arg string) {
+	if LogDebug {
+		llog(DebugLevel, arg)
+	}
+}
+
+// Verbosity level helps track down production issues:
+//  -l debug
+func Debugf(msg string, args ...interface{}) {
+	if LogDebug {
+		llog(DebugLevel, fmt.Sprintf(msg, args...))
+	}
 }

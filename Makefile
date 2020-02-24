@@ -89,6 +89,8 @@ cover:
 
 xbuild: clean generate
 	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	# brew install upx
+	upx -qq ./faktory
 
 build: clean generate
 	go build -o $(NAME) cmd/faktory/daemon.go

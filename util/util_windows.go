@@ -4,7 +4,7 @@ import (
 	"os/exec"
 )
 
-func isTTY(fd int) bool {
+func isTTY(fd uintptr) bool {
 	// this function controls if we output ANSI coloring to the terminal.
 	// dunno how to do this on Windows so just play safe and assume it is not a TTY
 	return false

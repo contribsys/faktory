@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
@@ -17,7 +16,6 @@ const (
 
 type Level int
 
-// Log levels.
 const (
 	InvalidLevel Level = iota - 1
 	DebugLevel
@@ -27,6 +25,13 @@ const (
 	FatalLevel
 )
 
+var colors = [...]int{
+	DebugLevel: green,
+	InfoLevel:  blue,
+	WarnLevel:  yellow,
+	ErrorLevel: red,
+	FatalLevel: red,
+}
 var levelNames = [...]string{
 	DebugLevel: "debug",
 	InfoLevel:  "info",
@@ -43,8 +48,7 @@ var levelStrings = map[string]Level{
 	"fatal": FatalLevel,
 }
 
-// Strings mapping.
-var Strings = [...]string{
+var strings = [...]string{
 	DebugLevel: "D",
 	InfoLevel:  "I",
 	WarnLevel:  "W",
@@ -55,7 +59,8 @@ var Strings = [...]string{
 var (
 	LogInfo  = false
 	LogDebug = false
-	logg     = log.New(os.Stdout, "", 0)
+	logg     = os.Stdout
+	colorize = isTTY(logg.Fd())
 )
 
 const (
@@ -63,10 +68,15 @@ const (
 )
 
 func llog(lvl Level, msg string) {
-	level := Strings[lvl]
+	level := strings[lvl]
 	ts := time.Now().UTC().Format(TimeFormat)
 
-	logg.Printf("%s %s %s\n", level, ts, msg)
+	if colorize {
+		color := colors[lvl]
+		fmt.Fprintf(logg, "\033[%dm%s\033[0m %s %s\n", color, level, ts, msg)
+	} else {
+		fmt.Fprintf(logg, "%s %s %s\n", level, ts, msg)
+	}
 }
 
 // This generic logging interface hide

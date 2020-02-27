@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	//"net/http/pprof"
 	"strings"
 	"time"
 
@@ -119,6 +121,13 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	app.HandleFunc("/morgue/", Log(ui, deadHandler))
 	app.HandleFunc("/busy", Log(ui, busyHandler))
 	app.HandleFunc("/debug", Log(ui, debugHandler))
+
+	//app.HandleFunc("/debug/pprof/", pprof.Index)
+	//app.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	//app.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	//app.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	//app.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
 	ui.App = app
 
 	proxy := http.NewServeMux()
@@ -224,7 +233,7 @@ func (ui *WebUI) Run() (func(), error) {
 	s := &http.Server{
 		Addr:           ui.Options.Binding,
 		ReadTimeout:    1 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		WriteTimeout:   30 * time.Second,
 		MaxHeaderBytes: 1 << 16,
 		Handler:        ui.proxy,
 	}

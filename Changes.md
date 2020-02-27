@@ -7,6 +7,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 - Allow workers to send their current process state as part of BEAT [#266]
 - Faktory will now dump all thread stacktraces when sent the TTIN signal
 - Remove apex/log dependency [#289]
+- Enable SLOWLOG in Faktory's Redis instance
 
 ## 1.2.0
 

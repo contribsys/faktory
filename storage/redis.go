@@ -407,5 +407,7 @@ stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes
 dbfilename faktory.rdb
+slowlog-log-slower-than 10000
+slowlog-max-len 128
 `
 )

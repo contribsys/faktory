@@ -5,7 +5,7 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
-## HEAD
+## 1.3.0
 
 * Validate statsd tags, per Datadog docs [#283]
 * Add periodic job history and details page [#265]

@@ -285,10 +285,12 @@ func StopRedis(sock string) error {
 	before := time.Now()
 	p := cmd.Process
 	pid := p.Pid
-	err := p.Signal(syscall.SIGTERM)
-	if err != nil {
-		return err
-	}
+
+	// this call frequently errs and the returned error is a string,
+	// not easy to build logic around and too noisy to log
+	// "os: process already finished"
+	// TODO revisit error handling in versions after Go 1.14.
+	_ = p.Signal(syscall.SIGTERM)
 	delete(instances, sock)
 
 	// Test suite hack: Redis will not exit if we
@@ -299,9 +301,11 @@ func StopRedis(sock string) error {
 	for ; i > 0; i-- {
 		time.Sleep(2 * time.Millisecond)
 		err := syscall.Kill(pid, syscall.Signal(0))
-		if err == syscall.ESRCH {
+		if errors.Is(err, syscall.ESRCH) {
 			util.Debugf("Redis dead in %v", time.Since(before))
 			return nil
+		} else {
+			return err
 		}
 	}
 

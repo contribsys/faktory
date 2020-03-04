@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Integrate golangci-lint and numerous minor changes for issues it raised
+
 ## 1.3.0
 
 - Allow workers to send their current process state as part of BEAT [#266]

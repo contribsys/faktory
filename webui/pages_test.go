@@ -38,12 +38,16 @@ func TestPages(t *testing.T) {
 
 			s.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
 			str := s.Store()
-			_, _ = str.GetQueue("default")
-			q, _ := str.GetQueue("foobar")
-			_, _ = q.Clear()
+			_, err = str.GetQueue("default")
+			assert.NoError(t, err)
+			q, err := str.GetQueue("foobar")
+			assert.NoError(t, err)
+			_, err = q.Clear()
+			assert.NoError(t, err)
 			args := []string{"faktory", "rocks", "!!", ":)"}
 			for _, v := range args {
-				q.Push([]byte(v))
+				err = q.Push([]byte(v))
+				assert.NoError(t, err)
 			}
 
 			w := httptest.NewRecorder()
@@ -71,10 +75,14 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			str := s.Store()
-			str.GetQueue("default")
-			q, _ := str.GetQueue("foobar")
-			q.Clear()
-			q.Push([]byte("1l23j12l3"))
+			_, err = str.GetQueue("default")
+			assert.NoError(t, err)
+			q, err := str.GetQueue("foobar")
+			assert.NoError(t, err)
+			_, err = q.Clear()
+			assert.NoError(t, err)
+			err = q.Push([]byte("1l23j12l3"))
+			assert.NoError(t, err)
 
 			w := httptest.NewRecorder()
 			queuesHandler(w, req)
@@ -89,9 +97,12 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			str := s.Store()
-			q, _ := str.GetQueue("foobar")
-			q.Clear()
-			q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+			q, err := str.GetQueue("foobar")
+			assert.NoError(t, err)
+			_, err = q.Clear()
+			assert.NoError(t, err)
+			err = q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+			assert.NoError(t, err)
 			assert.EqualValues(t, 1, q.Size())
 
 			w := httptest.NewRecorder()
@@ -120,7 +131,8 @@ func TestPages(t *testing.T) {
 
 			str := s.Store()
 			retries := str.Retries()
-			retries.Clear()
+			err = retries.Clear()
+			assert.NoError(t, err)
 			jid1, data := fakeJob()
 			err = retries.AddElement(util.Nows(), jid1, data)
 			assert.NoError(t, err)
@@ -134,10 +146,11 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			var key []byte
-			retries.Each(func(idx int, entry storage.SortedEntry) error {
+			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
+			assert.NoError(t, err)
 			keys := string(key)
 
 			w := httptest.NewRecorder()
@@ -206,7 +219,8 @@ func TestPages(t *testing.T) {
 				"key":    {keys},
 				"action": {"kill"},
 			}
-			retries.Clear() // clear it under us!
+			err = retries.Clear() // clear it under us!
+			assert.NoError(t, err)
 			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -222,11 +236,12 @@ func TestPages(t *testing.T) {
 		t.Run("Retry", func(t *testing.T) {
 			str := s.Store()
 			q := str.Retries()
-			q.Clear()
+			err := q.Clear()
+			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Nows()
 
-			err := q.AddElement(ts, jid, data)
+			err = q.AddElement(ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/retries/%s|%s", ts, jid), nil)
@@ -243,17 +258,19 @@ func TestPages(t *testing.T) {
 
 			str := s.Store()
 			q := str.Scheduled()
-			q.Clear()
+			err = q.Clear()
+			assert.NoError(t, err)
 			jid, data := fakeJob()
 
 			err = q.AddElement(util.Nows(), jid, data)
 			assert.NoError(t, err)
 
 			var key []byte
-			q.Each(func(idx int, entry storage.SortedEntry) error {
+			err = q.Each(func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
+			assert.NoError(t, err)
 			keys := string(key)
 
 			w := httptest.NewRecorder()
@@ -281,11 +298,12 @@ func TestPages(t *testing.T) {
 		t.Run("ScheduledJob", func(t *testing.T) {
 			str := s.Store()
 			q := str.Scheduled()
-			q.Clear()
+			err := q.Clear()
+			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Thens(time.Now().Add(1e6 * time.Second))
 
-			err := q.AddElement(ts, jid, data)
+			err = q.AddElement(ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/scheduled/%s|%s", ts, jid), nil)
@@ -302,7 +320,8 @@ func TestPages(t *testing.T) {
 
 			str := s.Store()
 			q := str.Dead()
-			q.Clear()
+			err = q.Clear()
+			assert.NoError(t, err)
 			jid, data := fakeJob()
 
 			err = q.AddElement(util.Nows(), jid, data)
@@ -317,11 +336,12 @@ func TestPages(t *testing.T) {
 		t.Run("Dead", func(t *testing.T) {
 			str := s.Store()
 			q := str.Dead()
-			q.Clear()
+			err := q.Clear()
+			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Nows()
 
-			err := q.AddElement(ts, jid, data)
+			err = q.AddElement(ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/morgue/%s|%s", ts, jid), nil)

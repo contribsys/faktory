@@ -50,7 +50,9 @@ func TestSystem(t *testing.T) {
 	}
 	s.Register(webui.Subsystem(opts.WebBinding))
 
-	go s.Run()
+	go func() {
+		_ = s.Run()
+	}()
 
 	// this is a worker process so we need to set the global WID before connecting
 	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)

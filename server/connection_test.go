@@ -16,19 +16,24 @@ func TestConnectionBasics(t *testing.T) {
 
 	assert.NotNil(t, dc)
 
-	dc.Ok()
+	err := dc.Ok()
+	assert.NoError(t, err)
 	assert.Equal(t, "+OK\r\n", output(dc))
 
-	dc.Number(123)
+	err = dc.Number(123)
+	assert.NoError(t, err)
 	assert.Equal(t, ":123\r\n", output(dc))
 
-	dc.Result(nil)
+	err = dc.Result(nil)
+	assert.NoError(t, err)
 	assert.Equal(t, "$-1\r\n", output(dc))
 
-	dc.Result([]byte("{some:jobjson}"))
+	err = dc.Result([]byte("{some:jobjson}"))
+	assert.NoError(t, err)
 	assert.Equal(t, "$14\r\n{some:jobjson}\r\n", output(dc))
 
-	dc.Error("bad command", fmt.Errorf("permission denied"))
+	err = dc.Error("bad command", fmt.Errorf("permission denied"))
+	assert.NoError(t, err)
 	assert.Equal(t, "-ERR permission denied\r\n", output(dc))
 
 	dc.Close()

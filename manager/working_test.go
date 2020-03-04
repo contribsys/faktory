@@ -66,7 +66,8 @@ func TestLoadWorkingSet(t *testing.T) {
 
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, store.Working().Size())
-				store.Working().Clear()
+				err = store.Working().Clear()
+				assert.NoError(t, err)
 			}
 		})
 

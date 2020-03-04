@@ -83,13 +83,18 @@ func (m *manager) loadWorkingSet() error {
 		var res Reservation
 		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
-			return err
+			//  We can't return an error here, this method is best effort
+			// as we are booting the server. We can't allow corrupted data
+			// to stop Faktory from starting.
+			util.Error("Unable to restore working job", err)
+			return nil
 		}
 		m.workingMap[res.Job.Jid] = &res
 		addedCount++
 		return nil
 	})
 	if err != nil {
+		util.Error("Error restoring working set", err)
 		return err
 	}
 	if addedCount > 0 {
@@ -160,11 +165,14 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	// Lease is in-memory only
 	// A reservation can have a nil Lease if we restarted
 	if res.lease != nil {
-		res.lease.Release()
+		err = res.lease.Release()
+		if err != nil {
+			util.Error("Error releasing lease for "+jid, err)
+		}
 	}
 
 	if res.Job != nil {
-		m.store.Success()
+		_ = m.store.Success()
 		err = callMiddleware(m.ackChain, Ctx{context.Background(), res.Job, m, res}, func() error {
 			return nil
 		})
@@ -202,7 +210,10 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
 			util.Debugf("Auto-extending reservation time for %s", jid)
 			localres.texpiry = localres.extension
 			localres.Expiry = util.Thens(localres.extension)
-			m.store.Working().AddElement(localres.Expiry, jid, elm)
+			err = m.store.Working().AddElement(localres.Expiry, jid, elm)
+			if err != nil {
+				util.Error("Unable to extend reservation for "+jid, err)
+			}
 			continue
 		}
 

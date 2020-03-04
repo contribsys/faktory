@@ -43,7 +43,12 @@ func BootRedis(path string, sock string) (func(), error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
-		return func() { StopRedis(sock) }, nil
+		return func() {
+			err := StopRedis(sock)
+			if err != nil {
+				util.Error("Unable to stop Redis", err)
+			}
+		}, nil
 	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
@@ -170,7 +175,12 @@ func BootRedis(path string, sock string) (func(), error) {
 		return nil, err
 	}
 
-	return func() { StopRedis(sock) }, nil
+	return func() {
+		err := StopRedis(sock)
+		if err != nil {
+			util.Error("Unable to stop Redis", err)
+		}
+	}, nil
 }
 
 func OpenRedis(sock string, poolSize int) (Store, error) {

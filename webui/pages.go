@@ -26,7 +26,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Add("Cache-Control", "no-cache")
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,11 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		r.ParseForm()
+		err = r.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		keys := r.Form["bkey"]
 		if len(keys) > 0 {

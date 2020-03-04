@@ -39,7 +39,7 @@ func TestManager(t *testing.T) {
 
 			q, err := store.GetQueue("default")
 			assert.NoError(t, err)
-			q.Clear()
+			_, _ = q.Clear()
 			assert.EqualValues(t, 0, q.Size())
 
 			jids := []string{"", "id", "shortid"}
@@ -140,7 +140,7 @@ func TestManager(t *testing.T) {
 			job.At = "invalid time"
 			q, err := store.GetQueue(job.Queue)
 			assert.NoError(t, err)
-			q.Clear()
+			_, _ = q.Clear()
 			assert.EqualValues(t, 0, q.Size())
 			assert.Empty(t, job.EnqueuedAt)
 

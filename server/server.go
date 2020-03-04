@@ -185,31 +185,31 @@ func hash(pwd, salt string, iterations int) string {
 
 func startConnection(conn net.Conn, s *Server) *Connection {
 	// handshake must complete within 1 second
-	conn.SetDeadline(time.Now().Add(1 * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
 	iter := rand.Intn(4096) + 4000
 
 	var salt string
-	conn.Write([]byte(`+HI {"v":2`))
+	_, _ = conn.Write([]byte(`+HI {"v":2`))
 	if s.Options.Password != "" {
-		conn.Write([]byte(`,"i":`))
+		_, _ = conn.Write([]byte(`,"i":`))
 		iters := strconv.FormatInt(int64(iter), 10)
-		conn.Write([]byte(iters))
+		_, _ = conn.Write([]byte(iters))
 		salt = strconv.FormatInt(rand.Int63(), 16)
-		conn.Write([]byte(`,"s":"`))
-		conn.Write([]byte(salt))
-		conn.Write([]byte(`"}`))
+		_, _ = conn.Write([]byte(`,"s":"`))
+		_, _ = conn.Write([]byte(salt))
+		_, _ = conn.Write([]byte(`"}`))
 	} else {
-		conn.Write([]byte("}"))
+		_, _ = conn.Write([]byte("}"))
 	}
-	conn.Write([]byte("\r\n"))
+	_, _ = conn.Write([]byte("\r\n"))
 
 	buf := bufio.NewReader(conn)
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		util.Error("Closing connection", err)
+		util.Error("Bad connection", err)
 		conn.Close()
 		return nil
 	}
@@ -235,8 +235,8 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		}
 
 		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
-			conn.Write([]byte("-ERR Invalid password\r\n"))
-			conn.Close()
+			_, _ = conn.Write([]byte("-ERR Invalid password\r\n"))
+			_ = conn.Close()
 			return nil
 		}
 	}
@@ -261,7 +261,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	// disable deadline
-	conn.SetDeadline(time.Time{})
+	_ = conn.SetDeadline(time.Time{})
 
 	return cn
 }
@@ -280,8 +280,8 @@ func (s *Server) processLines(conn *Connection) {
 			return
 		}
 		if s.closed {
-			conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
-			conn.Close()
+			_ = conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
+			_ = conn.Close()
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")
@@ -295,7 +295,7 @@ func (s *Server) processLines(conn *Connection) {
 		}
 		proc, ok := CommandSet[verb]
 		if !ok {
-			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
+			_ = conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
 			atomic.AddUint64(&s.Stats.Commands, 1)
 			proc(conn, s, cmd)

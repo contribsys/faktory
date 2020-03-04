@@ -32,21 +32,6 @@ var colors = [...]int{
 	ErrorLevel: red,
 	FatalLevel: red,
 }
-var levelNames = [...]string{
-	DebugLevel: "debug",
-	InfoLevel:  "info",
-	WarnLevel:  "warn",
-	ErrorLevel: "error",
-	FatalLevel: "fatal",
-}
-
-var levelStrings = map[string]Level{
-	"debug": DebugLevel,
-	"info":  InfoLevel,
-	"warn":  WarnLevel,
-	"error": ErrorLevel,
-	"fatal": FatalLevel,
-}
 
 var strings = [...]string{
 	DebugLevel: "D",

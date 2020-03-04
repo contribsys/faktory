@@ -86,16 +86,16 @@ func TestWorkers(t *testing.T) {
 
 	assert.Equal(t, Running, entry.state)
 	beat.CurrentState = "quiet"
-	entry, ok = workers.heartbeat(beat)
+	entry, _ = workers.heartbeat(beat)
 	assert.Equal(t, Quiet, entry.state)
 	assert.True(t, entry.IsQuiet())
 
 	beat.CurrentState = ""
-	entry, ok = workers.heartbeat(beat)
+	entry, _ = workers.heartbeat(beat)
 	assert.Equal(t, Quiet, entry.state)
 
 	beat.CurrentState = "terminate"
-	entry, ok = workers.heartbeat(beat)
+	entry, _ = workers.heartbeat(beat)
 	assert.Equal(t, Terminate, entry.state)
 
 	count := workers.reapHeartbeats(client.lastHeartbeat)

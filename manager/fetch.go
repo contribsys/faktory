@@ -51,7 +51,6 @@ type Fetcher interface {
 }
 
 type BasicFetch struct {
-	m Manager
 	r *redis.Client
 }
 

@@ -113,6 +113,7 @@ func TestPoolClosePool(t *testing.T) {
 		resp <- "+OK\r\n"
 		res, err = cl.Beat("")
 		assert.Error(t, err)
+		assert.Equal(t, "", res)
 
 		// Pool should return an error when trying to get another client
 		cl, err = p.Get()

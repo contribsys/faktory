@@ -245,7 +245,7 @@ func (ui *WebUI) Run() (func(), error) {
 		}
 	}()
 	util.Infof("Web server now listening at %s", ui.Options.Binding)
-	return func() { s.Shutdown(context.Background()) }, nil
+	return func() { _ = s.Shutdown(context.Background()) }, nil
 }
 
 func Layout(w io.Writer, req *http.Request, yield func()) {

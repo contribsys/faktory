@@ -109,6 +109,10 @@ megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 
 # TODO integrate a few useful Golang linters.
+lint:
+	# brew install golangci/tap/golangci-lint
+	golangci-lint run
+
 fmt: ## Format the code
 	go fmt ./...
 

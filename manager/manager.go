@@ -125,7 +125,7 @@ func newManager(s storage.Store) *manager {
 		ackChain:   make(MiddlewareChain, 0),
 		fetchChain: make(MiddlewareChain, 0),
 	}
-	m.loadWorkingSet()
+	_ = m.loadWorkingSet()
 	m.fetcher = BasicFetcher(m.Redis())
 	return m
 }

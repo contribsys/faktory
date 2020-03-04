@@ -32,11 +32,11 @@ var CommandSet = map[string]command{
 }
 
 func track(c *Connection, s *Server, cmd string) {
-	c.Error(cmd, fmt.Errorf("The Tracking subsystem is only available in Faktory Enterprise"))
+	_ = c.Error(cmd, fmt.Errorf("The Tracking subsystem is only available in Faktory Enterprise"))
 }
 
 func batch(c *Connection, s *Server, cmd string) {
-	c.Error(cmd, fmt.Errorf("The Batch subsystem is only available in Faktory Enterprise"))
+	_ = c.Error(cmd, fmt.Errorf("The Batch subsystem is only available in Faktory Enterprise"))
 }
 
 func flush(c *Connection, s *Server, cmd string) {
@@ -47,11 +47,11 @@ func flush(c *Connection, s *Server, cmd string) {
 	}
 	err := s.store.Flush()
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Ok()
+	_ = c.Ok()
 }
 
 func end(c *Connection, s *Server, cmd string) {
@@ -68,24 +68,24 @@ func push(c *Connection, s *Server, cmd string) {
 
 	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
+		_ = c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
 		return
 	}
 
 	err = s.manager.Push(&job)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Ok()
+	_ = c.Ok()
 }
 
 func fetch(c *Connection, s *Server, cmd string) {
 	if c.client.state != Running {
 		// quiet or terminated workers should not get new jobs
 		time.Sleep(2 * time.Second)
-		c.Result(nil)
+		_ = c.Result(nil)
 		return
 	}
 
@@ -95,18 +95,18 @@ func fetch(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
 	job, err := s.manager.Fetch(ctx, c.client.Wid, qs...)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 	if job != nil {
 		res, err := json.Marshal(job)
 		if err != nil {
-			c.Error(cmd, err)
+			_ = c.Error(cmd, err)
 			return
 		}
-		c.Result(res)
+		_ = c.Result(res)
 	} else {
-		c.Result(nil)
+		_ = c.Result(nil)
 	}
 }
 
@@ -116,21 +116,21 @@ func ack(c *Connection, s *Server, cmd string) {
 	var hash map[string]string
 	err := json.Unmarshal([]byte(data), &hash)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		_ = c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
 		return
 	}
 	jid, ok := hash["jid"]
 	if !ok {
-		c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		_ = c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
 		return
 	}
 	_, err = s.manager.Acknowledge(jid)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Ok()
+	_ = c.Ok()
 }
 
 func fail(c *Connection, s *Server, cmd string) {
@@ -139,31 +139,31 @@ func fail(c *Connection, s *Server, cmd string) {
 	var failure manager.FailPayload
 	err := json.Unmarshal([]byte(data), &failure)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid FAIL %s", data))
+		_ = c.Error(cmd, fmt.Errorf("Invalid FAIL %s", data))
 		return
 	}
 
 	err = s.manager.Fail(&failure)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
-	c.Ok()
+	_ = c.Ok()
 }
 
 func info(c *Connection, s *Server, cmd string) {
 	data, err := s.CurrentState()
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Result(bytes)
+	_ = c.Result(bytes)
 }
 
 type ClientBeat struct {
@@ -177,19 +177,19 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	var beat ClientBeat
 	err := json.Unmarshal([]byte(data), &beat)
 	if err != nil {
-		c.Error(cmd, fmt.Errorf("Invalid BEAT %s", data))
+		_ = c.Error(cmd, fmt.Errorf("Invalid BEAT %s", data))
 		return
 	}
 
 	worker, ok := s.workers.heartbeat(&beat)
 	if !ok {
-		c.Error(cmd, fmt.Errorf("Unknown worker %s", beat.Wid))
+		_ = c.Error(cmd, fmt.Errorf("Unknown worker %s", beat.Wid))
 		return
 	}
 
 	if worker.state == Running {
-		c.Ok()
+		_ = c.Ok()
 	} else {
-		c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(worker.state))))
+		_ = c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(worker.state))))
 	}
 }

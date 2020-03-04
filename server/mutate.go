@@ -103,7 +103,7 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 func mutate(c *Connection, s *Server, cmd string) {
 	parts := strings.Split(cmd, " ")
 	if len(parts) != 2 {
-		c.Error(cmd, fmt.Errorf("Invalid format"))
+		_ = c.Error(cmd, fmt.Errorf("Invalid format"))
 		return
 	}
 
@@ -111,7 +111,7 @@ func mutate(c *Connection, s *Server, cmd string) {
 	var op client.Operation
 	err = json.Unmarshal([]byte(parts[1]), &op)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
@@ -129,11 +129,11 @@ func mutate(c *Connection, s *Server, cmd string) {
 	}
 
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Ok()
+	_ = c.Ok()
 }
 
 func mutateClear(store storage.Store, target string) error {

@@ -330,10 +330,13 @@ func processedHistory(req *http.Request) string {
 	procd := map[string]uint64{}
 	//faild := map[string]int64{}
 
-	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
 		//faild[daystr] = f
 	})
+	if err != nil {
+		return err.Error()
+	}
 	str, err := json.Marshal(procd)
 	if err != nil {
 		return err.Error()
@@ -346,10 +349,13 @@ func failedHistory(req *http.Request) string {
 	//procd := map[string]int64{}
 	faild := map[string]uint64{}
 
-	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		//procd[daystr] = p
 		faild[daystr] = f
 	})
+	if err != nil {
+		return err.Error()
+	}
 	str, err := json.Marshal(faild)
 	if err != nil {
 		return err.Error()
@@ -361,7 +367,7 @@ func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
 	c := ctx(req)
 	names := make(sort.StringSlice, len(locales))
 	i := 0
-	for name, _ := range locales {
+	for name := range locales {
 		names[i] = name
 		i++
 	}
@@ -395,7 +401,7 @@ func displayLimitedArgs(args []interface{}, limit int) string {
 			fmt.Fprintf(&b, s[0:limit])
 			b.WriteRune('…')
 		} else {
-			fmt.Fprintf(&b, s)
+			fmt.Fprint(&b, s)
 		}
 		if idx+1 < len(args) {
 			b.WriteRune(',')

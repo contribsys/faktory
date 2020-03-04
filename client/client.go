@@ -168,7 +168,10 @@ func Dial(srv *Server, password string) (*Client, error) {
 			return nil, err
 		}
 		if x, ok := conn.(*net.TCPConn); ok {
-			x.SetKeepAlive(true)
+			err = x.SetKeepAlive(true)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -232,7 +235,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 }
 
 func (c *Client) Close() error {
-	writeLine(c.wtr, "END", nil)
+	_ = writeLine(c.wtr, "END", nil)
 	return c.conn.Close()
 }
 

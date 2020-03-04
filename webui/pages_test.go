@@ -38,9 +38,9 @@ func TestPages(t *testing.T) {
 
 			s.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
 			str := s.Store()
-			str.GetQueue("default")
+			_, _ = str.GetQueue("default")
 			q, _ := str.GetQueue("foobar")
-			q.Clear()
+			_, _ = q.Clear()
 			args := []string{"faktory", "rocks", "!!", ":)"}
 			for _, v := range args {
 				q.Push([]byte(v))

@@ -103,7 +103,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	m.store.Failure()
+	_ = m.store.Failure()
 
 	job := res.Job
 	if job.Retry == 0 {

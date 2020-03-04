@@ -53,8 +53,8 @@ func runServer(binding string, runner func()) {
 }
 
 func TestServerStart(t *testing.T) {
-	runServer("localhost:7420", func() {
-		conn, err := net.DialTimeout("tcp", "localhost:7420", 1*time.Second)
+	runServer("localhost:4477", func() {
+		conn, err := net.DialTimeout("tcp", "localhost:4477", 1*time.Second)
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)
 

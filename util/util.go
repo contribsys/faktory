@@ -1,8 +1,6 @@
 package util
 
 import (
-	"bufio"
-	"bytes"
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -33,17 +31,6 @@ func FileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-// ReadLines reads a whole file into memory
-// and returns a slice of its lines.
-func ReadLines(data []byte) ([]string, error) {
-	var lines []string
-	scan := bufio.NewScanner(bytes.NewReader(data))
-	for scan.Scan() {
-		lines = append(lines, scan.Text())
-	}
-	return lines, scan.Err()
 }
 
 func RandomJid() string {

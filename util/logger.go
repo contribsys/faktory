@@ -33,7 +33,7 @@ var colors = [...]int{
 	FatalLevel: red,
 }
 
-var strings = [...]string{
+var lvlPrefix = [...]string{
 	DebugLevel: "D",
 	InfoLevel:  "I",
 	WarnLevel:  "W",
@@ -53,14 +53,14 @@ const (
 )
 
 func llog(lvl Level, msg string) {
-	level := strings[lvl]
+	prefix := lvlPrefix[lvl]
 	ts := time.Now().UTC().Format(TimeFormat)
 
 	if colorize {
 		color := colors[lvl]
-		fmt.Fprintf(logg, "\033[%dm%s\033[0m %s %s\n", color, level, ts, msg)
+		fmt.Fprintf(logg, "\033[%dm%s\033[0m %s %s\n", color, prefix, ts, msg)
 	} else {
-		fmt.Fprintf(logg, "%s %s %s\n", level, ts, msg)
+		fmt.Fprintf(logg, "%s %s %s\n", prefix, ts, msg)
 	}
 }
 

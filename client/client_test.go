@@ -62,6 +62,11 @@ func TestClientOperations(t *testing.T) {
 		assert.Equal(t, "", res)
 		assert.Contains(t, <-req, "BEAT")
 
+		resp <- "+OK\r\n"
+		err = cl.Kill(Retries, OfType("SomeJobType"))
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "MUTATE")
+
 		job, err := cl.Fetch()
 		assert.Error(t, err)
 		assert.Nil(t, job)
@@ -71,6 +76,11 @@ func TestClientOperations(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, job)
 		assert.Contains(t, <-req, "FETCH")
+
+		resp <- "+OK\r\n"
+		err = cl.Push(NewJob("foo", 1, 2))
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "PUSH")
 
 		resp <- "+OK\r\n"
 		err = cl.Ack("123456")

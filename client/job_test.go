@@ -26,4 +26,8 @@ func TestJobCustomOptions(t *testing.T) {
 	assert.EqualValues(t, 100, job.Custom["unique_for"])
 	assert.EqualValues(t, UntilStart, job.Custom["unique_until"])
 	assert.EqualValues(t, expiresAt.Format(time.RFC3339Nano), job.Custom["expires_at"])
+
+	val, ok := job.GetCustom("unique_for")
+	assert.EqualValues(t, 100, val)
+	assert.True(t, ok)
 }

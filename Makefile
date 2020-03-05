@@ -83,7 +83,14 @@ generate:
 	go generate github.com/contribsys/faktory/webui
 
 cover:
-	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
+	go test -coverprofile cover.out \
+		github.com/contribsys/faktory/cli \
+		github.com/contribsys/faktory/client \
+		github.com/contribsys/faktory/manager \
+		github.com/contribsys/faktory/server \
+		github.com/contribsys/faktory/storage \
+		github.com/contribsys/faktory/util \
+		github.com/contribsys/faktory/webui
 	go tool cover -html=cover.out -o coverage.html
 	open coverage.html
 

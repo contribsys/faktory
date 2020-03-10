@@ -5,6 +5,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 ## HEAD
 
 - Integrate golangci-lint and numerous minor changes for issues it raised
+- Support staging environment `-e staging`
 
 ## 1.3.0
 

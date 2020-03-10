@@ -35,7 +35,7 @@ func ParseArguments() CliOptions {
 	flag.StringVar(&defaults.WebBinding, "w", "localhost:7420", "WebUI binding")
 	flag.StringVar(&defaults.CmdBinding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
-	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, production)")
+	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production)")
 
 	// undocumented on purpose, we don't want people changing these if possible
 	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")
@@ -72,7 +72,7 @@ func ParseArguments() CliOptions {
 func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
 	log.Println("-w [binding]\tWeb UI binding (use :7420 to listen on all interfaces), default: localhost:7420")
-	log.Println("-e [env]\tSet environment (development, production), default: development")
+	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (error, warn, info, debug), default: info")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")
@@ -252,7 +252,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 		}
 	}
 
-	if env == "production" && !skip() && password == "" {
+	if env != "development" && !skip() && password == "" {
 		ok, _ := util.FileExists("/etc/faktory/password")
 		if ok {
 			password = "/etc/faktory/password"
@@ -270,8 +270,8 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 		password = strings.TrimSpace(string(data))
 	}
 
-	if env == "production" && !skip() && password == "" {
-		return "", fmt.Errorf("Faktory requires a password to be set in production mode, see the Security wiki page")
+	if env != "development" && !skip() && password == "" {
+		return "", fmt.Errorf("Faktory requires a password to be set in staging or production, see the Security wiki page")
 	}
 
 	return password, nil

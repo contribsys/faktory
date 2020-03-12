@@ -2,8 +2,9 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.4.0
 
+- Faktory Enterprise now supports **[Job Tracking](https://github.com/contribsys/faktory/wiki/Ent-Tracking)**.
 - Integrate golangci-lint and numerous minor changes for issues it raised
 - Support staging environment `-e staging`
 

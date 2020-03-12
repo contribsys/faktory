@@ -5,6 +5,11 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.4.0
+
+- Major new feature: **[Job Tracking](https://github.com/contribsys/faktory/wiki/Ent-Tracking)** [#278]
+- `-e staging` environment support, limited to 100 connections
+
 ## 1.3.0
 
 - Allow custom WebUI tweaks for OEM whitelabeling by customers looking

@@ -5,6 +5,11 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
+## 1.4.0
+
+- `-e staging` environment support, limited to 100 connections
+- Fixes for linter problems
+
 ## 1.3.0
 
 * Validate statsd tags, per Datadog docs [#283]

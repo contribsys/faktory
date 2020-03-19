@@ -76,7 +76,8 @@ func (s *Server) Manager() manager.Manager {
 }
 
 func (s *Server) Reload() {
-	for _, x := range s.Subsystems {
+	for idx := range s.Subsystems {
+		x := s.Subsystems[idx]
 		err := x.Reload(s)
 		if err != nil {
 			util.Warnf("Subsystem %s returned reload error: %v", x.Name(), err)
@@ -117,7 +118,8 @@ func (s *Server) Run() error {
 		panic("Server hasn't been booted")
 	}
 
-	for _, x := range s.Subsystems {
+	for idx := range s.Subsystems {
+		x := s.Subsystems[idx]
 		err := x.Start(s)
 		if err != nil {
 			util.Error("Subsystem failed to start", err)

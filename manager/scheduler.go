@@ -36,9 +36,9 @@ func (m *manager) schedule(when time.Time, set storage.SortedSet) (int64, error)
 	}
 
 	count := int64(0)
-	for _, elm := range elms {
+	for idx := range elms {
 		var job client.Job
-		err := json.Unmarshal(elm, &job)
+		err := json.Unmarshal(elms[idx], &job)
 		if err != nil {
 			util.Error("Unable to unmarshal json", err)
 			continue

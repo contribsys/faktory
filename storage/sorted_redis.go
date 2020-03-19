@@ -103,9 +103,9 @@ func (rs *redisSorted) Get(key []byte) (SortedEntry, error) {
 		return NewEntry(time_f, []byte(elms[0])), nil
 	}
 
-	for _, elm := range elms {
-		if strings.Index(elm, jid) > 0 {
-			return NewEntry(time_f, []byte(elm)), nil
+	for idx := range elms {
+		if strings.Index(elms[idx], jid) > 0 {
+			return NewEntry(time_f, []byte(elms[idx])), nil
 		}
 	}
 	return nil, nil
@@ -192,8 +192,8 @@ func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEnt
 		return 0, err
 	}
 
-	for idx, z := range zs {
-		err = fn(idx, NewEntry(z.Score, []byte(z.Member.(string))))
+	for idx := range zs {
+		err = fn(idx, NewEntry(zs[idx].Score, []byte(zs[idx].Member.(string))))
 		if err != nil {
 			return idx, err
 		}
@@ -232,9 +232,9 @@ func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
 		return count == 1, err
 	}
 
-	for _, elm := range elms {
-		if strings.Index(elm, jid) > 0 {
-			count, err := rs.store.rclient.ZRem(rs.name, elm).Result()
+	for idx := range elms {
+		if strings.Index(elms[idx], jid) > 0 {
+			count, err := rs.store.rclient.ZRem(rs.name, elms[idx]).Result()
 			return count == 1, err
 		}
 	}
@@ -286,8 +286,8 @@ func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
 	}
 
 	results := make([][]byte, len(jobs))
-	for idx, j := range jobs {
-		results[idx] = []byte(j)
+	for idx := range jobs {
+		results[idx] = []byte(jobs[idx])
 	}
 	return results, nil
 }

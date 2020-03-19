@@ -207,13 +207,14 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 		fmt.Sprintf("%s/conf.d/*.toml", cdir),
 	}
 
-	for _, glob := range globs {
-		matches, err := filepath.Glob(glob)
+	for idx := range globs {
+		matches, err := filepath.Glob(globs[idx])
 		if err != nil {
 			return nil, err
 		}
 
-		for _, file := range matches {
+		for fidx := range matches {
+			file := matches[fidx]
 			util.Debugf("Reading configuration in %s", file)
 			fileBytes, err := ioutil.ReadFile(file)
 			if err != nil {

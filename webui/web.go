@@ -56,8 +56,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	for _, filename := range files {
-		name := strings.Split(filename, ".")[0]
+	for idx := range files {
+		name := strings.Split(files[idx], ".")[0]
 		locales[name] = nil
 	}
 	//util.Debugf("Initialized %d locales", len(files))

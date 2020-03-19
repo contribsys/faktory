@@ -231,13 +231,13 @@ func (w *workers) reapHeartbeats(t time.Time) int {
 	count := len(toDelete)
 	conns := 0
 	if count > 0 {
-		for _, k := range toDelete {
-			cd := w.heartbeats[k]
+		for idx := range toDelete {
+			cd := w.heartbeats[toDelete[idx]]
 			for conn := range cd.connections {
 				conn.Close()
 				conns += 1
 			}
-			delete(w.heartbeats, k)
+			delete(w.heartbeats, toDelete[idx])
 		}
 
 		util.Debugf("Reaped %d worker heartbeats", count)

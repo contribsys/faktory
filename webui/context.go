@@ -135,8 +135,8 @@ func acceptableLanguages(header string) []string {
 	pairs := strings.Split(header, ",")
 	// we ignore the q weighting and just assume the
 	// values are sorted by acceptability
-	for _, pair := range pairs {
-		trimmed := strings.Trim(pair, " ")
+	for idx := range pairs {
+		trimmed := strings.Trim(pairs[idx], " ")
 		split := strings.Split(trimmed, ";")
 		langs = append(langs, strings.ToLower(split[0]))
 	}
@@ -150,16 +150,16 @@ func localeFromHeader(value string) string {
 
 	langs := acceptableLanguages(value)
 	//util.Debugf("A-L: %s %v", value, langs)
-	for _, lang := range langs {
-		strs := translations(lang)
+	for idx := range langs {
+		strs := translations(langs[idx])
 		if strs != nil {
-			return lang
+			return langs[idx]
 		}
 	}
 
 	// fallback by checking the language component of any dialect pairs, e.g. "sv-se"
-	for _, lang := range langs {
-		pair := strings.Split(lang, "-")
+	for idx := range langs {
+		pair := strings.Split(langs[idx], "-")
 		if len(pair) == 2 {
 			baselang := pair[0]
 			strs := translations(baselang)

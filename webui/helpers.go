@@ -215,8 +215,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		if len(keys) == 1 && keys[0] == "all" {
 			return set.Clear()
 		} else {
-			for _, key := range keys {
-				_, err := set.Remove([]byte(key))
+			for idx := range keys {
+				_, err := set.Remove([]byte(keys[idx]))
 				// ok doesn't really matter
 				if err != nil {
 					return err
@@ -228,8 +228,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		if len(keys) == 1 && keys[0] == "all" {
 			return ctx(req).Store().EnqueueAll(set)
 		} else {
-			for _, key := range keys {
-				err := ctx(req).Store().EnqueueFrom(set, []byte(key))
+			for idx := range keys {
+				err := ctx(req).Store().EnqueueFrom(set, []byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -243,8 +243,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 			// TODO Make this 180 day dead job expiry dynamic per-job or
 			// a global variable in TOML? PRs welcome.
 			expiry := time.Now().Add(180 * 24 * time.Hour)
-			for _, key := range keys {
-				entry, err := set.Get([]byte(key))
+			for idx := range keys {
+				entry, err := set.Get([]byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -375,8 +375,8 @@ func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
 	}
 	names.Sort()
 
-	for _, name := range names {
-		fn(name, name == c.locale)
+	for idx := range names {
+		fn(names[idx], names[idx] == c.locale)
 	}
 }
 
@@ -390,12 +390,12 @@ func displayFullArgs(args []interface{}) string {
 
 func displayLimitedArgs(args []interface{}, limit int) string {
 	var b strings.Builder
-	for idx, arg := range args {
+	for idx := range args {
 		var s string
-		data, err := json.Marshal(arg)
+		data, err := json.Marshal(args[idx])
 		if err != nil {
 			util.Warnf("Unable to marshal argument for display: %s", err)
-			s = fmt.Sprintf("%#v", arg)
+			s = fmt.Sprintf("%#v", args[idx])
 		} else {
 			s = string(data)
 		}

@@ -69,8 +69,8 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		if len(keys) > 0 {
 			// delete specific entries
 			bkeys := make([][]byte, len(keys))
-			for idx, key := range keys {
-				bindata, err := base64.RawURLEncoding.DecodeString(key)
+			for idx := range keys {
+				bindata, err := base64.RawURLEncoding.DecodeString(keys[idx])
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return

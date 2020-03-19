@@ -89,8 +89,8 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 
 	if len(filter.Jids) > 0 {
 		return "*", func(value string) bool {
-			for _, jid := range filter.Jids {
-				if strings.Index(value, fmt.Sprintf(`"jid":"%s"`, jid)) > 0 {
+			for idx := range filter.Jids {
+				if strings.Index(value, fmt.Sprintf(`"jid":"%s"`, filter.Jids[idx])) > 0 {
 					return true
 				}
 			}

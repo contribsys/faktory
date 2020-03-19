@@ -188,9 +188,9 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
 	}
 
 	count := 0
-	for _, elm := range elms {
+	for idx := range elms {
 		var res Reservation
-		err := json.Unmarshal(elm, &res)
+		err := json.Unmarshal(elms[idx], &res)
 		if err != nil {
 			util.Error("Unable to read reservation", err)
 			continue
@@ -210,7 +210,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
 			util.Debugf("Auto-extending reservation time for %s", jid)
 			localres.texpiry = localres.extension
 			localres.Expiry = util.Thens(localres.extension)
-			err = m.store.Working().AddElement(localres.Expiry, jid, elm)
+			err = m.store.Working().AddElement(localres.Expiry, jid, elms[idx])
 			if err != nil {
 				util.Error("Unable to extend reservation for "+jid, err)
 			}

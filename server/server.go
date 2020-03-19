@@ -222,7 +222,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	client, err := clientDataFromHello(line[5:])
+	cl, err := clientDataFromHello(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in HELLO", err)
 		conn.Close()
@@ -230,11 +230,11 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	if s.Options.Password != "" {
-		if client.Version < 2 {
+		if cl.Version < 2 {
 			iter = 1
 		}
 
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
+		if subtle.ConstantTimeCompare([]byte(cl.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
 			_, _ = conn.Write([]byte("-ERR Invalid password\r\n"))
 			_ = conn.Close()
 			return nil
@@ -242,15 +242,15 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	cn := &Connection{
-		client: client,
+		client: cl,
 		conn:   conn,
 		buf:    buf,
 	}
 
-	if client.Wid == "" {
+	if cl.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		s.workers.setupHeartbeat(client, cn)
+		s.workers.setupHeartbeat(cl, cn)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))

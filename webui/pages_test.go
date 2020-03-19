@@ -515,8 +515,8 @@ func TestPages(t *testing.T) {
 	})
 }
 
-func (ui *WebUI) NewRequest(method string, url string, body io.Reader) (*http.Request, error) {
-	r := httptest.NewRequest(method, url, body)
+func (ui *WebUI) NewRequest(method string, urlstr string, body io.Reader) (*http.Request, error) {
+	r := httptest.NewRequest(method, urlstr, body)
 	dctx := &DefaultContext{
 		Context: r.Context(),
 		webui:   ui,
@@ -527,13 +527,16 @@ func (ui *WebUI) NewRequest(method string, url string, body io.Reader) (*http.Re
 	return r.WithContext(dctx), nil
 }
 
+var (
+	searchBody   = regexp.MustCompile(`name="csrf_token" value="(.*)"/>`)
+	searchCookie = regexp.MustCompile(`csrf_token=(.*);`)
+)
+
 func findCSRFTokens(w http.ResponseWriter, body string) (string, string) {
 	bodyToken := ""
 	cookieToken := ""
 
 	// parse body token
-	searchBody, _ := regexp.Compile(`name="csrf_token" value="(.*)"/>`)
-	searchCookie, _ := regexp.Compile(`csrf_token=(.*);`)
 	results := searchBody.FindStringSubmatch(body)
 	if len(results) > 1 {
 		fmt.Println(results)

@@ -59,13 +59,13 @@ func TestBasicSortedOps(t *testing.T) {
 			sset := store.Retries()
 			assert.EqualValues(t, 0, sset.Size())
 
-			time := util.Nows()
+			tim := util.Nows()
 			jid, data := fakeJob()
-			err := sset.AddElement(time, jid, data)
+			err := sset.AddElement(tim, jid, data)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, sset.Size())
 
-			key := fmt.Sprintf("%s|%s", time, jid)
+			key := fmt.Sprintf("%s|%s", tim, jid)
 			entry, err := sset.Get([]byte(key))
 			assert.NoError(t, err)
 			assert.NotNil(t, entry)
@@ -76,11 +76,11 @@ func TestBasicSortedOps(t *testing.T) {
 			// add a second job with exact same time to handle edge case of
 			// sorted set entries with same score.
 			newjid, payload := fakeJob()
-			err = sset.AddElement(time, newjid, payload)
+			err = sset.AddElement(tim, newjid, payload)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 2, sset.Size())
 
-			newkey := fmt.Sprintf("%s|%s", time, newjid)
+			newkey := fmt.Sprintf("%s|%s", tim, newjid)
 			entry, err = sset.Get([]byte(newkey))
 			assert.NoError(t, err)
 			assert.Equal(t, payload, entry.Value())
@@ -90,12 +90,12 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.EqualValues(t, 1, sset.Size())
 			assert.True(t, ok)
 
-			ok, err = sset.RemoveElement(time, jid)
+			ok, err = sset.RemoveElement(tim, jid)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, sset.Size())
 			assert.True(t, ok)
 
-			err = sset.AddElement(time, newjid, payload)
+			err = sset.AddElement(tim, newjid, payload)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, sset.Size())
 

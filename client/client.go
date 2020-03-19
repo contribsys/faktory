@@ -377,8 +377,8 @@ func (c *Client) Beat(args ...string) (string, error) {
 	return val, err
 }
 
-func (c *Client) writeLine(io *bufio.Writer, op string, payload []byte) error {
-	err := writeLine(io, op, payload)
+func (c *Client) writeLine(wtr *bufio.Writer, op string, payload []byte) error {
+	err := writeLine(wtr, op, payload)
 	if err != nil {
 		c.markUnusable()
 	}
@@ -434,23 +434,23 @@ func emptyClientData() *ClientData {
 	return client
 }
 
-func writeLine(io *bufio.Writer, op string, payload []byte) error {
+func writeLine(wtr *bufio.Writer, op string, payload []byte) error {
 	//util.Debugf("> %s %s", op, string(payload))
 
-	_, err := io.Write([]byte(op))
+	_, err := wtr.Write([]byte(op))
 	if payload != nil {
 		if err == nil {
-			_, err = io.Write([]byte(" "))
+			_, err = wtr.Write([]byte(" "))
 		}
 		if err == nil {
-			_, err = io.Write(payload)
+			_, err = wtr.Write(payload)
 		}
 	}
 	if err == nil {
-		_, err = io.Write([]byte("\r\n"))
+		_, err = wtr.Write([]byte("\r\n"))
 	}
 	if err == nil {
-		err = io.Flush()
+		err = wtr.Flush()
 	}
 	return err
 }

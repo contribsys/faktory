@@ -120,7 +120,8 @@ func uintWithDelimiter(val uint64) string {
 		if i == 0 {
 			return string(out)
 		}
-		if k++; k == 3 {
+		k++
+		if k == 3 {
 			j, k = j-1, 0
 			out[j] = ','
 		}
@@ -266,13 +267,14 @@ func uptimeInDays(req *http.Request) string {
 }
 
 func redis_info(req *http.Request) string {
-	client := ctx(req).Store().(storage.Redis)
-	val, err := client.Redis().Info().Result()
+	cl := ctx(req).Store().(storage.Redis)
+	val, err := cl.Redis().Info().Result()
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
 	return val
 }
+
 func rss() string {
 	ex, err := util.FileExists("/proc/self/status")
 	if err != nil || !ex {
@@ -390,12 +392,12 @@ func displayLimitedArgs(args []interface{}, limit int) string {
 	var b strings.Builder
 	for idx, arg := range args {
 		var s string
-		bytes, err := json.Marshal(arg)
+		data, err := json.Marshal(arg)
 		if err != nil {
 			util.Warnf("Unable to marshal argument for display: %s", err)
 			s = fmt.Sprintf("%#v", arg)
 		} else {
-			s = string(bytes)
+			s = string(data)
 		}
 		if len(s) > limit {
 			fmt.Fprintf(&b, s[0:limit])

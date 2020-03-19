@@ -140,11 +140,11 @@ func (c *Client) Clear(name Structure) error {
 }
 
 func (c *Client) mutate(op Operation) error {
-	json, err := json.Marshal(op)
+	j, err := json.Marshal(op)
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "MUTATE", json)
+	err = writeLine(c.wtr, "MUTATE", j)
 	if err != nil {
 		return err
 	}

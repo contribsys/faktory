@@ -37,6 +37,7 @@ Restart=on-failure
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=faktory
+Environment=FAKTORY_REDIS_TIMEOUT=200
 
 [Install]
 WantedBy=multi-user.target

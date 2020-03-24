@@ -1,5 +1,5 @@
 FROM alpine:3.8
-RUN apk add --no-cache redis ca-certificates socat
+RUN apk add --no-cache redis ca-certificates socat libc6-compat
 COPY ./faktory /
 
 RUN mkdir -p /root/.faktory/db

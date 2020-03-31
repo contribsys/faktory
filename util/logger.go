@@ -64,25 +64,6 @@ func llog(lvl Level, msg string) {
 	}
 }
 
-// This generic logging interface hide
-// a Logrus logger or another impl
-type Logger interface {
-	Debug(arg string)
-	Debugf(format string, args ...interface{})
-	Info(arg string)
-	Infof(format string, args ...interface{})
-	Warn(arg string)
-	Warnf(format string, args ...interface{})
-	Error(arg string)
-	Errorf(format string, args ...interface{})
-
-	// Log and terminate process (unrecoverable)
-	Fatal(arg string)
-
-	// Log with fmt.Printf-like formatting and terminate process (unrecoverable)
-	Fatalf(format string, args ...interface{})
-}
-
 //
 // Logging functions
 //

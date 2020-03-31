@@ -80,7 +80,7 @@ func InitLogger(level string) {
 }
 
 func Error(msg string, err error) {
-	llog(ErrorLevel, fmt.Sprintf("%s: %s", msg, err))
+	llog(ErrorLevel, fmt.Sprintf("%s: %v", msg, err))
 }
 
 // Uh oh, not good but not worthy of process death

@@ -31,7 +31,7 @@ release:
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## install build prereqs
-	@go get github.com/benbjohnson/ego/cmd/ego
+	@go get github.com/benbjohnson/ego/...
 	@go get github.com/go-bindata/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 

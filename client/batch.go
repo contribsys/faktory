@@ -64,20 +64,19 @@ func NewBatch(cl *Client) *Batch {
 // and avoid the obvious race condition.
 func (b *Batch) Jobs(fn func() error) error {
 	if b.new {
-		_, err := b.faktory.BatchNew(b)
-		if err != nil {
-			return err
+		if _, err := b.faktory.BatchNew(b); err != nil {
+			return fmt.Errorf("cannot create new batch: %w", err)
 		}
 	}
 	if b.faktory == nil || b.committed {
 		return BatchNotOpen
 	}
 
-	err := fn()
-	if err == nil {
-		return b.Commit()
+	if err := fn(); err != nil {
+		return fmt.Errorf("cannot push jobs in the %q batch: %w", b.Bid, err)
 	}
-	return err
+
+	return b.Commit()
 }
 
 func (b *Batch) Push(job *Job) error {
@@ -101,10 +100,14 @@ func (b *Batch) Commit() error {
 	if b.faktory == nil || b.committed {
 		return BatchAlreadyCommitted
 	}
-	err := b.faktory.BatchCommit(b.Bid)
+	if err := b.faktory.BatchCommit(b.Bid); err != nil {
+		return fmt.Errorf("cannot commit %q batch: %w", b.Bid, err)
+	}
+
 	b.faktory = nil
 	b.committed = true
-	return err
+
+	return nil
 }
 
 var (

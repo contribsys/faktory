@@ -48,7 +48,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		opts.Binding = "localhost:7419"
 	}
 	if opts.StorageDirectory == "" {
-		return nil, fmt.Errorf("empty storage directory")
+		return nil, fmt.Errorf("missing or empty storage directory")
 	}
 
 	s := &Server{
@@ -76,11 +76,9 @@ func (s *Server) Manager() manager.Manager {
 }
 
 func (s *Server) Reload() {
-	for idx := range s.Subsystems {
-		x := s.Subsystems[idx]
-		err := x.Reload(s)
-		if err != nil {
-			util.Warnf("Subsystem %s returned reload error: %v", x.Name(), err)
+	for _, subsystem := range s.Subsystems {
+		if err := subsystem.Reload(s); err != nil {
+			util.Warnf("Subsystem %s returned reload error: %v", subsystem.Name(), err)
 		}
 	}
 }
@@ -92,13 +90,13 @@ func (s *Server) AddTask(everySec int64, task Taskable) {
 func (s *Server) Boot() error {
 	store, err := storage.Open("redis", s.Options.RedisSock, s.Options.PoolSize)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open redis database: %w", err)
 	}
 
 	listener, err := net.Listen("tcp", s.Options.Binding)
 	if err != nil {
 		store.Close()
-		return err
+		return fmt.Errorf("cannot listen on %s: %w", s.Options.Binding, err)
 	}
 
 	s.mu.Lock()
@@ -118,13 +116,11 @@ func (s *Server) Run() error {
 		panic("Server hasn't been booted")
 	}
 
-	for idx := range s.Subsystems {
-		x := s.Subsystems[idx]
-		err := x.Start(s)
-		if err != nil {
+	for _, subsystem := range s.Subsystems {
+		if err := subsystem.Start(s); err != nil {
 			util.Error("Subsystem failed to start", err)
 			close(s.Stopper())
-			return err
+			return fmt.Errorf("cannot start server subsystem: %w", err)
 		}
 	}
 

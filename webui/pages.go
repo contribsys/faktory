@@ -152,7 +152,21 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	data, err := ctx(r).Store().Retries().Get([]byte(key))
+
+	set := ctx(r).Store().Retries()
+	if r.Method == "POST" {
+		action := r.FormValue("action")
+		keys := []string{key}
+		err := actOn(r, set, action, keys)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			Redirect(w, r, "/retries", http.StatusFound)
+		}
+		return
+	}
+
+	data, err := set.Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -219,7 +233,20 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := ctx(r).Store().Scheduled().Get([]byte(key))
+	set := ctx(r).Store().Scheduled()
+	if r.Method == "POST" {
+		action := r.FormValue("action")
+		keys := []string{key}
+		err := actOn(r, set, action, keys)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			Redirect(w, r, "/scheduled", http.StatusFound)
+		}
+		return
+	}
+
+	data, err := set.Get([]byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

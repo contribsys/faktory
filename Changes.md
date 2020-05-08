@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Fix form handler on Scheduled Job and Retry Job UI pages [#236]
+
 ## 1.4.0
 
 - Faktory Enterprise now supports **[Job Tracking](https://github.com/contribsys/faktory/wiki/Ent-Tracking)**.

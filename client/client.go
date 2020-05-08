@@ -108,8 +108,9 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 	if ok {
 		uri, err := url.Parse(uval)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot parse value of FAKTORY_URL environment variable: %w", err)
 		}
+
 		s.Network = uri.Scheme
 		s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 		if uri.User != nil {
@@ -139,9 +140,8 @@ func DefaultServer() *Server {
 // which is appropriate for local development.
 func Open() (*Client, error) {
 	srv := DefaultServer()
-	err := srv.ReadFromEnv()
-	if err != nil {
-		return nil, err
+	if err := srv.ReadFromEnv(); err != nil {
+		return nil, fmt.Errorf("cannot read configuration from env: %w", err)
 	}
 	// Connect to default localhost
 	return srv.Open()
@@ -216,11 +216,10 @@ func Dial(srv *Server, password string) (*Client, error) {
 
 	data, err := json.Marshal(client)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot JSON marshal: %w", err)
 	}
 
-	err = writeLine(w, "HELLO", data)
-	if err != nil {
+	if err := writeLine(w, "HELLO", data); err != nil {
 		conn.Close()
 		return nil, err
 	}

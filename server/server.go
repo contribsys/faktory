@@ -76,7 +76,8 @@ func (s *Server) Manager() manager.Manager {
 }
 
 func (s *Server) Reload() {
-	for _, subsystem := range s.Subsystems {
+	for idx := range s.Subsystems {
+		subsystem := s.Subsystems[idx]
 		if err := subsystem.Reload(s); err != nil {
 			util.Warnf("Subsystem %s returned reload error: %v", subsystem.Name(), err)
 		}
@@ -116,11 +117,11 @@ func (s *Server) Run() error {
 		panic("Server hasn't been booted")
 	}
 
-	for _, subsystem := range s.Subsystems {
+	for idx := range s.Subsystems {
+		subsystem := s.Subsystems[idx]
 		if err := subsystem.Start(s); err != nil {
-			util.Error("Subsystem failed to start", err)
 			close(s.Stopper())
-			return fmt.Errorf("cannot start server subsystem: %w", err)
+			return fmt.Errorf("cannot start server subsystem %s: %w", subsystem.Name(), err)
 		}
 	}
 
@@ -132,6 +133,10 @@ func (s *Server) Run() error {
 		if err != nil {
 			return nil
 		}
+		// Each connection gets its own goroutine which ultimately limits Faktory's scalability.
+		// Faktory hardcodes a limit of 1000 Redis connections but does not put a limit here
+		// because Go's runtime scheduler will get better over time.
+		// TODO: Look into alternatives like a reactor + goroutine pool.
 		go func(conn net.Conn) {
 			c := startConnection(conn, s)
 			if c == nil {

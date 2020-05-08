@@ -25,7 +25,7 @@ func main() {
 	util.InitLogger(opts.LogLevel)
 	util.Debugf("Options: %v", opts)
 
-	s, stopper, err := cli.BuildServer(opts)
+	s, stopper, err := cli.BuildServer(&opts)
 	if stopper != nil {
 		defer stopper()
 	}

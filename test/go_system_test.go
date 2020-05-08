@@ -30,7 +30,7 @@ func TestSystem(t *testing.T) {
 
 	opts.ConfigDirectory = "."
 	opts.StorageDirectory = dir
-	s, stopper, err := cli.BuildServer(opts)
+	s, stopper, err := cli.BuildServer(&opts)
 	if stopper != nil {
 		defer stopper()
 	}

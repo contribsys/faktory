@@ -1,0 +1,5 @@
+[[cron]]
+  schedule = "*/5 * * * *"
+  [cron.job]
+    type = "TwoJob"
+    queue = "critical"

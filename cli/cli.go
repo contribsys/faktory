@@ -221,6 +221,7 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
+			fileBytes = append(fileBytes, "\n"...)
 			combined = append(combined, fileBytes...)
 		}
 	}

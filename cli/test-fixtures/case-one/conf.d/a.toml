@@ -2,4 +2,4 @@
   schedule = "*/5 * * * *"
   [cron.job]
     type = "OneJob"
-    queue = "critical"
+    queue = "critical" # EOF newline intentionally omitted

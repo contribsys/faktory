@@ -269,10 +269,14 @@ func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
 	var vals *redis.StringSliceCmd
-	_, err = rs.store.rclient.TxPipelined(func(pipe redis.Pipeliner) error {
-		vals = pipe.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf})
-		pipe.ZRemRangeByScore(rs.name, "-inf", strf)
-		return nil
+
+	err = util.Retryable("scheduler", 2, func() error {
+		_, err = rs.store.rclient.TxPipelined(func(pipe redis.Pipeliner) error {
+			vals = pipe.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf})
+			pipe.ZRemRangeByScore(rs.name, "-inf", strf)
+			return nil
+		})
+		return err
 	})
 	if err != nil {
 		return nil, err

@@ -17,6 +17,19 @@ const (
 	SIGTERM = 0xF
 )
 
+func Retryable(name string, count int, fn func() error) error {
+	var err error
+	for i := 0; i < count; i++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(10 * time.Millisecond)
+		Debugf("Retrying %s due to %v", name, err)
+	}
+	return err
+}
+
 func Darwin() bool {
 	b, _ := FileExists("/Applications")
 	return b

@@ -207,6 +207,7 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 		fmt.Sprintf("%s/conf.d/*.toml", cdir),
 	}
 
+	combined := []byte{}
 	for idx := range globs {
 		matches, err := filepath.Glob(globs[idx])
 		if err != nil {
@@ -220,14 +221,16 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			err = toml.Unmarshal(fileBytes, &hash)
-			if err != nil {
-				util.Warnf("Unable to parse TOML file at %s", file)
-				return nil, err
-			}
+			fileBytes = append(fileBytes, "\n"...)
+			combined = append(combined, fileBytes...)
 		}
 	}
 
+	err := toml.Unmarshal(combined, &hash)
+	if err != nil {
+		util.Warnf("Unable to parse configs")
+		return nil, err
+	}
 	return hash, nil
 }
 

@@ -260,40 +260,39 @@ func (rs *redisSorted) RemoveElement(timestamp string, jid string) (bool, error)
 	return rs.rem(time_f, jid)
 }
 
-func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
+func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(data []byte) error) (int64, error) {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
-	var vals *redis.StringSliceCmd
-
-	err = util.Retryable("scheduler", 2, func() error {
-		_, err = rs.store.rclient.TxPipelined(func(pipe redis.Pipeliner) error {
-			vals = pipe.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf})
-			pipe.ZRemRangeByScore(rs.name, "-inf", strf)
-			return nil
-		})
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
+	vals := rs.store.rclient.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf, Count: maxCount})
 	jobs, err := vals.Result()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if len(jobs) == 0 {
-		return [][]byte{}, nil
+		return 0, nil
 	}
 
-	results := make([][]byte, len(jobs))
-	for idx := range jobs {
-		results[idx] = []byte(jobs[idx])
+	count := int64(0)
+	for _, j := range jobs {
+		cnt, err := rs.store.rclient.ZRem(rs.name, j).Result()
+		if err != nil {
+			return count, err
+		}
+		if cnt == 1 {
+			err = fn([]byte(j))
+			if err != nil {
+				util.Warnf("Unable to process timed job: %v", err)
+				continue
+			}
+			count++
+		}
 	}
-	return results, nil
+	return count, nil
 }
 
 func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error {

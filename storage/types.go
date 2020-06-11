@@ -88,7 +88,7 @@ type SortedSet interface {
 	// so we need to be careful about the data changing under us.
 	Remove(key []byte) (bool, error)
 	RemoveElement(timestamp string, jid string) (bool, error)
-	RemoveBefore(timestamp string) ([][]byte, error)
+	RemoveBefore(timestamp string, maxCount int64, fn func(data []byte) error) (int64, error)
 	RemoveEntry(ent SortedEntry) error
 
 	// Move the given key from this SortedSet to the given

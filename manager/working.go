@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -181,50 +182,53 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return res.Job, err
 }
 
-func (m *manager) ReapExpiredJobs(when time.Time) (int, error) {
-	elms, err := m.store.Working().RemoveBefore(util.Thens(when))
-	if err != nil {
-		return 0, err
-	}
-
-	count := 0
-	for idx := range elms {
-		var res Reservation
-		err := json.Unmarshal(elms[idx], &res)
-		if err != nil {
-			util.Error("Unable to read reservation", err)
-			continue
-		}
-
-		jid := res.Job.Jid
-		m.workingMutex.Lock()
-		localres, ok := m.workingMap[jid]
-		m.workingMutex.Unlock()
-
-		// the user has extended the job reservation.
-		// Since modifying the score of a SortedSet member
-		// is an expensive operation in Redis, we keep
-		// the latest deadline in memory and extend the
-		// reservation when it expires, in this method.
-		if ok && when.Before(localres.extension) {
-			util.Debugf("Auto-extending reservation time for %s", jid)
-			localres.texpiry = localres.extension
-			localres.Expiry = util.Thens(localres.extension)
-			err = m.store.Working().AddElement(localres.Expiry, jid, elms[idx])
+func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
+	total := int64(0)
+	for {
+		tm := util.Thens(when)
+		count, err := m.store.Working().RemoveBefore(tm, 10, func(data []byte) error {
+			var res Reservation
+			err := json.Unmarshal(data, &res)
 			if err != nil {
-				util.Error("Unable to extend reservation for "+jid, err)
+				return fmt.Errorf("Unable to read reservation: %w", err)
 			}
-			continue
-		}
 
-		job := res.Job
-		err = m.processFailure(job.Jid, JobReservationExpired)
+			jid := res.Job.Jid
+			m.workingMutex.Lock()
+			localres, ok := m.workingMap[jid]
+			m.workingMutex.Unlock()
+
+			// the user has extended the job reservation.
+			// Since modifying the score of a SortedSet member
+			// is an expensive operation in Redis, we keep
+			// the latest deadline in memory and extend the
+			// reservation when it expires, in this method.
+			if ok && when.Before(localres.extension) {
+				localres.texpiry = localres.extension
+				localres.Expiry = util.Thens(localres.extension)
+				util.Debugf("Auto-extending reservation time for %s to %s", jid, localres.Expiry)
+				err = m.store.Working().AddElement(localres.Expiry, jid, data)
+				if err != nil {
+					return fmt.Errorf("Unable to extend reservation for %s: %w", jid, err)
+				}
+				return nil
+			}
+
+			job := res.Job
+			err = m.processFailure(job.Jid, JobReservationExpired)
+			if err != nil {
+				return fmt.Errorf("Unable to retry reservation: %w", err)
+			}
+			total += 1
+			return nil
+		})
 		if err != nil {
-			util.Error("Unable to retry reservation", err)
-			continue
+			return total, err
 		}
-		count++
+		if count < 10 {
+			break
+		}
 	}
 
-	return count, nil
+	return total, nil
 }

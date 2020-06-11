@@ -2,6 +2,7 @@ package manager
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -14,11 +15,13 @@ func (m *manager) Purge(when time.Time) (int64, error) {
 	// than N elements.  The dead set shouldn't be able to collect
 	// millions or billions of jobs.  Sidekiq uses a default max size
 	// of 10,000 jobs.
-	dead, err := m.store.Dead().RemoveBefore(util.Thens(when))
+	dead, err := m.store.Dead().RemoveBefore(util.Thens(when), 100, func([]byte) error {
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
-	return int64(len(dead)), nil
+	return dead, nil
 }
 
 func (m *manager) EnqueueScheduledJobs(when time.Time) (int64, error) {
@@ -30,28 +33,28 @@ func (m *manager) RetryJobs(when time.Time) (int64, error) {
 }
 
 func (m *manager) schedule(when time.Time, set storage.SortedSet) (int64, error) {
-	elms, err := set.RemoveBefore(util.Thens(when))
-	if err != nil {
-		return 0, err
-	}
+	total := int64(0)
+	for {
+		count, err := set.RemoveBefore(util.Thens(when), 100, func(data []byte) error {
+			var job client.Job
+			err := json.Unmarshal(data, &job)
+			if err != nil {
+				return err
+			}
 
-	count := int64(0)
-	for idx := range elms {
-		var job client.Job
-		err := json.Unmarshal(elms[idx], &job)
+			err = m.enqueue(&job)
+			if err != nil {
+				return fmt.Errorf("Error pushing job to '%s': %w", job.Queue, err)
+			}
+			return nil
+		})
+		total += count
 		if err != nil {
-			util.Error("Unable to unmarshal json", err)
-			continue
+			return total, err
 		}
-
-		err = m.enqueue(&job)
-		if err != nil {
-			util.Warnf("Error pushing job to '%s': %s", job.Queue, err.Error())
-			continue
+		if count != 100 {
+			break
 		}
-
-		count++
 	}
-
-	return count, nil
+	return total, nil
 }

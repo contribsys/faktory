@@ -5,6 +5,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 ## HEAD
 
 - Fix form handler on Scheduled Job and Retry Job UI pages [#236]
+- Refactor scheduled job processing to handle large job counts [#309]
 
 ## 1.4.0
 

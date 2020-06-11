@@ -92,7 +92,7 @@ type Manager interface {
 
 	WorkingCount() int
 
-	ReapExpiredJobs(when time.Time) (int, error)
+	ReapExpiredJobs(when time.Time) (int64, error)
 
 	// Purge deletes all dead jobs
 	Purge(when time.Time) (int64, error)

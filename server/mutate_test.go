@@ -64,6 +64,9 @@ func TestMutateCommands(t *testing.T) {
 		err = cl.Kill(faktory.Scheduled, faktory.OfType("AnotherJob"))
 		assert.NoError(t, err)
 
+		err = cl.Kill("", faktory.OfType("AnotherJob"))
+		assert.Error(t, err)
+
 		hash, err = cl.Info()
 		assert.NoError(t, err)
 		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])

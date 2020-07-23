@@ -697,7 +697,7 @@ func staticLocalesJaYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/locales/ja.yml", size: 2316, mode: os.FileMode(420), modTime: time.Unix(1503001993, 0)}
+	info := bindataFileInfo{name: "static/locales/ja.yml", size: 2414, mode: os.FileMode(420), modTime: time.Unix(1588949221, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

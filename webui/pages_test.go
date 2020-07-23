@@ -66,8 +66,8 @@ func TestPages(t *testing.T) {
 			queues := content["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
 			defaultQ := queues["default"].(float64)
 			assert.Equal(t, 0.0, defaultQ)
-			foobarQ := queues["foobar"].(float64)
-			assert.Equal(t, float64(len(args)), foobarQ)
+			foobarQ := queues["foobar"]
+			assert.Nil(t, foobarQ)
 		})
 
 		t.Run("Queues", func(t *testing.T) {
@@ -88,7 +88,7 @@ func TestPages(t *testing.T) {
 			queuesHandler(w, req)
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), "default"), w.Body.String())
-			assert.True(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
+			assert.False(t, strings.Contains(w.Body.String(), "foobar"), w.Body.String())
 		})
 
 		t.Run("Queue", func(t *testing.T) {

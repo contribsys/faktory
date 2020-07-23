@@ -209,6 +209,19 @@ func OpenRedis(sock string, poolSize int) (Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	vals, err := rs.rclient.SMembers("queues").Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, val := range vals {
+		q := rs.NewQueue(val)
+		err := q.init()
+		if err != nil {
+			util.Warnf("Unable to initialize queue: %v", err)
+			continue
+		}
+		rs.queueSet[val] = q
+	}
 	return rs, nil
 }
 
@@ -255,6 +268,10 @@ func (store *redisStore) GetQueue(name string) (Queue, error) {
 	err := q.init()
 	if err != nil {
 		return nil, err
+	}
+	err = store.rclient.SAdd("queues", name).Err()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to store queue name: %v", err)
 	}
 	store.queueSet[name] = q
 	return q, nil

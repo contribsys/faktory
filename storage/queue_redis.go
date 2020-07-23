@@ -52,6 +52,8 @@ func (q *redisQueue) Each(fn func(index int, data []byte) error) error {
 
 func (q *redisQueue) Clear() (uint64, error) {
 	q.store.rclient.Unlink(q.name)
+	q.store.rclient.SRem("queues", q.name)
+	delete(q.store.queueSet, q.name)
 	return 0, nil
 }
 

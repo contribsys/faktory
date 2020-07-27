@@ -5,7 +5,7 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
-## HEAD
+## 1.4.1
 
 - Fix for `redis: transaction failed` error during batch processing under heavy load [#305]
 

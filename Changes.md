@@ -2,7 +2,7 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.4.1
 
 - Fix crash with invalid mutate API usage [#313]
 - Fix form handler on Scheduled Job and Retry Job UI pages [#236]

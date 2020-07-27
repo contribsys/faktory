@@ -213,14 +213,14 @@ func OpenRedis(sock string, poolSize int) (Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, val := range vals {
-		q := rs.NewQueue(val)
+	for idx := range vals {
+		q := rs.NewQueue(vals[idx])
 		err := q.init()
 		if err != nil {
 			util.Warnf("Unable to initialize queue: %v", err)
 			continue
 		}
-		rs.queueSet[val] = q
+		rs.queueSet[vals[idx]] = q
 	}
 	return rs, nil
 }

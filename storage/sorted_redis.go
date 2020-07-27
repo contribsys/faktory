@@ -278,7 +278,8 @@ func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(da
 	}
 
 	count := int64(0)
-	for _, j := range jobs {
+	for idx := range jobs {
+		j := jobs[idx]
 		cnt, err := rs.store.rclient.ZRem(rs.name, j).Result()
 		if err != nil {
 			return count, err

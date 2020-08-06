@@ -212,7 +212,11 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		util.Error("Bad connection", err)
+		// TCP probes on the socket will close connection
+		// immediately and lead to EOF. Don't flood logs with them.
+		if err != io.EOF {
+			util.Error("Bad connection", err)
+		}
 		conn.Close()
 		return nil
 	}

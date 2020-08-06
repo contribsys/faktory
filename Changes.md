@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Fix frequent "Bad connection EOF" log messages due to k8s probes
+
 ## 1.4.1
 
 - Fix crash with invalid mutate API usage [#313]

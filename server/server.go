@@ -187,8 +187,10 @@ func hash(pwd, salt string, iterations int) string {
 }
 
 func startConnection(conn net.Conn, s *Server) *Connection {
-	// handshake must complete within 1 second
-	_ = conn.SetDeadline(time.Now().Add(1 * time.Second))
+	// Handshake must complete within 2 seconds.
+	// This is a DoS mitigation so clients can't start a handshake
+	// but never complete it, leaving a connection open.
+	_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
 
 	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
 	iter := rand.Intn(4096) + 4000

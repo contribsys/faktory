@@ -106,10 +106,6 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	_ = m.store.Failure()
 
 	job := res.Job
-	if job.Retry == 0 {
-		// no retry, no death, completely ephemeral, goodbye
-		return nil
-	}
 
 	if job.Failure != nil {
 		job.Failure.RetryCount++
@@ -127,6 +123,10 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	}
 
 	return callMiddleware(m.failChain, Ctx{context.Background(), job, m, res}, func() error {
+		if job.Retry == 0 {
+			// no retry, no death, completely ephemeral, goodbye
+			return nil
+		}
 		if job.Failure.RetryCount < job.Retry {
 			return retryLater(m.store, job)
 		}

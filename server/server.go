@@ -341,7 +341,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+		"server_utc_time": time.Now().UTC().Format("15:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"total_failures":  s.store.TotalFailures(),
 			"total_processed": s.store.TotalProcessed(),

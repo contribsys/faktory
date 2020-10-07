@@ -1,0 +1,81 @@
+vi: # <---- change this to your locale code
+  Dashboard: Bảng Điều Khiển
+  Status: Trạng Thái
+  Time: Thời Gian
+  Namespace: Không gian
+  Realtime: Thời gian thực
+  History: Lịch sử
+  Busy: Bận
+  Processed: Đã xử lý
+  Failed: Đã thất bại
+  Scheduled: Đã lên lịch
+  Retries: Thử lại
+  Enqueued: Hàng đợi
+  Worker: Worker
+  LivePoll: Thăm dò trực tiếp
+  StopPolling: Ngừng thăm dò
+  Queue: Hàng đợi
+  Class: Class
+  Job: Tác vụ
+  Arguments: Tham số
+  Extras: Thêm
+  Started: Đã bắt đầu
+  ShowAll: Hiển thị tất cả
+  CurrentMessagesInQueue: Số lượng công việc trong <span class='title'>%{queue}</span>
+  Delete: Xoá
+  ClearQueue: Làm sạch
+  AddToQueue: Thêm vào hàng đợi
+  AreYouSureDeleteJob: Bạn có chắc muốn xoá tác vụ này?
+  AreYouSureDeleteQueue: Bạn có chắc muốn xoá %{queue} này?
+  Queues: Các hàng đợi
+  Size: Kích thước
+  Actions: Các hành động
+  NextRetry: Lần thử lại tiếp theo
+  RetryCount: Số lần thử lại
+  RetryNow: Thử lại ngay bây giờ
+  Kill: Kill
+  LastRetry: Lần thử cuối
+  OriginallyFailed: Đã thất bại từ đầu
+  AreYouSure: Bạn có chắc?
+  DeleteAll: Xoá tất cả
+  RetryAll: Thử lại tất cả
+  NoRetriesFound: Không có lần thử lại nào được tìm thấy
+  Error: Lỗi
+  ErrorClass: Error Class
+  ErrorMessage: Error Message
+  ErrorBacktrace: Error Backtrace
+  GoBack: ← Trở về
+  NoScheduledFound: Không có tác vụ đã lên lịch nào được tìm thấy
+  When: Khi
+  ScheduledJobs: Những tác vụ đã được lên lịch
+  idle: đang chờ
+  active: đang hoạt động
+  Version: Phiên bản
+  Connections: Các kết nối
+  MemoryUsage: Lượng bộ nhớ sử dụng
+  PeakMemoryUsage: Lượng bộ nhớ sử dụng cao nhất
+  Uptime: Thời gian hệ thống đã hoạt động (ngày)
+  OneWeek: 1 tuần
+  OneMonth: 1 tháng
+  ThreeMonths: 3 tháng
+  SixMonths: 6 tháng
+  Failures: Các thất bại
+  DeadJobs: Các tác vụ đã chết
+  NoDeadJobsFound: Không có tác vụ chết nào được tìm thấy
+  Dead: Chết
+  Processes: Tiến trình xử lý
+  Thread: Luồng xử lý
+  Threads: Các luồng xử lý
+  Jobs: Các tác vụ
+  Paused: Tạm dừng
+  Stop: Dừng
+  Quiet: Im lặng
+  StopAll: Dừng tất cả
+  QuietAll: Im lặng tất cả
+  PollingInterval: Khoảng thời gian thăm dò
+  Plugins: Plugins
+  NotYetEnqueued: Chưa vào được hàng đợi
+  CreatedAt: Tạo lúc
+  BackToApp: Trở về ứng dụng
+  CommandsExecuted: Lệnh được thực thi
+

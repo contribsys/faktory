@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadConfig(t *testing.T) {
@@ -28,4 +30,15 @@ func TestReadConfig(t *testing.T) {
 	if got != "TwoJob" {
 		t.Errorf("Second job in schedule was %v, want TwoJob", got)
 	}
+}
+
+func TestEnv(t *testing.T) {
+	err := os.Setenv("FAKTORY_ENV", "staging")
+	assert.NoError(t, err)
+
+	clix := ParseArguments()
+	assert.Equal(t, "staging", clix.Environment)
+
+	err = os.Unsetenv("FAKTORY_ENV")
+	assert.NoError(t, err)
 }

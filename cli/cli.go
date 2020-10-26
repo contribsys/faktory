@@ -29,13 +29,19 @@ type CliOptions struct {
 }
 
 func ParseArguments() CliOptions {
-	defaults := CliOptions{"localhost:7419", "localhost:7420", "development", "/etc/faktory", "info", "/var/lib/faktory/db"}
+
+	fenv := os.Getenv("FAKTORY_ENV")
+	if fenv == "" {
+		fenv = "development"
+	}
+
+	defaults := CliOptions{"localhost:7419", "localhost:7420", fenv, "/etc/faktory", "info", "/var/lib/faktory/db"}
 
 	flag.Usage = help
 	flag.StringVar(&defaults.WebBinding, "w", "localhost:7420", "WebUI binding")
 	flag.StringVar(&defaults.CmdBinding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
-	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, staging, production)")
+	flag.StringVar(&defaults.Environment, "e", fenv, "Environment (development, staging, production)")
 
 	// undocumented on purpose, we don't want people changing these if possible
 	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")

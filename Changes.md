@@ -4,6 +4,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 
 ## HEAD
 
+- Allow FAKTORY_ENV to switch environment without flags [#325]
 - Fix jobs with Retry:0 not running FAIL middleware [#317]
 - Fix frequent "Bad connection EOF" log messages due to k8s probes
 

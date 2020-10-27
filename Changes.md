@@ -7,6 +7,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 - Allow FAKTORY_ENV to switch environment without flags [#325]
 - Fix jobs with Retry:0 not running FAIL middleware [#317]
 - Fix frequent "Bad connection EOF" log messages due to k8s probes
+- Upgrade to Go 1.15 and alpine 3.12.
 
 ## 1.4.1
 

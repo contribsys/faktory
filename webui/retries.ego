@@ -28,7 +28,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 </header>
 
 <% if totalSize > 0 { %>
-  <form action="/retries" method="post">
+  <form action="<%= relative(req, "/retries") %>" method="post">
     <%== csrfTag(req) %>
     <div class="table_container">
       <table class="table table-striped table-bordered table-white">
@@ -55,11 +55,11 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
               </label>
             </td>
             <td>
-              <a href="/retries/<%= string(key) %>"><%= relativeTime(job.Failure.NextAt) %></a>
+              <a href="<%= root(req) %>/retries/<%= string(key) %>"><%= relativeTime(job.Failure.NextAt) %></a>
             </td>
             <td><%= job.Failure.RetryCount %></td>
             <td>
-              <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+              <a href="<%= root(req) %>/queues/<%= job.Queue %>"><%= job.Queue %></a>
             </td>
             <td><code><%= job.Type %></code></td>
             <td>
@@ -80,7 +80,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
   </form>
 
   <% if unfiltered() { %>
-    <form action="/retries" method="post">
+    <form action="<%= relative(req, "/retries") %>" method="post">
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
       <div class="pull-right flip">

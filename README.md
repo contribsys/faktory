@@ -22,6 +22,7 @@ the Faktory API to fetch a job from a queue.
 ## Installation
 
 See the [Installation wiki page](https://github.com/contribsys/faktory/wiki/Installation) for current installation methods.
+Here's more info on installation with [Docker](https://github.com/contribsys/faktory/wiki/Docker) and [AWS ECS](https://github.com/contribsys/faktory/wiki/AWS-ECS).
 
 ## Documentation
 

@@ -29,13 +29,19 @@ type CliOptions struct {
 }
 
 func ParseArguments() CliOptions {
-	defaults := CliOptions{"localhost:7419", "localhost:7420", "development", "/etc/faktory", "info", "/var/lib/faktory/db"}
+
+	fenv := os.Getenv("FAKTORY_ENV")
+	if fenv == "" {
+		fenv = "development"
+	}
+
+	defaults := CliOptions{"localhost:7419", "localhost:7420", fenv, "/etc/faktory", "info", "/var/lib/faktory/db"}
 
 	flag.Usage = help
 	flag.StringVar(&defaults.WebBinding, "w", "localhost:7420", "WebUI binding")
 	flag.StringVar(&defaults.CmdBinding, "b", "localhost:7419", "Network binding")
 	flag.StringVar(&defaults.LogLevel, "l", "info", "Logging level (error, warn, info, debug)")
-	flag.StringVar(&defaults.Environment, "e", "development", "Environment (development, production)")
+	flag.StringVar(&defaults.Environment, "e", fenv, "Environment (development, staging, production)")
 
 	// undocumented on purpose, we don't want people changing these if possible
 	flag.StringVar(&defaults.StorageDirectory, "d", "/var/lib/faktory/db", "Storage directory")
@@ -65,6 +71,11 @@ func ParseArguments() CliOptions {
 		if defaults.ConfigDirectory == "/etc/faktory" {
 			defaults.ConfigDirectory = filepath.Join(dir, ".faktory")
 		}
+	} else if defaults.Environment == "staging" || defaults.Environment == "production" {
+	} else {
+		help()
+		log.Println("")
+		log.Fatalf(`Invalid environment "%s": legal values are development, staging or production`, defaults.Environment)
 	}
 	return defaults
 }
@@ -72,7 +83,7 @@ func ParseArguments() CliOptions {
 func help() {
 	log.Println("-b [binding]\tNetwork binding (use :7419 to listen on all interfaces), default: localhost:7419")
 	log.Println("-w [binding]\tWeb UI binding (use :7420 to listen on all interfaces), default: localhost:7420")
-	log.Println("-e [env]\tSet environment (development, production), default: development")
+	log.Println("-e [env]\tSet environment (development, staging, production), default: development")
 	log.Println("-l [level]\tSet logging level (error, warn, info, debug), default: info")
 	log.Println("-v\t\tShow version and license information")
 	log.Println("-h\t\tThis help screen")
@@ -81,11 +92,13 @@ func help() {
 var (
 	Term os.Signal = syscall.SIGTERM
 	Hup  os.Signal = syscall.SIGHUP
+	Info os.Signal = syscall.SIGTTIN
 
 	SignalHandlers = map[os.Signal]func(*server.Server){
 		Term:         exit,
 		os.Interrupt: exit,
 		Hup:          reload,
+		Info:         threadDump,
 	}
 )
 
@@ -122,7 +135,11 @@ func exit(s *server.Server) {
 	close(s.Stopper())
 }
 
-func BuildServer(opts CliOptions) (*server.Server, func(), error) {
+func threadDump(s *server.Server) {
+	util.DumpProcessTrace()
+}
+
+func BuildServer(opts *CliOptions) (*server.Server, func(), error) {
 	globalConfig, err := readConfig(opts.ConfigDirectory, opts.Environment)
 	if err != nil {
 		return nil, nil, err
@@ -154,6 +171,7 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 		RedisSock:        sock,
 		GlobalConfig:     globalConfig,
 		Password:         pwd,
+		PoolSize:         1000,
 	}
 
 	// don't log config hash until fetchPassword has had a chance to scrub the password value
@@ -195,26 +213,30 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 		fmt.Sprintf("%s/conf.d/*.toml", cdir),
 	}
 
-	for _, glob := range globs {
-		matches, err := filepath.Glob(glob)
+	combined := []byte{}
+	for idx := range globs {
+		matches, err := filepath.Glob(globs[idx])
 		if err != nil {
 			return nil, err
 		}
 
-		for _, file := range matches {
+		for fidx := range matches {
+			file := matches[fidx]
 			util.Debugf("Reading configuration in %s", file)
 			fileBytes, err := ioutil.ReadFile(file)
 			if err != nil {
 				return nil, err
 			}
-			err = toml.Unmarshal(fileBytes, &hash)
-			if err != nil {
-				util.Warnf("Unable to parse TOML file at %s", file)
-				return nil, err
-			}
+			fileBytes = append(fileBytes, "\n"...)
+			combined = append(combined, fileBytes...)
 		}
 	}
 
+	err := toml.Unmarshal(combined, &hash)
+	if err != nil {
+		util.Warnf("Unable to parse configs")
+		return nil, err
+	}
 	return hash, nil
 }
 
@@ -245,7 +267,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 		}
 	}
 
-	if env == "production" && !skip() && password == "" {
+	if env != "development" && !skip() && password == "" {
 		ok, _ := util.FileExists("/etc/faktory/password")
 		if ok {
 			password = "/etc/faktory/password"
@@ -263,8 +285,8 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 		password = strings.TrimSpace(string(data))
 	}
 
-	if env == "production" && !skip() && password == "" {
-		return "", fmt.Errorf("Faktory requires a password to be set in production mode, see the Security wiki page")
+	if env != "development" && !skip() && password == "" {
+		return "", fmt.Errorf("Faktory requires a password to be set in staging or production, see the Security wiki page")
 	}
 
 	return password, nil

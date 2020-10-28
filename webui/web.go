@@ -1,16 +1,17 @@
 package webui
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"crypto/subtle"
 	"fmt"
 	"io"
 	"net/http"
+
+	//"net/http/pprof"
 	"strings"
 	"time"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
 	"github.com/justinas/nosurf"
@@ -32,11 +33,15 @@ var (
 	}
 
 	// these are used in testing only
-	staticHandler = cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	staticHandler = cache(http.FileServer(AssetFile()))
+
+	LicenseStatus = func(w io.Writer, req *http.Request) string {
+		return ""
+	}
 )
 
 //go:generate ego .
-//go:generate go-bindata -pkg webui -o static.go static/...
+//go:generate go-bindata -fs -pkg webui -o static.go static/...
 
 type localeMap map[string]map[string]string
 type assetLookup func(string) ([]byte, error)
@@ -51,8 +56,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	for _, filename := range files {
-		name := strings.Split(filename, ".")[0]
+	for idx := range files {
+		name := strings.Split(files[idx], ".")[0]
 		locales[name] = nil
 	}
 	//util.Debugf("Initialized %d locales", len(files))
@@ -71,9 +76,13 @@ func Subsystem(binding string) *Lifecycle {
 }
 
 type WebUI struct {
-	Options Options
-	Server  *server.Server
-	Mux     *http.ServeMux
+	Options     Options
+	Server      *server.Server
+	App         *http.ServeMux
+	Title       string
+	ExtraCssUrl string
+
+	proxy *http.ServeMux
 }
 
 type Options struct {
@@ -94,26 +103,65 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	ui := &WebUI{
 		Options: opts,
 		Server:  s,
-
-		Mux: http.NewServeMux(),
+		Title:   client.Name,
 	}
 
-	ui.Mux.HandleFunc("/static/", staticHandler)
-	ui.Mux.HandleFunc("/stats", DebugLog(ui, statsHandler))
+	app := http.NewServeMux()
+	app.HandleFunc("/static/", staticHandler)
+	app.HandleFunc("/stats", DebugLog(ui, statsHandler))
 
-	ui.Mux.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
-	ui.Mux.HandleFunc("/queues", Log(ui, queuesHandler))
-	ui.Mux.HandleFunc("/queues/", Log(ui, queueHandler))
-	ui.Mux.HandleFunc("/retries", Log(ui, retriesHandler))
-	ui.Mux.HandleFunc("/retries/", Log(ui, retryHandler))
-	ui.Mux.HandleFunc("/scheduled", Log(ui, scheduledHandler))
-	ui.Mux.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
-	ui.Mux.HandleFunc("/morgue", Log(ui, morgueHandler))
-	ui.Mux.HandleFunc("/morgue/", Log(ui, deadHandler))
-	ui.Mux.HandleFunc("/busy", Log(ui, busyHandler))
-	ui.Mux.HandleFunc("/debug", Log(ui, debugHandler))
+	app.HandleFunc("/", Log(ui, GetOnly(indexHandler)))
+	app.HandleFunc("/queues", Log(ui, queuesHandler))
+	app.HandleFunc("/queues/", Log(ui, queueHandler))
+	app.HandleFunc("/retries", Log(ui, retriesHandler))
+	app.HandleFunc("/retries/", Log(ui, retryHandler))
+	app.HandleFunc("/scheduled", Log(ui, scheduledHandler))
+	app.HandleFunc("/scheduled/", Log(ui, scheduledJobHandler))
+	app.HandleFunc("/morgue", Log(ui, morgueHandler))
+	app.HandleFunc("/morgue/", Log(ui, deadHandler))
+	app.HandleFunc("/busy", Log(ui, busyHandler))
+	app.HandleFunc("/debug", Log(ui, debugHandler))
+
+	//app.HandleFunc("/debug/pprof/", pprof.Index)
+	//app.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	//app.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	//app.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	//app.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	ui.App = app
+
+	proxy := http.NewServeMux()
+	proxy.HandleFunc("/", Proxy(ui))
+	ui.proxy = proxy
 
 	return ui
+}
+
+func Proxy(ui *WebUI) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		///////
+		// Support transparent proxying with nginx's proxy_pass.
+		// Note that it's super critical that location == X-Script-Name
+		// Example config:
+		/*
+		   location /faktory {
+		       proxy_set_header X-Script-Name /faktory;
+
+		       proxy_pass   http://127.0.0.1:7420;
+		       proxy_set_header Host $host;
+		       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		       proxy_set_header X-Scheme $scheme;
+		       proxy_set_header X-Real-IP $remote_addr;
+		   }
+		*/
+
+		prefix := r.Header.Get("X-Script-Name")
+		if prefix != "" {
+			r.RequestURI = strings.Replace(r.RequestURI, prefix, "", 1)
+			r.URL.Path = r.RequestURI
+		}
+		ui.App.ServeHTTP(w, r)
+	}
 }
 
 func (l *Lifecycle) opts(s *server.Server) Options {
@@ -185,9 +233,9 @@ func (ui *WebUI) Run() (func(), error) {
 	s := &http.Server{
 		Addr:           ui.Options.Binding,
 		ReadTimeout:    1 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		WriteTimeout:   30 * time.Second,
 		MaxHeaderBytes: 1 << 16,
-		Handler:        ui.Mux,
+		Handler:        ui.proxy,
 	}
 
 	go func() {
@@ -197,83 +245,7 @@ func (ui *WebUI) Run() (func(), error) {
 		}
 	}()
 	util.Infof("Web server now listening at %s", ui.Options.Binding)
-	return func() { s.Shutdown(context.Background()) }, nil
-}
-
-func translations(locale string) map[string]string {
-	strs, ok := locales[locale]
-	if strs != nil {
-		return strs
-	}
-
-	if !ok {
-		return nil
-	}
-
-	if ok {
-		//util.Debugf("Booting the %s locale", locale)
-		strs := map[string]string{}
-		for _, finder := range AssetLookups {
-			content, err := finder(fmt.Sprintf("static/locales/%s.yml", locale))
-			if err != nil {
-				continue
-			}
-
-			scn := bufio.NewScanner(bytes.NewReader(content))
-			for scn.Scan() {
-				kv := strings.Split(scn.Text(), ":")
-				if len(kv) == 2 {
-					strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-				}
-			}
-		}
-		locales[locale] = strs
-		return strs
-	}
-
-	panic("Shouldn't get here")
-}
-
-func acceptableLanguages(header string) []string {
-	langs := []string{}
-	pairs := strings.Split(header, ",")
-	// we ignore the q weighting and just assume the
-	// values are sorted by acceptability
-	for _, pair := range pairs {
-		trimmed := strings.Trim(pair, " ")
-		split := strings.Split(trimmed, ";")
-		langs = append(langs, strings.ToLower(split[0]))
-	}
-	return langs
-}
-
-func localeFromHeader(value string) string {
-	if value == "" {
-		return "en"
-	}
-
-	langs := acceptableLanguages(value)
-	//util.Debugf("A-L: %s %v", value, langs)
-	for _, lang := range langs {
-		strs := translations(lang)
-		if strs != nil {
-			return lang
-		}
-	}
-
-	// fallback by checking the language component of any dialect pairs, e.g. "sv-se"
-	for _, lang := range langs {
-		pair := strings.Split(lang, "-")
-		if len(pair) == 2 {
-			baselang := pair[0]
-			strs := translations(baselang)
-			if strs != nil {
-				return baselang
-			}
-		}
-	}
-
-	return "en"
+	return func() { _ = s.Shutdown(context.Background()) }, nil
 }
 
 func Layout(w io.Writer, req *http.Request, yield func()) {
@@ -298,32 +270,7 @@ func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 		// static assets bypass all this hubbub
 		start := time.Now()
 
-		// negotiate the language to be used for rendering
-
-		// set locale via cookie
-		localeCookie, _ := r.Cookie("faktory_locale")
-
-		var locale string
-		if localeCookie != nil {
-			locale = localeCookie.Value
-		}
-
-		if locale == "" {
-			// fall back to browser language
-			locale = localeFromHeader(r.Header.Get("Accept-Language"))
-		}
-
-		w.Header().Set("Content-Language", locale)
-
-		dctx := &DefaultContext{
-			Context:  r.Context(),
-			webui:    ui,
-			response: w,
-			request:  r,
-			locale:   locale,
-			strings:  translations(locale),
-			csrf:     ui.Options.EnableCSRF,
-		}
+		dctx := NewContext(ui, r, w)
 
 		pass(w, r.WithContext(dctx))
 		if debug {

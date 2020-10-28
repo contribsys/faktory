@@ -43,7 +43,12 @@ func BootRedis(path string, sock string) (func(), error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
-		return func() { StopRedis(sock) }, nil
+		return func() {
+			err := StopRedis(sock)
+			if err != nil {
+				util.Error("Unable to stop Redis", err)
+			}
+		}, nil
 	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
@@ -177,10 +182,15 @@ func BootRedis(path string, sock string) (func(), error) {
 		return nil, err
 	}
 
-	return func() { StopRedis(sock) }, nil
+	return func() {
+		err := StopRedis(sock)
+		if err != nil {
+			util.Error("Unable to stop Redis", err)
+		}
+	}, nil
 }
 
-func OpenRedis(sock string) (Store, error) {
+func OpenRedis(sock string, poolSize int) (Store, error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; !ok {
@@ -200,11 +210,24 @@ func OpenRedis(sock string) (Store, error) {
 		Network:  "unix",
 		Addr:     sock,
 		DB:       db,
-		PoolSize: 1000,
+		PoolSize: poolSize,
 	})
 	_, err := rs.rclient.Ping().Result()
 	if err != nil {
 		return nil, err
+	}
+	vals, err := rs.rclient.SMembers("queues").Result()
+	if err != nil {
+		return nil, err
+	}
+	for idx := range vals {
+		q := rs.NewQueue(vals[idx])
+		err := q.init()
+		if err != nil {
+			util.Warnf("Unable to initialize queue: %v", err)
+			continue
+		}
+		rs.queueSet[vals[idx]] = q
 	}
 	return rs, nil
 }
@@ -253,6 +276,10 @@ func (store *redisStore) GetQueue(name string) (Queue, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = store.rclient.SAdd("queues", name).Err()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to store queue name: %v", err)
+	}
 	store.queueSet[name] = q
 	return q, nil
 }
@@ -282,10 +309,12 @@ func StopRedis(sock string) error {
 	before := time.Now()
 	p := cmd.Process
 	pid := p.Pid
-	err := p.Signal(syscall.SIGTERM)
-	if err != nil {
-		return err
-	}
+
+	// this call frequently errs and the returned error is a string,
+	// not easy to build logic around and too noisy to log
+	// "os: process already finished"
+	// TODO revisit error handling in versions after Go 1.14.
+	_ = p.Signal(syscall.SIGTERM)
 	delete(instances, sock)
 
 	// Test suite hack: Redis will not exit if we
@@ -296,9 +325,11 @@ func StopRedis(sock string) error {
 	for ; i > 0; i-- {
 		time.Sleep(2 * time.Millisecond)
 		err := syscall.Kill(pid, syscall.Signal(0))
-		if err == syscall.ESRCH {
+		if errors.Is(err, syscall.ESRCH) {
 			util.Debugf("Redis dead in %v", time.Since(before))
 			return nil
+		} else {
+			return err
 		}
 	}
 
@@ -414,5 +445,7 @@ stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes
 dbfilename faktory.rdb
+slowlog-log-slower-than 10000
+slowlog-max-len 128
 `
 )

@@ -152,12 +152,12 @@ header.row .pagination {
   padding: 0 0 2px 0;
   width: 100%;
   color: #777;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
 }
 
 
-@media (max-width: 767px) and (min-width: 400px) {
+@media (max-width: 767px) and (min-width: 100px) {
   .summary.row {
     padding-bottom: 8px;
   }
@@ -355,7 +355,6 @@ img.smallogo {
 }
 
 .status-sprite {
-  background-image: url(/static/img/status.png);
   height: 32px; 
   width: 32px;
   display: inline-block;
@@ -1151,44 +1150,6 @@ div.interval-slider input {
     position: relative;
     top: auto;
   }
-}
-
-.redis-url, .redis-namespace {
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-@media (min-width: 768px) {
-  .redis-url {
-    max-width: 200px;
-  }
-
-  .redis-namespace {
-    max-width: 150px;
-  }
-}
-
-@media (min-width: 992px) {
-  .redis-url {
-    max-width: 390px;
-  }
-
-  .redis-namespace {
-    max-width: 300px;
-  }
-}
-@media (min-width: 1200px) {
-  .redis-url {
-    max-width: 480px;
-  }
-
-  .redis-namespace {
-    max-width: 350px;
-  }
-}
-
-.redis-url {
-  text-overflow: ellipsis;
 }
 
 .product-version {

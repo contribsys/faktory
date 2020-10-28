@@ -30,7 +30,7 @@ func TestSystem(t *testing.T) {
 
 	opts.ConfigDirectory = "."
 	opts.StorageDirectory = dir
-	s, stopper, err := cli.BuildServer(opts)
+	s, stopper, err := cli.BuildServer(&opts)
 	if stopper != nil {
 		defer stopper()
 	}
@@ -50,7 +50,9 @@ func TestSystem(t *testing.T) {
 	}
 	s.Register(webui.Subsystem(opts.WebBinding))
 
-	go s.Run()
+	go func() {
+		_ = s.Run()
+	}()
 
 	// this is a worker process so we need to set the global WID before connecting
 	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
@@ -77,20 +79,20 @@ func TestSystem(t *testing.T) {
 
 func pushAndPop(t *testing.T, count int) {
 	time.Sleep(300 * time.Millisecond)
-	client, err := client.Dial(client.DefaultServer(), "123456")
+	cl, err := client.Dial(client.DefaultServer(), "123456")
 	if err != nil {
 		handleError(err)
 		return
 	}
-	defer client.Close()
+	defer cl.Close()
 
-	sig, err := client.Beat()
+	sig, err := cl.Beat()
 	assert.Equal(t, "", sig)
 	assert.NoError(t, err)
 
 	util.Info("Pushing")
 	for i := 0; i < count; i++ {
-		if err = pushJob(client, i); err != nil {
+		if err = pushJob(cl, i); err != nil {
 			handleError(err)
 			return
 		}
@@ -98,15 +100,15 @@ func pushAndPop(t *testing.T, count int) {
 	util.Info("Popping")
 
 	for i := 0; i < count; i++ {
-		job, err := client.Fetch("default")
+		job, err := cl.Fetch("default")
 		if err != nil {
 			handleError(err)
 			return
 		}
 		if i%100 == 99 {
-			err = client.Fail(job.Jid, os.ErrClosed, nil)
+			err = cl.Fail(job.Jid, os.ErrClosed, nil)
 		} else {
-			err = client.Ack(job.Jid)
+			err = cl.Ack(job.Jid)
 		}
 		if err != nil {
 			handleError(err)
@@ -114,7 +116,7 @@ func pushAndPop(t *testing.T, count int) {
 		}
 	}
 	util.Info("Done")
-	hash, err := client.Info()
+	hash, err := cl.Info()
 	if err != nil {
 		handleError(err)
 		return
@@ -123,13 +125,7 @@ func pushAndPop(t *testing.T, count int) {
 }
 
 func pushJob(cl *client.Client, idx int) error {
-	j := &client.Job{
-		Jid:   util.RandomJid(),
-		Queue: "default",
-		Type:  "SomeJob",
-		Args:  []interface{}{1, "string", 3},
-	}
-	return cl.Push(j)
+	return cl.Push(client.NewJob("SomeJob", 1, "string", 3))
 }
 
 func stacks() {

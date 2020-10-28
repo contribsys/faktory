@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/contribsys/faktory/internal/pool"
 )
 
 const (
@@ -25,6 +27,7 @@ var (
 	// Set this to a non-empty value in a consumer process
 	// e.g. see how faktory_worker_go sets this.
 	RandomProcessWid = ""
+	Labels           = []string{"golang"}
 )
 
 // The Client structure represents a thread-unsafe connection
@@ -32,13 +35,13 @@ var (
 // of Clients in a multi-threaded process.  See faktory_worker_go's
 // internal connection pool for example.
 //
-// TODO Provide a connection pool as part of this package?
 type Client struct {
 	Location string
 	Options  *ClientData
 	rdr      *bufio.Reader
 	wtr      *bufio.Writer
 	conn     net.Conn
+	poolConn *pool.PoolConn
 }
 
 // ClientData is serialized to JSON and sent
@@ -105,8 +108,9 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 	if ok {
 		uri, err := url.Parse(uval)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot parse value of FAKTORY_URL environment variable: %w", err)
 		}
+
 		s.Network = uri.Scheme
 		s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 		if uri.User != nil {
@@ -136,9 +140,8 @@ func DefaultServer() *Server {
 // which is appropriate for local development.
 func Open() (*Client, error) {
 	srv := DefaultServer()
-	err := srv.ReadFromEnv()
-	if err != nil {
-		return nil, err
+	if err := srv.ReadFromEnv(); err != nil {
+		return nil, fmt.Errorf("cannot read configuration from env: %w", err)
 	}
 	// Connect to default localhost
 	return srv.Open()
@@ -165,7 +168,10 @@ func Dial(srv *Server, password string) (*Client, error) {
 			return nil, err
 		}
 		if x, ok := conn.(*net.TCPConn); ok {
-			x.SetKeepAlive(true)
+			err = x.SetKeepAlive(true)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -210,11 +216,10 @@ func Dial(srv *Server, password string) (*Client, error) {
 
 	data, err := json.Marshal(client)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot JSON marshal: %w", err)
 	}
 
-	err = writeLine(w, "HELLO", data)
-	if err != nil {
+	if err := writeLine(w, "HELLO", data); err != nil {
 		conn.Close()
 		return nil, err
 	}
@@ -229,29 +234,29 @@ func Dial(srv *Server, password string) (*Client, error) {
 }
 
 func (c *Client) Close() error {
-	writeLine(c.wtr, "END", nil)
+	_ = writeLine(c.wtr, "END", nil)
 	return c.conn.Close()
 }
 
 func (c *Client) Ack(jid string) error {
-	err := writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
+	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Push(job *Job) error {
-	jobytes, err := json.Marshal(job)
+	jobBytes, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "PUSH", jobytes)
+	err = c.writeLine(c.wtr, "PUSH", jobBytes)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Fetch(q ...string) (*Job, error) {
@@ -259,12 +264,12 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
 	}
 
-	err := writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
+	err := c.writeLine(c.wtr, "FETCH", []byte(strings.Join(q, " ")))
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	data, err := c.readResponse(c.rdr)
 	if err != nil {
 		return nil, err
 	}
@@ -306,29 +311,29 @@ func (c *Client) Fail(jid string, err error, backtrace []byte) error {
 	if err != nil {
 		return err
 	}
-	err = writeLine(c.wtr, "FAIL", failbytes)
+	err = c.writeLine(c.wtr, "FAIL", failbytes)
 	if err != nil {
 		return err
 	}
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Flush() error {
-	err := writeLine(c.wtr, "FLUSH", nil)
+	err := c.writeLine(c.wtr, "FLUSH", nil)
 	if err != nil {
 		return err
 	}
 
-	return ok(c.rdr)
+	return c.ok(c.rdr)
 }
 
 func (c *Client) Info() (map[string]interface{}, error) {
-	err := writeLine(c.wtr, "INFO", nil)
+	err := c.writeLine(c.wtr, "INFO", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := readResponse(c.rdr)
+	data, err := c.readResponse(c.rdr)
 	if err != nil {
 		return nil, err
 	}
@@ -346,20 +351,70 @@ func (c *Client) Info() (map[string]interface{}, error) {
 }
 
 func (c *Client) Generic(cmdline string) (string, error) {
-	err := writeLine(c.wtr, cmdline, nil)
+	err := c.writeLine(c.wtr, cmdline, nil)
 	if err != nil {
 		return "", err
 	}
 
-	return readString(c.rdr)
+	return c.readString(c.rdr)
 }
 
-func (c *Client) Beat() (string, error) {
-	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"}`, RandomProcessWid))
+func (c *Client) Beat(args ...string) (string, error) {
+	state := ""
+	if len(args) > 0 {
+		state = args[0]
+	}
+
+	extra := ""
+	if state != "" {
+		extra = fmt.Sprintf(`,"current_state":"%s"`, state)
+	}
+	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"%s}`, RandomProcessWid, extra))
 	if val == "OK" {
 		return "", nil
 	}
 	return val, err
+}
+
+func (c *Client) writeLine(wtr *bufio.Writer, op string, payload []byte) error {
+	err := writeLine(wtr, op, payload)
+	if err != nil {
+		c.markUnusable()
+	}
+	return err
+}
+
+func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
+	data, err := readResponse(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return data, err
+}
+
+func (c *Client) ok(rdr *bufio.Reader) error {
+	err := ok(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return err
+}
+
+func (c *Client) readString(rdr *bufio.Reader) (string, error) {
+	s, err := readString(rdr)
+	if err != nil {
+		c.markUnusable()
+	}
+	return s, err
+}
+
+func (c *Client) markUnusable() {
+	if c.poolConn == nil {
+		// if this client was not created as part of a pool,
+		// this call becomes a no-op
+		return
+	}
+	c.poolConn.MarkUnusable()
 }
 
 //////////////////////////////////////////////////
@@ -373,28 +428,28 @@ func emptyClientData() *ClientData {
 	client.Hostname = hs
 	client.Pid = os.Getpid()
 	client.Wid = RandomProcessWid
-	client.Labels = []string{"golang"}
+	client.Labels = Labels
 	client.Version = ExpectedProtocolVersion
 	return client
 }
 
-func writeLine(io *bufio.Writer, op string, payload []byte) error {
+func writeLine(wtr *bufio.Writer, op string, payload []byte) error {
 	//util.Debugf("> %s %s", op, string(payload))
 
-	_, err := io.Write([]byte(op))
+	_, err := wtr.Write([]byte(op))
 	if payload != nil {
 		if err == nil {
-			_, err = io.Write([]byte(" "))
+			_, err = wtr.Write([]byte(" "))
 		}
 		if err == nil {
-			_, err = io.Write(payload)
+			_, err = wtr.Write(payload)
 		}
 	}
 	if err == nil {
-		_, err = io.Write([]byte("\r\n"))
+		_, err = wtr.Write([]byte("\r\n"))
 	}
 	if err == nil {
-		err = io.Flush()
+		err = wtr.Flush()
 	}
 	return err
 }

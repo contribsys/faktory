@@ -1,0 +1,5 @@
+[[cron]]
+  schedule = "*/5 * * * *"
+  [cron.job]
+    type = "OneJob"
+    queue = "critical" # EOF newline intentionally omitted

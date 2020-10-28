@@ -7,27 +7,28 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
 <!doctype html>
 <html dir="<%= textDir(req) %>">
   <head>
-    <title>Faktory</title>
+    <title><%= productTitle(req) %></title>
     <meta charset="utf8" />
-    <link rel="shortcut icon" href="/static/img/favicon.ico">
-    <link rel="mask-icon" href="/static/img/favicon.svg" color="#000000">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">
+    <link rel="shortcut icon" href="<%= relative(req, "/static/img/favicon.ico") %>">
+    <link rel="mask-icon" href="<%= relative(req, "/static/img/favicon.svg") %>" color="#000000">
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= relative(req, "/static/img/apple-touch-icon.png") %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= relative(req, "/static/img/favicon-32x32.png") %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= relative(req, "/static/img/favicon-16x16.png") %>">
 
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 
-    <link href="/static/bootstrap.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="<%= relative(req, "/static/bootstrap.css") %>" media="screen" rel="stylesheet" type="text/css" />
     <% if rtl(req) { %>
-    <link href="/static/bootstrap-rtl.min.css" media="screen" rel="stylesheet" type="text/css"/>
+    <link href="<%= relative(req, "/static/bootstrap-rtl.min.css") %>" media="screen" rel="stylesheet" type="text/css"/>
     <% } %>
 
-    <link href="/static/application.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="<%= relative(req, "/static/application.css") %>" media="screen" rel="stylesheet" type="text/css" />
     <% if rtl(req) { %>
-    <link href="/static/application-rtl.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="<%= relative(req, "/static/application-rtl.css") %>" media="screen" rel="stylesheet" type="text/css" />
     <% } %>
+    <%== extraCss(req) %>
 
-    <script type="text/javascript" src="/static/application.js"></script>
+    <script type="text/javascript" src="<%= relative(req, "/static/application.js") %>"></script>
     <meta name="google" content="notranslate" />
   </head>
   <body class="admin" data-locale="<%= ctx(req).locale %>" data-poll-path="">

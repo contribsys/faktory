@@ -4,8 +4,6 @@ package webui
 import (
   "net/http"
   "strings"
-
-  "github.com/contribsys/faktory/client"
 )
 
 func ego_nav(w io.Writer, req *http.Request) {
@@ -20,9 +18,12 @@ func ego_nav(w io.Writer, req *http.Request) {
       </button>
       <div class="navbar-toggle collapsed navbar-livereload">
       </div>
-      <a class="navbar-brand" href="/">
-        <% ego_status(w, req) %>
-        <%= client.Name %>
+      <a class="navbar-brand" href="<%= root(req) %>/">
+        <span class="status">
+          <% x := currentStatus(req) %>
+          <i class="status-sprite status-<%= x %>" style="background-image: url(<%= root(req) %>/static/img/status.png);"></i>
+        </span>
+        <%= productTitle(req) %>
       </a>
     </div>
 
@@ -34,7 +35,7 @@ func ego_nav(w io.Writer, req *http.Request) {
           <% } else { %>
             <li class="<% if strings.HasPrefix(req.RequestURI, tab.Path) { %>active<% } %>">
           <% } %>
-            <a href="<%= tab.Path %>"><%= t(req, tab.Name) %></a>
+            <a href="<%= relative(req, tab.Path) %>"><%= t(req, tab.Name) %></a>
           </li>
         <% } %>
       </ul>
@@ -43,7 +44,10 @@ func ego_nav(w io.Writer, req *http.Request) {
         </li>
       </ul>
     </div>
-    <% ego_status_text(w, req) %>
+    <span class="status-text">
+      <i class="status-icon status-<%= x %>"></i>
+      <%= t(req, x) %>
+    </span>
   </div>
 </div>
 <% } %>

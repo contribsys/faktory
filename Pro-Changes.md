@@ -1,9 +1,48 @@
 # Faktory Pro Changelog
 
+Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.md) || Faktory Pro || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
+
 A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
 
-## HEAD
+## 1.4.2
+
+- *No significant changes*
+
+## 1.4.1
+
+- *No significant changes*
+
+## 1.4.0
+
+- `-e staging` environment support, limited to 100 connections
+- Fixes for linter problems
+
+## 1.3.0
+
+* Validate statsd tags, per Datadog docs [#283]
+* Add periodic job history and details page [#265]
+* Allow cron jobs to specify static arguments:
+```toml
+[[cron]]
+  schedule = "* * * * *"
+  [cron.job]
+    type = "SomeWorker"
+    args = ["minutely"]
+
+[[cron]]
+  schedule = "0 * * * *"
+  [cron.job]
+    type = "SomeWorker"
+    args = ["hourly"]
+```
+
+## 1.2.0
+
+- **BREAKING** Deprecate some statsd metrics, see issue for details [#261]
+- Add some new statsd metrics for job expiration, uniqueness and cron. [#261]
+
+## 1.1.0
 
 - The canonical copy of each cron job was mutable, leading to
   inconsistent cron jobs over time [#234]

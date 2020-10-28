@@ -39,7 +39,7 @@ func TestManager(t *testing.T) {
 
 			q, err := store.GetQueue("default")
 			assert.NoError(t, err)
-			q.Clear()
+			_, _ = q.Clear()
 			assert.EqualValues(t, 0, q.Size())
 
 			jids := []string{"", "id", "shortid"}
@@ -140,7 +140,7 @@ func TestManager(t *testing.T) {
 			job.At = "invalid time"
 			q, err := store.GetQueue(job.Queue)
 			assert.NoError(t, err)
-			q.Clear()
+			_, _ = q.Clear()
 			assert.EqualValues(t, 0, q.Size())
 			assert.Empty(t, job.EnqueuedAt)
 
@@ -223,6 +223,7 @@ func TestManager(t *testing.T) {
 
 			fetchedJob, err := m.Fetch(context.Background(), "workerId", queues...)
 			assert.NoError(t, err)
+			assert.NotNil(t, fetchedJob)
 			assert.EqualValues(t, job.Jid, fetchedJob.Jid)
 			assert.EqualValues(t, 0, q1.Size())
 			assert.EqualValues(t, 1, q2.Size())
@@ -278,7 +279,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 		panic(err)
 	}
 
-	store, err := storage.Open("redis", sock)
+	store, err := storage.Open("redis", sock, 10)
 	if err != nil {
 		panic(err)
 	}

@@ -19,7 +19,7 @@ func ego_busy(w io.Writer, req *http.Request) {
     <h3><%= t(req, "Processes") %></h3>
   </div>
   <div class="col-sm-4 pull-right flip">
-    <form method="POST" class="warning-messages">
+    <form method="POST" action="<%= relative(req, "/busy") %>" class="warning-messages">
       <%== csrfTag(req) %>
       <input type="hidden" name="wid" value="all"/>
       <button class="btn btn-primary" type="submit" name="signal" value="quiet" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "QuietAll") %></button>
@@ -104,7 +104,7 @@ func ego_busy(w io.Writer, req *http.Request) {
           </code>
         </td>
         <td>
-          <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+          <a href="<%= root(req) %>/queues/<%= job.Queue %>"><%= job.Queue %></a>
         </td>
         <td><code><%= job.Type %></code></td>
         <td>

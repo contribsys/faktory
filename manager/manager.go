@@ -85,9 +85,14 @@ type Manager interface {
 
 	Fail(fail *FailPayload) error
 
+	// Allows arbitrary extension of a job's current reservation
+	// This is a no-op if you set the time before the current
+	// reservation expiry.
+	ExtendReservation(jid string, until time.Time) error
+
 	WorkingCount() int
 
-	ReapExpiredJobs(timestamp string) (int, error)
+	ReapExpiredJobs(when time.Time) (int64, error)
 
 	// Purge deletes all dead jobs
 	Purge(when time.Time) (int64, error)
@@ -104,9 +109,14 @@ type Manager interface {
 
 	KV() storage.KV
 	Redis() *redis.Client
+	SetFetcher(f Fetcher)
 }
 
 func NewManager(s storage.Store) Manager {
+	return newManager(s)
+}
+
+func newManager(s storage.Store) *manager {
 	m := &manager{
 		store:      s,
 		workingMap: map[string]*Reservation{},
@@ -115,8 +125,13 @@ func NewManager(s storage.Store) Manager {
 		ackChain:   make(MiddlewareChain, 0),
 		fetchChain: make(MiddlewareChain, 0),
 	}
-	m.loadWorkingSet()
+	_ = m.loadWorkingSet()
+	m.fetcher = BasicFetcher(m.Redis())
 	return m
+}
+
+func (m *manager) SetFetcher(f Fetcher) {
+	m.fetcher = f
 }
 
 func (m *manager) KV() storage.KV {
@@ -142,6 +157,12 @@ func (m *manager) AddMiddleware(fntype string, fn MiddlewareFunc) {
 	}
 }
 
+type Lease interface {
+	Release() error
+	Payload() []byte
+	Job() (*client.Job, error)
+}
+
 type manager struct {
 	store storage.Store
 
@@ -155,6 +176,7 @@ type manager struct {
 	fetchChain   MiddlewareChain
 	failChain    MiddlewareChain
 	ackChain     MiddlewareChain
+	fetcher      Fetcher
 }
 
 func (m *manager) Push(job *client.Job) error {
@@ -179,24 +201,27 @@ func (m *manager) Push(job *client.Job) error {
 		job.Queue = "default"
 	}
 
+	var err error
+	var t time.Time
 	if job.At != "" {
-		t, err := util.ParseTime(job.At)
+		t, err = util.ParseTime(job.At)
 		if err != nil {
 			return fmt.Errorf("Invalid timestamp for 'at': '%s'", job.At)
 		}
-
-		if t.After(time.Now()) {
-			data, err := json.Marshal(job)
-			if err != nil {
-				return err
-			}
-
-			// scheduler for later
-			return m.store.Scheduled().AddElement(job.At, job.Jid, data)
-		}
 	}
 
-	err := callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+	err = callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+		if job.At != "" {
+			if t.After(time.Now()) {
+				data, err := json.Marshal(job)
+				if err != nil {
+					return err
+				}
+
+				// scheduler for later
+				return m.store.Scheduled().AddElement(job.At, job.Jid, data)
+			}
+		}
 		return m.enqueue(job)
 	})
 	if err != nil {
@@ -220,81 +245,4 @@ func (m *manager) enqueue(job *client.Job) error {
 	}
 	//util.Debugf("pushed: %+v", job)
 	return q.Push(data)
-}
-
-func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
-restart:
-	var first storage.Queue
-
-	for idx, qname := range queues {
-		q, err := m.store.GetQueue(qname)
-		if err != nil {
-			return nil, err
-		}
-
-		data, err := q.Pop()
-		if err != nil {
-			return nil, err
-		}
-		if data != nil {
-			var job client.Job
-			err = json.Unmarshal(data, &job)
-			if err != nil {
-				return nil, err
-			}
-			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
-				return m.reserve(wid, &job)
-			})
-			if h, ok := err.(KnownError); ok {
-				util.Infof("JID %s: %s", job.Jid, h.Error())
-				if h.Code() == "DISCARD" {
-					goto restart
-				}
-				return nil, err
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &job, nil
-		}
-		if idx == 0 {
-			first = q
-		}
-	}
-
-	if first == nil {
-		return nil, fmt.Errorf("Fetch must be called with one or more queue names")
-	}
-
-	// scanned through our queues, no jobs were available
-	// we should block for a moment, awaiting a job to be
-	// pushed.  this allows us to pick up new jobs in µs
-	// rather than seconds.
-	data, err := first.BPop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if data != nil {
-		var job client.Job
-		err = json.Unmarshal(data, &job)
-		if err != nil {
-			return nil, err
-		}
-		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m, nil}, func() error {
-			return m.reserve(wid, &job)
-		})
-		if h, ok := err.(KnownError); ok {
-			util.Debugf("JID %s: %s", job.Jid, h.Error())
-			if h.Code() == "DISCARD" {
-				goto restart
-			}
-			return nil, err
-		}
-		if err != nil {
-			return nil, err
-		}
-		return &job, nil
-	}
-
-	return nil, nil
 }

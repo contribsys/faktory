@@ -48,7 +48,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		opts.Binding = "localhost:7419"
 	}
 	if opts.StorageDirectory == "" {
-		return nil, fmt.Errorf("empty storage directory")
+		return nil, fmt.Errorf("missing or empty storage directory")
 	}
 
 	s := &Server{
@@ -76,10 +76,10 @@ func (s *Server) Manager() manager.Manager {
 }
 
 func (s *Server) Reload() {
-	for _, x := range s.Subsystems {
-		err := x.Reload(s)
-		if err != nil {
-			util.Warnf("Subsystem %s returned reload error: %v", x.Name(), err)
+	for idx := range s.Subsystems {
+		subsystem := s.Subsystems[idx]
+		if err := subsystem.Reload(s); err != nil {
+			util.Warnf("Subsystem %s returned reload error: %v", subsystem.Name(), err)
 		}
 	}
 }
@@ -89,15 +89,15 @@ func (s *Server) AddTask(everySec int64, task Taskable) {
 }
 
 func (s *Server) Boot() error {
-	store, err := storage.Open("redis", s.Options.RedisSock)
+	store, err := storage.Open("redis", s.Options.RedisSock, s.Options.PoolSize)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open redis database: %w", err)
 	}
 
 	listener, err := net.Listen("tcp", s.Options.Binding)
 	if err != nil {
 		store.Close()
-		return err
+		return fmt.Errorf("cannot listen on %s: %w", s.Options.Binding, err)
 	}
 
 	s.mu.Lock()
@@ -117,12 +117,11 @@ func (s *Server) Run() error {
 		panic("Server hasn't been booted")
 	}
 
-	for _, x := range s.Subsystems {
-		err := x.Start(s)
-		if err != nil {
-			util.Error("Subsystem failed to start", err)
+	for idx := range s.Subsystems {
+		subsystem := s.Subsystems[idx]
+		if err := subsystem.Start(s); err != nil {
 			close(s.Stopper())
-			return err
+			return fmt.Errorf("cannot start server subsystem %s: %w", subsystem.Name(), err)
 		}
 	}
 
@@ -134,6 +133,10 @@ func (s *Server) Run() error {
 		if err != nil {
 			return nil
 		}
+		// Each connection gets its own goroutine which ultimately limits Faktory's scalability.
+		// Faktory hardcodes a limit of 1000 Redis connections but does not put a limit here
+		// because Go's runtime scheduler will get better over time.
+		// TODO: Look into alternatives like a reactor + goroutine pool.
 		go func(conn net.Conn) {
 			c := startConnection(conn, s)
 			if c == nil {
@@ -184,32 +187,38 @@ func hash(pwd, salt string, iterations int) string {
 }
 
 func startConnection(conn net.Conn, s *Server) *Connection {
-	// handshake must complete within 1 second
-	conn.SetDeadline(time.Now().Add(1 * time.Second))
+	// Handshake must complete within 2 seconds.
+	// This is a DoS mitigation so clients can't start a handshake
+	// but never complete it, leaving a connection open.
+	_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
 
 	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
 	iter := rand.Intn(4096) + 4000
 
 	var salt string
-	conn.Write([]byte(`+HI {"v":2`))
+	_, _ = conn.Write([]byte(`+HI {"v":2`))
 	if s.Options.Password != "" {
-		conn.Write([]byte(`,"i":`))
+		_, _ = conn.Write([]byte(`,"i":`))
 		iters := strconv.FormatInt(int64(iter), 10)
-		conn.Write([]byte(iters))
+		_, _ = conn.Write([]byte(iters))
 		salt = strconv.FormatInt(rand.Int63(), 16)
-		conn.Write([]byte(`,"s":"`))
-		conn.Write([]byte(salt))
-		conn.Write([]byte(`"}`))
+		_, _ = conn.Write([]byte(`,"s":"`))
+		_, _ = conn.Write([]byte(salt))
+		_, _ = conn.Write([]byte(`"}`))
 	} else {
-		conn.Write([]byte("}"))
+		_, _ = conn.Write([]byte("}"))
 	}
-	conn.Write([]byte("\r\n"))
+	_, _ = conn.Write([]byte("\r\n"))
 
 	buf := bufio.NewReader(conn)
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
-		util.Error("Closing connection", err)
+		// TCP probes on the socket will close connection
+		// immediately and lead to EOF. Don't flood logs with them.
+		if err != io.EOF {
+			util.Error("Bad connection", err)
+		}
 		conn.Close()
 		return nil
 	}
@@ -222,7 +231,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
-	client, err := clientDataFromHello(line[5:])
+	cl, err := clientDataFromHello(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in HELLO", err)
 		conn.Close()
@@ -230,27 +239,27 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	if s.Options.Password != "" {
-		if client.Version < 2 {
+		if cl.Version < 2 {
 			iter = 1
 		}
 
-		if subtle.ConstantTimeCompare([]byte(client.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
-			conn.Write([]byte("-ERR Invalid password\r\n"))
-			conn.Close()
+		if subtle.ConstantTimeCompare([]byte(cl.PasswordHash), []byte(hash(s.Options.Password, salt, iter))) != 1 {
+			_, _ = conn.Write([]byte("-ERR Invalid password\r\n"))
+			_ = conn.Close()
 			return nil
 		}
 	}
 
 	cn := &Connection{
-		client: client,
+		client: cl,
 		conn:   conn,
 		buf:    buf,
 	}
 
-	if client.Wid == "" {
+	if cl.Wid == "" {
 		// a producer, not a consumer connection
 	} else {
-		s.workers.heartbeat(client, cn)
+		s.workers.setupHeartbeat(cl, cn)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -261,7 +270,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	// disable deadline
-	conn.SetDeadline(time.Time{})
+	_ = conn.SetDeadline(time.Time{})
 
 	return cn
 }
@@ -280,8 +289,8 @@ func (s *Server) processLines(conn *Connection) {
 			return
 		}
 		if s.closed {
-			conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
-			conn.Close()
+			_ = conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
+			_ = conn.Close()
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")
@@ -293,9 +302,9 @@ func (s *Server) processLines(conn *Connection) {
 		if idx >= 0 {
 			verb = cmd[0:idx]
 		}
-		proc, ok := cmdSet[verb]
+		proc, ok := CommandSet[verb]
 		if !ok {
-			conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
+			_ = conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
 		} else {
 			atomic.AddUint64(&s.Stats.Commands, 1)
 			proc(conn, s, cmd)
@@ -332,7 +341,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
+		"server_utc_time": time.Now().UTC().Format("15:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"total_failures":  s.store.TotalFailures(),
 			"total_processed": s.store.TotalProcessed(),

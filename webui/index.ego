@@ -9,7 +9,8 @@ import (
 
 func ego_index(w io.Writer, req *http.Request) {
   ego_layout(w, req, func() { %>
-<script type="text/javascript" src="/static/dashboard.js"></script>
+    <%== LicenseStatus(w, req) %>
+<script type="text/javascript" src="<%= relative(req, "/static/dashboard.js") %>"></script>
 <div class= "dashboard clearfix">
   <h3 >
     <%= t(req, "Dashboard") %>
@@ -34,13 +35,13 @@ func ego_index(w io.Writer, req *http.Request) {
 <div class="row chart">
   <h5>
     <span class="history-heading"><%= t(req, "History") %></span>
-    <a href="/?days=7" class="history-graph <%= daysMatches(req, "7", false) %>"><%= t(req, "OneWeek") %></a>
-    <a href="/" class="history-graph <%= daysMatches(req, "30", true) %>"><%= t(req, "OneMonth") %></a>
-    <a href="/?days=90" class="history-graph <%= daysMatches(req, "90", false) %>"><%= t(req, "ThreeMonths") %></a>
-    <a href="/?days=180" class="history-graph <%= daysMatches(req, "180", false) %>"><%= t(req, "SixMonths") %></a>
+    <a href="<%= relative(req, "/?days=7") %>" class="history-graph <%= daysMatches(req, "7", false) %>"><%= t(req, "OneWeek") %></a>
+    <a href="<%= relative(req, "/") %>" class="history-graph <%= daysMatches(req, "30", true) %>"><%= t(req, "OneMonth") %></a>
+    <a href="<%= relative(req, "/?days=90") %>" class="history-graph <%= daysMatches(req, "90", false) %>"><%= t(req, "ThreeMonths") %></a>
+    <a href="<%= relative(req, "/?days=180") %>" class="history-graph <%= daysMatches(req, "180", false) %>"><%= t(req, "SixMonths") %></a>
   </h5>
 
-  <div id="history" data-processed-label="<%= t(req, "Processed") %>" data-failed-label="<%= t(req, "Failed") %>" data-processed="<%= processedHistory(req) %>" data-failed="<%= failedHistory(req) %>" data-update-url="/stats"></div>
+  <div id="history" data-processed-label="<%= t(req, "Processed") %>" data-failed-label="<%= t(req, "Failed") %>" data-processed="<%= processedHistory(req) %>" data-failed="<%= failedHistory(req) %>" data-update-url="<%= relative(req, "/stats") %>"></div>
   <div id="history-legend"></div>
 </div>
 

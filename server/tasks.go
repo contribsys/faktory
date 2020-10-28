@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/util"
 )
 
 type reservationReaper struct {
@@ -18,7 +17,7 @@ func (r *reservationReaper) Name() string {
 }
 
 func (r *reservationReaper) Execute() error {
-	count, err := r.m.ReapExpiredJobs(util.Nows())
+	count, err := r.m.ReapExpiredJobs(time.Now())
 	if err != nil {
 		return err
 	}

@@ -36,8 +36,8 @@ func (q *redisQueue) Page(start int64, count int64, fn func(index int, data []by
 	index := 0
 
 	slice, err := q.store.rclient.LRange(q.name, start, start+count).Result()
-	for _, job := range slice {
-		err = fn(index, []byte(job))
+	for idx := range slice {
+		err = fn(index, []byte(slice[idx]))
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,9 @@ func (q *redisQueue) Each(fn func(index int, data []byte) error) error {
 }
 
 func (q *redisQueue) Clear() (uint64, error) {
-	q.store.rclient.Del(q.name)
+	q.store.rclient.Unlink(q.name)
+	q.store.rclient.SRem("queues", q.name)
+	delete(q.store.queueSet, q.name)
 	return 0, nil
 }
 
@@ -109,8 +111,8 @@ func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
 }
 
 func (q *redisQueue) Delete(vals [][]byte) error {
-	for _, val := range vals {
-		err := q.store.rclient.LRem(q.name, 1, val).Err()
+	for idx := range vals {
+		err := q.store.rclient.LRem(q.name, 1, vals[idx]).Err()
 		if err != nil {
 			return err
 		}

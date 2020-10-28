@@ -88,7 +88,7 @@ type SortedSet interface {
 	// so we need to be careful about the data changing under us.
 	Remove(key []byte) (bool, error)
 	RemoveElement(timestamp string, jid string) (bool, error)
-	RemoveBefore(timestamp string) ([][]byte, error)
+	RemoveBefore(timestamp string, maxCount int64, fn func(data []byte) error) (int64, error)
 	RemoveEntry(ent SortedEntry) error
 
 	// Move the given key from this SortedSet to the given
@@ -97,9 +97,9 @@ type SortedSet interface {
 	MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error
 }
 
-func Open(dbtype string, path string) (Store, error) {
+func Open(dbtype string, path string, size int) (Store, error) {
 	if dbtype == "redis" {
-		return OpenRedis(path)
+		return OpenRedis(path, size)
 	} else {
 		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
 	}

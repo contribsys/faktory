@@ -51,7 +51,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
       <tr>
         <th><%= t(req, "Queue") %></th>
         <td>
-          <a href="/queues/<%= job.Queue %>"><%= job.Queue %></a>
+          <a href="<%= root(req) %>/queues/<%= job.Queue %>"><%= job.Queue %></a>
         </td>
       </tr>
       <tr>

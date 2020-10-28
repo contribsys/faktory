@@ -34,7 +34,7 @@ func (rs *redisSorted) Size() uint64 {
 }
 
 func (rs *redisSorted) Clear() error {
-	return rs.store.rclient.Del(rs.name).Err()
+	return rs.store.rclient.Unlink(rs.name).Err()
 }
 
 func (rs *redisSorted) Add(job *client.Job) error {
@@ -103,9 +103,9 @@ func (rs *redisSorted) Get(key []byte) (SortedEntry, error) {
 		return NewEntry(time_f, []byte(elms[0])), nil
 	}
 
-	for _, elm := range elms {
-		if strings.Index(elm, jid) > 0 {
-			return NewEntry(time_f, []byte(elm)), nil
+	for idx := range elms {
+		if strings.Index(elms[idx], jid) > 0 {
+			return NewEntry(time_f, []byte(elms[idx])), nil
 		}
 	}
 	return nil, nil
@@ -192,8 +192,8 @@ func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEnt
 		return 0, err
 	}
 
-	for idx, z := range zs {
-		err = fn(idx, NewEntry(z.Score, []byte(z.Member.(string))))
+	for idx := range zs {
+		err = fn(idx, NewEntry(zs[idx].Score, []byte(zs[idx].Member.(string))))
 		if err != nil {
 			return idx, err
 		}
@@ -232,9 +232,9 @@ func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
 		return count == 1, err
 	}
 
-	for _, elm := range elms {
-		if strings.Index(elm, jid) > 0 {
-			count, err := rs.store.rclient.ZRem(rs.name, elm).Result()
+	for idx := range elms {
+		if strings.Index(elms[idx], jid) > 0 {
+			count, err := rs.store.rclient.ZRem(rs.name, elms[idx]).Result()
 			return count == 1, err
 		}
 	}
@@ -260,36 +260,40 @@ func (rs *redisSorted) RemoveElement(timestamp string, jid string) (bool, error)
 	return rs.rem(time_f, jid)
 }
 
-func (rs *redisSorted) RemoveBefore(timestamp string) ([][]byte, error) {
+func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(data []byte) error) (int64, error) {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
-	var vals *redis.StringSliceCmd
-	_, err = rs.store.rclient.TxPipelined(func(pipe redis.Pipeliner) error {
-		vals = pipe.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf})
-		pipe.ZRemRangeByScore(rs.name, "-inf", strf)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
+	vals := rs.store.rclient.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf, Count: maxCount})
 	jobs, err := vals.Result()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if len(jobs) == 0 {
-		return [][]byte{}, nil
+		return 0, nil
 	}
 
-	results := make([][]byte, len(jobs))
-	for idx, j := range jobs {
-		results[idx] = []byte(j)
+	count := int64(0)
+	for idx := range jobs {
+		j := jobs[idx]
+		cnt, err := rs.store.rclient.ZRem(rs.name, j).Result()
+		if err != nil {
+			return count, err
+		}
+		if cnt == 1 {
+			err = fn([]byte(j))
+			if err != nil {
+				util.Warnf("Unable to process timed job: %v", err)
+				continue
+			}
+			count++
+		}
 	}
-	return results, nil
+	return count, nil
 }
 
 func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error {

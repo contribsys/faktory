@@ -1,5 +1,62 @@
 # Faktory Changelog
 
+Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
+
+## 1.4.2
+
+- Allow FAKTORY_ENV to switch environment without flags [#325]
+- Fix jobs with Retry:0 not running FAIL middleware [#317]
+- Fix frequent "Bad connection EOF" log messages due to k8s probes
+- Upgrade to Go 1.15 and alpine 3.12.
+
+## 1.4.1
+
+- Fix crash with invalid mutate API usage [#313]
+- Fix form handler on Scheduled Job and Retry Job UI pages [#236]
+- Refactor scheduled job processing to handle large job counts [#309]
+
+## 1.4.0
+
+- Faktory Enterprise now supports **[Job Tracking](https://github.com/contribsys/faktory/wiki/Ent-Tracking)**.
+- Integrate golangci-lint and numerous minor changes for issues it raised
+- Support staging environment `-e staging`
+
+## 1.3.0
+
+- Allow workers to send their current process state as part of BEAT [#266]
+- Faktory will now dump all thread stacktraces when sent the TTIN signal
+- Remove apex/log dependency [#289]
+- Upgrade to Go 1.14
+- Enable SLOWLOG in Faktory's Redis instance
+
+## 1.2.0
+
+- **Faktory Enterprise** is now available with [Batches and Queue Throttling](https://github.com/contribsys/faktory/wiki#faktory-enterprise).
+- Upgrade Docker image to Alpine 3.10
+- Add connection pool support for `client` Go package.
+- Refactor manager package for Pro/Ent integration.
+- Scheduled jobs now go through `push` middleware when pushed [#260]
+
+## 1.1.0
+
+- Upgrade Go runtime from 1.10 to 1.13.
+- Faktory, Faktory Pro and faktory\_worker\_go are now using Go modules [#216, ClaytonNorthey92]
+- Fix "Add to Queue" button on the Scheduled page [#236]
+- Rework fetching jobs from queues to be more efficient. [#235]
+- Add several helper APIs to configure Faktory Pro features. [#251, tylerb]
+- You can now put nginx in front of Faktory's Web UI using `proxy_pass`:
+```nginx
+location /faktory {
+   proxy_set_header X-Script-Name /faktory;
+
+   proxy_pass   http://127.0.0.1:7420;
+   proxy_set_header Host $host;
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header X-Scheme $scheme;
+   proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
 ## 1.0.1
 
 - Pause Faktory boot and wait upon any `LOADING` errors from Redis

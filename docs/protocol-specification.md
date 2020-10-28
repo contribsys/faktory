@@ -364,6 +364,18 @@ C: HELLO {"pwdhash":"1e440e3f3d2db545e9129bb4b63121b6b09d594dae4344d1d2a309af0e2
 S: +OK
 ```
 
+### `FLUSH` Command
+
+Arguments: *none*
+
+Responses:
+
+ - Simple String "OK" - database was cleared
+ - Error - database was not cleared
+
+`FLUSH` allows the caller to clear all info from Faktory's internal
+database. It uses Redis's `FLUSHDB` command under the covers.
+
 ### `INFO` Command
 
 TODO

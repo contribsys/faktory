@@ -23,6 +23,26 @@ var (
 	utcFormat = "15:04:05 UTC"
 )
 
+func productTitle(req *http.Request) string {
+	return ctx(req).webui.Title
+}
+
+func extraCss(req *http.Request) string {
+	url := ctx(req).webui.ExtraCssUrl
+	if url != "" && strings.HasPrefix(url, "http") {
+		return fmt.Sprintf("<link href='%s' media='screen' rel='stylesheet' type='text/css'/>", url)
+	}
+	return ""
+}
+
+func root(req *http.Request) string {
+	return ctx(req).Root
+}
+
+func relative(req *http.Request, relpath string) string {
+	return fmt.Sprintf("%s%s", root(req), relpath)
+}
+
 func serverUtcTime() string {
 	return time.Now().UTC().Format(utcFormat)
 }
@@ -100,7 +120,8 @@ func uintWithDelimiter(val uint64) string {
 		if i == 0 {
 			return string(out)
 		}
-		if k++; k == 3 {
+		k++
+		if k == 3 {
 			j, k = j-1, 0
 			out[j] = ','
 		}
@@ -194,8 +215,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		if len(keys) == 1 && keys[0] == "all" {
 			return set.Clear()
 		} else {
-			for _, key := range keys {
-				_, err := set.Remove([]byte(key))
+			for idx := range keys {
+				_, err := set.Remove([]byte(keys[idx]))
 				// ok doesn't really matter
 				if err != nil {
 					return err
@@ -203,12 +224,12 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 			}
 			return nil
 		}
-	case "retry":
+	case "add_to_queue", "retry":
 		if len(keys) == 1 && keys[0] == "all" {
 			return ctx(req).Store().EnqueueAll(set)
 		} else {
-			for _, key := range keys {
-				err := ctx(req).Store().EnqueueFrom(set, []byte(key))
+			for idx := range keys {
+				err := ctx(req).Store().EnqueueFrom(set, []byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -222,8 +243,8 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 			// TODO Make this 180 day dead job expiry dynamic per-job or
 			// a global variable in TOML? PRs welcome.
 			expiry := time.Now().Add(180 * 24 * time.Hour)
-			for _, key := range keys {
-				entry, err := set.Get([]byte(key))
+			for idx := range keys {
+				entry, err := set.Get([]byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -246,13 +267,14 @@ func uptimeInDays(req *http.Request) string {
 }
 
 func redis_info(req *http.Request) string {
-	client := ctx(req).Store().(storage.Redis)
-	val, err := client.Redis().Info().Result()
+	cl := ctx(req).Store().(storage.Redis)
+	val, err := cl.Redis().Info().Result()
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
 	return val
 }
+
 func rss() string {
 	ex, err := util.FileExists("/proc/self/status")
 	if err != nil || !ex {
@@ -265,10 +287,12 @@ func rss() string {
 	}
 
 	lines := bytes.Split(content, []byte("\n"))
-	for line := range lines {
-		ls := string(line)
-		if strings.Contains(ls, "VmRSS") {
-			return strings.Split(ls, ":")[1]
+	for idx := range lines {
+		if lines[idx][0] == 'V' {
+			ls := string(lines[idx])
+			if strings.Contains(ls, "VmRSS") {
+				return strings.Split(ls, ":")[1]
+			}
 		}
 	}
 	return ""
@@ -310,10 +334,13 @@ func processedHistory(req *http.Request) string {
 	procd := map[string]uint64{}
 	//faild := map[string]int64{}
 
-	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
 		//faild[daystr] = f
 	})
+	if err != nil {
+		return err.Error()
+	}
 	str, err := json.Marshal(procd)
 	if err != nil {
 		return err.Error()
@@ -326,10 +353,13 @@ func failedHistory(req *http.Request) string {
 	//procd := map[string]int64{}
 	faild := map[string]uint64{}
 
-	ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		//procd[daystr] = p
 		faild[daystr] = f
 	})
+	if err != nil {
+		return err.Error()
+	}
 	str, err := json.Marshal(faild)
 	if err != nil {
 		return err.Error()
@@ -341,14 +371,14 @@ func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
 	c := ctx(req)
 	names := make(sort.StringSlice, len(locales))
 	i := 0
-	for name, _ := range locales {
+	for name := range locales {
 		names[i] = name
 		i++
 	}
 	names.Sort()
 
-	for _, name := range names {
-		fn(name, name == c.locale)
+	for idx := range names {
+		fn(names[idx], names[idx] == c.locale)
 	}
 }
 
@@ -362,20 +392,20 @@ func displayFullArgs(args []interface{}) string {
 
 func displayLimitedArgs(args []interface{}, limit int) string {
 	var b strings.Builder
-	for idx, arg := range args {
+	for idx := range args {
 		var s string
-		bytes, err := json.Marshal(arg)
+		data, err := json.Marshal(args[idx])
 		if err != nil {
 			util.Warnf("Unable to marshal argument for display: %s", err)
-			s = fmt.Sprintf("%#v", arg)
+			s = fmt.Sprintf("%#v", args[idx])
 		} else {
-			s = string(bytes)
+			s = string(data)
 		}
 		if len(s) > limit {
 			fmt.Fprintf(&b, s[0:limit])
 			b.WriteRune('…')
 		} else {
-			fmt.Fprintf(&b, s)
+			fmt.Fprint(&b, s)
 		}
 		if idx+1 < len(args) {
 			b.WriteRune(',')

@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+type UniqueUntil string
+
+const (
+	UntilSuccess UniqueUntil = "success" // default
+	UntilStart   UniqueUntil = "start"
+)
+
 type Failure struct {
 	RetryCount   int      `json:"retry_count"`
 	FailedAt     string   `json:"failed_at"`
@@ -28,24 +35,26 @@ type Job struct {
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
 	At         string                 `json:"at,omitempty"`
 	ReserveFor int                    `json:"reserve_for,omitempty"`
-	Retry      int                    `json:"retry,omitempty"`
+	Retry      int                    `json:"retry"`
 	Backtrace  int                    `json:"backtrace,omitempty"`
 	Failure    *Failure               `json:"failure,omitempty"`
 	Custom     map[string]interface{} `json:"custom,omitempty"`
 }
 
+// Clients should use this constructor to build a Job, not allocate
+// a bare struct directly.
 func NewJob(jobtype string, args ...interface{}) *Job {
 	return &Job{
 		Type:      jobtype,
 		Queue:     "default",
 		Args:      args,
-		Jid:       randomJid(),
+		Jid:       RandomJid(),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Retry:     25,
 	}
 }
 
-func randomJid() string {
+func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
 	if err != nil {
@@ -64,10 +73,43 @@ func (j *Job) GetCustom(name string) (interface{}, bool) {
 	return val, ok
 }
 
-func (j *Job) SetCustom(name string, value interface{}) {
+// Set custom metadata for this job. Faktory reserves all
+// element names starting with "_" for internal use, e.g.
+// SetCustom("_txid", "12345")
+func (j *Job) SetCustom(name string, value interface{}) *Job {
 	if j.Custom == nil {
 		j.Custom = map[string]interface{}{}
 	}
 
 	j.Custom[name] = value
+	return j
+}
+
+////////////////////////////////////////////
+// Faktory Pro helpers
+//
+// These helpers allow you to configure several Faktory Pro features.
+// They will have no effect unless you are running Faktory Pro.
+
+// Configure this job to be unique for +secs+ seconds or until the job
+// has been successfully processed.
+func (j *Job) SetUniqueFor(secs uint) *Job {
+	return j.SetCustom("unique_for", secs)
+}
+
+// Configure the uniqueness deadline for this job, legal values
+// are:
+//
+// - "success" - the job will be considered unique until it has successfully processed
+//   or the +unique_for+ TTL has passed, this is the default value.
+// - "start" - the job will be considered unique until it starts processing. Retries
+//   may lead to multiple copies of the job running.
+func (j *Job) SetUniqueness(until UniqueUntil) *Job {
+	return j.SetCustom("unique_until", until)
+}
+
+// Configure the TTL for this job. After this point in time, the job will be
+// discarded rather than executed.
+func (j *Job) SetExpiresAt(expiresAt time.Time) *Job {
+	return j.SetCustom("expires_at", expiresAt.Format(time.RFC3339Nano))
 }

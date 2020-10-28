@@ -82,6 +82,15 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		return fmt.Errorf("Job not found %s", jid)
 	}
 
+	// Lease is in-memory only
+	// A reservation can have a nil Lease if we restarted
+	if res.lease != nil {
+		err := res.lease.Release()
+		if err != nil {
+			return err
+		}
+	}
+
 	// when expiring overdue jobs in the working set, we remove in
 	// bulk so this job is no longer in the working set already.
 	if failure != JobReservationExpired {
@@ -94,13 +103,9 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	m.store.Failure()
+	_ = m.store.Failure()
 
 	job := res.Job
-	if job.Retry == 0 {
-		// no retry, no death, completely ephemeral, goodbye
-		return nil
-	}
 
 	if job.Failure != nil {
 		job.Failure.RetryCount++
@@ -118,6 +123,10 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	}
 
 	return callMiddleware(m.failChain, Ctx{context.Background(), job, m, res}, func() error {
+		if job.Retry == 0 {
+			// no retry, no death, completely ephemeral, goodbye
+			return nil
+		}
 		if job.Failure.RetryCount < job.Retry {
 			return retryLater(m.store, job)
 		}

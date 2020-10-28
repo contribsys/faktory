@@ -19,6 +19,9 @@ var (
 
 func mutateKill(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
+	if ss == nil {
+		return fmt.Errorf("Invalid target for mutation command")
+	}
 	match, matchfn := matchForFilter(op.Filter)
 	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
@@ -30,6 +33,9 @@ func mutateKill(store storage.Store, op client.Operation) error {
 
 func mutateRequeue(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
+	if ss == nil {
+		return fmt.Errorf("Invalid target for mutation command")
+	}
 	match, matchfn := matchForFilter(op.Filter)
 	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
@@ -53,6 +59,9 @@ func mutateRequeue(store storage.Store, op client.Operation) error {
 
 func mutateDiscard(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
+	if ss == nil {
+		return fmt.Errorf("Invalid target for mutation command")
+	}
 	if op.Filter == nil {
 		return ss.Clear()
 	}
@@ -89,8 +98,8 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 
 	if len(filter.Jids) > 0 {
 		return "*", func(value string) bool {
-			for _, jid := range filter.Jids {
-				if strings.Index(value, fmt.Sprintf(`"jid":"%s"`, jid)) > 0 {
+			for idx := range filter.Jids {
+				if strings.Index(value, fmt.Sprintf(`"jid":"%s"`, filter.Jids[idx])) > 0 {
 					return true
 				}
 			}
@@ -103,7 +112,7 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 func mutate(c *Connection, s *Server, cmd string) {
 	parts := strings.Split(cmd, " ")
 	if len(parts) != 2 {
-		c.Error(cmd, fmt.Errorf("Invalid format"))
+		_ = c.Error(cmd, fmt.Errorf("Invalid format"))
 		return
 	}
 
@@ -111,7 +120,7 @@ func mutate(c *Connection, s *Server, cmd string) {
 	var op client.Operation
 	err = json.Unmarshal([]byte(parts[1]), &op)
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
@@ -129,19 +138,19 @@ func mutate(c *Connection, s *Server, cmd string) {
 	}
 
 	if err != nil {
-		c.Error(cmd, err)
+		_ = c.Error(cmd, err)
 		return
 	}
 
-	c.Ok()
+	_ = c.Ok()
 }
 
 func mutateClear(store storage.Store, target string) error {
 	ss := setForTarget(store, target)
-	if ss != nil {
-		return ss.Clear()
+	if ss == nil {
+		return fmt.Errorf("Invalid target for mutation command")
 	}
-	return fmt.Errorf("Cannot clear, invalid set: %s", target)
+	return ss.Clear()
 }
 
 func setForTarget(store storage.Store, name string) storage.SortedSet {

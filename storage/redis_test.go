@@ -46,7 +46,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, Store)) {
 		panic(err)
 	}
 
-	store, err := OpenRedis(sock)
+	store, err := OpenRedis(sock, 10)
 	if err != nil {
 		panic(err)
 	}

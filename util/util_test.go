@@ -1,6 +1,8 @@
 package util
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,4 +37,38 @@ func TestBacktrace(t *testing.T) {
 	//for _, str := range ex {
 	//fmt.Println(str)
 	//}
+
+	LogInfo = true
+	DumpProcessTrace()
+}
+
+func TestLogger(t *testing.T) {
+	InitLogger("debug")
+	Debug("hello")
+	Debugf("hello %s", "mike")
+	Info("hello")
+	Infof("hello %s", "mike")
+	Warn("hello")
+	Warnf("hello %s", "mike")
+	Error("hello", os.ErrClosed)
+}
+
+func TestMisc(t *testing.T) {
+	Darwin()
+
+	ok, err := FileExists("./nope.go")
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+	ok, err = FileExists("./util_test.go")
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	assert.Equal(t, 16, len(RandomJid()))
+
+	ts := Nows()
+	assert.True(t, strings.HasPrefix(ts, "20"))
+
+	val := MemoryUsage()
+	assert.True(t, strings.Contains(val, "MB"))
 }

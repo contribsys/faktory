@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=1.0.1
+VERSION=1.4.2
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -19,6 +19,7 @@ all: test
 
 release:
 	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
+	cp /tmp/faktory-ent_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
 	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
@@ -26,13 +27,12 @@ release:
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
 		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
+		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
-prepare: ## Download all dependencies
-	@go get github.com/golang/dep/cmd/dep
-	@dep ensure
-	@go get github.com/benbjohnson/ego/cmd/ego
-	@go get github.com/jteeuwen/go-bindata/go-bindata
+prepare: ## install build prereqs
+	@go get github.com/benbjohnson/ego/...
+	@go get github.com/go-bindata/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc
@@ -83,12 +83,21 @@ generate:
 	go generate github.com/contribsys/faktory/webui
 
 cover:
-	go test -cover -coverprofile cover.out github.com/contribsys/faktory/server
+	go test -coverprofile cover.out \
+		github.com/contribsys/faktory/cli \
+		github.com/contribsys/faktory/client \
+		github.com/contribsys/faktory/manager \
+		github.com/contribsys/faktory/server \
+		github.com/contribsys/faktory/storage \
+		github.com/contribsys/faktory/util \
+		github.com/contribsys/faktory/webui
 	go tool cover -html=cover.out -o coverage.html
 	open coverage.html
 
 xbuild: clean generate
 	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	# brew install upx
+	upx -qq ./faktory
 
 build: clean generate
 	go build -o $(NAME) cmd/faktory/daemon.go
@@ -107,6 +116,10 @@ megacheck:
 	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
 
 # TODO integrate a few useful Golang linters.
+lint:
+	# brew install golangci/tap/golangci-lint
+	golangci-lint run
+
 fmt: ## Format the code
 	go fmt ./...
 
@@ -114,7 +127,6 @@ work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
 clean: ## Clean the project, set it up for a new build
-	@rm -f webui/*.ego.go
 	@rm -rf tmp
 	@rm -f main faktory templates.go
 	@rm -rf packaging/output
@@ -149,7 +161,8 @@ reload_deb:
 rpm: xbuild
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis \
-		--rpm-compression bzip2 --rpm-os linux \
+		--rpm-compression bzip2 \
+	 	--rpm-os linux \
 	 	--after-install packaging/scripts/postinst.rpm.systemd \
 	 	--before-remove packaging/scripts/prerm.rpm.systemd \
 		--after-remove packaging/scripts/postrm.rpm.systemd \

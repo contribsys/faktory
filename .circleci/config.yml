@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.14
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -20,4 +20,5 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: sudo apt-get install redis-server
       - run: make prepare
-      - run: make test
+      - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.7
+      - run: make lint test

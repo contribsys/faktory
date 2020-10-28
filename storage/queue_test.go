@@ -36,10 +36,11 @@ func TestBasicQueueOps(t *testing.T) {
 				[]byte("world"),
 				[]byte("hello"),
 			}
-			q.Each(func(idx int, value []byte) error {
+			err = q.Each(func(idx int, value []byte) error {
 				assert.Equal(t, values[idx], value)
 				return nil
 			})
+			assert.NoError(t, err)
 
 			data, err = q.Pop()
 			assert.NoError(t, err)
@@ -141,11 +142,12 @@ func TestBasicQueueOps(t *testing.T) {
 			assert.EqualValues(t, 0, counter)
 			assert.EqualValues(t, 0, q.Size())
 
-			q.Each(func(idx int, v []byte) error {
+			err = q.Each(func(idx int, v []byte) error {
 				atomic.AddInt64(&counter, 1)
 				//log.Println(string(k), string(v))
 				return nil
 			})
+			assert.NoError(t, err)
 			assert.EqualValues(t, 0, counter)
 		})
 	})

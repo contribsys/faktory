@@ -387,7 +387,9 @@ func (c *Client) writeLine(wtr *bufio.Writer, op string, payload []byte) error {
 func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
 	data, err := readResponse(rdr)
 	if err != nil {
-		c.markUnusable()
+		if _, ok := err.(*ProtocolError); !ok {
+			c.markUnusable()
+		}
 	}
 	return data, err
 }
@@ -395,7 +397,9 @@ func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
 func (c *Client) ok(rdr *bufio.Reader) error {
 	err := ok(rdr)
 	if err != nil {
-		c.markUnusable()
+		if _, ok := err.(*ProtocolError); !ok {
+			c.markUnusable()
+		}
 	}
 	return err
 }
@@ -403,7 +407,9 @@ func (c *Client) ok(rdr *bufio.Reader) error {
 func (c *Client) readString(rdr *bufio.Reader) (string, error) {
 	s, err := readString(rdr)
 	if err != nil {
-		c.markUnusable()
+		if _, ok := err.(*ProtocolError); !ok {
+			c.markUnusable()
+		}
 	}
 	return s, err
 }

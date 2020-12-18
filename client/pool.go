@@ -16,10 +16,24 @@ type Pool struct {
 // Put(), the connection will be leaked, and the pool will stop working once it hits capacity.
 //
 // Do NOT call Close() on the client, as the lifecycle is managed internally.
+//
+// The dialer clients in this pool use is determined by the URI scheme in FAKTORY_PROVIDER.
 func NewPool(capacity int) (*Pool, error) {
+	return newPool(capacity, func() (pool.Closeable, error) { return Open() })
+}
+
+// NewPoolWithDialer creates a new Pool object similar to NewPool but clients will use the
+// provided dialer instead of default ones.
+func NewPoolWithDialer(capacity int, dialer Dialer) (*Pool, error) {
+	fn := func() (pool.Closeable, error) { return OpenWithDialer(dialer) }
+	return newPool(capacity, fn)
+}
+
+// newPool creates a *Pool channel with the provided capacity and opener.
+func newPool(capacity int, opener pool.Factory) (*Pool, error) {
 	var p Pool
 	var err error
-	p.Pool, err = pool.NewChannelPool(0, capacity, func() (pool.Closeable, error) { return Open() })
+	p.Pool, err = pool.NewChannelPool(0, capacity, opener)
 	return &p, err
 }
 

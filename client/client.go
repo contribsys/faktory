@@ -30,11 +30,15 @@ var (
 	Labels           = []string{"golang"}
 )
 
+// Dialer is the interface for creating a specialized net.Conn.
+type Dialer interface {
+	Dial(network, addr string) (c net.Conn, err error)
+}
+
 // The Client structure represents a thread-unsafe connection
 // to a Faktory server.  It is recommended to use a connection pool
 // of Clients in a multi-threaded process.  See faktory_worker_go's
 // internal connection pool for example.
-//
 type Client struct {
 	Location string
 	Options  *ClientData
@@ -72,6 +76,11 @@ type Server struct {
 	Password string
 	Timeout  time.Duration
 	TLS      *tls.Config
+}
+
+// OpenWithDialer creates a *Client with the dialer.
+func (s *Server) OpenWithDialer(dialer Dialer) (*Client, error) {
+	return DialWithDialer(s, s.Password, dialer)
 }
 
 func (s *Server) Open() (*Client, error) {
@@ -147,32 +156,49 @@ func Open() (*Client, error) {
 	return srv.Open()
 }
 
-// Dial connects to the remote faktory server.
+// OpenWithDialer connects to a Faktory server
+// following the same conventions as Open but
+// instead uses dialer as the transport.
+func OpenWithDialer(dialer Dialer) (*Client, error) {
+	srv := DefaultServer()
+	if err := srv.ReadFromEnv(); err != nil {
+		return nil, fmt.Errorf("cannot read configuration from env: %w", err)
+	}
+	// Connect to default localhost
+	return srv.OpenWithDialer(dialer)
+}
+
+// Dial connects to the remote faktory server with
+// a Dialer reflecting the value of srv.Network; i.e.,
+// a *tls.Dialer if "tcp+tls" and a *net.Dialer if
+// not.
 //
 //   client.Dial(client.Localhost, "topsecret")
 //
 func Dial(srv *Server, password string) (*Client, error) {
+	d := &net.Dialer{Timeout: srv.Timeout}
+	var dialer Dialer = d
+	if srv.Network == "tcp+tls" {
+		dialer = &tls.Dialer{NetDialer: d, Config: srv.TLS}
+	}
+	return dial(srv, password, dialer)
+}
+
+// DialWithDialer connects to the faktory server
+func DialWithDialer(srv *Server, password string, dialer Dialer) (*Client, error) {
+	return dial(srv, password, dialer)
+}
+
+// dial connects to the remote faktory server.
+func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 	client := emptyClientData()
 
 	var err error
 	var conn net.Conn
-	dial := &net.Dialer{Timeout: srv.Timeout}
-	if srv.Network == "tcp+tls" {
-		conn, err = tls.DialWithDialer(dial, "tcp", srv.Address, srv.TLS)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		conn, err = dial.Dial(srv.Network, srv.Address)
-		if err != nil {
-			return nil, err
-		}
-		if x, ok := conn.(*net.TCPConn); ok {
-			err = x.SetKeepAlive(true)
-			if err != nil {
-				return nil, err
-			}
-		}
+
+	conn, err = dialer.Dial("tcp", srv.Address)
+	if err != nil {
+		return nil, err
 	}
 
 	r := bufio.NewReader(conn)
@@ -183,6 +209,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 		conn.Close()
 		return nil, err
 	}
+
 	if strings.HasPrefix(line, "HI ") {
 		str := strings.TrimSpace(line)[3:]
 

@@ -177,7 +177,7 @@ func OpenWithDialer(dialer Dialer) (*Client, error) {
 //
 func Dial(srv *Server, password string) (*Client, error) {
 	d := &net.Dialer{Timeout: srv.Timeout}
-	var dialer Dialer = d
+	dialer := Dialer(d)
 	if srv.Network == "tcp+tls" {
 		dialer = &tls.Dialer{NetDialer: d, Config: srv.TLS}
 	}

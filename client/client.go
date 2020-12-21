@@ -201,6 +201,13 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 		return nil, err
 	}
 
+	if x, ok := conn.(*net.TCPConn); ok {
+		err = x.SetKeepAlive(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 

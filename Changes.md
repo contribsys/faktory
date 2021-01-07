@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Add `Dialer` support for custom `faktory.Client` connections [#330]
+
 ## 1.4.2
 
 - Allow FAKTORY_ENV to switch environment without flags [#325]

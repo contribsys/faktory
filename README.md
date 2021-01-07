@@ -34,4 +34,4 @@ You can find help in the [contribsys/faktory](https://gitter.im/contribsys/fakto
 
 ## Author
 
-Mike Perham, @mperham, mike @ contribsys.com
+Mike Perham, @getajobmike, mike @ contribsys.com

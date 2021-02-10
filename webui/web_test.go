@@ -79,7 +79,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 	defer os.RemoveAll(dir)
 
 	sock := fmt.Sprintf("%s/redis.sock", dir)
-	stopper, err := storage.BootRedis(dir, sock)
+	stopper, err := storage.Boot(dir, sock)
 	if err != nil {
 		panic(err)
 	}

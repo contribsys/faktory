@@ -151,7 +151,7 @@ func BuildServer(opts *CliOptions) (*server.Server, func(), error) {
 	}
 
 	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
-	stopper, err := storage.BootRedis(opts.StorageDirectory, sock)
+	stopper, err := storage.Boot(opts.StorageDirectory, sock)
 	if err != nil {
 		return nil, stopper, err
 	}

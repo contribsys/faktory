@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -95,12 +94,4 @@ type SortedSet interface {
 	// SortedSet atomically.  The given func may mutate the payload and
 	// return a new tstamp.
 	MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error
-}
-
-func Open(dbtype string, path string, size int) (Store, error) {
-	if dbtype == "redis" {
-		return OpenRedis(path, size)
-	} else {
-		return nil, fmt.Errorf("Invalid dbtype: %s", dbtype)
-	}
 }

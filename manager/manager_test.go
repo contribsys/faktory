@@ -271,7 +271,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 	defer os.RemoveAll(dir)
 
 	sock := fmt.Sprintf("%s/redis.sock", dir)
-	stopper, err := storage.BootRedis(dir, sock)
+	stopper, err := storage.Boot(dir, sock)
 	if stopper != nil {
 		defer stopper()
 	}
@@ -279,7 +279,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 		panic(err)
 	}
 
-	store, err := storage.Open("redis", sock, 10)
+	store, err := storage.Open(sock, 10)
 	if err != nil {
 		panic(err)
 	}

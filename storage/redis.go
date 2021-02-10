@@ -31,7 +31,31 @@ type redisStore struct {
 	working   *redisSorted
 
 	rclient *redis.Client
-	DB      int
+}
+
+func NewRedisStore(name string, rclient *redis.Client) (Store, error) {
+	rs := &redisStore{
+		Name:     name,
+		mu:       sync.Mutex{},
+		queueSet: map[string]*redisQueue{},
+		rclient:  rclient,
+	}
+	rs.initSorted()
+
+	vals, err := rs.rclient.SMembers("queues").Result()
+	if err != nil {
+		return nil, err
+	}
+	for idx := range vals {
+		q := rs.NewQueue(vals[idx])
+		err := q.init()
+		if err != nil {
+			util.Warnf("Unable to initialize queue: %v", err)
+			continue
+		}
+		rs.queueSet[vals[idx]] = q
+	}
+	return rs, nil
 }
 
 var (
@@ -39,12 +63,12 @@ var (
 	redisMutex = sync.Mutex{}
 )
 
-func BootRedis(path string, sock string) (func(), error) {
+func bootRedis(path string, sock string) (func(), error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
 		return func() {
-			err := StopRedis(sock)
+			err := stopRedis(sock)
 			if err != nil {
 				util.Error("Unable to stop Redis", err)
 			}
@@ -176,53 +200,31 @@ func BootRedis(path string, sock string) (func(), error) {
 	}
 
 	return func() {
-		err := StopRedis(sock)
+		err := stopRedis(sock)
 		if err != nil {
 			util.Error("Unable to stop Redis", err)
 		}
 	}, nil
 }
 
-func OpenRedis(sock string, poolSize int) (Store, error) {
+func openRedis(sock string, poolSize int) (Store, error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; !ok {
 		return nil, errors.New("redis not booted, cannot start")
 	}
 
-	db := 0
-	rs := &redisStore{
-		Name:     sock,
-		DB:       db,
-		mu:       sync.Mutex{},
-		queueSet: map[string]*redisQueue{},
-	}
-	rs.initSorted()
-
-	rs.rclient = redis.NewClient(&redis.Options{
+	rclient := redis.NewClient(&redis.Options{
 		Network:  "unix",
 		Addr:     sock,
-		DB:       db,
+		DB:       0,
 		PoolSize: poolSize,
 	})
-	_, err := rs.rclient.Ping().Result()
+	_, err := rclient.Ping().Result()
 	if err != nil {
 		return nil, err
 	}
-	vals, err := rs.rclient.SMembers("queues").Result()
-	if err != nil {
-		return nil, err
-	}
-	for idx := range vals {
-		q := rs.NewQueue(vals[idx])
-		err := q.init()
-		if err != nil {
-			util.Warnf("Unable to initialize queue: %v", err)
-			continue
-		}
-		rs.queueSet[vals[idx]] = q
-	}
-	return rs, nil
+	return NewRedisStore(sock, rclient)
 }
 
 func (store *redisStore) Stats() map[string]string {
@@ -289,7 +291,7 @@ func (store *redisStore) Redis() *redis.Client {
 	return store.rclient
 }
 
-func StopRedis(sock string) error {
+func stopRedis(sock string) error {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 
@@ -404,6 +406,12 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 
 	return q.Add(job)
 }
+
+var (
+	Open = openRedis
+	Boot = bootRedis
+	Stop = stopRedis
+)
 
 const (
 	redisconf = `

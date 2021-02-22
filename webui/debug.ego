@@ -12,6 +12,7 @@ func ego_debug(w io.Writer, req *http.Request) {
   stats := ctx(req).Store().Stats()
   var m runtime.MemStats
   runtime.ReadMemStats(&m)
+  rdata, latency := redis_info(req)
 %>
 <% ego_layout(w, req, func() { %>
 
@@ -62,15 +63,19 @@ func ego_debug(w io.Writer, req *http.Request) {
         NumGC: <%= m.NumGC %>
       </td>
     </tr>
+    <tr>
+      <th><%= t(req, "Redis Latency") %></th>
+      <td class="bg-<%= color_for_latency(latency) %>">
+        <%= latency %> µs
+      </td>
+    </tr>
   </tbody>
 </table>
 </div>
 
 <h3><%= t(req, "Redis Info") %></h3>
-<% data, latency := redis_info(req) %>
 <pre>
-Latency: <%= latency %>µs
-<%= data %>
+<%= rdata %>
 </pre>
 
 <h3><%= t(req, "Disk Usage") %></h3>

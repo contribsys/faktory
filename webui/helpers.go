@@ -266,6 +266,18 @@ func uptimeInDays(req *http.Request) string {
 	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
 }
 
+func color_for_latency(lat float64) string {
+	if lat == 0 {
+		return "danger"
+	} else if lat < 1000 {
+		return "success"
+	} else if lat < 10000 {
+		return "warning"
+	} else {
+		return "danger"
+	}
+}
+
 func redis_info(req *http.Request) (string, float64) {
 	cl := ctx(req).Store().(storage.Redis)
 	client := cl.Redis()

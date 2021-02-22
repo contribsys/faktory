@@ -266,13 +266,17 @@ func uptimeInDays(req *http.Request) string {
 	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
 }
 
-func redis_info(req *http.Request) string {
+func redis_info(req *http.Request) (string, float64) {
 	cl := ctx(req).Store().(storage.Redis)
-	val, err := cl.Redis().Info().Result()
+	client := cl.Redis()
+	a := time.Now().UnixNano()
+	res := client.Info()
+	b := time.Now().UnixNano()
+	val, err := res.Result()
 	if err != nil {
-		return fmt.Sprintf("%v", err)
+		return fmt.Sprintf("%v", err), 0
 	}
-	return val
+	return val, (float64(b-a) / 1000)
 }
 
 func rss() string {

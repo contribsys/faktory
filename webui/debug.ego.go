@@ -127,24 +127,32 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:69
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Info"))))
 //line debug.ego:69
-		_, _ = io.WriteString(w, "</h3>\n<pre>\n")
+		_, _ = io.WriteString(w, "</h3>\n")
+//line debug.ego:70
+		data, latency := redis_info(req)
 //line debug.ego:71
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(redis_info(req))))
+		_, _ = io.WriteString(w, "\n<pre>\nLatency: ")
 //line debug.ego:72
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(latency)))
+//line debug.ego:72
+		_, _ = io.WriteString(w, "µs\n")
+//line debug.ego:73
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(data)))
+//line debug.ego:74
 		_, _ = io.WriteString(w, "\n</pre>\n\n<h3>")
-//line debug.ego:74
+//line debug.ego:76
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Disk Usage"))))
-//line debug.ego:74
+//line debug.ego:76
 		_, _ = io.WriteString(w, "</h3>\n<pre>\n<code>&gt; df -h</code>\n")
-//line debug.ego:77
+//line debug.ego:79
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(df_h())))
-//line debug.ego:78
-		_, _ = io.WriteString(w, "\n</pre>\n\n")
 //line debug.ego:80
+		_, _ = io.WriteString(w, "\n</pre>\n\n")
+//line debug.ego:82
 	})
-//line debug.ego:81
+//line debug.ego:83
 	_, _ = io.WriteString(w, "\n")
-//line debug.ego:81
+//line debug.ego:83
 }
 
 var _ fmt.Stringer

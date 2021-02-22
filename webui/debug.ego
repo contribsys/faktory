@@ -67,8 +67,10 @@ func ego_debug(w io.Writer, req *http.Request) {
 </div>
 
 <h3><%= t(req, "Redis Info") %></h3>
+<% data, latency := redis_info(req) %>
 <pre>
-<%= redis_info(req) %>
+Latency: <%= latency %>µs
+<%= data %>
 </pre>
 
 <h3><%= t(req, "Disk Usage") %></h3>

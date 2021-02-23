@@ -1187,3 +1187,13 @@ div.interval-slider input {
 code {
   color: #585454;
 }
+.info-circle {
+  color: #000;
+  background-color: #dddddd;
+  border-radius: 50%;
+  text-align: center;
+  vertical-align: middle;
+  padding: 3px 7px;
+  font-size: 0.7em;
+  margin-left: 5px;
+}

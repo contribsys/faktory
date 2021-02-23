@@ -64,7 +64,11 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Version"))))
 //line debug.ego:38
-		_, _ = io.WriteString(w, "</th>\n      <td>Faktory ")
+		_, _ = io.WriteString(w, "</th>\n      <td>")
+//line debug.ego:39
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
+//line debug.ego:39
+		_, _ = io.WriteString(w, " ")
 //line debug.ego:39
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
 //line debug.ego:39
@@ -124,40 +128,40 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:63
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(m.NumGC)))
 //line debug.ego:64
-		_, _ = io.WriteString(w, "\n      </td>\n    </tr>\n    <tr>\n      <th>")
-//line debug.ego:67
+		_, _ = io.WriteString(w, "\n      </td>\n    </tr>\n    <tr>\n      <th>\n        ")
+//line debug.ego:68
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis RTT"))))
-//line debug.ego:67
-		_, _ = io.WriteString(w, "</th>\n      <td class=\"bg-")
-//line debug.ego:68
+//line debug.ego:69
+		_, _ = io.WriteString(w, "\n        <a href=\"https://github.com/contribsys/faktory/wiki/Storage#rtt\"><span class=\"info-circle\" title=\"Click to learn more about RTT\">?</span></a>\n      </th>\n      <td class=\"bg-")
+//line debug.ego:71
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(category_for_rtt(rtt))))
-//line debug.ego:68
+//line debug.ego:71
 		_, _ = io.WriteString(w, "\">\n        ")
-//line debug.ego:69
+//line debug.ego:72
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rtt)))
-//line debug.ego:69
+//line debug.ego:72
 		_, _ = io.WriteString(w, " µs\n      </td>\n    </tr>\n  </tbody>\n</table>\n</div>\n\n<h3>")
-//line debug.ego:76
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Info"))))
-//line debug.ego:76
-		_, _ = io.WriteString(w, "</h3>\n<pre>\n")
-//line debug.ego:78
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rdata)))
 //line debug.ego:79
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Info"))))
+//line debug.ego:79
+		_, _ = io.WriteString(w, "</h3>\n<pre>\n")
+//line debug.ego:81
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rdata)))
+//line debug.ego:82
 		_, _ = io.WriteString(w, "\n</pre>\n\n<h3>")
-//line debug.ego:81
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Disk Usage"))))
-//line debug.ego:81
-		_, _ = io.WriteString(w, "</h3>\n<pre>\n<code>&gt; df -h</code>\n")
 //line debug.ego:84
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(df_h())))
-//line debug.ego:85
-		_, _ = io.WriteString(w, "\n</pre>\n\n")
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Disk Usage"))))
+//line debug.ego:84
+		_, _ = io.WriteString(w, "</h3>\n<pre>\n<code>&gt; df -h</code>\n")
 //line debug.ego:87
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(df_h())))
+//line debug.ego:88
+		_, _ = io.WriteString(w, "\n</pre>\n\n")
+//line debug.ego:90
 	})
-//line debug.ego:88
+//line debug.ego:91
 	_, _ = io.WriteString(w, "\n")
-//line debug.ego:88
+//line debug.ego:91
 }
 
 var _ fmt.Stringer

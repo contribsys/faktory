@@ -21,7 +21,7 @@ func ego_debug(w io.Writer, req *http.Request) {
 	stats := ctx(req).Store().Stats()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	rdata, latency := redis_info(req)
+	rdata, rtt := redis_info(req)
 
 //line debug.ego:17
 	_, _ = io.WriteString(w, "\n")
@@ -126,15 +126,15 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:64
 		_, _ = io.WriteString(w, "\n      </td>\n    </tr>\n    <tr>\n      <th>")
 //line debug.ego:67
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Latency"))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis RTT"))))
 //line debug.ego:67
 		_, _ = io.WriteString(w, "</th>\n      <td class=\"bg-")
 //line debug.ego:68
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(color_for_latency(latency))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(category_for_rtt(rtt))))
 //line debug.ego:68
 		_, _ = io.WriteString(w, "\">\n        ")
 //line debug.ego:69
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(latency)))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rtt)))
 //line debug.ego:69
 		_, _ = io.WriteString(w, " µs\n      </td>\n    </tr>\n  </tbody>\n</table>\n</div>\n\n<h3>")
 //line debug.ego:76

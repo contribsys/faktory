@@ -12,7 +12,7 @@ func ego_debug(w io.Writer, req *http.Request) {
   stats := ctx(req).Store().Stats()
   var m runtime.MemStats
   runtime.ReadMemStats(&m)
-  rdata, latency := redis_info(req)
+  rdata, rtt := redis_info(req)
 %>
 <% ego_layout(w, req, func() { %>
 
@@ -64,9 +64,9 @@ func ego_debug(w io.Writer, req *http.Request) {
       </td>
     </tr>
     <tr>
-      <th><%= t(req, "Redis Latency") %></th>
-      <td class="bg-<%= color_for_latency(latency) %>">
-        <%= latency %> µs
+      <th><%= t(req, "Redis RTT") %></th>
+      <td class="bg-<%= category_for_rtt(rtt) %>">
+        <%= rtt %> µs
       </td>
     </tr>
   </tbody>

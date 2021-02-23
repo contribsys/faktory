@@ -266,7 +266,7 @@ func uptimeInDays(req *http.Request) string {
 	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
 }
 
-func color_for_latency(lat float64) string {
+func category_for_rtt(lat float64) string {
 	if lat == 0 {
 		return "danger"
 	} else if lat < 1000 {
@@ -279,10 +279,10 @@ func color_for_latency(lat float64) string {
 }
 
 func redis_info(req *http.Request) (string, float64) {
-	cl := ctx(req).Store().(storage.Redis)
-	client := cl.Redis()
+	store := ctx(req).Store().(storage.Redis)
+	redis := store.Redis()
 	a := time.Now().UnixNano()
-	res := client.Info()
+	res := redis.Info()
 	b := time.Now().UnixNano()
 	val, err := res.Result()
 	if err != nil {

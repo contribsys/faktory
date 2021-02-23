@@ -266,6 +266,16 @@ func uptimeInDays(req *http.Request) string {
 	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
 }
 
+func displayRss(rssKb int) string {
+	if rssKb < 100000 {
+		return strconv.FormatInt(int64(rssKb), 10) + " KB"
+	} else if rssKb < 10000000 {
+		return strconv.FormatFloat(float64(rssKb)/1024, 'f', 1, 64) + " MB"
+	} else {
+		return strconv.FormatFloat(float64(rssKb)/(1024*1024), 'f', 1, 64) + " GB"
+	}
+}
+
 func category_for_rtt(lat float64) string {
 	if lat == 0 {
 		return "danger"

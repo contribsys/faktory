@@ -34,6 +34,7 @@ func ego_busy(w io.Writer, req *http.Request) {
       <th><%= t(req, "ID") %></th>
       <th><%= t(req, "Name") %></th>
       <th><%= t(req, "Started") %></th>
+      <th><%= t(req, "RSS") %></th>
       <th><%= t(req, "Busy") %></th>
       <th>&nbsp;</th>
     </thead>
@@ -54,6 +55,7 @@ func ego_busy(w io.Writer, req *http.Request) {
           <% } %>
         </td>
         <td><%= Timeago(worker.StartedAt) %></td>
+        <td><%= displayRss(worker.RssKb) %></td>
         <td><%= ctx(req).Server().Manager().BusyCount(worker.Wid) %></td>
         <td>
           <div class="btn-group pull-right flip">

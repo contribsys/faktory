@@ -393,17 +393,33 @@ func (c *Client) Generic(cmdline string) (string, error) {
 	return c.readString(c.rdr)
 }
 
+/*
+ * The first arg to Beat allows a worker process to report its current lifecycle state
+ * to Faktory. All worker processes must follow the same basic lifecycle:
+ *
+ * (startup) -> "" -> "quiet" -> "terminate"
+ *
+ * Quiet allows the process to finish its current work without fetching any new work.
+ * Terminate means the process should exit within X seconds, usually ~30 seconds.
+ */
 func (c *Client) Beat(args ...string) (string, error) {
 	state := ""
 	if len(args) > 0 {
 		state = args[0]
 	}
+	hash := map[string]interface{}{}
+	hash["wid"] = RandomProcessWid
+	hash["rss_kb"] = 99999 // TODO
 
-	extra := ""
 	if state != "" {
-		extra = fmt.Sprintf(`,"current_state":"%s"`, state)
+		hash["current_state"] = state
 	}
-	val, err := c.Generic("BEAT " + fmt.Sprintf(`{"wid":"%s"%s}`, RandomProcessWid, extra))
+	bytes, err := json.Marshal(hash)
+	if err != nil {
+		return "", err
+	}
+	cmd := fmt.Sprintf("BEAT %s", bytes)
+	val, err := c.Generic(cmd)
 	if val == "OK" {
 		return "", nil
 	}

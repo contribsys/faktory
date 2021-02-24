@@ -4,6 +4,8 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 
 ## HEAD
 
+- The Busy page can now display current RSS for Worker processes [#339]
+- The /debug page now displays Redis latency [#337]
 - Add `Dialer` support for custom `faktory.Client` connections [#330]
 
 ## 1.4.2

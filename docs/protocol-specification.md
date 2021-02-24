@@ -476,7 +476,7 @@ The argument should be a JSON hash with the following fields:
 
 ### `BEAT` Command
 
-Arguments: `{wid: String}`
+Arguments: `{wid: String, current_state: String, rss_kb: Integer}`
 
 Responses:
 
@@ -489,6 +489,13 @@ and to get notified about server-initiated state changes. The argument
 to `BEAT` is a single-field JSON hash that contains the `wid` issued by
 this worker in its `HELLO`.
 
+If the Consumer receives a signal which transitions it to Quiet
+or Terminate, it MAY notify Faktory by sending the `current_state`
+element with either `quiet` or `terminate` as the value.
+
+The Consumer MAY send the `rss_kb` element with the current size
+of the Consumer's memory usage in Kilobytes.
+
 If a non-OK simple string response is received, it represents a
 server-initiated state change. The `state` field of the returned JSON
 hash contains one of two values: "quiet" or "terminate". The client MUST
@@ -498,11 +505,11 @@ of these messages.
 #### Examples
 
 ```example
-C: BEAT {"wid": "4qpc2443vpvai"}
+C: BEAT {"wid": "4qpc2443vpvai","rss_kb":54176}
 S: +OK
-C: BEAT {"wid": "4qpc2443vpvai"}
+C: BEAT {"wid": "4qpc2443vpvai","rss_kb":55272}
 S: +{"state": "quiet"}
-C: BEAT {"wid": "4qpc2443vpvai"}
+C: BEAT {"wid": "4qpc2443vpvai","current_state": "quiet"}
 S: +{"state": "terminate"}
 C: END
 S: +OK

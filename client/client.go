@@ -416,11 +416,11 @@ func (c *Client) Beat(args ...string) (string, error) {
 	if state != "" {
 		hash["current_state"] = state
 	}
-	bytes, err := json.Marshal(hash)
+	data, err := json.Marshal(hash)
 	if err != nil {
 		return "", err
 	}
-	cmd := fmt.Sprintf("BEAT %s", bytes)
+	cmd := fmt.Sprintf("BEAT %s", data)
 	val, err := c.Generic(cmd)
 	if val == "OK" {
 		return "", nil
@@ -618,8 +618,8 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 }
 
 func hash(pwd, salt string, iterations int) string {
-	bytes := []byte(pwd + salt)
-	hash := sha256.Sum256(bytes)
+	data := []byte(pwd + salt)
+	hash := sha256.Sum256(data)
 	if iterations > 1 {
 		for i := 1; i < iterations; i++ {
 			hash = sha256.Sum256(hash[:])

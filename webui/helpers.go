@@ -1,10 +1,8 @@
 package webui
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -299,29 +297,6 @@ func redis_info(req *http.Request) (string, float64) {
 		return fmt.Sprintf("%v", err), 0
 	}
 	return val, (float64(b-a) / 1000)
-}
-
-func rss() string {
-	ex, err := util.FileExists("/proc/self/status")
-	if err != nil || !ex {
-		return ""
-	}
-
-	content, err := ioutil.ReadFile("/proc/self/status")
-	if err != nil {
-		return ""
-	}
-
-	lines := bytes.Split(content, []byte("\n"))
-	for idx := range lines {
-		if lines[idx][0] == 'V' {
-			ls := string(lines[idx])
-			if strings.Contains(ls, "VmRSS") {
-				return strings.Split(ls, ":")[1]
-			}
-		}
-	}
-	return ""
 }
 
 func days(req *http.Request) int {

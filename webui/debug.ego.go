@@ -106,11 +106,11 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:54
 		_, _ = io.WriteString(w, "\n        ")
 //line debug.ego:54
-		if amt := rss(); amt != "" {
+		if amt := client.RssKb(); amt != 0 {
 //line debug.ego:55
 			_, _ = io.WriteString(w, "\n        <br/>RSS: ")
 //line debug.ego:55
-			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(amt)))
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayRss(amt))))
 //line debug.ego:56
 			_, _ = io.WriteString(w, "\n        ")
 //line debug.ego:56

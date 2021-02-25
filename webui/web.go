@@ -3,6 +3,7 @@ package webui
 import (
 	"context"
 	"crypto/subtle"
+	"embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 	"github.com/contribsys/faktory/util"
 	"github.com/justinas/nosurf"
 )
+
+//go:generate ego .
 
 type Tab struct {
 	Name string
@@ -32,32 +35,36 @@ var (
 		{"Dead", "/morgue"},
 	}
 
-	// these are used in testing only
-	staticHandler = cache(http.FileServer(AssetFile()))
+	//go:embed static/*.css static/*.js static/img/*
+	staticFiles embed.FS
+
+	//go:embed static/locales/*
+	localeFiles embed.FS
+
+	staticHandler = cache(http.FileServer(http.FS(staticFiles)))
 
 	LicenseStatus = func(w io.Writer, req *http.Request) string {
 		return ""
 	}
 )
 
-//go:generate ego .
-//go:generate go-bindata -fs -pkg webui -o static.go static/...
-
 type localeMap map[string]map[string]string
 type assetLookup func(string) ([]byte, error)
 
 var (
-	AssetLookups = []assetLookup{Asset}
-	locales      = localeMap{}
+	AssetLookups = []assetLookup{
+		localeFiles.ReadFile,
+	}
+	locales = localeMap{}
 )
 
 func init() {
-	files, err := AssetDir("static/locales")
+	files, err := localeFiles.ReadDir("static/locales")
 	if err != nil {
 		panic(err)
 	}
 	for idx := range files {
-		name := strings.Split(files[idx], ".")[0]
+		name := strings.Split(files[idx].Name(), ".")[0]
 		locales[name] = nil
 	}
 	//util.Debugf("Initialized %d locales", len(files))

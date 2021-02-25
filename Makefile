@@ -32,7 +32,6 @@ release:
 
 prepare: ## install build prereqs
 	@go get github.com/benbjohnson/ego/...
-	@go get github.com/go-bindata/go-bindata/go-bindata
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc

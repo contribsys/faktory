@@ -26,6 +26,7 @@ type Store interface {
 	Stats() map[string]string
 	EnqueueAll(SortedSet) error
 	EnqueueFrom(SortedSet, []byte) error
+	PausedQueues() ([]string, error)
 
 	History(days int, fn func(day string, procCnt uint64, failCnt uint64)) error
 	Success() error
@@ -48,6 +49,10 @@ type Redis interface {
 type Queue interface {
 	Name() string
 	Size() uint64
+
+	Pause() error
+	Unpause() error
+	IsPaused() bool
 
 	Add(job *client.Job) error
 	Push(data []byte) error

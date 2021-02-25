@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/contribsys/faktory/client"
@@ -16,9 +17,78 @@ var (
 	Nothing Lease = &simpleLease{}
 )
 
+func (m *manager) Pause(qName string) error {
+	q, err := m.store.GetQueue(qName)
+	if err != nil {
+		return err
+	}
+	err = q.Pause()
+	if err != nil {
+		return err
+	}
+
+	m.paused = append(filter([]string{qName}, m.paused), qName)
+	return nil
+}
+
+func (m *manager) Unpause(qName string) error {
+	q, err := m.store.GetQueue(qName)
+	if err != nil {
+		return err
+	}
+	err = q.Unpause()
+	if err != nil {
+		return err
+	}
+
+	m.paused = filter([]string{qName}, m.paused)
+	return nil
+}
+
+// returns the subset of "queues" which are not in "paused"
+func filter(paused []string, queues []string) []string {
+	if len(paused) == 0 {
+		return queues
+	}
+
+	qs := make([]string, len(queues))
+	count := 0
+
+	for qidx := 0; qidx < len(queues); qidx++ {
+		if !contains(queues[qidx], paused) {
+			qs[count] = queues[qidx]
+			count++
+		}
+	}
+	return qs[:count]
+}
+
+func contains(a string, slc []string) bool {
+	for x := range slc {
+		if a == slc[x] {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
+	if len(queues) == 0 {
+		return nil, fmt.Errorf("You must call fetch with at least one queue!")
+	}
+
 restart:
-	lease, err := m.fetcher.Fetch(ctx, wid, queues...)
+	activeQueues := filter(m.paused, queues)
+	if len(activeQueues) == 0 {
+		// if we pause all queues, there is nothing to fetch
+		select {
+		case <-ctx.Done():
+		case <-time.After(2 * time.Second):
+		}
+		return nil, nil
+	}
+
+	lease, err := m.fetcher.Fetch(ctx, wid, activeQueues...)
 	if err != nil {
 		return nil, err
 	}

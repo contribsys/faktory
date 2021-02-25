@@ -24,6 +24,19 @@ func (store *redisStore) NewQueue(name string) *redisQueue {
 	}
 }
 
+func (q *redisQueue) Pause() error {
+	return q.store.rclient.SAdd("paused", q.name).Err()
+}
+
+func (q *redisQueue) Unpause() error {
+	return q.store.rclient.SRem("paused", q.name).Err()
+}
+
+func (q *redisQueue) IsPaused() bool {
+	b, _ := q.store.rclient.SIsMember("paused", q.name).Result()
+	return b
+}
+
 func (q *redisQueue) Close() {
 	q.done = true
 }

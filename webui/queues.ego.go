@@ -75,16 +75,36 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 //line queues.ego:29
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ClearQueue"))))
 //line queues.ego:29
-			_, _ = io.WriteString(w, "</button>\n          </form>\n        </td>\n      </tr>\n    ")
+			_, _ = io.WriteString(w, "</button>\n            ")
+//line queues.ego:30
+			if queue.IsPaused {
+//line queues.ego:31
+				_, _ = io.WriteString(w, "\n              <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"unpause\">")
+//line queues.ego:31
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Unpause"))))
+//line queues.ego:31
+				_, _ = io.WriteString(w, "</button>\n            ")
+//line queues.ego:32
+			} else {
 //line queues.ego:33
-		}
+				_, _ = io.WriteString(w, "\n              <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"pause\">")
+//line queues.ego:33
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Pause"))))
+//line queues.ego:33
+				_, _ = io.WriteString(w, "</button>\n            ")
 //line queues.ego:34
+			}
+//line queues.ego:35
+			_, _ = io.WriteString(w, "\n          </form>\n        </td>\n      </tr>\n    ")
+//line queues.ego:38
+		}
+//line queues.ego:39
 		_, _ = io.WriteString(w, "\n  </table>\n</div>\n\n  ")
-//line queues.ego:37
+//line queues.ego:42
 	})
-//line queues.ego:38
+//line queues.ego:43
 	_, _ = io.WriteString(w, "\n")
-//line queues.ego:38
+//line queues.ego:43
 }
 
 var _ fmt.Stringer

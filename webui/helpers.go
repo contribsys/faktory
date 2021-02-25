@@ -78,14 +78,24 @@ func currentStatus(req *http.Request) string {
 }
 
 type Queue struct {
-	Name string
-	Size uint64
+	Name     string
+	Size     uint64
+	IsPaused bool
 }
 
 func queues(req *http.Request) []Queue {
 	queues := make([]Queue, 0)
-	ctx(req).Store().EachQueue(func(q storage.Queue) {
-		queues = append(queues, Queue{q.Name(), q.Size()})
+	s := ctx(req).Store()
+	pq, _ := s.PausedQueues()
+
+	s.EachQueue(func(q storage.Queue) {
+		paused := false
+		for idx := range pq {
+			if q.Name() == pq[idx] {
+				paused = true
+			}
+		}
+		queues = append(queues, Queue{q.Name(), q.Size(), paused})
 	})
 
 	sort.Slice(queues, func(i, j int) bool {

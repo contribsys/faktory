@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestManagerBasics(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, []string{"b", "c"}, filter([]string{"a"}, []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"a"}, filter([]string{"c", "b"}, []string{"a", "b", "c"}))
+}
+
 func TestManager(t *testing.T) {
 	withRedis(t, "manager", func(t *testing.T, store storage.Store) {
 
@@ -192,6 +198,65 @@ func TestManager(t *testing.T) {
 			fetchedJob, err := m.Fetch(ctx, "workerId", queues...)
 			assert.NoError(t, err)
 			assert.Nil(t, fetchedJob)
+		})
+
+		t.Run("FetchWithPause", func(t *testing.T) {
+			store.Flush()
+
+			dq, err := store.GetQueue("default")
+			assert.NoError(t, err)
+			assert.NoError(t, dq.Pause())
+
+			m := NewManager(store)
+
+			job := client.NewJob("ManagerPush", 1, 2, 3)
+			q1, err := store.GetQueue(job.Queue)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q1.Size())
+
+			err = m.Push(job)
+
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q1.Size())
+
+			email := client.NewJob("SendEmail", 1, 2, 3)
+			email.Queue = "email"
+			q2, err := store.GetQueue(email.Queue)
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, q2.Size())
+
+			err = m.Push(email)
+
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1, q2.Size())
+
+			queues := []string{"default", "email"}
+
+			fetchedJob, err := m.Fetch(context.Background(), "workerId", queues...)
+			assert.NoError(t, err)
+			assert.NotNil(t, fetchedJob)
+			assert.EqualValues(t, email.Jid, fetchedJob.Jid)
+			assert.EqualValues(t, 1, q1.Size())
+			assert.EqualValues(t, 0, q2.Size())
+
+			assert.NoError(t, m.Unpause("default"))
+
+			fetchedJob, err = m.Fetch(context.Background(), "workerId", queues...)
+			assert.NoError(t, err)
+			assert.NotNil(t, fetchedJob)
+			assert.EqualValues(t, job.Jid, fetchedJob.Jid)
+			assert.EqualValues(t, 0, q1.Size())
+			assert.EqualValues(t, 0, q2.Size())
+
+			pq, err := store.PausedQueues()
+			assert.NoError(t, err)
+			assert.Equal(t, []string{}, pq)
+
+			assert.NoError(t, m.Pause("default"))
+
+			pq, err = store.PausedQueues()
+			assert.NoError(t, err)
+			assert.Equal(t, []string{"default"}, pq)
 		})
 
 		t.Run("FetchFromMultipleQueues", func(t *testing.T) {

@@ -83,12 +83,28 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			// clear entire queue
-			_, err := q.Clear()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+			action := r.FormValue("action")
+			if action == "delete" {
+				// clear entire queue
+				_, err := q.Clear()
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else if action == "pause" {
+				err := ctx(r).webui.Server.Manager().Pause(q.Name())
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else if action == "unpause" {
+				err := ctx(r).webui.Server.Manager().Unpause(q.Name())
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
+
 			Redirect(w, r, "/queues", http.StatusFound)
 			return
 		}

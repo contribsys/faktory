@@ -56,6 +56,9 @@ func ExpectedError(code string, msg string) error {
 type Manager interface {
 	Push(job *client.Job) error
 
+	Pause(qName string) error
+	Unpause(qName string) error
+
 	// Dispatch operations:
 	//
 	//  - Basic dequeue
@@ -126,6 +129,8 @@ func newManager(s storage.Store) *manager {
 		fetchChain: make(MiddlewareChain, 0),
 	}
 	_ = m.loadWorkingSet()
+	p, _ := s.PausedQueues()
+	m.paused = p
 	m.fetcher = BasicFetcher(m.Redis())
 	return m
 }
@@ -177,6 +182,7 @@ type manager struct {
 	failChain    MiddlewareChain
 	ackChain     MiddlewareChain
 	fetcher      Fetcher
+	paused       []string
 }
 
 func (m *manager) Push(job *client.Job) error {

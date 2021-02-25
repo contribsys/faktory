@@ -27,6 +27,11 @@ func ego_listQueues(w io.Writer, req *http.Request) {
           <form action="<%= root(req) %>/queues/<%= queue.Name %>" method="post">
             <%== csrfTag(req) %>
             <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "ClearQueue") %></button>
+            <% if queue.IsPaused { %>
+              <button class="btn btn-primary btn-sm" type="submit" name="action" value="unpause"><%= t(req, "Unpause") %></button>
+            <% } else { %>
+              <button class="btn btn-primary btn-sm" type="submit" name="action" value="pause"><%= t(req, "Pause") %></button>
+            <% } %>
           </form>
         </td>
       </tr>

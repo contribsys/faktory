@@ -234,6 +234,10 @@ func (store *redisStore) Stats() map[string]string {
 	}
 }
 
+func (store *redisStore) PausedQueues() ([]string, error) {
+	return store.rclient.SMembers("paused").Result()
+}
+
 // queues are iterated in sorted, lexigraphical order
 func (store *redisStore) EachQueue(x func(Queue)) {
 	for _, k := range store.queueSet {

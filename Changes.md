@@ -4,9 +4,11 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 
 ## HEAD
 
+- Add queue pausing / unpausing to /queues page [#336]
 - The Busy page can now display current RSS for Worker processes [#339]
 - The /debug page now displays Redis latency [#337]
 - Add `Dialer` support for custom `faktory.Client` connections [#330]
+- Upgrade to Go 1.16 and alpine 3.13; remove go-bindata dependency [#338]
 
 ## 1.4.2
 

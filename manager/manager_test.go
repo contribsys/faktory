@@ -239,7 +239,7 @@ func TestManager(t *testing.T) {
 			assert.EqualValues(t, 1, q1.Size())
 			assert.EqualValues(t, 0, q2.Size())
 
-			assert.NoError(t, m.Unpause("default"))
+			assert.NoError(t, m.Resume("default"))
 
 			fetchedJob, err = m.Fetch(context.Background(), "workerId", queues...)
 			assert.NoError(t, err)

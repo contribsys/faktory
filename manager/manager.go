@@ -57,7 +57,7 @@ type Manager interface {
 	Push(job *client.Job) error
 
 	Pause(qName string) error
-	Unpause(qName string) error
+	Resume(qName string) error
 
 	// Dispatch operations:
 	//

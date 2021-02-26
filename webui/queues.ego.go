@@ -79,9 +79,9 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 //line queues.ego:30
 			if queue.IsPaused {
 //line queues.ego:31
-				_, _ = io.WriteString(w, "\n              <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"unpause\">")
+				_, _ = io.WriteString(w, "\n              <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"resume\">")
 //line queues.ego:31
-				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Unpause"))))
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Resume"))))
 //line queues.ego:31
 				_, _ = io.WriteString(w, "</button>\n            ")
 //line queues.ego:32

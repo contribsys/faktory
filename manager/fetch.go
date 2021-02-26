@@ -31,12 +31,12 @@ func (m *manager) Pause(qName string) error {
 	return nil
 }
 
-func (m *manager) Unpause(qName string) error {
+func (m *manager) Resume(qName string) error {
 	q, err := m.store.GetQueue(qName)
 	if err != nil {
 		return err
 	}
-	err = q.Unpause()
+	err = q.Resume()
 	if err != nil {
 		return err
 	}

@@ -28,7 +28,7 @@ func (q *redisQueue) Pause() error {
 	return q.store.rclient.SAdd("paused", q.name).Err()
 }
 
-func (q *redisQueue) Unpause() error {
+func (q *redisQueue) Resume() error {
 	return q.store.rclient.SRem("paused", q.name).Err()
 }
 

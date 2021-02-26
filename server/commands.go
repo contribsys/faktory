@@ -9,6 +9,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
+	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 )
 
@@ -29,6 +30,7 @@ var CommandSet = map[string]command{
 	"MUTATE": mutate,
 	"BATCH":  batch,
 	"TRACK":  track,
+	"QUEUE":  queue,
 }
 
 func track(c *Connection, s *Server, cmd string) {
@@ -39,6 +41,32 @@ func batch(c *Connection, s *Server, cmd string) {
 	_ = c.Error(cmd, fmt.Errorf("The Batch subsystem is only available in Faktory Enterprise"))
 }
 
+// QUEUE PAUSE foo bar baz
+// QUEUE RESUME *
+func queue(c *Connection, s *Server, cmd string) {
+	qs := strings.Split(cmd, " ")[1:]
+	m := s.Manager()
+	if qs[1] == "*" {
+		s.Store().EachQueue(func(q storage.Queue) {
+			if qs[0] == "PAUSE" {
+				_ = m.Pause(q.Name())
+			} else if qs[0] == "RESUME" {
+				_ = m.Resume(q.Name())
+			}
+		})
+	} else {
+		for _, q := range qs[1:] {
+			if qs[0] == "PAUSE" {
+				_ = m.Pause(q)
+			} else if qs[0] == "RESUME" {
+				_ = m.Resume(q)
+			}
+		}
+	}
+	c.Ok()
+}
+
+// FLUSH
 func flush(c *Connection, s *Server, cmd string) {
 	if s.Options.Environment == "development" {
 		util.Info("Flushing dataset")
@@ -54,10 +82,12 @@ func flush(c *Connection, s *Server, cmd string) {
 	_ = c.Ok()
 }
 
+// END
 func end(c *Connection, s *Server, cmd string) {
 	c.Close()
 }
 
+// PUSH {json}
 func push(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
@@ -81,6 +111,7 @@ func push(c *Connection, s *Server, cmd string) {
 	_ = c.Ok()
 }
 
+// FETCH critical default bulk
 func fetch(c *Connection, s *Server, cmd string) {
 	if c.client.state != Running {
 		// quiet or terminated workers should not get new jobs
@@ -110,6 +141,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 	}
 }
 
+// ACK {"jid":"123456789"}
 func ack(c *Connection, s *Server, cmd string) {
 	data := cmd[4:]
 
@@ -133,6 +165,7 @@ func ack(c *Connection, s *Server, cmd string) {
 	_ = c.Ok()
 }
 
+// FAIL {"jid":"123456789","errmsg":"RuntimeError: blah","backtrace":["line1","line2"]}
 func fail(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
@@ -151,6 +184,7 @@ func fail(c *Connection, s *Server, cmd string) {
 	_ = c.Ok()
 }
 
+// INFO
 func info(c *Connection, s *Server, cmd string) {
 	data, err := s.CurrentState()
 	if err != nil {
@@ -172,6 +206,7 @@ type ClientBeat struct {
 	RssKb        int    `json:"rss_kb"`
 }
 
+// BEAT {"wid":"12345abcde","rss_kb":54176}
 func heartbeat(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 

@@ -79,3 +79,5 @@ en: # <---- change this to your locale code
   CreatedAt: Created At
   BackToApp: Back to App
   CommandsExecuted: Commands Executed
+  Pause: Pause
+  Resume: Resume

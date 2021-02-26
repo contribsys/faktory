@@ -51,7 +51,7 @@ type Queue interface {
 	Size() uint64
 
 	Pause() error
-	Unpause() error
+	Resume() error
 	IsPaused() bool
 
 	Add(job *client.Job) error

@@ -97,8 +97,8 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-			} else if action == "unpause" {
-				err := ctx(r).webui.Server.Manager().Unpause(q.Name())
+			} else if action == "resume" {
+				err := ctx(r).webui.Server.Manager().Resume(q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return

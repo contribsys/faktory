@@ -212,8 +212,16 @@ func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
 }
 
 func busyWorkers(req *http.Request, fn func(proc *server.ClientData)) {
-	for _, worker := range ctx(req).Server().Heartbeats() {
-		fn(worker)
+	hb := ctx(req).Server().Heartbeats()
+	wids := make([]string, len(hb))
+	idx := 0
+	for wid, _ := range hb {
+		wids[idx] = wid
+		idx++
+	}
+	sort.Strings(wids)
+	for idx := range wids {
+		fn(hb[wids[idx]])
 	}
 }
 

@@ -204,7 +204,7 @@ func info(c *Connection, s *Server, cmd string) {
 type ClientBeat struct {
 	CurrentState string `json:"current_state"`
 	Wid          string `json:"wid"`
-	RssKb        int    `json:"rss_kb"`
+	RssKb        int64  `json:"rss_kb"`
 }
 
 // BEAT {"wid":"12345abcde","rss_kb":54176}

@@ -52,7 +52,7 @@ type ClientData struct {
 	Hostname     string   `json:"hostname"`
 	Wid          string   `json:"wid"`
 	Pid          int      `json:"pid"`
-	RssKb        int      `json:"rss_kb"`
+	RssKb        int64    `json:"rss_kb"`
 	Labels       []string `json:"labels"`
 	PasswordHash string   `json:"pwdhash"`
 	Version      uint8    `json:"v"`

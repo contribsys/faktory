@@ -365,7 +365,7 @@ func (c *Client) Flush() error {
 
 // List queues explicitly or use "*" to pause all known queues
 func (c *Client) PauseQueues(names ...string) error {
-	err := c.writeLine(c.wtr, "QUEUE PAUSE", strings.Join(names, " "))
+	err := c.writeLine(c.wtr, "QUEUE PAUSE", []byte(strings.Join(names, " ")))
 	if err != nil {
 		return err
 	}
@@ -375,7 +375,7 @@ func (c *Client) PauseQueues(names ...string) error {
 
 // List queues explicitly or use "*" to resume all known queues
 func (c *Client) ResumeQueues(names ...string) error {
-	err := c.writeLine(c.wtr, "QUEUE RESUME", strings.Join(names, " "))
+	err := c.writeLine(c.wtr, "QUEUE RESUME", []byte(strings.Join(names, " ")))
 	if err != nil {
 		return err
 	}

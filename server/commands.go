@@ -55,15 +55,16 @@ func queue(c *Connection, s *Server, cmd string) {
 			}
 		})
 	} else {
-		for _, q := range qs[1:] {
+		names := qs[1:]
+		for idx := range names {
 			if qs[0] == "PAUSE" {
-				_ = m.Pause(q)
+				_ = m.Pause(names[idx])
 			} else if qs[0] == "RESUME" {
-				_ = m.Resume(q)
+				_ = m.Resume(names[idx])
 			}
 		}
 	}
-	c.Ok()
+	_ = c.Ok()
 }
 
 // FLUSH

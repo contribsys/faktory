@@ -57,6 +57,16 @@ func TestClientOperations(t *testing.T) {
 		assert.Contains(t, s, "pwdhash")
 
 		resp <- "+OK\r\n"
+		err = cl.PauseQueues("foo", "bar")
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "QUEUE PAUSE foo bar")
+
+		resp <- "+OK\r\n"
+		err = cl.ResumeQueues("foo", "bar")
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "QUEUE RESUME foo bar")
+
+		resp <- "+OK\r\n"
 		res, err := cl.Beat("")
 		assert.NoError(t, err)
 		assert.Equal(t, "", res)

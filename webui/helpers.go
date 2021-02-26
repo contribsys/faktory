@@ -215,7 +215,7 @@ func busyWorkers(req *http.Request, fn func(proc *server.ClientData)) {
 	hb := ctx(req).Server().Heartbeats()
 	wids := make([]string, len(hb))
 	idx := 0
-	for wid, _ := range hb {
+	for wid := range hb {
 		wids[idx] = wid
 		idx++
 	}

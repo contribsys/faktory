@@ -5,7 +5,7 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for OSX is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
-## HEAD
+## 1.5.0
 
 - Implement BYOR - **Bring Your Own Redis**. If Faktory Enterprise sees a
   `REDIS_URL` or `REDIS_PROVIDER` variable, it will use that to connect

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func RssKb() int {
+func RssKb() int64 {
 	path := "/proc/self/status"
 	if _, err := os.Stat(path); err != nil {
 		return 0
@@ -29,7 +29,7 @@ func RssKb() int {
 				if err != nil {
 					return 0
 				}
-				return intt
+				return int64(intt)
 			}
 		}
 	}

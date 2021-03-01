@@ -2,7 +2,7 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.5.0
 
 - Add `QUEUE PAUSE` and `QUEUE RESUME` commands, add buttons to the /queues page [#336]
 - The Busy page can now display current RSS for Worker processes [#339]

@@ -12,7 +12,7 @@ sums = {}
 Dir["packaging/output/systemd/*"].each do |fullname|
   name = File.basename(fullname)
 
-  output = `shasum -p -a 256 #{Shellwords.escape(fullname)}`
+  output = `shasum -a 256 #{Shellwords.escape(fullname)}`
   if $?.exitstatus != 0
     raise output
   end

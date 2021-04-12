@@ -15,7 +15,7 @@ func logPreamble() {
 	log.SetFlags(0)
 	log.Println(client.Name, client.Version)
 	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
-	log.Println(client.Licensing)
+	log.Println("Licensed under the GNU Affero Public License 3.0")
 }
 
 func main() {

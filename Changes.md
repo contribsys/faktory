@@ -2,6 +2,13 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.5.1
+
+- **Change license from GPLv3 to AGPLv3.** This is intended to protect
+  Contributed Systems from cloud providers forking Faktory and providing
+  it as a closed source service. **No worker or application code is covered by this license.**
+- Fixed Windows build.
+
 ## 1.5.0
 
 - Add `QUEUE PAUSE` and `QUEUE RESUME` commands, add buttons to the /queues page [#336]

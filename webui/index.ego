@@ -65,7 +65,7 @@ func ego_index(w io.Writer, req *http.Request) {
     </div>
 
     <div class="stat">
-      <h3 class="used_memory_human"><%= util.MemoryUsage() %></h3>
+      <h3 class="used_memory_human"><%= util.MemoryUsageMB() %> MB</h3>
       <p><%= t(req, "MemoryUsage") %></p>
     </div>
 

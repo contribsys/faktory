@@ -69,6 +69,6 @@ func TestMisc(t *testing.T) {
 	ts := Nows()
 	assert.True(t, strings.HasPrefix(ts, "20"))
 
-	val := MemoryUsage()
-	assert.True(t, strings.Contains(val, "MB"))
+	val := MemoryUsageMB()
+	assert.True(t, val < 100)
 }

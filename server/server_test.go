@@ -124,7 +124,7 @@ func TestServerStart(t *testing.T) {
 		var stats map[string]interface{}
 		err = json.Unmarshal([]byte(result), &stats)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(stats))
+		assert.Equal(t, 4, len(stats))
 
 		_, _ = conn.Write([]byte(fmt.Sprintf("BEAT {\"wid\":\"%s\"}\n", client.Wid)))
 		result, err = buf.ReadString('\n')

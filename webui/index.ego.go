@@ -141,9 +141,9 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:64
 		_, _ = io.WriteString(w, "</p>\n    </div>\n\n    <div class=\"stat\">\n      <h3 class=\"used_memory_human\">")
 //line index.ego:68
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(util.MemoryUsage())))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(util.MemoryUsageMB())))
 //line index.ego:68
-		_, _ = io.WriteString(w, "</h3>\n      <p>")
+		_, _ = io.WriteString(w, " MB</h3>\n      <p>")
 //line index.ego:69
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "MemoryUsage"))))
 //line index.ego:69

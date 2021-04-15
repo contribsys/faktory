@@ -75,11 +75,11 @@ func ParseTime(str string) (time.Time, error) {
 	return time.Parse(TimestampFormat, str)
 }
 
-func MemoryUsage() string {
+func MemoryUsageMB() uint64 {
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
 	mb := m.Sys / 1024 / 1024
-	return fmt.Sprintf("%v MB", mb)
+	return mb
 }
 
 // Backtrace gathers a backtrace for the caller.

@@ -341,6 +341,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
+		"now":             util.Nows(),
 		"server_utc_time": time.Now().UTC().Format("15:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"total_failures":  s.store.TotalFailures(),
@@ -356,7 +357,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"uptime":          s.uptimeInSeconds(),
 			"connections":     atomic.LoadUint64(&s.Stats.Connections),
 			"command_count":   atomic.LoadUint64(&s.Stats.Commands),
-			"used_memory_mb":  util.MemoryUsage(),
+			"used_memory_mb":  util.MemoryUsageMB(),
 		},
 	}, nil
 }

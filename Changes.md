@@ -7,7 +7,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 - **Change license from GPLv3 to AGPLv3.** This is intended to ensure Faktory
   remains open source, even if someone forks Faktory and provides it as a
   service. **No worker or application code is covered by this license.**
-- Add support for native Apple Silicon builds and Docker images.
+- Add support for native Apple Silicon builds. Docker images still in progress.
 - Fixed Windows build.
 
 ## 1.5.0

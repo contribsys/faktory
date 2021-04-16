@@ -2,8 +2,14 @@
 
 Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.md) || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || Faktory Enterprise
 
-A trial version of Faktory Enterprise for OSX is available with each [release](/contribsys/faktory/releases/).
+A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
+
+## 1.5.1
+
+- License check now supports HTTP(S)_PROXY env variables.
+- Fix crash upon license check if license server is down.
+- Releases now provide macOS trial binaries for Apple Silicon.
 
 ## 1.5.0
 

@@ -132,7 +132,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 }
 
 func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{MinVersion: tls.VersionTLS11}}
+	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{MinVersion: tls.VersionTLS12}}
 }
 
 // Open connects to a Faktory server based on

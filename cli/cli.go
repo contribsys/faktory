@@ -270,6 +270,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 	if env != "development" && !skip() && password == "" {
 		ok, _ := util.FileExists("/etc/faktory/password")
 		if ok {
+			//nolint:gosec
 			password = "/etc/faktory/password"
 		}
 	}

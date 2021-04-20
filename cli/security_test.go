@@ -18,6 +18,7 @@ func pwdCfg(value string) map[string]interface{} {
 
 func TestPasswords(t *testing.T) {
 	emptyCfg := map[string]interface{}{}
+	// nolint:gosec
 	pwd := "cce29d6565ab7376"
 
 	t.Run("DevWithPassword", func(t *testing.T) {
@@ -42,6 +43,7 @@ func TestPasswords(t *testing.T) {
 	})
 
 	t.Run("ProductionWithFile", func(t *testing.T) {
+		// nolint:gosec
 		err := ioutil.WriteFile("/tmp/test-password", []byte("foobar"), os.FileMode(0666))
 		assert.NoError(t, err)
 		cfg := pwdCfg("/tmp/test-password")

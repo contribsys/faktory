@@ -93,6 +93,7 @@ func bootRedis(path string, sock string) (func(), error) {
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
+				//nolint:gosec
 				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
 				if err != nil {
 					return nil, err
@@ -127,6 +128,7 @@ func bootRedis(path string, sock string) (func(), error) {
 
 		util.Debugf("Booting Redis: %s", strings.Join(arguments, " "))
 
+		// nolint:gosec
 		cmd := exec.Command(arguments[0], arguments[1:]...)
 		util.EnsureChildShutdown(cmd, util.SIGTERM) // platform-specific tuning
 		//cmd.Stdout = os.Stdout

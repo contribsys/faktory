@@ -58,6 +58,7 @@ func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
 	if err != nil {
+		//nolint:gosec
 		mathrand.Read(bytes)
 	}
 

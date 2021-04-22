@@ -62,8 +62,14 @@ type ClientData struct {
 	Wid      string   `json:"wid"`
 	Pid      int      `json:"pid"`
 	Labels   []string `json:"labels"`
+
+	// this can be used by proxies to route the connection.
+	// it is ignored by Faktory.
+	Username string `json:"username"`
+
 	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
+
 	// The protocol version used by this client.
 	// The server can reject this connection if the version will not work
 	// The server advertises its protocol version in the HI.
@@ -73,6 +79,7 @@ type ClientData struct {
 type Server struct {
 	Network  string
 	Address  string
+	Username string
 	Password string
 	Timeout  time.Duration
 	TLS      *tls.Config
@@ -106,6 +113,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 			s.Network = uri.Scheme
 			s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 			if uri.User != nil {
+				s.Username = uri.User.Username()
 				s.Password, _ = uri.User.Password()
 			}
 			return nil
@@ -123,6 +131,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 		s.Network = uri.Scheme
 		s.Address = fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 		if uri.User != nil {
+			s.Username = uri.User.Username()
 			s.Password, _ = uri.User.Password()
 		}
 		return nil
@@ -132,7 +141,7 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 }
 
 func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", "", 1 * time.Second, &tls.Config{MinVersion: tls.VersionTLS12}}
+	return &Server{"tcp", "localhost:7419", "", "", 1 * time.Second, &tls.Config{MinVersion: tls.VersionTLS12}}
 }
 
 // Open connects to a Faktory server based on
@@ -192,6 +201,7 @@ func DialWithDialer(srv *Server, password string, dialer Dialer) (*Client, error
 // dial connects to the remote faktory server.
 func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 	client := emptyClientData()
+	client.Username = srv.Username
 
 	var err error
 	var conn net.Conn

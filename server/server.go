@@ -272,6 +272,10 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	// disable deadline
 	_ = conn.SetDeadline(time.Time{})
 
+	//if cl.Username != "" {
+	//util.Debugf("Successful connection from %s", cl.Username)
+	//}
+
 	return cn
 }
 

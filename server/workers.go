@@ -55,6 +55,7 @@ type ClientData struct {
 	RssKb        int64    `json:"rss_kb"`
 	Labels       []string `json:"labels"`
 	PasswordHash string   `json:"pwdhash"`
+	Username     string   `json:"username"`
 	Version      uint8    `json:"v"`
 	StartedAt    time.Time
 

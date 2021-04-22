@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/master/Pro-Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Support username in FAKTORY_URL, useful for connection routing proxies.
+
 ## 1.5.1
 
 - **Change license from GPLv3 to AGPLv3.** This is intended to ensure Faktory

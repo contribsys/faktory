@@ -165,7 +165,7 @@ func Proxy(ui *WebUI) http.HandlerFunc {
 		prefix := r.Header.Get("X-Script-Name")
 		if prefix != "" {
 			r.RequestURI = strings.Replace(r.RequestURI, prefix, "", 1)
-			r.URL.Path = r.RequestURI
+			r.URL.Path = strings.Replace(r.URL.Path, prefix, "", 1)
 		}
 		ui.App.ServeHTTP(w, r)
 	}

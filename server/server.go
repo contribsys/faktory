@@ -195,13 +195,18 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
 	iter := rand.Intn(4096) + 4000
 
+	saltValue, err := util.RandomInt63()
+	if err != nil {
+		util.Error("Couldn't produce salt.", err)
+	}
+
 	var salt string
 	_, _ = conn.Write([]byte(`+HI {"v":2`))
 	if s.Options.Password != "" {
 		_, _ = conn.Write([]byte(`,"i":`))
 		iters := strconv.FormatInt(int64(iter), 10)
 		_, _ = conn.Write([]byte(iters))
-		salt = strconv.FormatInt(rand.Int63(), 16)
+		salt = strconv.FormatInt(saltValue, 16)
 		_, _ = conn.Write([]byte(`,"s":"`))
 		_, _ = conn.Write([]byte(salt))
 		_, _ = conn.Write([]byte(`"}`))

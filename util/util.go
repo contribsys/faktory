@@ -4,6 +4,7 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"math/big"
 	mathrand "math/rand"
 	"os"
 	"runtime"
@@ -15,6 +16,8 @@ const (
 	SIGINT  = 0x2
 	SIGQUIT = 0x3
 	SIGTERM = 0xF
+
+	maxInt63 = int64(^uint64(0) >> 1)
 )
 
 func Retryable(name string, count int, fn func() error) error {
@@ -55,6 +58,14 @@ func RandomJid() string {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(bytes)
+}
+
+func RandomInt63() (int64, error) {
+	r, err := cryptorand.Int(cryptorand.Reader, big.NewInt(maxInt63))
+	if err != nil {
+		return 0, err
+	}
+	return r.Int64(), nil
 }
 
 const (

@@ -34,7 +34,7 @@ func ego_index(w io.Writer, req *http.Request) {
 
 <div class="row chart">
   <h6>
-    <span class="history-heading"><%= t(req, "History") %></span>
+    <span class="pe-3"><%= t(req, "History") %></span>
     <a href="<%= relative(req, "/?days=7") %>" class="history-graph <%= daysMatches(req, "7", false) %>"><%= t(req, "OneWeek") %></a>
     <a href="<%= relative(req, "/") %>" class="history-graph <%= daysMatches(req, "30", true) %>"><%= t(req, "OneMonth") %></a>
     <a href="<%= relative(req, "/?days=90") %>" class="history-graph <%= daysMatches(req, "90", false) %>"><%= t(req, "ThreeMonths") %></a>

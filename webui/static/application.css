@@ -83,9 +83,6 @@ footer {
   text-align: center;
   flex-shrink: none;
 }
-footer .edits {
-  margin-right: 40px;
-}
 
 h3 {
   line-height: 45px;
@@ -291,38 +288,9 @@ table .table-checkbox label {
   display: none;
 }
 
-.navbar-footer .navbar ul.nav {
-  text-align: center;
-  float: none;
-}
-.navbar-footer .navbar ul.nav a {
-  font-weight: 700;
-  font-size: 16px;
-  padding: 15px;
-}
-
-.navbar-footer .navbar ul.nav a.navbar-brand {
-  font-weight: 400;
-  padding: 0 15px 0 0;
-}
-
-.navbar-footer .navbar ul.nav li {
-  display: inline-block;
-  float: none;
-}
-.navbar-footer .navbar.affix {
-  top: 0;
-  width: 100%;
-  z-index: 10;
-}
-
 img.smallogo {
   width: 30px;
   margin: 0 0 6px 0;
-}
-
-.navbar-fixed-bottom li {
-  margin-right: 20px;
 }
 
 .status-sprite {
@@ -657,10 +625,6 @@ div.interval-slider input {
   margin: 0 0 15px;
 }
 
-.history-heading {
-  padding-right: 15px;
-}
-
 .history-graph {
   font-size: 0.8em;
   padding: 3px;
@@ -692,14 +656,6 @@ div.interval-slider input {
     display: block;
     position: relative;
     font-size: 21px;
-  }
-
-  .navbar.navbar-fixed-top ul {
-    margin-right: 0;
-  }
-
-  .navbar.navbar-fixed-top li {
-    margin-right: 0;
   }
 
   .poll-wrapper {

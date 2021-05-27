@@ -41,7 +41,7 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:31
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Failed"))))
 //line index.ego:31
-		_, _ = io.WriteString(w, "\"></div>\n  <div id=\"realtime-legend\"></div>\n</div>\n\n<div class=\"row chart\">\n  <h6>\n    <span class=\"history-heading\">")
+		_, _ = io.WriteString(w, "\"></div>\n  <div id=\"realtime-legend\"></div>\n</div>\n\n<div class=\"row chart\">\n  <h6>\n    <span class=\"pe-3\">")
 //line index.ego:37
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "History"))))
 //line index.ego:37

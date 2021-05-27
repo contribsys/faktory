@@ -29,7 +29,7 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:16
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Dashboard"))))
 //line index.ego:17
-		_, _ = io.WriteString(w, "\n    <span class=\"beacon\">\n      <span class=\"ring\"></span>\n      <span class=\"dot\"></span>\n    </span>\n  </h3>\n  <div class=\"interval-slider\">\n    <span class=\"interval-slider-label\">")
+		_, _ = io.WriteString(w, "\n    <span class=\"beacon\">\n      <span class=\"ring\"></span>\n      <span class=\"dot\"></span>\n    </span>\n  </h3>\n  <div class=\"interval-slider ltr\">\n    <span class=\"interval-slider-label\">")
 //line index.ego:23
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "PollingInterval"))))
 //line index.ego:23

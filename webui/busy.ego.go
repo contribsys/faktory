@@ -50,7 +50,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:26
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "StopAll"))))
 //line busy.ego:26
-		_, _ = io.WriteString(w, "</button>\n    </form>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"processes table table-hover table-bordered table-striped bg-white\">\n    <thead>\n      <th>")
+		_, _ = io.WriteString(w, "</button>\n    </form>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"processes table table-hover table-bordered table-striped table-light\">\n    <thead>\n      <th>")
 //line busy.ego:34
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ID"))))
 //line busy.ego:34
@@ -148,7 +148,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:81
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Jobs"))))
 //line busy.ego:81
-		_, _ = io.WriteString(w, "</h3>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"workers table table-hover table-bordered table-striped bg-white\">\n    <thead>\n      <th>")
+		_, _ = io.WriteString(w, "</h3>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"workers table table-hover table-bordered table-striped table-light\">\n    <thead>\n      <th>")
 //line busy.ego:88
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Process"))))
 //line busy.ego:88

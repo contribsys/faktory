@@ -11,7 +11,7 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 <h3><%= t(req, "Queues") %></h3>
 
 <div class="table-responsive">
-  <table class="queues table table-hover table-bordered table-striped bg-white">
+  <table class="queues table table-hover table-bordered table-striped table-light">
     <thead>
       <th><%= t(req, "Queue") %></th>
       <th><%= t(req, "Size") %></th>

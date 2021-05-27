@@ -31,7 +31,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
   <form action="<%= relative(req, "/retries") %>" method="post">
     <%== csrfTag(req) %>
     <div class="table-responsive">
-      <table class="table table-striped table-bordered bg-white">
+      <table class="table table-striped table-bordered table-light">
         <thead>
           <tr>
             <th class="table-checkbox checkbox-column">

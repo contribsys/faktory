@@ -19,7 +19,7 @@ func ego_index(w io.Writer, req *http.Request) {
       <span class="dot"></span>
     </span>
   </h3>
-  <div class="interval-slider">
+  <div class="interval-slider ltr">
     <span class="interval-slider-label"><%= t(req, "PollingInterval") %>:</span>
     <span class="current-interval">5 sec</span>
     <br/>

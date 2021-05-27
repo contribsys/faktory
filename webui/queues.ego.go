@@ -21,7 +21,7 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 //line queues.ego:11
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Queues"))))
 //line queues.ego:11
-		_, _ = io.WriteString(w, "</h3>\n\n<div class=\"table-responsive\">\n  <table class=\"queues table table-hover table-bordered table-striped bg-white\">\n    <thead>\n      <th>")
+		_, _ = io.WriteString(w, "</h3>\n\n<div class=\"table-responsive\">\n  <table class=\"queues table table-hover table-bordered table-striped table-light\">\n    <thead>\n      <th>")
 //line queues.ego:16
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Queue"))))
 //line queues.ego:16

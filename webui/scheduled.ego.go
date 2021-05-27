@@ -53,7 +53,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:32
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line scheduled.ego:33
-			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered bg-white\">\n        <thead>\n          <tr>\n            <th class=\"checkbox-column\">\n              <input type=\"checkbox\" class=\"check_all\" />\n            </th>\n            <th>")
+			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered table-light\">\n        <thead>\n          <tr>\n            <th class=\"checkbox-column\">\n              <input type=\"checkbox\" class=\"check_all\" />\n            </th>\n            <th>")
 //line scheduled.ego:40
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "When"))))
 //line scheduled.ego:40

@@ -41,7 +41,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
 //line queue.ego:27
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line queue.ego:28
-		_, _ = io.WriteString(w, "\n\n  <div class=\"table-responsive\">\n    <table class=\"queue table table-hover table-bordered table-striped bg-white\">\n      <thead>\n        <th class=\"checkbox-column\"><input type=\"checkbox\" class=\"check_all\" /></th>\n        <th>")
+		_, _ = io.WriteString(w, "\n\n  <div class=\"table-responsive\">\n    <table class=\"queue table table-hover table-bordered table-striped table-light\">\n      <thead>\n        <th class=\"checkbox-column\"><input type=\"checkbox\" class=\"check_all\" /></th>\n        <th>")
 //line queue.ego:33
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "JID"))))
 //line queue.ego:33

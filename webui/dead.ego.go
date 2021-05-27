@@ -27,7 +27,7 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:17
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Error"))))
 //line dead.ego:17
-		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped table-light\">\n    <tbody>\n      <tr>\n        <th>")
 //line dead.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ErrorClass"))))
 //line dead.ego:22

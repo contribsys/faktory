@@ -5,6 +5,7 @@ Changelog: Faktory || [Faktory Pro](https://github.com/contribsys/faktory/blob/m
 ## HEAD
 
 - Support username in FAKTORY_URL, useful for connection routing proxies.
+- UI: Upgrade Bootstrap to v5.0.1 from v3.3.7
 
 ## 1.5.1
 

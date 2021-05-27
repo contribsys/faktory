@@ -5,7 +5,7 @@ import "net/http"
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
-<html dir="<%= textDir(req) %>">
+<html lang="<%= locale(req) %>" dir="<%= textDir(req) %>">
   <head>
     <title><%= productTitle(req) %></title>
     <meta charset="utf8" />
@@ -17,9 +17,11 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
 
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 
-    <link href="<%= relative(req, "/static/bootstrap.css") %>" media="screen" rel="stylesheet" type="text/css" />
+
     <% if rtl(req) { %>
     <link href="<%= relative(req, "/static/bootstrap-rtl.min.css") %>" media="screen" rel="stylesheet" type="text/css"/>
+    <% } else { %>
+    <link href="<%= relative(req, "/static/bootstrap.css") %>" media="screen" rel="stylesheet" type="text/css" />
     <% } %>
 
     <link href="<%= relative(req, "/static/application.css") %>" media="screen" rel="stylesheet" type="text/css" />
@@ -31,16 +33,16 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <script type="text/javascript" src="<%= relative(req, "/static/application.js") %>"></script>
     <meta name="google" content="notranslate" />
   </head>
-  <body class="admin" data-locale="<%= ctx(req).locale %>" data-poll-path="">
+  <body class="admin d-flex flex-column" data-locale="<%= ctx(req).locale %>" data-poll-path="">
     <% ego_nav(w, req) %>
-    <div id="page">
-      <div class="container">
+    <div id="page" class="flex-fill">
+      <div class="container-xl">
         <div class="row">
-          <div class="col-sm-12 summary_bar">
+          <div class="col-12 summary_bar">
             <% ego_summary(w, req) %>
           </div>
 
-          <div class="col-sm-12">
+          <div class="col-12">
             <% yield() %>
           </div>
         </div>

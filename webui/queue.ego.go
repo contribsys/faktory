@@ -21,11 +21,11 @@ import (
 func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPage uint64) {
 	ego_layout(w, req, func() {
 //line queue.ego:14
-		_, _ = io.WriteString(w, "\n\n<header class=\"row\">\n  <div class=\"col-sm-5\">\n    <h3>\n      ")
+		_, _ = io.WriteString(w, "\n\n<header class=\"row\">\n  <div class=\"col-5\">\n    <h3>\n      ")
 //line queue.ego:18
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(q.Name())))
 //line queue.ego:19
-		_, _ = io.WriteString(w, "\n    </h3>\n  </div>\n  <div class=\"col-sm-4 pull-right flip\">\n    ")
+		_, _ = io.WriteString(w, "\n    </h3>\n  </div>\n  <div class=\"col-7 d-flex justify-content-end\">\n    ")
 //line queue.ego:22
 		ego_paging(w, req, fmt.Sprintf("/queues/%s", q.Name()), q.Size(), count, currentPage)
 //line queue.ego:23
@@ -41,60 +41,58 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
 //line queue.ego:27
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line queue.ego:28
-		_, _ = io.WriteString(w, "\n\n<div class=\"table_container\">\n  <table class=\"queue table table-hover table-bordered table-striped\">\n    <thead>\n      <th class=\"checkbox-column\"><input type=\"checkbox\" class=\"check_all\" /></th>\n      <th>")
+		_, _ = io.WriteString(w, "\n\n  <div class=\"table-responsive\">\n    <table class=\"queue table table-hover table-bordered table-striped bg-white\">\n      <thead>\n        <th class=\"checkbox-column\"><input type=\"checkbox\" class=\"check_all\" /></th>\n        <th>")
 //line queue.ego:33
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "JID"))))
 //line queue.ego:33
-		_, _ = io.WriteString(w, "</th>\n      <th>")
+		_, _ = io.WriteString(w, "</th>\n        <th>")
 //line queue.ego:34
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Type"))))
 //line queue.ego:34
-		_, _ = io.WriteString(w, "</th>\n      <th>")
+		_, _ = io.WriteString(w, "</th>\n        <th>")
 //line queue.ego:35
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Arguments"))))
 //line queue.ego:35
-		_, _ = io.WriteString(w, "</th>\n    </thead>\n    ")
+		_, _ = io.WriteString(w, "</th>\n      </thead>\n      ")
 //line queue.ego:37
 		queueJobs(q, count, currentPage, func(idx int, key []byte, job *client.Job) {
 //line queue.ego:38
-			_, _ = io.WriteString(w, "\n      <tr>\n        <td><input type=\"checkbox\" name=\"bkey\" value=\"")
+			_, _ = io.WriteString(w, "\n        <tr>\n          <td><input type=\"checkbox\" name=\"bkey\" value=\"")
 //line queue.ego:39
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(base64.RawURLEncoding.EncodeToString(key))))
 //line queue.ego:39
-			_, _ = io.WriteString(w, "\" /></td>\n        <td>")
+			_, _ = io.WriteString(w, "\" /></td>\n          <td>")
 //line queue.ego:40
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Jid)))
 //line queue.ego:40
-			_, _ = io.WriteString(w, "</td>\n        <td>")
+			_, _ = io.WriteString(w, "</td>\n          <td>")
 //line queue.ego:41
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Type)))
 //line queue.ego:41
-			_, _ = io.WriteString(w, "</td>\n        <td><div class=\"args\">")
+			_, _ = io.WriteString(w, "</td>\n          <td><div class=\"args\">")
 //line queue.ego:42
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayArgs(job.Args))))
 //line queue.ego:42
-			_, _ = io.WriteString(w, "</div></td>\n      </tr>\n    ")
+			_, _ = io.WriteString(w, "</div></td>\n        </tr>\n      ")
 //line queue.ego:44
 		})
 //line queue.ego:45
-		_, _ = io.WriteString(w, "\n  </table>\n  </div>\n  <div class=\"pull-left flip\">\n    <button class=\"btn btn-danger\" type=\"submit\" name=\"action\" value=\"delete\" data-confirm=\"")
-//line queue.ego:48
+		_, _ = io.WriteString(w, "\n    </table>\n  </div>\n  <div class=\"row\">\n    <div class=\"col-5\">\n      <button class=\"btn btn-danger\" type=\"submit\" name=\"action\" value=\"delete\" data-confirm=\"")
+//line queue.ego:49
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AreYouSure"))))
-//line queue.ego:48
+//line queue.ego:49
 		_, _ = io.WriteString(w, "\">")
-//line queue.ego:48
+//line queue.ego:49
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Delete"))))
-//line queue.ego:48
-		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n\n")
+//line queue.ego:49
+		_, _ = io.WriteString(w, "</button>\n    </div>\n    <div class=\"col-7 d-flex justify-content-end\">\n      ")
 //line queue.ego:52
 		ego_paging(w, req, fmt.Sprintf("/queues/%s", q.Name()), q.Size(), count, currentPage)
 //line queue.ego:53
-		_, _ = io.WriteString(w, "\n")
-//line queue.ego:53
+		_, _ = io.WriteString(w, "\n    </div>\n  </div>\n</form>\n\n")
+//line queue.ego:57
 	})
-//line queue.ego:54
-	_, _ = io.WriteString(w, "\n")
-//line queue.ego:54
+//line queue.ego:58
 }
 
 var _ fmt.Stringer

@@ -16,11 +16,11 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 
 
 <header class="row">
-  <div class="col-sm-5">
+  <div class="col-5">
     <h3><%= t(req, "Retries") %></h3>
   </div>
   <% if totalSize > count { %>
-    <div class="col-sm-4">
+    <div class="col-7 d-flex justify-content-end">
       <% ego_paging(w, req, "/retries", totalSize, count, currentPage) %>
     </div>
   <% } %>
@@ -30,8 +30,8 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 <% if totalSize > 0 { %>
   <form action="<%= relative(req, "/retries") %>" method="post">
     <%== csrfTag(req) %>
-    <div class="table_container">
-      <table class="table table-striped table-bordered table-white">
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered bg-white">
         <thead>
           <tr>
             <th class="table-checkbox checkbox-column">
@@ -72,7 +72,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
         <% }) %>
       </table>
     </div>
-    <div class="pull-left flip">
+    <div class="pull-left">
       <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
       <button class="btn btn-warn btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
       <button class="btn btn-danger btn-sm" type="submit" name="action" value="kill"><%= t(req, "Kill") %></button>
@@ -83,7 +83,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
     <form action="<%= relative(req, "/retries") %>" method="post">
       <%== csrfTag(req) %>
       <input type="hidden" name="key" value="all" />
-      <div class="pull-right flip">
+      <div class="pull-right">
         <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "RetryAll") %></button>
         <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "DeleteAll") %></button>
       </div>

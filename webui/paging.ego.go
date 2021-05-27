@@ -17,20 +17,18 @@ import (
 
 func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, current_page uint64) {
 
-//line paging.ego:11
-	_, _ = io.WriteString(w, "\n\n")
 //line paging.ego:12
 	if total_size > count {
 //line paging.ego:13
-		_, _ = io.WriteString(w, "\n  <ul class=\"pagination pull-right flip\">\n    <li class=\"")
+		_, _ = io.WriteString(w, "\n  <ul class=\"pagination\">\n    <li class=\"page-item")
 //line paging.ego:14
 		if current_page == 1 {
 //line paging.ego:14
-			_, _ = io.WriteString(w, "disabled")
+			_, _ = io.WriteString(w, " disabled")
 //line paging.ego:14
 		}
 //line paging.ego:14
-		_, _ = io.WriteString(w, "\">\n      <a href=\"")
+		_, _ = io.WriteString(w, "\">\n      <a class=\"page-link\" href=\"")
 //line paging.ego:15
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, url))))
 //line paging.ego:15
@@ -38,7 +36,7 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 //line paging.ego:17
 		if current_page > 1 {
 //line paging.ego:18
-			_, _ = io.WriteString(w, "\n      <li>\n        <a href=\"")
+			_, _ = io.WriteString(w, "\n      <li class=\"page-item\">\n        <a class=\"page-link\" href=\"")
 //line paging.ego:19
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, url))))
 //line paging.ego:19
@@ -54,7 +52,7 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 //line paging.ego:21
 		}
 //line paging.ego:22
-		_, _ = io.WriteString(w, "\n    <li class=\"disabled\">\n      <a href=\"")
+		_, _ = io.WriteString(w, "\n    <li class=\"page-item disabled\">\n      <a class=\"page-link\" href=\"")
 //line paging.ego:23
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, url))))
 //line paging.ego:23
@@ -70,7 +68,7 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 //line paging.ego:25
 		if total_size > current_page*count {
 //line paging.ego:26
-			_, _ = io.WriteString(w, "\n      <li>\n        <a href=\"")
+			_, _ = io.WriteString(w, "\n      <li class=\"page-item\">\n        <a class=\"page-link\" href=\"")
 //line paging.ego:27
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, url))))
 //line paging.ego:27
@@ -86,15 +84,15 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 //line paging.ego:29
 		}
 //line paging.ego:30
-		_, _ = io.WriteString(w, "\n    <li class=\"")
+		_, _ = io.WriteString(w, "\n    <li class=\"page-item")
 //line paging.ego:30
 		if total_size <= current_page*count {
 //line paging.ego:30
-			_, _ = io.WriteString(w, "disabled")
+			_, _ = io.WriteString(w, " disabled")
 //line paging.ego:30
 		}
 //line paging.ego:30
-		_, _ = io.WriteString(w, "\">\n      <a href=\"")
+		_, _ = io.WriteString(w, "\">\n      <a class=\"page-link\" href=\"")
 //line paging.ego:31
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, url))))
 //line paging.ego:31
@@ -105,8 +103,6 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 		_, _ = io.WriteString(w, "\">&raquo;</a>\n    </li>\n  </ul>\n")
 //line paging.ego:34
 	}
-//line paging.ego:35
-	_, _ = io.WriteString(w, "\n")
 //line paging.ego:35
 }
 

@@ -8,46 +8,40 @@ import (
 
 func ego_nav(w io.Writer, req *http.Request) {
 %>
-<div class="navbar navbar-default navbar-fixed-top">
+<div class="fixed-top bg-light navbar-default">
   <div class="container-fluid">
-    <div class="navbar-header" data-navbar="static">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-menu">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <div class="navbar-toggle collapsed navbar-livereload">
-      </div>
-      <a class="navbar-brand" href="<%= root(req) %>/">
+    <div class="navbar navbar-light navbar-fixed-top navbar-expand-md py-0">
+      <a class="navbar-brand flex-grow-1" href="<%= root(req) %>/">
         <span class="status">
           <% x := currentStatus(req) %>
           <i class="status-sprite status-<%= x %>" style="background-image: url(<%= root(req) %>/static/img/status.png);"></i>
         </span>
         <%= productTitle(req) %>
       </a>
-    </div>
 
-    <div class="collapse navbar-collapse" id="navbar-menu">
-      <ul class="nav navbar-nav" data-navbar="static">
-        <% for _, tab := range DefaultTabs {
-           if tab.Path == "/" { %>
-            <li class="<% if req.RequestURI == "/" { %>active<% } %>">
-          <% } else { %>
-            <li class="<% if strings.HasPrefix(req.RequestURI, tab.Path) { %>active<% } %>">
+      <span class="status-text">
+        <i class="status-icon status-<%= x %>"></i>
+        <%= t(req, x) %>
+      </span>
+
+      <button class="navbar-toggler ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-center" id="navbar-menu">
+        <ul class="navbar-nav" data-navbar="static">
+          <% for _, tab := range DefaultTabs {
+            if tab.Path == "/" { %>
+              <li class="nav-item<% if req.RequestURI == "/" { %> active<% } %>">
+            <% } else { %>
+              <li class="nav-item<% if strings.HasPrefix(req.RequestURI, tab.Path) { %> active<% } %>">
+            <% } %>
+              <a class="nav-link p-3" href="<%= relative(req, tab.Path) %>"><%= t(req, tab.Name) %></a>
+            </li>
           <% } %>
-            <a href="<%= relative(req, tab.Path) %>"><%= t(req, tab.Name) %></a>
-          </li>
-        <% } %>
-      </ul>
-      <ul class="nav navbar-nav navbar-right navbar-livereload" data-navbar="static">
-        <li>
-        </li>
-      </ul>
+        </ul>
+      </div>
     </div>
-    <span class="status-text">
-      <i class="status-icon status-<%= x %>"></i>
-      <%= t(req, x) %>
-    </span>
   </div>
 </div>
 <% } %>

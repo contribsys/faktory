@@ -20,12 +20,10 @@ import (
 func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
 	totalSize := uint64(set.Size())
 
-//line retries.ego:14
-	_, _ = io.WriteString(w, "\n\n")
 //line retries.ego:15
 	ego_layout(w, req, func() {
 //line retries.ego:16
-		_, _ = io.WriteString(w, "\n\n\n<header class=\"row\">\n  <div class=\"col-sm-5\">\n    <h3>")
+		_, _ = io.WriteString(w, "\n\n\n<header class=\"row\">\n  <div class=\"col-5\">\n    <h3>")
 //line retries.ego:20
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Retries"))))
 //line retries.ego:20
@@ -33,15 +31,13 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:22
 		if totalSize > count {
 //line retries.ego:23
-			_, _ = io.WriteString(w, "\n    <div class=\"col-sm-4\">\n      ")
+			_, _ = io.WriteString(w, "\n    <div class=\"col-7 d-flex justify-content-end\">\n      ")
 //line retries.ego:24
 			ego_paging(w, req, "/retries", totalSize, count, currentPage)
 //line retries.ego:25
 			_, _ = io.WriteString(w, "\n    </div>\n  ")
 //line retries.ego:26
 		}
-//line retries.ego:27
-		_, _ = io.WriteString(w, "\n  ")
 //line retries.ego:27
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(filtering("retries"))))
 //line retries.ego:28
@@ -57,7 +53,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:32
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line retries.ego:33
-			_, _ = io.WriteString(w, "\n    <div class=\"table_container\">\n      <table class=\"table table-striped table-bordered table-white\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
+			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered bg-white\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
 //line retries.ego:42
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "NextRetry"))))
 //line retries.ego:42
@@ -137,7 +133,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:72
 			})
 //line retries.ego:73
-			_, _ = io.WriteString(w, "\n      </table>\n    </div>\n    <div class=\"pull-left flip\">\n      <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"retry\">")
+			_, _ = io.WriteString(w, "\n      </table>\n    </div>\n    <div class=\"pull-left\">\n      <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"retry\">")
 //line retries.ego:76
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetryNow"))))
 //line retries.ego:76
@@ -161,7 +157,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:84
 				_, _ = fmt.Fprint(w, csrfTag(req))
 //line retries.ego:85
-				_, _ = io.WriteString(w, "\n      <input type=\"hidden\" name=\"key\" value=\"all\" />\n      <div class=\"pull-right flip\">\n        <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"retry\" data-confirm=\"")
+				_, _ = io.WriteString(w, "\n      <input type=\"hidden\" name=\"key\" value=\"all\" />\n      <div class=\"pull-right\">\n        <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"retry\" data-confirm=\"")
 //line retries.ego:87
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AreYouSure"))))
 //line retries.ego:87
@@ -180,8 +176,6 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 				_, _ = io.WriteString(w, "</button>\n      </div>\n    </form>\n  ")
 //line retries.ego:91
 			}
-//line retries.ego:92
-			_, _ = io.WriteString(w, "\n\n")
 //line retries.ego:93
 		} else {
 //line retries.ego:94
@@ -193,11 +187,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:95
 		}
 //line retries.ego:96
-		_, _ = io.WriteString(w, "\n")
-//line retries.ego:96
 	})
-//line retries.ego:97
-	_, _ = io.WriteString(w, "\n")
 //line retries.ego:97
 }
 

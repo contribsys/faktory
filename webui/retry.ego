@@ -15,8 +15,8 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 <% ego_job_info(w, req, retry) %>
 
 <h3><%= t(req, "Error") %></h3>
-<div class="table_container">
-  <table class="error table table-bordered table-striped">
+<div class="table-responsive">
+  <table class="error table table-bordered table-striped bg-white">
     <tbody>
       <tr>
         <th><%= t(req, "ErrorClass") %></th>
@@ -46,7 +46,7 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 
 <form class="form-horizontal" action="<%= root(req) %>/retries/<%= key %>" method="post">
   <%== csrfTag(req) %>
-  <div class="pull-left flip">
+  <div class="pull-left">
     <a class="btn btn-default" href="<%= root(req) %>/retries"><%= t(req, "GoBack") %></a>
     <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
     <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>

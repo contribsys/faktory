@@ -19,20 +19,18 @@ import (
 
 func ego_busy(w io.Writer, req *http.Request) {
 
-//line busy.ego:13
-	_, _ = io.WriteString(w, "\n\n")
 //line busy.ego:14
 	ego_layout(w, req, func() {
 //line busy.ego:15
-		_, _ = io.WriteString(w, "\n\n\n<div class=\"row header\">\n  <div class=\"col-sm-8 pull-left flip\">\n    <h3>")
+		_, _ = io.WriteString(w, "\n\n\n<div class=\"row header mt-3\">\n  <div class=\"col-5\">\n    <h3>")
 //line busy.ego:19
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Processes"))))
 //line busy.ego:19
-		_, _ = io.WriteString(w, "</h3>\n  </div>\n  <div class=\"col-sm-4 pull-right flip\">\n    <form method=\"POST\" action=\"")
+		_, _ = io.WriteString(w, "</h3>\n  </div>\n  <div class=\"col-7\">\n    <form method=\"POST\" action=\"")
 //line busy.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/busy"))))
 //line busy.ego:22
-		_, _ = io.WriteString(w, "\" class=\"warning-messages\">\n      ")
+		_, _ = io.WriteString(w, "\" class=\"warning-messages d-flex justify-content-end\">\n      ")
 //line busy.ego:23
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line busy.ego:24
@@ -52,7 +50,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:26
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "StopAll"))))
 //line busy.ego:26
-		_, _ = io.WriteString(w, "</button>\n    </form>\n  </div>\n</div>\n\n<div class=\"table_container\">\n  <table class=\"processes table table-hover table-bordered table-striped table-white\">\n    <thead>\n      <th>")
+		_, _ = io.WriteString(w, "</button>\n    </form>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"processes table table-hover table-bordered table-striped bg-white\">\n    <thead>\n      <th>")
 //line busy.ego:34
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ID"))))
 //line busy.ego:34
@@ -100,8 +98,6 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:52
 			}
 //line busy.ego:53
-			_, _ = io.WriteString(w, "\n          ")
-//line busy.ego:53
 			if worker.IsQuiet() {
 //line busy.ego:54
 				_, _ = io.WriteString(w, "\n            <span class=\"label label-danger\">quiet</span>\n          ")
@@ -120,7 +116,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:59
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Manager().BusyCount(worker.Wid))))
 //line busy.ego:59
-			_, _ = io.WriteString(w, "</td>\n        <td>\n          <div class=\"btn-group pull-right flip\">\n            <form method=\"POST\">\n              ")
+			_, _ = io.WriteString(w, "</td>\n        <td>\n          <div class=\"btn-group d-flex justify-content-end\">\n            <form method=\"POST\">\n              ")
 //line busy.ego:63
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line busy.ego:64
@@ -128,7 +124,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:64
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(worker.Wid)))
 //line busy.ego:64
-			_, _ = io.WriteString(w, "\"/>\n              <div class=\"pull-right flip\">\n                ")
+			_, _ = io.WriteString(w, "\"/>\n              <div class=\"text-end\">\n                ")
 //line busy.ego:66
 			if !worker.IsQuiet() {
 //line busy.ego:67
@@ -148,11 +144,11 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:75
 		})
 //line busy.ego:76
-		_, _ = io.WriteString(w, "\n  </table>\n</div>\n\n<div class=\"row header\">\n  <div class=\"col-sm-7\">\n    <h3>")
+		_, _ = io.WriteString(w, "\n  </table>\n</div>\n\n<div class=\"row header mt-3\">\n  <div class=\"col-12\">\n    <h3>")
 //line busy.ego:81
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Jobs"))))
 //line busy.ego:81
-		_, _ = io.WriteString(w, "</h3>\n  </div>\n</div>\n\n<div class=\"table_container\">\n  <table class=\"workers table table-hover table-bordered table-striped table-white\">\n    <thead>\n      <th>")
+		_, _ = io.WriteString(w, "</h3>\n  </div>\n</div>\n\n<div class=\"table-responsive\">\n  <table class=\"workers table table-hover table-bordered table-striped bg-white\">\n    <thead>\n      <th>")
 //line busy.ego:88
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Process"))))
 //line busy.ego:88
@@ -179,8 +175,6 @@ func ego_busy(w io.Writer, req *http.Request) {
 		_, _ = io.WriteString(w, "</th>\n    </thead>\n    ")
 //line busy.ego:95
 		busyReservations(req, func(res *manager.Reservation) {
-//line busy.ego:96
-			_, _ = io.WriteString(w, "\n      ")
 //line busy.ego:96
 			job := res.Job
 //line busy.ego:97
@@ -223,8 +217,6 @@ func ego_busy(w io.Writer, req *http.Request) {
 		_, _ = io.WriteString(w, "\n  </table>\n</div>\n")
 //line busy.ego:120
 	})
-//line busy.ego:121
-	_, _ = io.WriteString(w, "\n")
 //line busy.ego:121
 }
 

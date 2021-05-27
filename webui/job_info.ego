@@ -14,8 +14,8 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
   <h3><%= t(req, "Job") %></h3>
 </header>
 
-<div class="table_container">
-  <table class="table table-bordered table-striped">
+<div class="table-responsive">
+  <table class="table table-bordered table-striped bg-white">
     <tbody>
       <tr>
         <th>JID</th>

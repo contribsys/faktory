@@ -17,8 +17,8 @@ func ego_debug(w io.Writer, req *http.Request) {
 <% ego_layout(w, req, func() { %>
 
 <h3><%= t(req, "Debugging") %></h3>
-<div class="table_container">
-  <table class="error table table-bordered table-striped">
+<div class="table-responsive">
+  <table class="error table table-bordered table-striped bg-white">
     <tbody>
       <tr>
         <th><%= t(req, "Locale") %></th>

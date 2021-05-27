@@ -18,32 +18,30 @@ import (
 func ego_footer(w io.Writer, req *http.Request) {
 
 //line footer.ego:11
-	_, _ = io.WriteString(w, "\n<div class=\"navbar navbar-fixed-bottom navbar-inverse ltr\">\n  <div class=\"navbar-inner\">\n    <div class=\"container text-center\">\n        <ul class=\"nav\">\n          <li>\n            <p class=\"navbar-text product-version\">")
-//line footer.ego:16
+	_, _ = io.WriteString(w, "\n<footer class=\"bg-dark\">\n  <div class=\"container-xl text-center\">\n    <div class=\"navbar navbar-fixed-bottom navbar-inverse navbar-dark justify-content-center justify-content-md-start\">\n      <div class=\"navbar-expand-md\">\n        <ul class=\"navbar-nav\">\n          <li class=\"nav-item\">\n            <p class=\"navbar-text mb-0 product-version\">")
+//line footer.ego:17
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
-//line footer.ego:16
-	_, _ = io.WriteString(w, " ")
-//line footer.ego:16
+//line footer.ego:17
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
-//line footer.ego:16
-	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li>\n            <p class=\"navbar-text faktory-url\">")
-//line footer.ego:19
+//line footer.ego:17
+	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li class=\"nav-item\">\n            <p class=\"navbar-text mb-0 faktory-url\">")
+//line footer.ego:20
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(serverLocation(req))))
-//line footer.ego:19
-	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li>\n            <p class=\"navbar-text server-utc-time\">")
-//line footer.ego:22
+//line footer.ego:20
+	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li class=\"nav-item\">\n            <p class=\"navbar-text mb-0 server-utc-time\">")
+//line footer.ego:23
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(serverUtcTime())))
-//line footer.ego:22
-	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li>\n            <p class=\"navbar-text\">")
-//line footer.ego:25
+//line footer.ego:23
+	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li class=\"nav-item\">\n            <p class=\"navbar-text mb-0\">")
+//line footer.ego:26
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Options.Environment)))
-//line footer.ego:25
-	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li>\n            <p class=\"navbar-text\"><a style=\"color: #666\" href=\"")
-//line footer.ego:28
+//line footer.ego:26
+	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li class=\"nav-item\">\n            <p class=\"navbar-text mb-0\"><a style=\"color: #666\" href=\"")
+//line footer.ego:29
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/debug"))))
-//line footer.ego:28
-	_, _ = io.WriteString(w, "\">debug</a></p>\n          </li>\n        </ul>\n    </div>\n  </div>\n</div>\n")
-//line footer.ego:34
+//line footer.ego:29
+	_, _ = io.WriteString(w, "\">debug</a></p>\n          </li>\n        </ul>\n      </div>\n    </div>\n  </div>\n</footer>\n")
+//line footer.ego:36
 }
 
 var _ fmt.Stringer

@@ -19,7 +19,7 @@ func ego_index(w io.Writer, req *http.Request) {
       <span class="dot"></span>
     </span>
   </h3>
-  <div class="interval-slider ltr">
+  <div class="interval-slider">
     <span class="interval-slider-label"><%= t(req, "PollingInterval") %>:</span>
     <span class="current-interval">5 sec</span>
     <br/>
@@ -33,43 +33,51 @@ func ego_index(w io.Writer, req *http.Request) {
 </div>
 
 <div class="row chart">
-  <h5>
+  <h6>
     <span class="history-heading"><%= t(req, "History") %></span>
     <a href="<%= relative(req, "/?days=7") %>" class="history-graph <%= daysMatches(req, "7", false) %>"><%= t(req, "OneWeek") %></a>
     <a href="<%= relative(req, "/") %>" class="history-graph <%= daysMatches(req, "30", true) %>"><%= t(req, "OneMonth") %></a>
     <a href="<%= relative(req, "/?days=90") %>" class="history-graph <%= daysMatches(req, "90", false) %>"><%= t(req, "ThreeMonths") %></a>
     <a href="<%= relative(req, "/?days=180") %>" class="history-graph <%= daysMatches(req, "180", false) %>"><%= t(req, "SixMonths") %></a>
-  </h5>
+  </h6>
 
   <div id="history" data-processed-label="<%= t(req, "Processed") %>" data-failed-label="<%= t(req, "Failed") %>" data-processed="<%= processedHistory(req) %>" data-failed="<%= failedHistory(req) %>" data-update-url="<%= relative(req, "/stats") %>"></div>
   <div id="history-legend"></div>
 </div>
 
 <br/>
-<h5>Faktory</h5>
-<div class="faktory-wrapper">
-  <div class="stats-container">
-    <div class="stat">
+<h6>Faktory</h6>
+<div class="row">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
       <h3 class="faktory_version"><%= client.Version %></h3>
       <p><%= t(req, "Version") %></p>
     </div>
+  </div>
 
-    <div class="stat">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
       <h3 class="uptime_in_days"><%= uptimeInDays(req) %></h3>
       <p><%= t(req, "Uptime") %></p>
     </div>
+  </div>
 
-    <div class="stat">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
       <h3 class="connections"><%= ctx(req).Server().Stats.Connections %></h3>
       <p><%= t(req, "Connections") %></p>
     </div>
+  </div>
 
-    <div class="stat">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
       <h3 class="used_memory_human"><%= util.MemoryUsageMB() %> MB</h3>
       <p><%= t(req, "MemoryUsage") %></p>
     </div>
+  </div>
 
-    <div class="stat">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
       <h3 class="commands"><%= ctx(req).Server().Stats.Commands %></h3>
       <p><%= t(req, "CommandsExecuted") %></p>
     </div>

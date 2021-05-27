@@ -14,12 +14,12 @@ func ego_busy(w io.Writer, req *http.Request) {
 <% ego_layout(w, req, func() { %>
 
 
-<div class="row header">
-  <div class="col-sm-8 pull-left flip">
+<div class="row header mt-3">
+  <div class="col-5">
     <h3><%= t(req, "Processes") %></h3>
   </div>
-  <div class="col-sm-4 pull-right flip">
-    <form method="POST" action="<%= relative(req, "/busy") %>" class="warning-messages">
+  <div class="col-7">
+    <form method="POST" action="<%= relative(req, "/busy") %>" class="warning-messages d-flex justify-content-end">
       <%== csrfTag(req) %>
       <input type="hidden" name="wid" value="all"/>
       <button class="btn btn-primary" type="submit" name="signal" value="quiet" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "QuietAll") %></button>
@@ -28,8 +28,8 @@ func ego_busy(w io.Writer, req *http.Request) {
   </div>
 </div>
 
-<div class="table_container">
-  <table class="processes table table-hover table-bordered table-striped table-white">
+<div class="table-responsive">
+  <table class="processes table table-hover table-bordered table-striped bg-white">
     <thead>
       <th><%= t(req, "ID") %></th>
       <th><%= t(req, "Name") %></th>
@@ -58,11 +58,11 @@ func ego_busy(w io.Writer, req *http.Request) {
         <td><%= displayRss(worker.RssKb) %></td>
         <td><%= ctx(req).Server().Manager().BusyCount(worker.Wid) %></td>
         <td>
-          <div class="btn-group pull-right flip">
+          <div class="btn-group d-flex justify-content-end">
             <form method="POST">
               <%== csrfTag(req) %>
               <input type="hidden" name="wid" value="<%= worker.Wid %>"/>
-              <div class="pull-right flip">
+              <div class="text-end">
                 <% if !worker.IsQuiet() { %>
                   <button class="btn btn-primary btn-sm" type="submit" name="signal" value="quiet"><%= t(req, "Quiet") %></button>
                 <% } %>
@@ -76,14 +76,14 @@ func ego_busy(w io.Writer, req *http.Request) {
   </table>
 </div>
 
-<div class="row header">
-  <div class="col-sm-7">
+<div class="row header mt-3">
+  <div class="col-12">
     <h3><%= t(req, "Jobs") %></h3>
   </div>
 </div>
 
-<div class="table_container">
-  <table class="workers table table-hover table-bordered table-striped table-white">
+<div class="table-responsive">
+  <table class="workers table table-hover table-bordered table-striped bg-white">
     <thead>
       <th><%= t(req, "Process") %></th>
       <th><%= t(req, "JID") %></th>

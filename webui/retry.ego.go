@@ -18,12 +18,8 @@ import (
 
 func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 
-//line retry.ego:12
-	_, _ = io.WriteString(w, "\n\n")
 //line retry.ego:13
 	ego_layout(w, req, func() {
-//line retry.ego:14
-		_, _ = io.WriteString(w, "\n\n")
 //line retry.ego:15
 		ego_job_info(w, req, retry)
 //line retry.ego:16
@@ -31,7 +27,7 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 //line retry.ego:17
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Error"))))
 //line retry.ego:17
-		_, _ = io.WriteString(w, "</h3>\n<div class=\"table_container\">\n  <table class=\"error table table-bordered table-striped\">\n    <tbody>\n      <tr>\n        <th>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>")
 //line retry.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ErrorClass"))))
 //line retry.ego:22
@@ -59,8 +55,6 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 //line retry.ego:36
 			for _, line := range retry.Failure.Backtrace {
 //line retry.ego:37
-				_, _ = io.WriteString(w, "\n                ")
-//line retry.ego:37
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(line)))
 //line retry.ego:37
 				_, _ = io.WriteString(w, "<br/>\n              ")
@@ -83,7 +77,7 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 //line retry.ego:48
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line retry.ego:49
-		_, _ = io.WriteString(w, "\n  <div class=\"pull-left flip\">\n    <a class=\"btn btn-default\" href=\"")
+		_, _ = io.WriteString(w, "\n  <div class=\"pull-left\">\n    <a class=\"btn btn-default\" href=\"")
 //line retry.ego:50
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(root(req))))
 //line retry.ego:50
@@ -102,8 +96,6 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n")
 //line retry.ego:55
 	})
-//line retry.ego:56
-	_, _ = io.WriteString(w, "\n")
 //line retry.ego:56
 }
 

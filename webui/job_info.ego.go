@@ -23,7 +23,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 //line job_info.ego:14
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Job"))))
 //line job_info.ego:14
-	_, _ = io.WriteString(w, "</h3>\n</header>\n\n<div class=\"table_container\">\n  <table class=\"table table-bordered table-striped\">\n    <tbody>\n      <tr>\n        <th>JID</th>\n        <td>\n          <code>")
+	_, _ = io.WriteString(w, "</h3>\n</header>\n\n<div class=\"table-responsive\">\n  <table class=\"table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>JID</th>\n        <td>\n          <code>")
 //line job_info.ego:23
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Jid)))
 //line job_info.ego:23
@@ -92,19 +92,11 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 	enq := job.EnqueuedAt
 	if enq != "" {
 //line job_info.ego:61
-		_, _ = io.WriteString(w, "\n            ")
-//line job_info.ego:61
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relativeTime(enq))))
-//line job_info.ego:62
-		_, _ = io.WriteString(w, "\n          ")
 //line job_info.ego:62
 	} else {
 //line job_info.ego:63
-		_, _ = io.WriteString(w, "\n            ")
-//line job_info.ego:63
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "NotYetEnqueued"))))
-//line job_info.ego:64
-		_, _ = io.WriteString(w, "\n          ")
 //line job_info.ego:64
 	}
 //line job_info.ego:65
@@ -135,8 +127,6 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 		_, _ = io.WriteString(w, "\n          </td>\n        </tr>\n      ")
 //line job_info.ego:76
 	}
-//line job_info.ego:77
-	_, _ = io.WriteString(w, "\n      ")
 //line job_info.ego:77
 	if job.Failure != nil {
 //line job_info.ego:78

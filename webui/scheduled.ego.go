@@ -20,12 +20,10 @@ import (
 func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
 	totalSize := uint64(set.Size())
 
-//line scheduled.ego:14
-	_, _ = io.WriteString(w, "\n\n")
 //line scheduled.ego:15
 	ego_layout(w, req, func() {
 //line scheduled.ego:16
-		_, _ = io.WriteString(w, "\n\n<header class=\"row\">\n  <div class=\"col-sm-5\">\n    <h3>")
+		_, _ = io.WriteString(w, "\n\n<header class=\"row\">\n  <div class=\"col-5\">\n    <h3>")
 //line scheduled.ego:19
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ScheduledJobs"))))
 //line scheduled.ego:19
@@ -33,15 +31,13 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:21
 		if totalSize > 0 && totalSize > count {
 //line scheduled.ego:22
-			_, _ = io.WriteString(w, "\n    <div class=\"col-sm-4\">\n      ")
+			_, _ = io.WriteString(w, "\n    <div class=\"col-7 d-flex justify-content-end\">\n      ")
 //line scheduled.ego:23
 			ego_paging(w, req, "/scheduled", totalSize, count, currentPage)
 //line scheduled.ego:24
 			_, _ = io.WriteString(w, "\n    </div>\n  ")
 //line scheduled.ego:25
 		}
-//line scheduled.ego:26
-		_, _ = io.WriteString(w, "\n  ")
 //line scheduled.ego:26
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(filtering("scheduled"))))
 //line scheduled.ego:27
@@ -57,7 +53,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:32
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line scheduled.ego:33
-			_, _ = io.WriteString(w, "\n    <div class=\"table_container\">\n      <table class=\"table table-striped table-bordered table-white\">\n        <thead>\n          <tr>\n            <th class=\"checkbox-column\">\n              <input type=\"checkbox\" class=\"check_all\" />\n            </th>\n            <th>")
+			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered bg-white\">\n        <thead>\n          <tr>\n            <th class=\"checkbox-column\">\n              <input type=\"checkbox\" class=\"check_all\" />\n            </th>\n            <th>")
 //line scheduled.ego:40
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "When"))))
 //line scheduled.ego:40
@@ -117,7 +113,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:62
 			})
 //line scheduled.ego:63
-			_, _ = io.WriteString(w, "\n      </table>\n    </div>\n    <div class=\"pull-right flip\">\n      <button class=\"btn btn-primary\" type=\"submit\" name=\"action\" value=\"add_to_queue\">")
+			_, _ = io.WriteString(w, "\n      </table>\n    </div>\n    <div class=\"pull-right\">\n      <button class=\"btn btn-primary\" type=\"submit\" name=\"action\" value=\"add_to_queue\">")
 //line scheduled.ego:66
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AddToQueue"))))
 //line scheduled.ego:66
@@ -137,11 +133,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:72
 		}
 //line scheduled.ego:73
-		_, _ = io.WriteString(w, "\n")
-//line scheduled.ego:73
 	})
-//line scheduled.ego:74
-	_, _ = io.WriteString(w, "\n")
 //line scheduled.ego:74
 }
 

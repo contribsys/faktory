@@ -18,12 +18,8 @@ import (
 
 func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 
-//line dead.ego:12
-	_, _ = io.WriteString(w, "\n\n")
 //line dead.ego:13
 	ego_layout(w, req, func() {
-//line dead.ego:14
-		_, _ = io.WriteString(w, "\n\n")
 //line dead.ego:15
 		ego_job_info(w, req, dead)
 //line dead.ego:16
@@ -31,7 +27,7 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:17
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Error"))))
 //line dead.ego:17
-		_, _ = io.WriteString(w, "</h3>\n<div class=\"table_container\">\n  <table class=\"error table table-bordered table-striped\">\n    <tbody>\n      <tr>\n        <th>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>")
 //line dead.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ErrorClass"))))
 //line dead.ego:22
@@ -59,8 +55,6 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:36
 			for _, line := range dead.Failure.Backtrace {
 //line dead.ego:37
-				_, _ = io.WriteString(w, "\n              ")
-//line dead.ego:37
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(line)))
 //line dead.ego:37
 				_, _ = io.WriteString(w, "<br/>\n            ")
@@ -83,7 +77,7 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:48
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line dead.ego:49
-		_, _ = io.WriteString(w, "\n  <div class=\"pull-left flip\">\n    <a class=\"btn btn-default\" href=\"")
+		_, _ = io.WriteString(w, "\n  <div class=\"pull-left\">\n    <a class=\"btn btn-default\" href=\"")
 //line dead.ego:50
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/morgue"))))
 //line dead.ego:50
@@ -102,8 +96,6 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n")
 //line dead.ego:55
 	})
-//line dead.ego:56
-	_, _ = io.WriteString(w, "\n")
 //line dead.ego:56
 }
 

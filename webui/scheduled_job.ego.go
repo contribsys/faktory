@@ -18,8 +18,6 @@ import (
 
 func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *client.Job) {
 	ego_layout(w, req, func() {
-//line scheduled_job.ego:12
-		_, _ = io.WriteString(w, "\n\n")
 //line scheduled_job.ego:13
 		ego_job_info(w, req, job)
 //line scheduled_job.ego:14
@@ -35,7 +33,7 @@ func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *client.J
 //line scheduled_job.ego:16
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line scheduled_job.ego:17
-		_, _ = io.WriteString(w, "\n  <div class=\"flip\">\n    <a class=\"btn btn-default\" href=\"")
+		_, _ = io.WriteString(w, "\n  <div>\n    <a class=\"btn btn-default\" href=\"")
 //line scheduled_job.ego:18
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(root(req))))
 //line scheduled_job.ego:18
@@ -54,8 +52,6 @@ func ego_scheduled_job(w io.Writer, req *http.Request, key string, job *client.J
 		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n\n")
 //line scheduled_job.ego:24
 	})
-//line scheduled_job.ego:25
-	_, _ = io.WriteString(w, "\n")
 //line scheduled_job.ego:25
 }
 

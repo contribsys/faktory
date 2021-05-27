@@ -16,7 +16,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 	store := ctx(req).Store()
 
 //line summary.ego:9
-	_, _ = io.WriteString(w, "\n<ul class=\"list-unstyled summary row\">\n  <li class=\"processed col-sm-1\">\n    <span class=\"count\">")
+	_, _ = io.WriteString(w, "\n<ul class=\"list-unstyled summary row justify-content-around\">\n  <li class=\"processed col-12 col-md-auto\">\n    <span class=\"count\">")
 //line summary.ego:11
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(uintWithDelimiter(store.TotalProcessed()))))
 //line summary.ego:11
@@ -24,7 +24,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:12
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Processed"))))
 //line summary.ego:12
-	_, _ = io.WriteString(w, "</span>\n  </li>\n  <li class=\"failed col-sm-1\">\n    <span class=\"count\">")
+	_, _ = io.WriteString(w, "</span>\n  </li>\n  <li class=\"failed col-12 col-md-auto\">\n    <span class=\"count\">")
 //line summary.ego:15
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(uintWithDelimiter(store.TotalFailures()))))
 //line summary.ego:15
@@ -32,7 +32,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:16
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Failed"))))
 //line summary.ego:16
-	_, _ = io.WriteString(w, "</span>\n  </li>\n  <li class=\"busy col-sm-1\">\n    <a href=\"")
+	_, _ = io.WriteString(w, "</span>\n  </li>\n  <li class=\"busy col-12 col-md-auto\">\n    <a href=\"")
 //line summary.ego:19
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/busy"))))
 //line summary.ego:19
@@ -44,7 +44,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:21
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Busy"))))
 //line summary.ego:21
-	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"enqueued col-sm-1\">\n    <a href=\"")
+	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"enqueued col-12 col-md-auto\">\n    <a href=\"")
 //line summary.ego:25
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/queues"))))
 //line summary.ego:25
@@ -56,7 +56,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:27
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Enqueued"))))
 //line summary.ego:27
-	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"retries col-sm-1\">\n    <a href=\"")
+	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"retries col-12 col-md-auto\">\n    <a href=\"")
 //line summary.ego:31
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/retries"))))
 //line summary.ego:31
@@ -68,7 +68,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:33
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Retries"))))
 //line summary.ego:33
-	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"scheduled col-sm-1\">\n    <a href=\"")
+	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"scheduled col-12 col-md-auto\">\n    <a href=\"")
 //line summary.ego:37
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/scheduled"))))
 //line summary.ego:37
@@ -80,7 +80,7 @@ func ego_summary(w io.Writer, req *http.Request) {
 //line summary.ego:39
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Scheduled"))))
 //line summary.ego:39
-	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"dead col-sm-1\">\n    <a href=\"")
+	_, _ = io.WriteString(w, "</span>\n    </a>\n  </li>\n  <li class=\"dead col-12 col-md-auto\">\n    <a href=\"")
 //line summary.ego:43
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/morgue"))))
 //line summary.ego:43

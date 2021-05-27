@@ -53,9 +53,14 @@ func rtl(req *http.Request) bool {
 	return t(req, "TextDirection") == "rtl"
 }
 
+func locale(req *http.Request) string {
+	dc := req.Context().(*DefaultContext)
+	return dc.Locale()
+}
+
 func textDir(req *http.Request) string {
 	dir := t(req, "TextDirection")
-	if dir == "" {
+	if dir == "" || dir == "TextDirection" {
 		dir = "ltr"
 	}
 	return dir

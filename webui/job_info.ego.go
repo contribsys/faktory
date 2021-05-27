@@ -23,7 +23,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 //line job_info.ego:14
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Job"))))
 //line job_info.ego:14
-	_, _ = io.WriteString(w, "</h3>\n</header>\n\n<div class=\"table-responsive\">\n  <table class=\"table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>JID</th>\n        <td>\n          <code>")
+	_, _ = io.WriteString(w, "</h3>\n</header>\n\n<div class=\"table-responsive\">\n  <table class=\"table table-bordered table-striped table-light\">\n    <tbody>\n      <tr>\n        <th>JID</th>\n        <td>\n          <code>")
 //line job_info.ego:23
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Jid)))
 //line job_info.ego:23

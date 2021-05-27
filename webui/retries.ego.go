@@ -53,7 +53,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:32
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line retries.ego:33
-			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered bg-white\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
+			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered table-light\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
 //line retries.ego:42
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "NextRetry"))))
 //line retries.ego:42

@@ -30,7 +30,7 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:19
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Debugging"))))
 //line debug.ego:19
-		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped table-light\">\n    <tbody>\n      <tr>\n        <th>")
 //line debug.ego:24
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Locale"))))
 //line debug.ego:24

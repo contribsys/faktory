@@ -29,7 +29,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 </div>
 
 <div class="table-responsive">
-  <table class="processes table table-hover table-bordered table-striped bg-white">
+  <table class="processes table table-hover table-bordered table-striped table-light">
     <thead>
       <th><%= t(req, "ID") %></th>
       <th><%= t(req, "Name") %></th>
@@ -83,7 +83,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 </div>
 
 <div class="table-responsive">
-  <table class="workers table table-hover table-bordered table-striped bg-white">
+  <table class="workers table table-hover table-bordered table-striped table-light">
     <thead>
       <th><%= t(req, "Process") %></th>
       <th><%= t(req, "JID") %></th>

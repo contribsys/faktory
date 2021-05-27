@@ -27,7 +27,7 @@ func ego_retry(w io.Writer, req *http.Request, key string, retry *client.Job) {
 //line retry.ego:17
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Error"))))
 //line retry.ego:17
-		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped bg-white\">\n    <tbody>\n      <tr>\n        <th>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"error table table-bordered table-striped table-light\">\n    <tbody>\n      <tr>\n        <th>")
 //line retry.ego:22
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ErrorClass"))))
 //line retry.ego:22

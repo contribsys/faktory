@@ -16,7 +16,7 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 
 <h3><%= t(req, "Error") %></h3>
 <div class="table-responsive">
-  <table class="error table table-bordered table-striped bg-white">
+  <table class="error table table-bordered table-striped table-light">
     <tbody>
       <tr>
         <th><%= t(req, "ErrorClass") %></th>

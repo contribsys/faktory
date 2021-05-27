@@ -53,7 +53,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 //line morgue.ego:31
 			_, _ = fmt.Fprint(w, csrfTag(req))
 //line morgue.ego:32
-			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered bg-white\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
+			_, _ = io.WriteString(w, "\n    <div class=\"table-responsive\">\n      <table class=\"table table-striped table-bordered table-light\">\n        <thead>\n          <tr>\n            <th class=\"table-checkbox checkbox-column\">\n              <label>\n                <input type=\"checkbox\" class=\"check_all\" />\n              </label>\n            </th>\n            <th>")
 //line morgue.ego:41
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "LastRetry"))))
 //line morgue.ego:41

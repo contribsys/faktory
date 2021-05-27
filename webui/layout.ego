@@ -5,7 +5,7 @@ import "net/http"
 func ego_layout(w io.Writer, req *http.Request, yield func()) {
 %>
 <!doctype html>
-<html lang="<%= locale(req) %>" dir="<%= textDir(req) %>">
+<html lang="<%= ctx(req).locale %>" dir="<%= textDir(req) %>">
   <head>
     <title><%= productTitle(req) %></title>
     <meta charset="utf8" />
@@ -16,7 +16,6 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <link rel="icon" type="image/png" sizes="16x16" href="<%= relative(req, "/static/img/favicon-16x16.png") %>">
 
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-
 
     <% if rtl(req) { %>
     <link href="<%= relative(req, "/static/bootstrap-rtl.min.css") %>" media="screen" rel="stylesheet" type="text/css"/>

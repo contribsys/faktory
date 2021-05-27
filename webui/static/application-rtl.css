@@ -1,16 +1,3 @@
-.navbar-right {
-    float: left !important;
-}
-
-footer .edits {
-  margin-right: unset;
-  margin-left: 40px;
-}
-
-.summary_bar .status {
-  margin-left: unset;
-  margin-right: 10px;
-}
 @media (max-width: 767px) and (min-width: 400px) {
   .summary_bar ul .desc {
     text-align: right;
@@ -19,8 +6,7 @@ footer .edits {
     text-align: left;
   }
 }
-@media (max-width: 979px) and (min-width: 768px) {
-}
+
 .summary_bar ul .count {
   float: left;
 }
@@ -35,32 +21,6 @@ form .btn-group .btn {
   margin-left: 1px;
 }
 
-@media (max-width: 768px) {
-  .navbar.navbar-fixed-top ul {
-    margin-right: unset;
-    margin-left: -15px!important;
-  }
-}
-
-@media (width: 768px) {
-  .navbar .poll-wrapper {
-    margin: 4px 0 0 4px;
-  }
-
-  .navbar .dropdown-menu a {
-    text-align: right;
-  }
-}
-
-.navbar-footer .navbar ul.nav a.navbar-brand {
-  padding: 0 0 0 15px;
-}
-
-.navbar-fixed-bottom li {
-  margin-right: unset;
-  margin-left: 20px;
-}
-
 .status-active {
   background-position: 100% 0;
 }
@@ -69,21 +29,8 @@ form .btn-group .btn {
   background-position: 100% -54px;
 }
 
-.stat {
-  float: right;
-  margin-right: unset;
-  margin-left: 20px;
-}
-
-.stat:last-child {
-  margin-left: 0;
-}
-
 @media (max-width: 767px) {
   .stat {
-    float: right;
-    margin-right: unset;
-    margin-left: 10px;
     text-align: right;
   }
   .stat h3{
@@ -91,7 +38,6 @@ form .btn-group .btn {
     margin: 5px 5px 5px 10px;
   }
   .stat p{
-    font-size: 1em;
     margin: 5px 10px 5px 5px;
   }
 }
@@ -138,36 +84,6 @@ div.interval-slider {
 
 .beacon .ring {
   margin: -14px -14px 0 0;
-}
-
-.history-heading {
-  padding-right: unset;
-  padding-left: 15px;
-}
-
-@media (max-width: 767px) {
-  .navbar.navbar-fixed-top ul {
-    margin-left: 0;
-  }
-
-  .navbar.navbar-fixed-top li {
-    margin-left: 0;
-  }
-
-  .navbar.navbar-fixed-bottom ul {
-    margin-left: 0;
-  }
-
-  .navbar.navbar-fixed-bottom li {
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 500px) {
-  .navbar-footer .navbar ul.nav a.navbar-brand {
-    padding-right: unset;
-    padding-left: 5px;
-  }
 }
 
 /* Rickshaw */

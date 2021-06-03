@@ -1,9 +1,12 @@
 # Faktory Pro Changelog
 
-Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.md) || Faktory Pro || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
+Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.md) || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-A trial version of Faktory Pro for OSX is available with each [release](/contribsys/faktory/releases/).
-Click to purchase [Faktory Pro](https://billing.contribsys.com/fpro/).
+# Note
+
+**Faktory Pro was sunset in April 2021 and is no longer available for
+sale.** Existing customers may continue to use it for the next two
+years.
 
 ## 1.5.1
 

@@ -1,9 +1,10 @@
 Faktory is AGPL licensed. What does this mean? In short:
 
-If you fork Faktory, make changes and allow others to access your modified Faktory, those changes must also be open source.
+If you fork Faktory, make changes and allow others to access your modified Faktory,
+the source code for those changes must be made available to those users.
 
-Note that Faktory client and worker libraries are NOT covered by this license, only the server is AGPL licensed.
-There is no intent for this license to require you to open source any private business logic or worker code.
+Note the Faktory client and worker libraries are NOT covered by this license, only the server is AGPL licensed.
+You do NOT need to open source any business logic or code for your background jobs.
 Please email mike@contribsys.com if you have further licensing questions.
 
 

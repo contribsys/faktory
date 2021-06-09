@@ -19,6 +19,8 @@ import (
 
 func ego_busy(w io.Writer, req *http.Request) {
 
+//line busy.ego:13
+	_, _ = io.WriteString(w, "\n\n")
 //line busy.ego:14
 	ego_layout(w, req, func() {
 //line busy.ego:15
@@ -98,6 +100,8 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:52
 			}
 //line busy.ego:53
+			_, _ = io.WriteString(w, "\n          ")
+//line busy.ego:53
 			if worker.IsQuiet() {
 //line busy.ego:54
 				_, _ = io.WriteString(w, "\n            <span class=\"label label-danger\">quiet</span>\n          ")
@@ -176,6 +180,8 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:95
 		busyReservations(req, func(res *manager.Reservation) {
 //line busy.ego:96
+			_, _ = io.WriteString(w, "\n      ")
+//line busy.ego:96
 			job := res.Job
 //line busy.ego:97
 			_, _ = io.WriteString(w, "\n      <tr>\n        <td>\n          <code>\n            ")
@@ -217,6 +223,8 @@ func ego_busy(w io.Writer, req *http.Request) {
 		_, _ = io.WriteString(w, "\n  </table>\n</div>\n")
 //line busy.ego:120
 	})
+//line busy.ego:121
+	_, _ = io.WriteString(w, "\n")
 //line busy.ego:121
 }
 

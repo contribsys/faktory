@@ -24,6 +24,8 @@ func ego_debug(w io.Writer, req *http.Request) {
 	rdata, rtt := redis_info(req)
 
 //line debug.ego:17
+	_, _ = io.WriteString(w, "\n")
+//line debug.ego:17
 	ego_layout(w, req, func() {
 //line debug.ego:18
 		_, _ = io.WriteString(w, "\n\n<h3>")
@@ -66,6 +68,8 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:39
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
 //line debug.ego:39
+		_, _ = io.WriteString(w, " ")
+//line debug.ego:39
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
 //line debug.ego:39
 		_, _ = io.WriteString(w, "</td>\n    </tr>\n    <tr>\n    <th>")
@@ -100,11 +104,15 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:53
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(m.Mallocs-m.Frees)))
 //line debug.ego:54
+		_, _ = io.WriteString(w, "\n        ")
+//line debug.ego:54
 		if amt := client.RssKb(); amt != 0 {
 //line debug.ego:55
 			_, _ = io.WriteString(w, "\n        <br/>RSS: ")
 //line debug.ego:55
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayRss(amt))))
+//line debug.ego:56
+			_, _ = io.WriteString(w, "\n        ")
 //line debug.ego:56
 		}
 //line debug.ego:57
@@ -151,6 +159,8 @@ func ego_debug(w io.Writer, req *http.Request) {
 		_, _ = io.WriteString(w, "\n</pre>\n\n")
 //line debug.ego:90
 	})
+//line debug.ego:91
+	_, _ = io.WriteString(w, "\n")
 //line debug.ego:91
 }
 

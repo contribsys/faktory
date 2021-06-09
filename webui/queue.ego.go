@@ -93,6 +93,8 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
 //line queue.ego:57
 	})
 //line queue.ego:58
+	_, _ = io.WriteString(w, "\n")
+//line queue.ego:58
 }
 
 var _ fmt.Stringer

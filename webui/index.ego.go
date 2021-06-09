@@ -19,6 +19,8 @@ import (
 func ego_index(w io.Writer, req *http.Request) {
 	ego_layout(w, req, func() {
 //line index.ego:12
+		_, _ = io.WriteString(w, "\n    ")
+//line index.ego:12
 		_, _ = fmt.Fprint(w, LicenseStatus(w, req))
 //line index.ego:13
 		_, _ = io.WriteString(w, "\n<script type=\"text/javascript\" src=\"")
@@ -157,7 +159,11 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:86
 	})
 //line index.ego:87
+	_, _ = io.WriteString(w, "\n")
+//line index.ego:87
 	// vim: set ft=html
+//line index.ego:88
+	_, _ = io.WriteString(w, "\n")
 //line index.ego:88
 }
 

@@ -20,6 +20,8 @@ import (
 func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
 	totalSize := uint64(set.Size())
 
+//line scheduled.ego:14
+	_, _ = io.WriteString(w, "\n\n")
 //line scheduled.ego:15
 	ego_layout(w, req, func() {
 //line scheduled.ego:16
@@ -38,6 +40,8 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 			_, _ = io.WriteString(w, "\n    </div>\n  ")
 //line scheduled.ego:25
 		}
+//line scheduled.ego:26
+		_, _ = io.WriteString(w, "\n  ")
 //line scheduled.ego:26
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(filtering("scheduled"))))
 //line scheduled.ego:27
@@ -133,7 +137,11 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:72
 		}
 //line scheduled.ego:73
+		_, _ = io.WriteString(w, "\n")
+//line scheduled.ego:73
 	})
+//line scheduled.ego:74
+	_, _ = io.WriteString(w, "\n")
 //line scheduled.ego:74
 }
 

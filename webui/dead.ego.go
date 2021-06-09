@@ -18,8 +18,12 @@ import (
 
 func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 
+//line dead.ego:12
+	_, _ = io.WriteString(w, "\n\n")
 //line dead.ego:13
 	ego_layout(w, req, func() {
+//line dead.ego:14
+		_, _ = io.WriteString(w, "\n\n")
 //line dead.ego:15
 		ego_job_info(w, req, dead)
 //line dead.ego:16
@@ -54,6 +58,8 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 			_, _ = io.WriteString(w, "</th>\n          <td>\n            <code>\n            ")
 //line dead.ego:36
 			for _, line := range dead.Failure.Backtrace {
+//line dead.ego:37
+				_, _ = io.WriteString(w, "\n              ")
 //line dead.ego:37
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(line)))
 //line dead.ego:37
@@ -96,6 +102,8 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n")
 //line dead.ego:55
 	})
+//line dead.ego:56
+	_, _ = io.WriteString(w, "\n")
 //line dead.ego:56
 }
 

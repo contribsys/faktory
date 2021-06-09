@@ -20,6 +20,8 @@ import (
 func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
 	totalSize := uint64(set.Size())
 
+//line morgue.ego:14
+	_, _ = io.WriteString(w, "\n\n")
 //line morgue.ego:15
 	ego_layout(w, req, func() {
 //line morgue.ego:16
@@ -38,6 +40,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 			_, _ = io.WriteString(w, "\n    </div>\n  ")
 //line morgue.ego:25
 		}
+//line morgue.ego:26
+		_, _ = io.WriteString(w, "\n  ")
 //line morgue.ego:26
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(filtering("dead"))))
 //line morgue.ego:27
@@ -164,6 +168,8 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 				_, _ = io.WriteString(w, "</button>\n      </div>\n    </form>\n  ")
 //line morgue.ego:89
 			}
+//line morgue.ego:90
+			_, _ = io.WriteString(w, "\n\n")
 //line morgue.ego:91
 		} else {
 //line morgue.ego:92
@@ -175,7 +181,11 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 //line morgue.ego:93
 		}
 //line morgue.ego:94
+		_, _ = io.WriteString(w, "\n")
+//line morgue.ego:94
 	})
+//line morgue.ego:95
+	_, _ = io.WriteString(w, "\n")
 //line morgue.ego:95
 }
 

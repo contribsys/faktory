@@ -82,6 +82,8 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
 //line layout.ego:29
 	}
 //line layout.ego:30
+	_, _ = io.WriteString(w, "\n    ")
+//line layout.ego:30
 	_, _ = fmt.Fprint(w, extraCss(req))
 //line layout.ego:31
 	_, _ = io.WriteString(w, "\n\n    <script type=\"text/javascript\" src=\"")

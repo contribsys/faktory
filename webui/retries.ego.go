@@ -20,6 +20,8 @@ import (
 func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
 	totalSize := uint64(set.Size())
 
+//line retries.ego:14
+	_, _ = io.WriteString(w, "\n\n")
 //line retries.ego:15
 	ego_layout(w, req, func() {
 //line retries.ego:16
@@ -38,6 +40,8 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 			_, _ = io.WriteString(w, "\n    </div>\n  ")
 //line retries.ego:26
 		}
+//line retries.ego:27
+		_, _ = io.WriteString(w, "\n  ")
 //line retries.ego:27
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(filtering("retries"))))
 //line retries.ego:28
@@ -176,6 +180,8 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 				_, _ = io.WriteString(w, "</button>\n      </div>\n    </form>\n  ")
 //line retries.ego:91
 			}
+//line retries.ego:92
+			_, _ = io.WriteString(w, "\n\n")
 //line retries.ego:93
 		} else {
 //line retries.ego:94
@@ -187,7 +193,11 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:95
 		}
 //line retries.ego:96
+		_, _ = io.WriteString(w, "\n")
+//line retries.ego:96
 	})
+//line retries.ego:97
+	_, _ = io.WriteString(w, "\n")
 //line retries.ego:97
 }
 

@@ -14,6 +14,8 @@ import "net/http"
 
 func ego_listQueues(w io.Writer, req *http.Request) {
 
+//line queues.ego:8
+	_, _ = io.WriteString(w, "\n\n")
 //line queues.ego:9
 	ego_layout(w, req, func() {
 //line queues.ego:10
@@ -100,6 +102,8 @@ func ego_listQueues(w io.Writer, req *http.Request) {
 		_, _ = io.WriteString(w, "\n  </table>\n</div>\n\n  ")
 //line queues.ego:42
 	})
+//line queues.ego:43
+	_, _ = io.WriteString(w, "\n")
 //line queues.ego:43
 }
 

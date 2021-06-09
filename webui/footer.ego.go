@@ -22,6 +22,8 @@ func ego_footer(w io.Writer, req *http.Request) {
 //line footer.ego:17
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Name)))
 //line footer.ego:17
+	_, _ = io.WriteString(w, " ")
+//line footer.ego:17
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
 //line footer.ego:17
 	_, _ = io.WriteString(w, "</p>\n          </li>\n          <li class=\"nav-item me-md-4\">\n            <p class=\"navbar-text mb-0 faktory-url\">")

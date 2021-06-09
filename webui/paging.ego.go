@@ -17,6 +17,8 @@ import (
 
 func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, current_page uint64) {
 
+//line paging.ego:11
+	_, _ = io.WriteString(w, "\n\n")
 //line paging.ego:12
 	if total_size > count {
 //line paging.ego:13
@@ -103,6 +105,8 @@ func ego_paging(w io.Writer, req *http.Request, url string, total_size, count, c
 		_, _ = io.WriteString(w, "\">&raquo;</a>\n    </li>\n  </ul>\n")
 //line paging.ego:34
 	}
+//line paging.ego:35
+	_, _ = io.WriteString(w, "\n")
 //line paging.ego:35
 }
 

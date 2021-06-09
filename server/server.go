@@ -134,7 +134,7 @@ func (s *Server) Run() error {
 			return nil
 		}
 		// Each connection gets its own goroutine which ultimately limits Faktory's scalability.
-		// Faktory hardcodes a limit of 1000 Redis connections but does not put a limit here
+		// Faktory hardcodes a limit of `DefaultMaxPoolSize` Redis connections but does not put a limit here
 		// because Go's runtime scheduler will get better over time.
 		// TODO: Look into alternatives like a reactor + goroutine pool.
 		go func(conn net.Conn) {
@@ -287,6 +287,16 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 func (s *Server) processLines(conn *Connection) {
 	atomic.AddUint64(&s.Stats.Connections, 1)
 	defer atomic.AddUint64(&s.Stats.Connections, ^uint64(0))
+
+	if s.Stats.Connections > uint64(s.Options.PoolSize) {
+		if client.Name == "Faktory" {
+			// This will trigger in Faktory OSS if over the default max pool size.
+			util.Warnf("%s has over %d active client connections and may exhibit poor performance. Ensure your worker processes are using a connection pool and closing unused connections.", client.Name, s.Options.PoolSize)
+		} else {
+			// This will trigger in Faktory Enterprise if over the licensed connection count.
+			util.Warnf("%s has over %d active client connections and may exhibit poor performance. Ensure your worker processes are using no more than your licensed connection count.", client.Name, s.Options.PoolSize)
+		}
+	}
 
 	for {
 		cmd, e := conn.buf.ReadString('\n')

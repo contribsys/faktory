@@ -108,10 +108,15 @@ func TestClientOperations(t *testing.T) {
 		assert.NotNil(t, hash)
 		assert.Contains(t, <-req, "INFO")
 
+		resp <- "$36\r\n{\"faktory\":{\"queues\":{\"default\":2}}}\r\n"
+		queues, err := cl.Queues()
+		assert.NoError(t, err)
+		assert.Equal(t, queues["default"], float64(2))
+		assert.Contains(t, <-req, "INFO")
+
 		err = cl.Close()
 		assert.NoError(t, err)
 		assert.Contains(t, <-req, "END")
-
 	})
 }
 

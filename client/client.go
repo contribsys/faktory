@@ -414,6 +414,16 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	return hash, nil
 }
 
+func (c *Client) Queues() (map[string]interface{}, error) {
+	hash, err := c.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	queues := hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
+	return queues, nil
+}
+
 func (c *Client) Generic(cmdline string) (string, error) {
 	err := c.writeLine(c.wtr, cmdline, nil)
 	if err != nil {

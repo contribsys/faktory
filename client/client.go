@@ -420,7 +420,11 @@ func (c *Client) Queues() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	queues := hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
+	queues, ok := hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Invalid info hash: %s", hash)
+	}
+
 	return queues, nil
 }
 

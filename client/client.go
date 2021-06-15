@@ -414,7 +414,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 	return hash, nil
 }
 
-func (c *Client) Queues() (map[string]interface{}, error) {
+func (c *Client) QueueSizes() (map[string]uint64, error) {
 	hash, err := c.Info()
 	if err != nil {
 		return nil, err
@@ -425,11 +425,19 @@ func (c *Client) Queues() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("Invalid info hash: %s", hash)
 	}
 
+	sizes := make(map[string]uint64)
 	for name, size := range queues {
-		queues[name] = int(size.(float64))
+		size, ok := size.(float64)
+		if !ok {
+			return nil, fmt.Errorf("Invalid queue size: %v", size)
+		}
+
+		sizes[name] = uint64(size)
 	}
 
-	return queues, nil
+	fmt.Printf("%v", sizes)
+
+	return sizes, nil
 }
 
 func (c *Client) Generic(cmdline string) (string, error) {

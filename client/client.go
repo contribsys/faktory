@@ -420,7 +420,12 @@ func (c *Client) QueueSizes() (map[string]uint64, error) {
 		return nil, err
 	}
 
-	queues, ok := hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
+	faktory, ok := hash["faktory"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Invalid info hash: %s", hash)
+	}
+
+	queues, ok := faktory["queues"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Invalid info hash: %s", hash)
 	}
@@ -434,8 +439,6 @@ func (c *Client) QueueSizes() (map[string]uint64, error) {
 
 		sizes[name] = uint64(size)
 	}
-
-	fmt.Printf("%v", sizes)
 
 	return sizes, nil
 }

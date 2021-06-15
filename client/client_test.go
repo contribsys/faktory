@@ -111,7 +111,7 @@ func TestClientOperations(t *testing.T) {
 		resp <- "$36\r\n{\"faktory\":{\"queues\":{\"default\":2}}}\r\n"
 		queues, err := cl.Queues()
 		assert.NoError(t, err)
-		assert.Equal(t, queues["default"], float64(2))
+		assert.Equal(t, queues["default"], 2)
 		assert.Contains(t, <-req, "INFO")
 
 		err = cl.Close()

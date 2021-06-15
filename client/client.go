@@ -425,6 +425,10 @@ func (c *Client) Queues() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("Invalid info hash: %s", hash)
 	}
 
+	for name, size := range queues {
+		queues[name] = int(size.(float64))
+	}
+
 	return queues, nil
 }
 

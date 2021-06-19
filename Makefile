@@ -47,12 +47,14 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
 
-dimg: xbuild ## Make a Docker image for the current version
-	#eval $(shell docker-machine env default)
-	docker build \
-		--tag contribsys/faktory:$(VERSION) \
-		--tag contribsys/faktory:latest \
-		.
+# docker buildx create --name cross
+# docker buildx use cross
+dimg: clean generate ## Make cross-platform Docker images for the current version
+	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	upx -qq ./faktory
+	docker buildx build --platform linux/amd64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
+	@GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
+	docker buildx build --platform linux/arm64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_SKIP_PASSWORD=true" \
@@ -73,7 +75,7 @@ dmon: ## Monitor Redis within the running Docker image
 		#-v faktory-data:/var/lib/faktory \
 		#contribsys/faktory:$(VERSION) /bin/bash
 
-dpush: tag
+dpush:
 	docker push contribsys/faktory:$(VERSION)
 	docker push contribsys/faktory:latest
 

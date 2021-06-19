@@ -4,15 +4,16 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
+- Publish arm64 Docker images
 - Support username in FAKTORY_URL, useful for connection routing proxies.
-- UI: Upgrade Bootstrap to v5.0.1 from v3.3.7
+- Upgrade Bootstrap from v3.3.7 to v5.0.1
 
 ## 1.5.1
 
 - **Change license from GPLv3 to AGPLv3.** This is intended to ensure Faktory
   remains open source, even if someone forks Faktory and provides it as a
   service. **No worker or application code is covered by this license.**
-- Add support for native Apple Silicon builds. Docker images still in progress.
+- Add support for native arm64 builds. Docker images still in progress.
 - Fixed Windows build.
 
 ## 1.5.0

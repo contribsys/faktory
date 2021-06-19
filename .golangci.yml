@@ -19,9 +19,9 @@ linters-settings:
 
     settings: # settings passed to gocritic
       rangeExprCopy:
-        sizeThreshold: 16
+        sizeThreshold: 24
       rangeValCopy:
-        sizeThreshold: 16
+        sizeThreshold: 24
 linters:
   enable:
     - gocritic

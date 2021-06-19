@@ -18,7 +18,6 @@ endif
 all: test
 
 release:
-	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).macos.* packaging/output/systemd
 	cp /tmp/faktory-ent_$(VERSION)-$(ITERATION).macos.* packaging/output/systemd
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
@@ -26,9 +25,7 @@ release:
 	hub release create v$(VERSION)-$(ITERATION) \
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
-		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.arm64.tbz \
 		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.arm64.tbz \
-		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.amd64.tbz \
 		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.amd64.tbz \
 	 	-F /tmp/release-notes.md -e -o
 

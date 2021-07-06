@@ -163,7 +163,7 @@ func bootRedis(path string, sock string) (func(), error) {
 		}()
 	}
 
-	secs := 60
+	secs := 600
 	for {
 		_, err = rclient.Ping().Result()
 		if err == nil {

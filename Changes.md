@@ -2,12 +2,12 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.5.2
 
-- Publish arm64 Docker images [#366]
-- Support username in FAKTORY_URL, useful for connection routing proxies.
-- Upgrade Bootstrap from v3.3.7 to v5.0.1 [#360, saurori]
 - Extend Faktory's Redis load timeout to allow for huge datasets [#225]
+- Upgrade Bootstrap from v3.3.7 to v5.0.1 [#360, saurori]
+- Support username in FAKTORY_URL, useful for connection routing proxies.
+- Publish arm64 Docker images [#366]
 
 ## 1.5.1
 

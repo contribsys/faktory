@@ -30,7 +30,7 @@ release:
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## install build prereqs
-	@go get github.com/benbjohnson/ego/...@v0.4.2
+	go get github.com/benbjohnson/ego/...@v0.4.2
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc
@@ -50,10 +50,10 @@ test: clean generate ## Execute test suite
 # docker buildx create --name cross
 # docker buildx use cross
 dimg: clean generate ## Make cross-platform Docker images for the current version
-	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
 	upx -qq ./faktory
 	docker buildx build --platform linux/amd64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
-	@GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
+	GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
 	docker buildx build --platform linux/arm64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"

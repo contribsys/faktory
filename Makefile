@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=1.5.2
+VERSION=1.6.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -18,15 +18,15 @@ endif
 all: test
 
 release:
-	cp /tmp/faktory-ent_$(VERSION)-$(ITERATION).macos.* packaging/output/systemd
+	cp /tmp/faktory-ent_$(VERSION).macos.* packaging/output/systemd
 	@echo Generating release notes
 	ruby .github/notes.rb $(VERSION)
-	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
-	hub release create v$(VERSION)-$(ITERATION) \
+	@echo Releasing $(NAME) $(VERSION)
+	hub release create v$(VERSION) \
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
-		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.arm64.tbz \
-		-a packaging/output/systemd/faktory-ent_$(VERSION)-$(ITERATION).macos.amd64.tbz \
+		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.arm64.tbz \
+		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.amd64.tbz \
 	 	-F /tmp/release-notes.md -e -o
 
 prepare: ## install build prereqs
@@ -191,13 +191,9 @@ deb: xbuild
 		packaging/root/=/
 
 tag:
-	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
+	git tag v$(VERSION) && git push --tags || :
 
-upload:	package tag
-	package_cloud push contribsys/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
-
-.PHONY: help all clean test build package upload
+.PHONY: help all clean test build package
 
 
 help:

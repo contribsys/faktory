@@ -2,6 +2,11 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Remove trailing "-1" on Faktory versions and tags. Future versions
+  will use the standard form of "vX.Y.Z" except for Linux DEB/RPM packages.
+
 ## 1.5.2
 
 - Extend Faktory's Redis load timeout to allow for huge datasets [#225]

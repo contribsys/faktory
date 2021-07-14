@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v0.3.1
+	github.com/benbjohnson/ego v0.4.1 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/justinas/nosurf v1.1.0
 	github.com/onsi/ginkgo v1.15.0 // indirect

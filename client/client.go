@@ -212,10 +212,12 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 	}
 
 	if x, ok := conn.(*net.TCPConn); ok {
-		err = x.SetKeepAlive(true)
-		if err != nil {
-			return nil, err
-		}
+		_ = x.SetKeepAlive(true)
+		// any I/O operations with the server should take less than 5 seconds.
+		// if an I/O command takes more than 5 seconds, something is very wrong.
+		// NB: FETCH can block up to 2 seconds so don't use any smaller
+		// value than ~3 seconds.
+		_ = x.SetDeadline(time.Now().Add(5 * time.Second))
 	}
 
 	r := bufio.NewReader(conn)

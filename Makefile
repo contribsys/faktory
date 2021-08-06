@@ -50,15 +50,15 @@ test: clean generate ## Execute test suite
 # docker buildx create --name cross
 # docker buildx use cross
 dimg: clean generate ## Make cross-platform Docker images for the current version
-	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/daemon/main.go
-	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/daemon/main.go
+	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/faktory/daemon.go
+	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/faktory/daemon.go
 	upx -qq ./tmp/linux/amd64
 	upx -qq ./tmp/linux/arm64
 	docker buildx build --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
 dpush: clean generate
-	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/daemon/main.go
-	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/daemon/main.go
+	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/faktory/daemon.go
+	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/faktory/daemon.go
 	upx -qq ./tmp/linux/amd64
 	upx -qq ./tmp/linux/arm64
 	docker buildx build --platform "linux/arm64,linux/amd64" --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --push .
@@ -135,6 +135,7 @@ clean: ## Clean the project, set it up for a new build
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
+	@mkdir -p tmp/linux
 
 run: clean generate ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development

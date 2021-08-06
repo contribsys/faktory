@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=1.5.2
+VERSION=1.5.3
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -50,16 +50,18 @@ test: clean generate ## Execute test suite
 # docker buildx create --name cross
 # docker buildx use cross
 dimg: clean generate ## Make cross-platform Docker images for the current version
-	GOOS=linux GOARCH=amd64 go build -o faktory cmd/faktory/daemon.go
-	upx -qq ./faktory
-	docker buildx build --platform linux/amd64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
-	GOOS=linux GOARCH=arm64 go build -o faktory cmd/faktory/daemon.go
-	upx -qq ./faktory
-	docker buildx build --platform linux/arm64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
+	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/daemon/main.go
+	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/daemon/main.go
+	upx -qq ./tmp/linux/amd64
+	upx -qq ./tmp/linux/arm64
+	docker buildx build --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
-dpush:
-	docker push contribsys/faktory:$(VERSION)
-	docker push contribsys/faktory:latest
+dpush: clean generate
+	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/daemon/main.go
+	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/daemon/main.go
+	upx -qq ./tmp/linux/amd64
+	upx -qq ./tmp/linux/arm64
+	docker buildx build --platform "linux/arm64,linux/amd64" --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --push .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_SKIP_PASSWORD=true" \

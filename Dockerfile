@@ -1,6 +1,7 @@
 FROM alpine:3.13
+ARG TARGETPLATFORM
 RUN apk add --no-cache redis ca-certificates socat
-COPY ./faktory /
+COPY ./tmp/$TARGETPLATFORM /faktory
 
 RUN mkdir -p /root/.faktory/db
 RUN mkdir -p /var/lib/faktory/db

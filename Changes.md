@@ -2,13 +2,14 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.5.3
 
 - Remove trailing "-1" on Faktory versions and tags. Future versions
   will use the standard form of "vX.Y.Z" except for Linux DEB/RPM packages.
 - Implement client-side I/O deadlines, which will look like this if the
   network is slow or misconfigured:
   `read tcp 127.0.0.1:63027->127.0.0.1:7419: i/o timeout`
+- Build fixes for ARM support [#370]
 
 ## 1.5.2
 

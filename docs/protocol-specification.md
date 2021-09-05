@@ -481,7 +481,7 @@ Arguments: `{wid: String, current_state: String, rss_kb: Integer}`
 Responses:
 
  - Simple String "OK" - `BEAT` acknowledged.
- - Simple String `{state: String}` - server-initiated state change.
+ - Bulk String containing `{state: String}` - server-initiated state change.
  - Error - `BEAT` malformed or rejected.
 
 Consumers MUST regularly issue the `BEAT` command to indicate liveness,

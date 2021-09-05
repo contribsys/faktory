@@ -378,7 +378,12 @@ database. It uses Redis's `FLUSHDB` command under the covers.
 
 ### `INFO` Command
 
-TODO
+Arguments: none
+
+Responses:
+
+ - Bulk String containing various information about the server
+ - Error
 
 ### `END` Command
 

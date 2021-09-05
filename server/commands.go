@@ -85,6 +85,7 @@ func flush(c *Connection, s *Server, cmd string) {
 
 // END
 func end(c *Connection, s *Server, cmd string) {
+	_ = c.Ok()
 	c.Close()
 }
 

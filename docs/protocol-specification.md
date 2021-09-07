@@ -247,10 +247,9 @@ In the end state, the connection is being terminated.  This state can be
 entered as a result of a client request (via the `END` command) or by
 unilateral action on the part of either the client or server.
 
-If the client requests the end state, the server MUST send an `OK`
-response to the `END` command before the server closes the connection;
-and the client MUST read the `OK` response to the `END` command before
-the client closes the connection.
+If the client requests the end state, the server will close the
+connection immediately. There is no response to read; the client closes the
+connection immediately after requesting the end state.
 
 A server MUST NOT unilaterally close the connection to a consumer
 without sending a Quiet or Terminating response to a `BEAT` command
@@ -258,14 +257,12 @@ issued by the client. The server is allowed to unilaterally close the
 connection to clients that are not consumers.
 
 A client SHOULD NOT unilaterally close the connection, and instead
-SHOULD issue an `END` command.  If the server detects that the client
-has unilaterally closed the connection, the server MAY omit the `OK`
-response and simply close its connection.
+SHOULD issue an `END` command.
 
 # Client Commands
 
 FWP commands are described in this section.  Commands are organized by
-the type of client likely to issue them (producer first, then consumer). 
+the type of client likely to issue them (producer first, then consumer).
 
 Command arguments, identified by "Arguments:" in the command
 descriptions below, are shown either a metavariables (e.g., "queue"), or

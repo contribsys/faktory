@@ -2,6 +2,11 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.5.4
+
+- Remove invalid client-side deadline which lead to lots of I/O errors [#375]
+- Upgrade to Go 1.17.
+
 ## 1.5.3
 
 - Remove trailing "-1" on Faktory versions and tags. Future versions

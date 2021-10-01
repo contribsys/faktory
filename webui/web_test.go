@@ -35,6 +35,16 @@ func TestLiveServer(t *testing.T) {
 			assert.True(t, strings.Contains(w.Body.String(), "Disk Usage"), w.Body.String())
 		})
 
+		t.Run("Health", func(t *testing.T) {
+			req, err := ui.NewRequest("GET", "http://localhost:7420/health", nil)
+			assert.NoError(t, err)
+
+			w := httptest.NewRecorder()
+			healthHandler(ui)(w, req)
+			assert.Equal(t, 200, w.Code)
+			assert.True(t, strings.Contains(w.Body.String(), "faktory_version"), w.Body.String())
+		})
+
 		t.Run("ComputeLocale", func(t *testing.T) {
 			lang := localeFromHeader("")
 			assert.Equal(t, "en", lang)

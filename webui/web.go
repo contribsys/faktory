@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/subtle"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 
 	//"net/http/pprof"
 	"strings"
@@ -128,6 +130,7 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	app.HandleFunc("/morgue/", Log(ui, deadHandler))
 	app.HandleFunc("/busy", Log(ui, busyHandler))
 	app.HandleFunc("/debug", Log(ui, debugHandler))
+	app.HandleFunc("/health", healthHandler(ui))
 
 	//app.HandleFunc("/debug/pprof/", pprof.Index)
 	//app.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -142,6 +145,29 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	ui.proxy = proxy
 
 	return ui
+}
+
+func healthHandler(ui *WebUI) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s := ui.Server
+		payload := map[string]interface{}{
+			"now": util.Nows(),
+			"server": map[string]interface{}{
+				"description":     client.Name,
+				"faktory_version": client.Version,
+				"connections":     atomic.LoadUint64(&s.Stats.Connections),
+				"command_count":   atomic.LoadUint64(&s.Stats.Commands),
+			},
+		}
+		data, err := json.Marshal(payload)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Cache-Control", "no-cache")
+		_, _ = w.Write(data)
+	}
 }
 
 func Proxy(ui *WebUI) http.HandlerFunc {

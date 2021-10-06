@@ -92,7 +92,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:50
 			for _, label := range worker.Labels {
 //line busy.ego:51
-				_, _ = io.WriteString(w, "\n            <span class=\"label label-info\">")
+				_, _ = io.WriteString(w, "\n            <span class=\"badge bg-primary\">")
 //line busy.ego:51
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(label)))
 //line busy.ego:51
@@ -104,7 +104,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:53
 			if worker.IsQuiet() {
 //line busy.ego:54
-				_, _ = io.WriteString(w, "\n            <span class=\"label label-danger\">quiet</span>\n          ")
+				_, _ = io.WriteString(w, "\n            <span class=\"badge bg-danger\">quiet</span>\n          ")
 //line busy.ego:55
 			}
 //line busy.ego:56

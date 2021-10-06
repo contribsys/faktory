@@ -48,10 +48,10 @@ func ego_busy(w io.Writer, req *http.Request) {
         <td>
           <code><%= worker.Hostname %>:<%= worker.Pid %></code>
           <% for _, label := range worker.Labels { %>
-            <span class="label label-info"><%= label %></span>
+            <span class="badge bg-primary"><%= label %></span>
           <% } %>
           <% if worker.IsQuiet() { %>
-            <span class="label label-danger">quiet</span>
+            <span class="badge bg-danger">quiet</span>
           <% } %>
         </td>
         <td><%= Timeago(worker.StartedAt) %></td>

@@ -158,26 +158,22 @@ func (w *workers) Count() int {
 }
 
 func (w *workers) setupHeartbeat(client *ClientData, cls io.Closer) (*ClientData, bool) {
-	w.mu.RLock()
-	entry, ok := w.heartbeats[client.Wid]
-	w.mu.RUnlock()
-
-	if ok {
-		return entry, ok
-	}
-
-	client.StartedAt = time.Now()
-	client.lastHeartbeat = time.Now()
-	client.connections = map[io.Closer]bool{}
+	var entry *ClientData
+	var ok bool
 
 	w.mu.Lock()
 	if c, ok := w.heartbeats[client.Wid]; ok {
 		entry = c
 	} else {
+		client.StartedAt = time.Now()
+		client.lastHeartbeat = time.Now()
+		client.connections = map[io.Closer]bool{}
+
 		w.heartbeats[client.Wid] = client
 		entry = client
 	}
 	entry.connections[cls] = true
+	//fmt.Printf("Connections: %d %+v\n", len(entry.connections), entry.connections)
 	w.mu.Unlock()
 
 	return entry, ok
@@ -191,6 +187,8 @@ func (w *workers) heartbeat(client *ClientBeat) (*ClientData, bool) {
 	if !ok {
 		return nil, ok
 	}
+
+	//util.Debugf("BEAT for %s", client.Wid)
 
 	newst := entry.state
 	if client.CurrentState != "" {
@@ -227,6 +225,7 @@ func (w *workers) reapHeartbeats(t time.Time) int {
 
 	for k, worker := range w.heartbeats {
 		if worker.lastHeartbeat.Before(t) {
+			//util.Debugf("Reaping %s", worker.Wid)
 			toDelete = append(toDelete, k)
 		}
 	}

@@ -143,6 +143,7 @@ func (s *Server) Run() error {
 				return
 			}
 			defer cleanupConnection(s, c)
+			//util.Debugf("Creating client connection %+v %s", c, c.client.Wid)
 			s.processLines(c)
 		}(conn)
 	}
@@ -171,7 +172,7 @@ func (s *Server) Stop(f func()) {
 }
 
 func cleanupConnection(s *Server, c *Connection) {
-	//util.Debugf("Removing client connection %v", c)
+	//util.Debugf("Removing client connection %+v", c)
 	s.workers.RemoveConnection(c)
 }
 
@@ -287,6 +288,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 func (s *Server) processLines(conn *Connection) {
 	atomic.AddUint64(&s.Stats.Connections, 1)
 	defer atomic.AddUint64(&s.Stats.Connections, ^uint64(0))
+	defer conn.Close()
 
 	if s.Stats.Connections > uint64(s.Options.PoolSize) {
 		if client.Name == "Faktory" {
@@ -304,12 +306,10 @@ func (s *Server) processLines(conn *Connection) {
 			if e != io.EOF {
 				util.Error("Unexpected socket error", e)
 			}
-			conn.Close()
 			return
 		}
 		if s.closed {
 			_ = conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
-			_ = conn.Close()
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")

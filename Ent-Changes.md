@@ -5,6 +5,23 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.5.5
+
+- Cron jobs now support empty arguments and can configure expiry via `expires_in` [#384]
+```toml
+[[cron]]
+  schedule = "*/5 * * * *"
+  [cron.job]
+    type = "FiveJob"
+    args = []
+    [cron.job.custom]
+      expires_in = 60
+```
+
+## 1.5.4
+
+- Upgrade to Go 1.17
+
 ## 1.5.1
 
 - License check now supports HTTP(S)_PROXY env variables.

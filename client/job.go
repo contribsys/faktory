@@ -114,3 +114,7 @@ func (j *Job) SetUniqueness(until UniqueUntil) *Job {
 func (j *Job) SetExpiresAt(expiresAt time.Time) *Job {
 	return j.SetCustom("expires_at", expiresAt.Format(time.RFC3339Nano))
 }
+
+func (j *Job) SetExpiresIn(expiresIn time.Duration) *Job {
+	return j.SetCustom("expires_at", time.Now().Add(expiresIn).Format(time.RFC3339Nano))
+}

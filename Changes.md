@@ -2,6 +2,11 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.5.5
+
+- Fix worker heartbeat monitoring which led to premature worker
+  disassociation
+
 ## 1.5.4
 
 - Remove invalid client-side deadline which lead to lots of I/O errors [#375]

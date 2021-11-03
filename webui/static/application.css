@@ -1093,3 +1093,8 @@ code {
   font-size: 0.7em;
   margin-left: 5px;
 }
+.jumbotron {
+  padding: 2rem 2rem;
+  margin-bottom: 2rem;
+  border-radius: .3rem;
+}

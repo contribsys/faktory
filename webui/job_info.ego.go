@@ -150,26 +150,34 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 //line job_info.ego:80
 		_, _ = io.WriteString(w, "</td>\n        </tr>\n        <tr>\n          <th>")
 //line job_info.ego:83
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "OriginallyFailed"))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetriesRemaining"))))
 //line job_info.ego:83
 		_, _ = io.WriteString(w, "</th>\n          <td>")
 //line job_info.ego:84
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relativeTime(job.Failure.FailedAt))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Failure.RetryRemaining)))
 //line job_info.ego:84
 		_, _ = io.WriteString(w, "</td>\n        </tr>\n        <tr>\n          <th>")
 //line job_info.ego:87
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "NextRetry"))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "OriginallyFailed"))))
 //line job_info.ego:87
 		_, _ = io.WriteString(w, "</th>\n          <td>")
 //line job_info.ego:88
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relativeTime(job.Failure.NextAt))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relativeTime(job.Failure.FailedAt))))
 //line job_info.ego:88
-		_, _ = io.WriteString(w, "</td>\n        </tr>\n      ")
-//line job_info.ego:90
-	}
+		_, _ = io.WriteString(w, "</td>\n        </tr>\n        <tr>\n          <th>")
 //line job_info.ego:91
-	_, _ = io.WriteString(w, "\n    </tbody>\n  </table>\n</div>\n")
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "NextRetry"))))
+//line job_info.ego:91
+		_, _ = io.WriteString(w, "</th>\n          <td>")
+//line job_info.ego:92
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relativeTime(job.Failure.NextAt))))
+//line job_info.ego:92
+		_, _ = io.WriteString(w, "</td>\n        </tr>\n      ")
 //line job_info.ego:94
+	}
+//line job_info.ego:95
+	_, _ = io.WriteString(w, "\n    </tbody>\n  </table>\n</div>\n")
+//line job_info.ego:98
 }
 
 var _ fmt.Stringer

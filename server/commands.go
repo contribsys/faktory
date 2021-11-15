@@ -103,7 +103,8 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 	result := map[string]string{}
 	ts := util.Nows()
 
-	for _, job := range jobs {
+	for idx := range jobs {
+		job := jobs[idx]
 		// caller can leave out the CreatedAt element
 		if job.CreatedAt == "" {
 			job.CreatedAt = ts
@@ -121,7 +122,7 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 	}
 
 	if len(result) == 0 {
-		c.Result([]byte("{}"))
+		_ = c.Result([]byte("{}"))
 		return
 	}
 	res, err := json.Marshal(result)
@@ -130,7 +131,7 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	c.Result(res)
+	_ = c.Result(res)
 }
 
 // PUSH {json}

@@ -87,6 +87,17 @@ func TestClientOperations(t *testing.T) {
 		assert.Nil(t, job)
 		assert.Contains(t, <-req, "FETCH")
 
+		resp <- "$2\r\n{}\r\n"
+		jobs := []*Job{
+			NewJob("foo", 1, 2),
+			NewJob("foo", 1, 2),
+		}
+
+		result, err := cl.PushBulk(jobs)
+		assert.NoError(t, err)
+		assert.Contains(t, <-req, "PUSHB")
+		assert.EqualValues(t, 0, len(result))
+
 		resp <- "+OK\r\n"
 		err = cl.Push(NewJob("foo", 1, 2))
 		assert.NoError(t, err)

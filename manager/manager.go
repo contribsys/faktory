@@ -55,6 +55,7 @@ func ExpectedError(code string, msg string) error {
 
 type Manager interface {
 	Push(job *client.Job) error
+	//PushBulk(jobs []*client.Job) map[*client.Job]error
 
 	Pause(qName string) error
 	Resume(qName string) error

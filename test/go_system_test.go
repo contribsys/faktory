@@ -115,6 +115,12 @@ func pushAndPop(t *testing.T, count int) {
 			return
 		}
 	}
+	err = pushBulk(cl)
+	if err != nil {
+		handleError(err)
+		return
+	}
+
 	util.Info("Done")
 	hash, err := cl.Info()
 	if err != nil {
@@ -126,6 +132,17 @@ func pushAndPop(t *testing.T, count int) {
 
 func pushJob(cl *client.Client, idx int) error {
 	return cl.Push(client.NewJob("SomeJob", 1, "string", 3))
+}
+
+func pushBulk(cl *client.Client) error {
+	job1 := client.NewJob("SomeJob", 1, "string", 4)
+	job2 := client.NewJob("SomeJob", 1, "string", 3)
+	job1.Type = "" // create error
+	result, err := cl.PushBulk([]*client.Job{job1, job2})
+	if _, ok := result[job1.Jid]; !ok {
+		return fmt.Errorf("Expected result to contain JID %s: %v", job1.Jid, result)
+	}
+	return err
 }
 
 func stacks() {

@@ -9,6 +9,14 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
   distinguish between the default value "0" and disabling retries "0";
   the default value is now "nil" and will result in the default retry
   policy of "25". [#385]
+- Add new `PUSHB` PUSH Bulk jobs command. You send an Array of Jobs
+  rather than a single Job with `PUSH`. There is no limit to the Array
+  size but we recommend 1000 at a time as a best practice.
+```
+PUSH {job} # OK or ERR
+PUSHB [{job},{job},...] # [] of 0 or more ERR
+```
+
 ## 1.5.5
 
 - Fix worker heartbeat monitoring which led to premature worker

@@ -288,6 +288,28 @@ func (c *Client) Ack(jid string) error {
 	return c.ok(c.rdr)
 }
 
+func (c *Client) PushBulk(jobs []*Job) (map[string]string, error) {
+	jobBytes, err := json.Marshal(jobs)
+	if err != nil {
+		return nil, err
+	}
+	err = c.writeLine(c.wtr, "PUSHB", jobBytes)
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	results := map[string]string{}
+	err = json.Unmarshal(data, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func (c *Client) Push(job *Job) error {
 	jobBytes, err := json.Marshal(job)
 	if err != nil {

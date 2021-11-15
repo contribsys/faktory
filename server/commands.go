@@ -21,6 +21,7 @@ type command func(c *Connection, s *Server, cmd string)
 var CommandSet = map[string]command{
 	"END":    end,
 	"PUSH":   push,
+	"PUSHB":  pushBulk,
 	"FETCH":  fetch,
 	"ACK":    ack,
 	"FAIL":   fail,
@@ -86,6 +87,50 @@ func flush(c *Connection, s *Server, cmd string) {
 // END
 func end(c *Connection, s *Server, cmd string) {
 	c.Close()
+}
+
+// PUSHB [{job},{job},{job},...] => Map<JID, Error>
+func pushBulk(c *Connection, s *Server, cmd string) {
+	data := cmd[6:]
+	jobs := make([]client.Job, 0)
+
+	err := json.Unmarshal([]byte(data), &jobs)
+	if err != nil {
+		_ = c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
+		return
+	}
+
+	result := map[string]string{}
+	ts := util.Nows()
+
+	for _, job := range jobs {
+		// caller can leave out the CreatedAt element
+		if job.CreatedAt == "" {
+			job.CreatedAt = ts
+		}
+		if job.Retry == nil {
+			// If retry is not set, we want to use the default policy
+			job.Retry = &client.RetryPolicyDefault
+		}
+		// TODO we aren't optimizing the roundtrips to Redis yet
+		// We need a new `manager.PushBulk` API
+		err = s.manager.Push(&job)
+		if err != nil {
+			result[job.Jid] = err.Error()
+		}
+	}
+
+	if len(result) == 0 {
+		c.Result([]byte("{}"))
+		return
+	}
+	res, err := json.Marshal(result)
+	if err != nil {
+		_ = c.Error(cmd, fmt.Errorf("PUSHB: %w", err))
+		return
+	}
+
+	c.Result(res)
 }
 
 // PUSH {json}

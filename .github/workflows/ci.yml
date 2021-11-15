@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Redis
+      # You may pin to the exact commit or the version.
+      # uses: zhulik/redis-action@765216a54a1114f109ce90a1de4775080be16ea5
+      uses: zhulik/redis-action@1.1.0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: Prepare
+      run: make prepare
+
+    - name: Test
+      run: make test

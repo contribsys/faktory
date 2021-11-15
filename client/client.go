@@ -288,6 +288,7 @@ func (c *Client) Ack(jid string) error {
 	return c.ok(c.rdr)
 }
 
+// Result is map[JID]ErrorMessage
 func (c *Client) PushBulk(jobs []*Job) (map[string]string, error) {
 	jobBytes, err := json.Marshal(jobs)
 	if err != nil {

@@ -123,11 +123,11 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	}
 
 	return callMiddleware(m.failChain, Ctx{context.Background(), job, m, res}, func() error {
-		if job.Retry == 0 {
+		if job.Retry == nil || *job.Retry == 0 {
 			// no retry, no death, completely ephemeral, goodbye
 			return nil
 		}
-		if job.Failure.RetryCount < job.Retry {
+		if job.Failure.RetryCount < *job.Retry {
 			return retryLater(m.store, job)
 		}
 		return sendToMorgue(m.store, job)

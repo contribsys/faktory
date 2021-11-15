@@ -9,6 +9,12 @@ import (
 
 type UniqueUntil string
 
+var (
+	RetryPolicyDefault        = 25
+	RetryPolicyEmphemeral     = 0
+	RetryPolicyDirectToMorgue = -1
+)
+
 const (
 	UntilSuccess UniqueUntil = "success" // default
 	UntilStart   UniqueUntil = "start"
@@ -35,7 +41,7 @@ type Job struct {
 	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
 	At         string                 `json:"at,omitempty"`
 	ReserveFor int                    `json:"reserve_for,omitempty"`
-	Retry      int                    `json:"retry"`
+	Retry      *int                   `json:"retry"`
 	Backtrace  int                    `json:"backtrace,omitempty"`
 	Failure    *Failure               `json:"failure,omitempty"`
 	Custom     map[string]interface{} `json:"custom,omitempty"`
@@ -50,7 +56,7 @@ func NewJob(jobtype string, args ...interface{}) *Job {
 		Args:      args,
 		Jid:       RandomJid(),
 		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
-		Retry:     25,
+		Retry:     &RetryPolicyDefault,
 	}
 }
 
@@ -87,10 +93,10 @@ func (j *Job) SetCustom(name string, value interface{}) *Job {
 }
 
 ////////////////////////////////////////////
-// Faktory Pro helpers
+// Faktory Enterprise helpers
 //
-// These helpers allow you to configure several Faktory Pro features.
-// They will have no effect unless you are running Faktory Pro.
+// These helpers allow you to configure several Faktory Enterprise features.
+// They will have no effect unless you are running Faktory Enterprise.
 
 // Configure this job to be unique for +secs+ seconds or until the job
 // has been successfully processed.

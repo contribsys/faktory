@@ -2,6 +2,13 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.6.0
+
+- The core Job struct in Go was modified slightly so the Retry element
+  is now a `int*` rather than `int`. This was necessary so code could
+  distinguish between the default value "0" and disabling retries "0";
+  the default value is now "nil" and will result in the default retry
+  policy of "25". [#385]
 ## 1.5.5
 
 - Fix worker heartbeat monitoring which led to premature worker

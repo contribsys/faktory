@@ -5,6 +5,11 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.6.0
+
+- Add support for unlimited license without external network access for
+  high security environments. See the Licensing wiki page for details.
+
 ## 1.5.5
 
 - Cron jobs now support empty arguments and can configure expiry via `expires_in` [#384]

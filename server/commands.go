@@ -93,14 +93,16 @@ func push(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
 	var job client.Job
-	// If retry is not set, the `json` package won't touch the Retry attribute.
-	// We want it to default to 25 if there is no attribute passed to us.
-	job.Retry = 25
+	job.Retry = &client.RetryPolicyDefault
 
 	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
 		return
+	}
+	if job.Retry == nil {
+		// If retry is not set, we want to use the default policy
+		job.Retry = &client.RetryPolicyDefault
 	}
 
 	err = s.manager.Push(&job)

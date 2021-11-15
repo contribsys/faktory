@@ -16,7 +16,8 @@ func TestRetry(t *testing.T) {
 			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
-			job.Retry = 1
+			retries := 1
+			job.Retry = &retries
 
 			lease := &simpleLease{job: job}
 
@@ -69,7 +70,8 @@ func TestRetry(t *testing.T) {
 			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
-			job.Retry = 0
+			retries := 0
+			job.Retry = &retries
 
 			lease := &simpleLease{job: job}
 			err := m.reserve("workerId", lease)

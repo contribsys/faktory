@@ -80,6 +80,10 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
           <td><%= job.Failure.RetryCount %></td>
         </tr>
         <tr>
+          <th><%= t(req, "RetriesRemaining") %></th>
+          <td><%= job.Failure.RetryRemaining %></td>
+        </tr>
+        <tr>
           <th><%= t(req, "OriginallyFailed") %></th>
           <td><%= relativeTime(job.Failure.FailedAt) %></td>
         </tr>

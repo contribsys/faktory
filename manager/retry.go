@@ -109,16 +109,20 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 
 	if job.Failure != nil {
 		job.Failure.RetryCount++
+		if job.Failure.RetryRemaining > 0 {
+			job.Failure.RetryRemaining--
+		}
 		job.Failure.ErrorMessage = failure.ErrorMessage
 		job.Failure.ErrorType = failure.ErrorType
 		job.Failure.Backtrace = failure.Backtrace
 	} else {
 		job.Failure = &client.Failure{
-			RetryCount:   0,
-			FailedAt:     util.Nows(),
-			ErrorMessage: failure.ErrorMessage,
-			ErrorType:    failure.ErrorType,
-			Backtrace:    failure.Backtrace,
+			RetryCount:     0,
+			RetryRemaining: *job.Retry,
+			FailedAt:       util.Nows(),
+			ErrorMessage:   failure.ErrorMessage,
+			ErrorType:      failure.ErrorType,
+			Backtrace:      failure.Backtrace,
 		}
 	}
 

@@ -81,3 +81,4 @@ en: # <---- change this to your locale code
   CommandsExecuted: Commands Executed
   Pause: Pause
   Resume: Resume
+  RetriesRemaining: Retries Remaining

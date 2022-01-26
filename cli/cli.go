@@ -66,7 +66,7 @@ func ParseArguments() CliOptions {
 		// development defaults to the user's home dir so everything is local and
 		// permissions aren't a problem.
 		if defaults.StorageDirectory == "/var/lib/faktory/db" {
-			defaults.StorageDirectory = filepath.Join(dir, ".faktory/db")
+			defaults.StorageDirectory = filepath.Join(dir, ".faktory", "db")
 		}
 		if defaults.ConfigDirectory == "/etc/faktory" {
 			defaults.ConfigDirectory = filepath.Join(dir, ".faktory")
@@ -287,7 +287,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 	}
 
 	if env != "development" && !skip() && password == "" {
-		return "", fmt.Errorf("Faktory requires a password to be set in staging or production, see the Security wiki page")
+		return "", fmt.Errorf("faktory requires a password to be set in staging or production, see the Security wiki page")
 	}
 
 	return password, nil

@@ -74,7 +74,7 @@ func contains(a string, slc []string) bool {
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
 	if len(queues) == 0 {
-		return nil, fmt.Errorf("You must call fetch with at least one queue!")
+		return nil, fmt.Errorf("must call fetch with at least one queue")
 	}
 
 restart:

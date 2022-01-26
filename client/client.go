@@ -252,7 +252,7 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 		}
 	} else {
 		conn.Close()
-		return nil, fmt.Errorf("Expecting HI but got: %s", line)
+		return nil, fmt.Errorf("expecting HI but got: %s", line)
 	}
 
 	data, err := json.Marshal(client)
@@ -280,7 +280,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Ack(jid string) error {
-	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":"%s"}`, jid)))
+	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":%q}`, jid)))
 	if err != nil {
 		return err
 	}
@@ -442,19 +442,19 @@ func (c *Client) QueueSizes() (map[string]uint64, error) {
 
 	faktory, ok := hash["faktory"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Invalid info hash: %s", hash)
+		return nil, fmt.Errorf("invalid info hash: %s", hash)
 	}
 
 	queues, ok := faktory["queues"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Invalid info hash: %s", hash)
+		return nil, fmt.Errorf("invalid info hash: %s", hash)
 	}
 
 	sizes := make(map[string]uint64)
 	for name, size := range queues {
 		size, ok := size.(float64)
 		if !ok {
-			return nil, fmt.Errorf("Invalid queue size: %v", size)
+			return nil, fmt.Errorf("invalid queue size: %v", size)
 		}
 
 		sizes[name] = uint64(size)
@@ -569,19 +569,19 @@ func emptyClientData() *ClientData {
 }
 
 func writeLine(wtr *bufio.Writer, op string, payload []byte) error {
-	//util.Debugf("> %s %s", op, string(payload))
+	// util.Debugf("> %s %s", op, string(payload))
 
-	_, err := wtr.Write([]byte(op))
+	_, err := wtr.WriteString(op)
 	if payload != nil {
 		if err == nil {
-			_, err = wtr.Write([]byte(" "))
+			_, err = wtr.WriteString(" ")
 		}
 		if err == nil {
 			_, err = wtr.Write(payload)
 		}
 	}
 	if err == nil {
-		_, err = wtr.Write([]byte("\r\n"))
+		_, err = wtr.WriteString("\r\n")
 	}
 	if err == nil {
 		err = wtr.Flush()
@@ -598,7 +598,7 @@ func ok(rdr *bufio.Reader) error {
 		return nil
 	}
 
-	return fmt.Errorf("Invalid response: %s", string(val))
+	return fmt.Errorf("invalid response: %s", string(val))
 }
 
 func readString(rdr *bufio.Reader) (string, error) {
@@ -655,13 +655,13 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		//util.Debugf("< %s%s", string(chr), string(line))
-		//util.Debugf("< %s", string(buff))
+		// util.Debugf("< %s%s", string(chr), string(line))
+		// util.Debugf("< %s", string(buff))
 		return buff, nil
 	case '-':
 		return nil, &ProtocolError{msg: string(line)}
 	default:
-		//util.Debugf("< %s%s", string(chr), string(line))
+		// util.Debugf("< %s%s", string(chr), string(line))
 		return line, nil
 	}
 }

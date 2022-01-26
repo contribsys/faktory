@@ -144,7 +144,7 @@ func TestBasicQueueOps(t *testing.T) {
 
 			err = q.Each(func(idx int, v []byte) error {
 				atomic.AddInt64(&counter, 1)
-				//log.Println(string(k), string(v))
+				// log.Println(string(k), string(v))
 				return nil
 			})
 			assert.NoError(t, err)
@@ -176,5 +176,5 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 func fakeJob() (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":"%s","created_at":"%s","queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows))
+	return jid, []byte(fmt.Sprintf(`{"jid":%q,"created_at":%q,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows))
 }

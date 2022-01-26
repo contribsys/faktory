@@ -34,10 +34,6 @@ func TestBacktrace(t *testing.T) {
 	assert.True(t, len(ex) < 12)
 	assert.Contains(t, ex[0], "TestBacktrace")
 
-	//for _, str := range ex {
-	//fmt.Println(str)
-	//}
-
 	LogInfo = true
 	DumpProcessTrace()
 }

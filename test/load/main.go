@@ -80,7 +80,6 @@ func run() {
 	waiter.Wait()
 	stop := time.Since(start)
 	fmt.Printf("Processed %d pushes and %d pops in %2f seconds, rate: %f jobs/s\n", pushes, pops, stop.Seconds(), float64(jobs)/stop.Seconds())
-	//fmt.Println(opsCount)
 }
 
 func stress(idx int64) {
@@ -114,7 +113,7 @@ func stress(idx int64) {
 }
 
 func randomQueue() string {
-	return queues[rand.Intn(len(queues))]
+	return queues[rand.Intn(len(queues))] //nolint:gosec
 }
 
 func pop(client *faktory.Client, queues []string) {
@@ -126,7 +125,7 @@ func pop(client *faktory.Client, queues []string) {
 	if job == nil {
 		return // timeout?
 	}
-	if rand.Intn(100) == 99 {
+	if rand.Intn(100) == 99 { //nolint:gosec
 		err = client.Fail(job.Jid, os.ErrClosed, nil)
 	} else {
 		err = client.Ack(job.Jid)

@@ -42,7 +42,7 @@ func queuesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	LAST_ELEMENT = regexp.MustCompile(`\/([^\/]+)\z`)
+	LAST_ELEMENT = regexp.MustCompile(`/([^/]+)\z`)
 )
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {

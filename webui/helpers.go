@@ -351,11 +351,11 @@ func daysMatches(req *http.Request, value string, defalt bool) string {
 func processedHistory(req *http.Request) string {
 	cnt := days(req)
 	procd := map[string]uint64{}
-	//faild := map[string]int64{}
+	// faild := map[string]int64{}
 
 	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
-		//faild[daystr] = f
+		// faild[daystr] = f
 	})
 	if err != nil {
 		return err.Error()
@@ -369,11 +369,11 @@ func processedHistory(req *http.Request) string {
 
 func failedHistory(req *http.Request) string {
 	cnt := days(req)
-	//procd := map[string]int64{}
+	// procd := map[string]int64{}
 	faild := map[string]uint64{}
 
 	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
-		//procd[daystr] = p
+		// procd[daystr] = p
 		faild[daystr] = f
 	})
 	if err != nil {

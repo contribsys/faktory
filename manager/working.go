@@ -190,7 +190,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 			var res Reservation
 			err := json.Unmarshal(data, &res)
 			if err != nil {
-				return fmt.Errorf("Unable to read reservation: %w", err)
+				return fmt.Errorf("unable to read reservation: %w", err)
 			}
 
 			jid := res.Job.Jid
@@ -209,7 +209,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 				util.Debugf("Auto-extending reservation time for %s to %s", jid, localres.Expiry)
 				err = m.store.Working().AddElement(localres.Expiry, jid, data)
 				if err != nil {
-					return fmt.Errorf("Unable to extend reservation for %s: %w", jid, err)
+					return fmt.Errorf("unable to extend reservation for %s: %w", jid, err)
 				}
 				return nil
 			}
@@ -217,7 +217,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 			job := res.Job
 			err = m.processFailure(job.Jid, JobReservationExpired)
 			if err != nil {
-				return fmt.Errorf("Unable to retry reservation: %w", err)
+				return fmt.Errorf("unable to retry reservation: %w", err)
 			}
 			total += 1
 			return nil

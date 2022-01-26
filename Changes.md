@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Fixes for linting warnings from gocritic and golangci-lint
+
 ## 1.6.0
 
 - The core Job struct in Go was modified slightly so the Retry element

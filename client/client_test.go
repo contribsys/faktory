@@ -17,8 +17,8 @@ import (
 )
 
 func init() {
-	//util.LogInfo = true
-	//util.LogDebug = true
+	// util.LogInfo = true
+	// util.LogDebug = true
 	go stacks()
 }
 
@@ -161,10 +161,10 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 				conn.Close()
 				break
 			}
-			//util.Infof("> %s", line)
+			// util.Infof("> %s", line)
 			req <- line
 			rsp := <-resp
-			//util.Infof("< %s", rsp)
+			// util.Infof("< %s", rsp)
 			_, _ = conn.Write([]byte(rsp))
 		}
 	}()

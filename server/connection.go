@@ -27,9 +27,9 @@ func (c *Connection) Close() error {
 
 func (c *Connection) Error(cmd string, err error) error {
 	if re, ok := err.(manager.KnownError); ok {
-		_, err = c.conn.Write([]byte(fmt.Sprintf("-%s\r\n", re.Error())))
+		_, err = fmt.Fprintf(c.conn, "-%s\r\n", re.Error())
 	} else {
-		_, err = c.conn.Write([]byte(fmt.Sprintf("-ERR %s\r\n", err.Error())))
+		_, err = fmt.Fprintf(c.conn, "-ERR %s\r\n", err.Error())
 	}
 	return err
 }

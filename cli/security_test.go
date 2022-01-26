@@ -44,7 +44,7 @@ func TestPasswords(t *testing.T) {
 
 	t.Run("ProductionWithFile", func(t *testing.T) {
 		// nolint:gosec
-		err := ioutil.WriteFile("/tmp/test-password", []byte("foobar"), os.FileMode(0666))
+		err := ioutil.WriteFile("/tmp/test-password", []byte("foobar"), os.FileMode(0o666))
 		assert.NoError(t, err)
 		cfg := pwdCfg("/tmp/test-password")
 		pwd, err := fetchPassword(cfg, "production")

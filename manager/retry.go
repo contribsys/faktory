@@ -22,12 +22,12 @@ type FailPayload struct {
 
 func (m *manager) Fail(failure *FailPayload) error {
 	if failure == nil {
-		return fmt.Errorf("No failure")
+		return fmt.Errorf("missing failure info")
 	}
 
 	jid := failure.Jid
 	if jid == "" {
-		return fmt.Errorf("Missing JID")
+		return fmt.Errorf("missing JID")
 	}
 
 	cleanse(failure)
@@ -161,6 +161,6 @@ func sendToMorgue(store storage.Store, job *client.Job) error {
 
 func nextRetry(job *client.Job) time.Time {
 	count := job.Failure.RetryCount
-	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1))
+	secs := (count * count * count * count) + 15 + (rand.Intn(30) * (count + 1)) //nolint:gosec
 	return time.Now().Add(time.Duration(secs) * time.Second)
 }

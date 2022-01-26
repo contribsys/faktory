@@ -55,7 +55,7 @@ func TestSystem(t *testing.T) {
 	}()
 
 	// this is a worker process so we need to set the global WID before connecting
-	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32)
+	client.RandomProcessWid = strconv.FormatInt(rand.Int63(), 32) //nolint:gosec
 
 	each := 5000
 	start := time.Now()
@@ -157,5 +157,5 @@ func stacks() {
 }
 
 func handleError(err error) {
-	fmt.Println(strings.Replace(err.Error(), "\n", "", -1))
+	fmt.Println(strings.ReplaceAll(err.Error(), "\n", ""))
 }

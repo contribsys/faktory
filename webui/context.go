@@ -107,7 +107,7 @@ func translations(locale string) map[string]string {
 	}
 
 	if ok {
-		//util.Debugf("Booting the %s locale", locale)
+		// util.Debugf("Booting the %s locale", locale)
 		strs := map[string]string{}
 		for _, finder := range AssetLookups {
 			content, err := finder(fmt.Sprintf("static/locales/%s.yml", locale))
@@ -149,7 +149,7 @@ func localeFromHeader(value string) string {
 	}
 
 	langs := acceptableLanguages(value)
-	//util.Debugf("A-L: %s %v", value, langs)
+	// util.Debugf("A-L: %s %v", value, langs)
 	for idx := range langs {
 		strs := translations(langs[idx])
 		if strs != nil {

@@ -20,7 +20,7 @@ var (
 func mutateKill(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
-		return fmt.Errorf("Invalid target for mutation command")
+		return fmt.Errorf("invalid target for mutation command")
 	}
 	match, matchfn := matchForFilter(op.Filter)
 	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
@@ -34,7 +34,7 @@ func mutateKill(store storage.Store, op client.Operation) error {
 func mutateRequeue(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
-		return fmt.Errorf("Invalid target for mutation command")
+		return fmt.Errorf("invalid target for mutation command")
 	}
 	match, matchfn := matchForFilter(op.Filter)
 	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
@@ -60,7 +60,7 @@ func mutateRequeue(store storage.Store, op client.Operation) error {
 func mutateDiscard(store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
-		return fmt.Errorf("Invalid target for mutation command")
+		return fmt.Errorf("invalid target for mutation command")
 	}
 	if op.Filter == nil {
 		return ss.Clear()
@@ -85,7 +85,7 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 		} else {
 			// if a regexp and jobtype, pass the regexp to Redis and match jobtype
 			// here
-			typematch := fmt.Sprintf(`"jobtype":"%s"`, filter.Jobtype)
+			typematch := fmt.Sprintf(`"jobtype":%q`, filter.Jobtype)
 			return filter.Regexp, func(value string) bool {
 				return strings.Index(value, typematch) > 0
 			}
@@ -93,13 +93,13 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 	}
 
 	if filter.Jobtype != "" {
-		return fmt.Sprintf(`*"jobtype":"%s"*`, filter.Jobtype), AlwaysMatch
+		return fmt.Sprintf(`*"jobtype":%q*`, filter.Jobtype), AlwaysMatch
 	}
 
 	if len(filter.Jids) > 0 {
 		return "*", func(value string) bool {
 			for idx := range filter.Jids {
-				if strings.Index(value, fmt.Sprintf(`"jid":"%s"`, filter.Jids[idx])) > 0 {
+				if strings.Index(value, fmt.Sprintf(`"jid":%q`, filter.Jids[idx])) > 0 {
 					return true
 				}
 			}
@@ -112,7 +112,7 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 func mutate(c *Connection, s *Server, cmd string) {
 	parts := strings.Split(cmd, " ")
 	if len(parts) != 2 {
-		_ = c.Error(cmd, fmt.Errorf("Invalid format"))
+		_ = c.Error(cmd, fmt.Errorf("invalid format"))
 		return
 	}
 
@@ -134,7 +134,7 @@ func mutate(c *Connection, s *Server, cmd string) {
 	case "requeue":
 		err = mutateRequeue(s.Store(), op)
 	default:
-		err = fmt.Errorf("Unknown mutate operation")
+		err = fmt.Errorf("unknown mutate operation")
 	}
 
 	if err != nil {
@@ -148,7 +148,7 @@ func mutate(c *Connection, s *Server, cmd string) {
 func mutateClear(store storage.Store, target string) error {
 	ss := setForTarget(store, target)
 	if ss == nil {
-		return fmt.Errorf("Invalid target for mutation command")
+		return fmt.Errorf("invalid target for mutation command")
 	}
 	return ss.Clear()
 }

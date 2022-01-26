@@ -102,11 +102,11 @@ func TestRetry(t *testing.T) {
 
 			err := m.Fail(nil)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "No failure")
+			assert.Contains(t, err.Error(), "missing failure info")
 
 			err = m.Fail(&FailPayload{})
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "Missing JID")
+			assert.Contains(t, err.Error(), "missing JID")
 
 			err = m.Fail(&FailPayload{Jid: "1238123123"})
 			assert.Error(t, err)

@@ -76,7 +76,7 @@ func bootRedis(path string, sock string) (func(), error) {
 	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
 
-	err := os.MkdirAll(path, os.ModeDir|0755)
+	err := os.MkdirAll(path, os.ModeDir|0o755)
 	if err != nil {
 		return nil, err
 	}
@@ -88,13 +88,13 @@ func bootRedis(path string, sock string) (func(), error) {
 
 	_, err = rclient.Ping().Result()
 	if err != nil {
-		//util.Debugf("Redis not alive, booting... -- %s", err)
+		// util.Debugf("Redis not alive, booting... -- %s", err)
 
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
-				//nolint:gosec
-				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
+				// nolint:gosec
+				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0o444)
 				if err != nil {
 					return nil, err
 				}
@@ -131,8 +131,8 @@ func bootRedis(path string, sock string) (func(), error) {
 		// nolint:gosec
 		cmd := exec.Command(arguments[0], arguments[1:]...)
 		util.EnsureChildShutdown(cmd, util.SIGTERM) // platform-specific tuning
-		//cmd.Stdout = os.Stdout
-		//cmd.Stderr = os.Stderr
+		// cmd.Stdout = os.Stdout
+		// cmd.Stderr = os.Stderr
 		instances[sock] = cmd
 		err = cmd.Start()
 		if err != nil {
@@ -321,7 +321,7 @@ func stopRedis(sock string) error {
 	// Test suite hack: Redis will not exit if we
 	// don't give it enough time to reopen the RDB
 	// file before deleting the entire storage directory.
-	//time.Sleep(100 * time.Millisecond)
+	// time.Sleep(100 * time.Millisecond)
 	i := 500
 	for ; i > 0; i-- {
 		time.Sleep(2 * time.Millisecond)

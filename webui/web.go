@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	//"net/http/pprof"
 	"strings"
 	"time"
 
@@ -69,7 +68,7 @@ func init() {
 		name := strings.Split(files[idx].Name(), ".")[0]
 		locales[name] = nil
 	}
-	//util.Debugf("Initialized %d locales", len(files))
+	// util.Debugf("Initialized %d locales", len(files))
 }
 
 type Lifecycle struct {
@@ -132,11 +131,11 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 	app.HandleFunc("/debug", Log(ui, debugHandler))
 	app.HandleFunc("/health", healthHandler(ui))
 
-	//app.HandleFunc("/debug/pprof/", pprof.Index)
-	//app.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	//app.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	//app.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	//app.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	// app.HandleFunc("/debug/pprof/", pprof.Index)
+	// app.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	// app.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	// app.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	// app.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	ui.App = app
 

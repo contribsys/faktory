@@ -35,11 +35,11 @@ var CommandSet = map[string]command{
 }
 
 func track(c *Connection, s *Server, cmd string) {
-	_ = c.Error(cmd, fmt.Errorf("The Tracking subsystem is only available in Faktory Enterprise"))
+	_ = c.Error(cmd, fmt.Errorf("tracking subsystem is only available in Faktory Enterprise"))
 }
 
 func batch(c *Connection, s *Server, cmd string) {
-	_ = c.Error(cmd, fmt.Errorf("The Batch subsystem is only available in Faktory Enterprise"))
+	_ = c.Error(cmd, fmt.Errorf("batch subsystem is only available in Faktory Enterprise"))
 }
 
 // QUEUE PAUSE foo bar baz
@@ -96,7 +96,7 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 
 	err := json.Unmarshal([]byte(data), &jobs)
 	if err != nil {
-		_ = c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
+		_ = c.Error(cmd, fmt.Errorf("invalid JSON: %w", err))
 		return
 	}
 
@@ -143,7 +143,7 @@ func push(c *Connection, s *Server, cmd string) {
 
 	err := json.Unmarshal([]byte(data), &job)
 	if err != nil {
-		_ = c.Error(cmd, fmt.Errorf("Invalid JSON: %w", err))
+		_ = c.Error(cmd, fmt.Errorf("invalid JSON: %w", err))
 		return
 	}
 	if job.Retry == nil {
@@ -197,12 +197,12 @@ func ack(c *Connection, s *Server, cmd string) {
 	var hash map[string]string
 	err := json.Unmarshal([]byte(data), &hash)
 	if err != nil {
-		_ = c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		_ = c.Error(cmd, fmt.Errorf("invalid ACK %s", data))
 		return
 	}
 	jid, ok := hash["jid"]
 	if !ok {
-		_ = c.Error(cmd, fmt.Errorf("Invalid ACK %s", data))
+		_ = c.Error(cmd, fmt.Errorf("invalid ACK %s", data))
 		return
 	}
 	_, err = s.manager.Acknowledge(jid)
@@ -221,7 +221,7 @@ func fail(c *Connection, s *Server, cmd string) {
 	var failure manager.FailPayload
 	err := json.Unmarshal([]byte(data), &failure)
 	if err != nil {
-		_ = c.Error(cmd, fmt.Errorf("Invalid FAIL %s", data))
+		_ = c.Error(cmd, fmt.Errorf("invalid FAIL %s", data))
 		return
 	}
 
@@ -262,19 +262,19 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	var beat ClientBeat
 	err := json.Unmarshal([]byte(data), &beat)
 	if err != nil {
-		_ = c.Error(cmd, fmt.Errorf("Invalid BEAT %s", data))
+		_ = c.Error(cmd, fmt.Errorf("invalid BEAT %s", data))
 		return
 	}
 
 	worker, ok := s.workers.heartbeat(&beat)
 	if !ok {
-		_ = c.Error(cmd, fmt.Errorf("Unknown worker %s", beat.Wid))
+		_ = c.Error(cmd, fmt.Errorf("unknown worker %s", beat.Wid))
 		return
 	}
 
 	if worker.state == Running {
 		_ = c.Ok()
 	} else {
-		_ = c.Result([]byte(fmt.Sprintf(`{"state":"%s"}`, stateString(worker.state))))
+		_ = c.Result([]byte(fmt.Sprintf(`{"state":%q}`, stateString(worker.state))))
 	}
 }

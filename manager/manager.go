@@ -55,7 +55,7 @@ func ExpectedError(code string, msg string) error {
 
 type Manager interface {
 	Push(job *client.Job) error
-	//PushBulk(jobs []*client.Job) map[*client.Job]error
+	// TODO PushBulk(jobs []*client.Job) map[*client.Job]error
 
 	Pause(qName string) error
 	Resume(qName string) error
@@ -188,16 +188,16 @@ type manager struct {
 
 func (m *manager) Push(job *client.Job) error {
 	if job.Jid == "" || len(job.Jid) < 8 {
-		return fmt.Errorf("All jobs must have a reasonable jid parameter")
+		return fmt.Errorf("jobs must have a reasonable jid parameter")
 	}
 	if job.Type == "" {
-		return fmt.Errorf("All jobs must have a jobtype parameter")
+		return fmt.Errorf("jobs must have a jobtype parameter")
 	}
 	if job.Args == nil {
-		return fmt.Errorf("All jobs must have an args parameter")
+		return fmt.Errorf("jobs must have an args parameter")
 	}
 	if job.ReserveFor > 86400 {
-		return fmt.Errorf("Jobs cannot be reserved for more than one day")
+		return fmt.Errorf("jobs cannot be reserved for more than one day")
 	}
 
 	if job.CreatedAt == "" {
@@ -213,7 +213,7 @@ func (m *manager) Push(job *client.Job) error {
 	if job.At != "" {
 		t, err = util.ParseTime(job.At)
 		if err != nil {
-			return fmt.Errorf("Invalid timestamp for 'at': '%s'", job.At)
+			return fmt.Errorf("invalid timestamp for 'at': '%s'", job.At)
 		}
 	}
 
@@ -250,6 +250,5 @@ func (m *manager) enqueue(job *client.Job) error {
 	if err != nil {
 		return err
 	}
-	//util.Debugf("pushed: %+v", job)
 	return q.Push(data)
 }

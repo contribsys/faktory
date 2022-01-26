@@ -143,7 +143,7 @@ func (s *Server) Run() error {
 				return
 			}
 			defer cleanupConnection(s, c)
-			//util.Debugf("Creating client connection %+v %s", c, c.client.Wid)
+			// util.Debugf("Creating client connection %+v %s", c, c.client.Wid)
 			s.processLines(c)
 		}(conn)
 	}
@@ -172,7 +172,7 @@ func (s *Server) Stop(f func()) {
 }
 
 func cleanupConnection(s *Server, c *Connection) {
-	//util.Debugf("Removing client connection %+v", c)
+	// util.Debugf("Removing client connection %+v", c)
 	s.workers.RemoveConnection(c)
 }
 
@@ -194,7 +194,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
 
 	// 4000 iterations is about 1ms on my 2016 MBP w/ 2.9Ghz Core i5
-	iter := rand.Intn(4096) + 4000
+	iter := rand.Intn(4096) + 4000 //nolint:gosec
 
 	saltValue, err := util.RandomInt63()
 	if err != nil {
@@ -278,9 +278,9 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	// disable deadline
 	_ = conn.SetDeadline(time.Time{})
 
-	//if cl.Username != "" {
-	//util.Debugf("Successful connection from %s", cl.Username)
-	//}
+	// if cl.Username != "" {
+	// util.Debugf("Successful connection from %s", cl.Username)
+	// }
 
 	return cn
 }
@@ -309,12 +309,12 @@ func (s *Server) processLines(conn *Connection) {
 			return
 		}
 		if s.closed {
-			_ = conn.Error("Closing connection", fmt.Errorf("Shutdown in progress"))
+			_ = conn.Error("Closing connection", fmt.Errorf("shutdown in progress"))
 			return
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")
 		cmd = strings.TrimSuffix(cmd, "\n")
-		//util.Debug(cmd)
+		// util.Debug(cmd)
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd
@@ -323,7 +323,7 @@ func (s *Server) processLines(conn *Connection) {
 		}
 		proc, ok := CommandSet[verb]
 		if !ok {
-			_ = conn.Error(cmd, fmt.Errorf("Unknown command %s", verb))
+			_ = conn.Error(cmd, fmt.Errorf("unknown command %s", verb))
 		} else {
 			atomic.AddUint64(&s.Stats.Commands, 1)
 			proc(conn, s, cmd)

@@ -66,7 +66,7 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		client.Hostname = hs
 		client.Pid = os.Getpid()
-		client.Wid = strconv.FormatInt(rand.Int63(), 10)
+		client.Wid = strconv.FormatInt(rand.Int63(), 10) //nolint:gosec
 		client.Labels = []string{"blue", "seven"}
 		client.Version = 2
 
@@ -83,7 +83,7 @@ func TestServerStart(t *testing.T) {
 		_, _ = conn.Write([]byte("CMD foo\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
-		assert.Equal(t, "-ERR Unknown command CMD\r\n", result)
+		assert.Equal(t, "-ERR unknown command CMD\r\n", result)
 
 		_, _ = conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"jobtype\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')
@@ -101,21 +101,21 @@ func TestServerStart(t *testing.T) {
 		hash := make(map[string]interface{})
 		err = json.Unmarshal([]byte(result), &hash)
 		assert.NoError(t, err)
-		//fmt.Println(hash)
+		// fmt.Println(hash)
 		assert.Equal(t, "12345678901234567890abcd", hash["jid"])
-		//assert.Equal(t, "{\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n", result)
+		// assert.Equal(t, "{\"jid\":\"12345678901234567890abcd\",\"class\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n", result)
 
-		_, _ = conn.Write([]byte(fmt.Sprintf("FAIL {\"jid\":\"%s\",\"message\":\"Invalid something\",\"errtype\":\"RuntimeError\"}\n", hash["jid"])))
+		_, _ = fmt.Fprintf(conn, "FAIL {\"jid\":%q,\"message\":\"Invalid something\",\"errtype\":\"RuntimeError\"}\n", hash["jid"])
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
-		_, _ = conn.Write([]byte(fmt.Sprintf("ACK {\"jid\":\"%s\"}\n", hash["jid"])))
+		_, _ = fmt.Fprintf(conn, "ACK {\"jid\":%q}\n", hash["jid"])
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
-		_, _ = conn.Write([]byte(fmt.Sprintf("INFO\n")))
+		_, _ = conn.Write([]byte("INFO\n"))
 		_, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		result, err = buf.ReadString('\n')
@@ -126,20 +126,20 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 4, len(stats))
 
-		_, _ = conn.Write([]byte(fmt.Sprintf("BEAT {\"wid\":\"%s\"}\n", client.Wid)))
+		_, _ = fmt.Fprintf(conn, "BEAT {\"wid\":%q}\n", client.Wid)
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
-		_, _ = conn.Write([]byte(fmt.Sprintf("FLUSH\n")))
+		_, _ = conn.Write([]byte("FLUSH\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
 		_, _ = conn.Write([]byte("END\n"))
-		//result, err = buf.ReadString('\n')
-		//assert.NoError(t, err)
-		//assert.Equal(t, "OK\n", result)
+		// result, err = buf.ReadString('\n')
+		// assert.NoError(t, err)
+		// assert.Equal(t, "OK\n", result)
 
 		conn.Close()
 	})

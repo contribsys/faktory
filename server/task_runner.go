@@ -57,7 +57,7 @@ func (ts *taskRunner) AddTask(sec int64, thing Taskable) {
 func (ts *taskRunner) Run(stopper chan bool) {
 	go func() {
 		// add random jitter so the runner goroutine doesn't fire at 000ms
-		time.Sleep(time.Duration(rand.Float64()) * time.Second)
+		time.Sleep(time.Duration(rand.Float64()) * time.Second) //nolint:gosec
 		timer := time.NewTicker(1 * time.Second)
 		defer timer.Stop()
 
@@ -95,7 +95,7 @@ func (ts *taskRunner) cycle() {
 			continue
 		}
 		tstart := time.Now()
-		//util.Debugf("Running task %s", t.runner.Name())
+		// util.Debugf("Running task %s", t.runner.Name())
 		err := t.runner.Execute()
 		tend := time.Now()
 		if err != nil {

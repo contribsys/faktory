@@ -5,8 +5,8 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 # Note
 
 **Faktory Pro was sunset in April 2021 and is no longer available for
-sale.** Existing customers may continue to use it for the next two
-years.
+sale.** Existing customers may continue to use it for the next
+year.
 
 ## 1.5.1
 

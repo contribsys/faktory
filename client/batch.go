@@ -47,7 +47,6 @@ type Batch struct {
 //   b.Jobs(func() error {
 //     b.Push(...)
 //   })
-//   b.Commit()
 //
 func NewBatch(cl *Client) *Batch {
 	return &Batch{

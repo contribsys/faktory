@@ -4,6 +4,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
+- Add new `QUEUE REMOVE [queue_names...]` subcommand to nuke one or more queues [#399]
 - Fixes for linting warnings from gocritic and golangci-lint
 
 ## 1.6.0

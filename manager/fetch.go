@@ -18,13 +18,14 @@ var (
 )
 
 func (m *manager) RemoveQueue(qName string) error {
-	m.paused = filter([]string{qName}, m.paused)
-
 	q, ok := m.store.ExistingQueue(qName)
 	if ok {
 		_, err := q.Clear()
-		return err
+		if err != nil {
+			return err
+		}
 	}
+	m.paused = filter([]string{qName}, m.paused)
 	return nil
 }
 

@@ -70,6 +70,7 @@ func (q *redisQueue) Clear() (uint64, error) {
 	_, err := q.store.rclient.Pipelined(func(pipe redis.Pipeliner) error {
 		pipe.Unlink(q.name)
 		pipe.SRem("queues", q.name)
+		pipe.SRem("paused", q.name)
 		return nil
 	})
 	if err != nil {

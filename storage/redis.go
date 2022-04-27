@@ -255,6 +255,13 @@ var (
 	ValidQueueName = regexp.MustCompile(`\A[a-zA-Z0-9._-]+\z`)
 )
 
+// returns an existing, known queue or nil
+func (store *redisStore) ExistingQueue(name string) (Queue, bool) {
+	q, ok := store.queueSet[name]
+	return q, ok
+}
+
+// creates the queue if it doesn't already exist
 func (store *redisStore) GetQueue(name string) (Queue, error) {
 	if name == "" {
 		return nil, fmt.Errorf("queue name cannot be blank")

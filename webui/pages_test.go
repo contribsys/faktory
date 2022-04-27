@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
@@ -101,7 +102,11 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 			_, err = q.Clear()
 			assert.NoError(t, err)
-			err = q.Push([]byte(`{"jobtype":"SomeWorker","args":["1l23j12l3"],"queue":"foobar"}`))
+
+			job := client.NewJob("SomeWorker", "1l23j12l3")
+			job.Queue = "foobar"
+
+			err = s.Manager().Push(job)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, q.Size())
 

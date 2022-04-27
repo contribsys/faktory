@@ -85,6 +85,11 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "-ERR unknown command CMD\r\n", result)
 
+		_, _ = conn.Write([]byte("QUEUE REMOVE frobnoz\n"))
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "+OK\r\n", result)
+
 		_, _ = conn.Write([]byte("PUSH {\"jid\":\"12345678901234567890abcd\",\"jobtype\":\"Thing\",\"args\":[123],\"queue\":\"default\"}\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
@@ -127,6 +132,11 @@ func TestServerStart(t *testing.T) {
 		assert.Equal(t, 4, len(stats))
 
 		_, _ = fmt.Fprintf(conn, "BEAT {\"wid\":%q}\n", client.Wid)
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "+OK\r\n", result)
+
+		_, _ = conn.Write([]byte("QUEUE REMOVE default\n"))
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)

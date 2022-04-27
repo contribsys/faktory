@@ -17,31 +17,37 @@ var (
 	Nothing Lease = &simpleLease{}
 )
 
-func (m *manager) Pause(qName string) error {
-	q, err := m.store.GetQueue(qName)
-	if err != nil {
+func (m *manager) RemoveQueue(qName string) error {
+	q, ok := m.store.ExistingQueue(qName)
+	if ok {
+		_, err := q.Clear()
 		return err
 	}
-	err = q.Pause()
-	if err != nil {
-		return err
-	}
-
-	m.paused = append(filter([]string{qName}, m.paused), qName)
 	return nil
 }
 
-func (m *manager) Resume(qName string) error {
-	q, err := m.store.GetQueue(qName)
-	if err != nil {
-		return err
+func (m *manager) PauseQueue(qName string) error {
+	q, ok := m.store.ExistingQueue(qName)
+	if ok {
+		err := q.Pause()
+		if err != nil {
+			return err
+		}
+		m.paused = append(filter([]string{qName}, m.paused), qName)
 	}
-	err = q.Resume()
-	if err != nil {
-		return err
-	}
+	return nil
+}
 
-	m.paused = filter([]string{qName}, m.paused)
+func (m *manager) ResumeQueue(qName string) error {
+	q, ok := m.store.ExistingQueue(qName)
+	if ok {
+		err := q.Resume()
+		if err != nil {
+			return err
+		}
+
+		m.paused = filter([]string{qName}, m.paused)
+	}
 	return nil
 }
 

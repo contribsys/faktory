@@ -64,8 +64,18 @@ func (q *redisQueue) Each(fn func(index int, data []byte) error) error {
 }
 
 func (q *redisQueue) Clear() (uint64, error) {
-	q.store.rclient.Unlink(q.name)
-	q.store.rclient.SRem("queues", q.name)
+	q.store.mu.Lock()
+	defer q.store.mu.Unlock()
+
+	_, err := q.store.rclient.Pipelined(func(pipe redis.Pipeliner) error {
+		pipe.Unlink(q.name)
+		pipe.SRem("queues", q.name)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
 	delete(q.store.queueSet, q.name)
 	return 0, nil
 }

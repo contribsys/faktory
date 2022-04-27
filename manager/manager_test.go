@@ -239,7 +239,7 @@ func TestManager(t *testing.T) {
 			assert.EqualValues(t, 1, q1.Size())
 			assert.EqualValues(t, 0, q2.Size())
 
-			assert.NoError(t, m.Resume("default"))
+			assert.NoError(t, m.ResumeQueue("default"))
 
 			fetchedJob, err = m.Fetch(context.Background(), "workerId", queues...)
 			assert.NoError(t, err)
@@ -252,7 +252,7 @@ func TestManager(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, []string{}, pq)
 
-			assert.NoError(t, m.Pause("default"))
+			assert.NoError(t, m.PauseQueue("default"))
 
 			pq, err = store.PausedQueues()
 			assert.NoError(t, err)

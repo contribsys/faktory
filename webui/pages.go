@@ -52,14 +52,14 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	queueName := name[1]
-	q, err := ctx(r).Store().GetQueue(queueName)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	q, ok := ctx(r).Store().ExistingQueue(queueName)
+	if !ok {
+		Redirect(w, r, "/queues", http.StatusFound)
 		return
 	}
 
 	if r.Method == "POST" {
-		err = r.ParseForm()
+		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -92,13 +92,13 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else if action == "pause" {
-				err := ctx(r).webui.Server.Manager().Pause(q.Name())
+				err := ctx(r).webui.Server.Manager().PauseQueue(q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			} else if action == "resume" {
-				err := ctx(r).webui.Server.Manager().Resume(q.Name())
+				err := ctx(r).webui.Server.Manager().ResumeQueue(q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return

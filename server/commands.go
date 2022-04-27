@@ -44,24 +44,29 @@ func batch(c *Connection, s *Server, cmd string) {
 
 // QUEUE PAUSE foo bar baz
 // QUEUE RESUME *
+// QUEUE REMOVE [names...]
 func queue(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
 	m := s.Manager()
 	if qs[1] == "*" {
 		s.Store().EachQueue(func(q storage.Queue) {
 			if qs[0] == "PAUSE" {
-				_ = m.Pause(q.Name())
+				_ = m.PauseQueue(q.Name())
 			} else if qs[0] == "RESUME" {
-				_ = m.Resume(q.Name())
+				_ = m.ResumeQueue(q.Name())
+			} else if qs[0] == "REMOVE" {
+				_ = m.RemoveQueue(q.Name())
 			}
 		})
 	} else {
 		names := qs[1:]
 		for idx := range names {
 			if qs[0] == "PAUSE" {
-				_ = m.Pause(names[idx])
+				_ = m.PauseQueue(names[idx])
 			} else if qs[0] == "RESUME" {
-				_ = m.Resume(names[idx])
+				_ = m.ResumeQueue(names[idx])
+			} else if qs[0] == "REMOVE" {
+				_ = m.RemoveQueue(names[idx])
 			}
 		}
 	}

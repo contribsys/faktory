@@ -57,8 +57,9 @@ type Manager interface {
 	Push(job *client.Job) error
 	// TODO PushBulk(jobs []*client.Job) map[*client.Job]error
 
-	Pause(qName string) error
-	Resume(qName string) error
+	PauseQueue(qName string) error
+	ResumeQueue(qName string) error
+	RemoveQueue(qName string) error
 
 	// Dispatch operations:
 	//

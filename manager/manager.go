@@ -65,10 +65,10 @@ type Manager interface {
 	//
 	//  - Basic dequeue
 	//    - Connection sends FETCH q1, q2
-	// 	 - Job moved from Queue into Working
+	//	 - Job moved from Queue into Working
 	//  - Scheduled
-	//  	 - Job Pushed into Queue
-	// 	 - Job moved from Queue into Working
+	//	 - Job Pushed into Queue
+	//	 - Job moved from Queue into Working
 	//  - Failure
 	//    - Job Pushed into Retries
 	//  - Push

@@ -94,10 +94,12 @@ func (m *manager) loadWorkingSet() error {
 		addedCount++
 		return nil
 	})
+
 	if err != nil {
 		util.Error("Error restoring working set", err)
 		return fmt.Errorf("cannot restore working set: %w", err)
 	}
+
 	if addedCount > 0 {
 		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
 	}

@@ -56,6 +56,7 @@ func (m *manager) WorkingCount() int {
 
 func (m *manager) BusyCount(wid string) int {
 	m.workingMutex.RLock()
+	defer m.workingMutex.RUnlock()
 
 	count := 0
 	for _, res := range m.workingMap {
@@ -63,7 +64,7 @@ func (m *manager) BusyCount(wid string) int {
 			count++
 		}
 	}
-	m.workingMutex.RUnlock()
+
 	return count
 }
 

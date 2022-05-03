@@ -214,7 +214,7 @@ func (m *manager) Push(job *client.Job) error {
 	if job.At != "" {
 		t, err = util.ParseTime(job.At)
 		if err != nil {
-			return fmt.Errorf("invalid timestamp for 'at': '%s'", job.At)
+			return fmt.Errorf("invalid timestamp for 'at': %q: %w", job.At, err)
 		}
 	}
 
@@ -223,7 +223,7 @@ func (m *manager) Push(job *client.Job) error {
 			if t.After(time.Now()) {
 				data, err := json.Marshal(job)
 				if err != nil {
-					return err
+					return fmt.Errorf("cannot marshal job payload: %w", err)
 				}
 
 				// scheduler for later
@@ -243,13 +243,13 @@ func (m *manager) Push(job *client.Job) error {
 func (m *manager) enqueue(job *client.Job) error {
 	q, err := m.store.GetQueue(job.Queue)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get %q queue: %w", job.Queue, err)
 	}
 
 	job.EnqueuedAt = util.Nows()
 	data, err := json.Marshal(job)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
 	return q.Push(data)
 }

@@ -37,14 +37,12 @@ func (m *manager) schedule(when time.Time, set storage.SortedSet) (int64, error)
 	for {
 		count, err := set.RemoveBefore(util.Thens(when), 100, func(data []byte) error {
 			var job client.Job
-			err := json.Unmarshal(data, &job)
-			if err != nil {
-				return err
+			if err := json.Unmarshal(data, &job); err != nil {
+				return fmt.Errorf("cannot unmarshal job payload: %w", err)
 			}
 
-			err = m.enqueue(&job)
-			if err != nil {
-				return fmt.Errorf("Error pushing job to '%s': %w", job.Queue, err)
+			if err := m.enqueue(&job); err != nil {
+				return fmt.Errorf("cannot push job to %q queue: %w", job.Queue, err)
 			}
 			return nil
 		})

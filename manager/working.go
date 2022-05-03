@@ -104,7 +104,8 @@ func (m *manager) loadWorkingSet() error {
 	if addedCount > 0 {
 		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
 	}
-	return err
+
+	return nil
 }
 
 func (m *manager) reserve(wid string, lease Lease) error {

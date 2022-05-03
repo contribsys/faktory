@@ -85,9 +85,8 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	// Lease is in-memory only
 	// A reservation can have a nil Lease if we restarted
 	if res.lease != nil {
-		err := res.lease.Release()
-		if err != nil {
-			return err
+		if err := res.lease.Release(); err != nil {
+			return fmt.Errorf("cannot release the lease: %w", err)
 		}
 	}
 
@@ -143,7 +142,7 @@ func retryLater(store storage.Store, job *client.Job) error {
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
 
 	return store.Retries().AddElement(when, job.Jid, bytes)
@@ -152,7 +151,7 @@ func retryLater(store storage.Store, job *client.Job) error {
 func sendToMorgue(store storage.Store, job *client.Job) error {
 	bytes, err := json.Marshal(job)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
 
 	expiry := util.Thens(time.Now().Add(DeadTTL))

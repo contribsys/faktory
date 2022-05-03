@@ -96,7 +96,7 @@ func (m *manager) loadWorkingSet() error {
 	})
 	if err != nil {
 		util.Error("Error restoring working set", err)
-		return err
+		return fmt.Errorf("cannot restore working set: %w", err)
 	}
 	if addedCount > 0 {
 		util.Debugf("Bootstrapped working set, loaded %d", addedCount)
@@ -135,12 +135,12 @@ func (m *manager) reserve(wid string, lease Lease) error {
 
 	data, err := json.Marshal(res)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot marshal reservation payload: %w", err)
 	}
 
 	err = m.store.Working().AddElement(res.Expiry, job.Jid, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot add element in the working set: %w", err)
 	}
 
 	m.workingMutex.Lock()
@@ -190,7 +190,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 			var res Reservation
 			err := json.Unmarshal(data, &res)
 			if err != nil {
-				return fmt.Errorf("unable to read reservation: %w", err)
+				return fmt.Errorf("cannot unmarshal reservation payload: %w", err)
 			}
 
 			jid := res.Job.Jid
@@ -209,7 +209,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 				util.Debugf("Auto-extending reservation time for %s to %s", jid, localres.Expiry)
 				err = m.store.Working().AddElement(localres.Expiry, jid, data)
 				if err != nil {
-					return fmt.Errorf("unable to extend reservation for %s: %w", jid, err)
+					return fmt.Errorf("cannot extend reservation for %q job: %w", jid, err)
 				}
 				return nil
 			}
@@ -217,7 +217,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 			job := res.Job
 			err = m.processFailure(job.Jid, JobReservationExpired)
 			if err != nil {
-				return fmt.Errorf("unable to retry reservation: %w", err)
+				return fmt.Errorf("cannot retry reservation: %w", err)
 			}
 			total += 1
 			return nil

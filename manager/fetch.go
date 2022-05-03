@@ -22,7 +22,7 @@ func (m *manager) RemoveQueue(qName string) error {
 	if ok {
 		_, err := q.Clear()
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot remove queue: %w", err)
 		}
 	}
 	m.paused = filter([]string{qName}, m.paused)
@@ -34,7 +34,7 @@ func (m *manager) PauseQueue(qName string) error {
 	if ok {
 		err := q.Pause()
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot pause queue: %w", err)
 		}
 		m.paused = append(filter([]string{qName}, m.paused), qName)
 	}
@@ -46,7 +46,7 @@ func (m *manager) ResumeQueue(qName string) error {
 	if ok {
 		err := q.Resume()
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot resume queue: %w", err)
 		}
 
 		m.paused = filter([]string{qName}, m.paused)

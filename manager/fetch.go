@@ -159,7 +159,7 @@ func (el *simpleLease) Job() (*client.Job, error) {
 		var job client.Job
 		err := json.Unmarshal(el.payload, &job)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot unmarshal job payload: %w", err)
 		}
 		el.job = &job
 	}

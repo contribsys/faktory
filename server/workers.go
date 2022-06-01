@@ -106,6 +106,10 @@ func clientDataFromHello(data string) (*ClientData, error) {
 	return &client, nil
 }
 
+func (worker *ClientData) ConnectionCount() int {
+	return len(worker.connections)
+}
+
 func (worker *ClientData) IsQuiet() bool {
 	return worker.state != Running
 }

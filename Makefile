@@ -17,6 +17,7 @@ endif
 
 all: test
 
+# need to login with `mperham` and the personal token at github.com/settings/tokens
 release:
 	cp /tmp/faktory-ent_$(VERSION).macos.* packaging/output/systemd
 	@echo Generating release notes

@@ -4,8 +4,10 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
-- Add new `QUEUE REMOVE [queue_names...]` subcommand to nuke one or more queues [#399]
+- Add per-worker connection count on Busy page
+- Add `QUEUE REMOVE [queue_names...]` subcommand to remove one or more queues [#399]
 - Fixes for linting warnings from gocritic and golangci-lint
+- Upgrade to Go 1.18.
 
 ## 1.6.0
 

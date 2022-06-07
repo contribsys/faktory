@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=1.6.0
+VERSION=1.6.1
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -46,6 +46,9 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/test \
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
+
+kill:
+	@killall -m -9 redis-server || :
 
 # docker buildx create --name cross
 # docker buildx use cross

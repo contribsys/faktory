@@ -71,8 +71,8 @@ func TestSystem(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.EqualValues(t, 3*each, s.Store().TotalProcessed())
-	assert.EqualValues(t, 3*(each/100), s.Store().TotalFailures())
+	assert.EqualValues(t, 3*each, int(s.Store().TotalProcessed()))
+	assert.EqualValues(t, 3*(each/100), int(s.Store().TotalFailures()))
 
 	s.Stop(nil)
 }
@@ -105,6 +105,7 @@ func pushAndPop(t *testing.T, count int) {
 			handleError(err)
 			return
 		}
+		assert.NotNil(t, job)
 		if i%100 == 99 {
 			err = cl.Fail(job.Jid, os.ErrClosed, nil)
 		} else {

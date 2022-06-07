@@ -2,7 +2,7 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.6.1
 
 - Add per-worker connection count on Busy page
 - Add `QUEUE REMOVE [queue_names...]` subcommand to remove one or more queues [#399]

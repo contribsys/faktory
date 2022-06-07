@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 func logPreamble() {
 	log.SetFlags(0)
 	log.Println(client.Name, client.Version)
-	log.Println(fmt.Sprintf("Copyright © %d Contributed Systems LLC", time.Now().Year()))
+	log.Printf("Copyright © %d Contributed Systems LLC", time.Now().Year())
 	log.Println("Licensed under the GNU Affero Public License 3.0")
 }
 

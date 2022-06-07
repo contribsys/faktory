@@ -5,6 +5,10 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.6.1
+
+- Support `reserve_for` in cron jobs [#381]
+
 ## 1.6.0
 
 - Add support for unlimited license without external network access for

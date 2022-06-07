@@ -391,6 +391,16 @@ func (c *Client) Flush() error {
 	return c.ok(c.rdr)
 }
 
+// List queues explicitly or use "*" to remove all known queues
+func (c *Client) RemoveQueues(names ...string) error {
+	err := c.writeLine(c.wtr, "QUEUE REMOVE", []byte(strings.Join(names, " ")))
+	if err != nil {
+		return err
+	}
+
+	return c.ok(c.rdr)
+}
+
 // List queues explicitly or use "*" to pause all known queues
 func (c *Client) PauseQueues(names ...string) error {
 	err := c.writeLine(c.wtr, "QUEUE PAUSE", []byte(strings.Join(names, " ")))

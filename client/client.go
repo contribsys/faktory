@@ -516,6 +516,7 @@ func (c *Client) Beat(args ...string) (string, error) {
 }
 
 func (c *Client) writeLine(wtr *bufio.Writer, op string, payload []byte) error {
+	_ = c.conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 	err := writeLine(wtr, op, payload)
 	if err != nil {
 		c.markUnusable()
@@ -524,6 +525,7 @@ func (c *Client) writeLine(wtr *bufio.Writer, op string, payload []byte) error {
 }
 
 func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	data, err := readResponse(rdr)
 	if err != nil {
 		if _, ok := err.(*ProtocolError); !ok {
@@ -534,6 +536,7 @@ func (c *Client) readResponse(rdr *bufio.Reader) ([]byte, error) {
 }
 
 func (c *Client) ok(rdr *bufio.Reader) error {
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	err := ok(rdr)
 	if err != nil {
 		if _, ok := err.(*ProtocolError); !ok {
@@ -544,6 +547,7 @@ func (c *Client) ok(rdr *bufio.Reader) error {
 }
 
 func (c *Client) readString(rdr *bufio.Reader) (string, error) {
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	s, err := readString(rdr)
 	if err != nil {
 		if _, ok := err.(*ProtocolError); !ok {

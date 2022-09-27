@@ -3,7 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -200,8 +199,9 @@ func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval 
 }
 
 // Read all config files in:
-//   /etc/faktory/conf.d/*.toml (in production)
-//   ~/.faktory/conf.d/*.toml (in development)
+//
+//	/etc/faktory/conf.d/*.toml (in production)
+//	~/.faktory/conf.d/*.toml (in development)
 //
 // They are read in alphabetical order.
 // File contents are shallow merged, a latter file
@@ -223,7 +223,7 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 		for fidx := range matches {
 			file := matches[fidx]
 			util.Debugf("Reading configuration in %s", file)
-			fileBytes, err := ioutil.ReadFile(file)
+			fileBytes, err := os.ReadFile(file)
 			if err != nil {
 				return nil, err
 			}
@@ -278,7 +278,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 	if strings.HasPrefix(password, "/") {
 		// allow password value to point to a file.
 		// this is how Docker secrets work.
-		data, err := ioutil.ReadFile(password)
+		data, err := os.ReadFile(password)
 		if err != nil {
 			return "", err
 		}

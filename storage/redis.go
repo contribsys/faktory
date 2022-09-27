@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -94,7 +93,7 @@ func bootRedis(path string, sock string) (func(), error) {
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
 				// nolint:gosec
-				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0o444)
+				err := os.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0o444)
 				if err != nil {
 					return nil, err
 				}

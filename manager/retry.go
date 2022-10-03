@@ -115,6 +115,9 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		job.Failure.ErrorType = failure.ErrorType
 		job.Failure.Backtrace = failure.Backtrace
 	} else {
+		if job.Retry == nil {
+			job.Retry = &client.RetryPolicyDefault
+		}
 		job.Failure = &client.Failure{
 			RetryCount:     0,
 			RetryRemaining: *job.Retry,

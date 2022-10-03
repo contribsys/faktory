@@ -81,8 +81,8 @@ func TestWorkers(t *testing.T) {
 	assert.Equal(t, 1, workers.Count())
 	assert.NotNil(t, entry)
 	assert.True(t, ok)
-	assert.True(t, entry.lastHeartbeat.After(before))
-	assert.True(t, entry.lastHeartbeat.Before(after))
+	assert.LessOrEqual(t, before, entry.lastHeartbeat)
+	assert.LessOrEqual(t, entry.lastHeartbeat, after)
 
 	assert.Equal(t, Running, entry.state)
 	beat.CurrentState = "quiet"

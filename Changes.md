@@ -2,6 +2,12 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.6.2
+
+- Add `client.RemoveQueues(...)` to delete existing queues via API
+- Add IO deadlines to client I/O [#373]
+- Upgrade to Go 1.19
+
 ## 1.6.1
 
 - Add per-worker connection count on Busy page

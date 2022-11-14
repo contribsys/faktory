@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"strconv"
@@ -19,6 +20,7 @@ type Connection struct {
 	client *ClientData
 	conn   io.WriteCloser
 	buf    *bufio.Reader
+	context.Context
 }
 
 func (c *Connection) Close() error {

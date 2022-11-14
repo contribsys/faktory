@@ -84,18 +84,20 @@ type Queue struct {
 }
 
 func queues(req *http.Request) []Queue {
+	// ctx := req.Context()
+	c := req.Context()
 	queues := make([]Queue, 0)
 	s := ctx(req).Store()
-	pq, _ := s.PausedQueues()
+	pq, _ := s.PausedQueues(c)
 
-	s.EachQueue(func(q storage.Queue) {
+	s.EachQueue(c, func(q storage.Queue) {
 		paused := false
 		for idx := range pq {
 			if q.Name() == pq[idx] {
 				paused = true
 			}
 		}
-		queues = append(queues, Queue{q.Name(), q.Size(), paused})
+		queues = append(queues, Queue{q.Name(), q.Size(c), paused})
 	})
 
 	sort.Slice(queues, func(i, j int) bool {
@@ -136,8 +138,9 @@ func uintWithDelimiter(val uint64) string {
 	}
 }
 
-func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	err := q.Page(int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
+func queueJobs(r *http.Request, q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+	c := r.Context()
+	err := q.Page(c, int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
 		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
@@ -153,9 +156,10 @@ func queueJobs(q storage.Queue, count, currentPage uint64, fn func(idx int, key 
 }
 
 func enqueuedSize(req *http.Request) uint64 {
+	c := req.Context()
 	var total uint64
-	ctx(req).Store().EachQueue(func(q storage.Queue) {
-		total += q.Size()
+	ctx(req).Store().EachQueue(c, func(q storage.Queue) {
+		total += q.Size(c)
 	})
 	return total
 }
@@ -176,8 +180,9 @@ func filtering(set string) string {
 	return ""
 }
 
-func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	_, err := set.Page(int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
+func setJobs(req *http.Request, set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
+	c := req.Context()
+	_, err := set.Page(c, int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
 		job, err := entry.Job()
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(entry.Value()))
@@ -196,7 +201,8 @@ func setJobs(set storage.SortedSet, count, currentPage uint64, fn func(idx int, 
 }
 
 func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
-	err := ctx(req).Store().Working().Each(func(idx int, entry storage.SortedEntry) error {
+	c := req.Context()
+	err := ctx(req).Store().Working().Each(c, func(idx int, entry storage.SortedEntry) error {
 		var res manager.Reservation
 		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
@@ -226,13 +232,14 @@ func busyWorkers(req *http.Request, fn func(proc *server.ClientData)) {
 }
 
 func actOn(req *http.Request, set storage.SortedSet, action string, keys []string) error {
+	c := req.Context()
 	switch action {
 	case "delete":
 		if len(keys) == 1 && keys[0] == "all" {
-			return set.Clear()
+			return set.Clear(c)
 		} else {
 			for idx := range keys {
-				_, err := set.Remove([]byte(keys[idx]))
+				_, err := set.Remove(c, []byte(keys[idx]))
 				// ok doesn't really matter
 				if err != nil {
 					return err
@@ -242,10 +249,10 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		}
 	case "add_to_queue", "retry":
 		if len(keys) == 1 && keys[0] == "all" {
-			return ctx(req).Store().EnqueueAll(set)
+			return ctx(req).Store().EnqueueAll(c, set)
 		} else {
 			for idx := range keys {
-				err := ctx(req).Store().EnqueueFrom(set, []byte(keys[idx]))
+				err := ctx(req).Store().EnqueueFrom(c, set, []byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -254,18 +261,18 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		}
 	case "kill":
 		if len(keys) == 1 && keys[0] == "all" {
-			return ctx(req).Store().EnqueueAll(set)
+			return ctx(req).Store().EnqueueAll(c, set)
 		} else {
 			// TODO Make this 180 day dead job expiry dynamic per-job or
 			// a global variable in TOML? PRs welcome.
 			expiry := time.Now().Add(180 * 24 * time.Hour)
 			for idx := range keys {
-				entry, err := set.Get([]byte(keys[idx]))
+				entry, err := set.Get(c, []byte(keys[idx]))
 				if err != nil {
 					return err
 				}
 				if entry != nil {
-					err = set.MoveTo(ctx(req).Store().Dead(), entry, expiry)
+					err = set.MoveTo(c, ctx(req).Store().Dead(), entry, expiry)
 					if err != nil {
 						return err
 					}
@@ -305,10 +312,11 @@ func category_for_rtt(lat float64) string {
 }
 
 func redis_info(req *http.Request) (string, float64) {
+	c := req.Context()
 	store := ctx(req).Store().(storage.Redis)
 	redis := store.Redis()
 	a := time.Now().UnixNano()
-	res := redis.Info()
+	res := redis.Info(c)
 	b := time.Now().UnixNano()
 	val, err := res.Result()
 	if err != nil {
@@ -349,11 +357,12 @@ func daysMatches(req *http.Request, value string, defalt bool) string {
 }
 
 func processedHistory(req *http.Request) string {
+	c := req.Context()
 	cnt := days(req)
 	procd := map[string]uint64{}
 	// faild := map[string]int64{}
 
-	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(c, cnt, func(daystr string, p, f uint64) {
 		procd[daystr] = p
 		// faild[daystr] = f
 	})
@@ -368,11 +377,12 @@ func processedHistory(req *http.Request) string {
 }
 
 func failedHistory(req *http.Request) string {
+	c := req.Context()
 	cnt := days(req)
 	// procd := map[string]int64{}
 	faild := map[string]uint64{}
 
-	err := ctx(req).Store().History(cnt, func(daystr string, p, f uint64) {
+	err := ctx(req).Store().History(c, cnt, func(daystr string, p, f uint64) {
 		// procd[daystr] = p
 		faild[daystr] = f
 	})

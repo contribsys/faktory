@@ -18,7 +18,7 @@ import (
 )
 
 func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
-	totalSize := uint64(set.Size())
+	totalSize := uint64(set.Size(req.Context()))
 
 //line scheduled.ego:14
 	_, _ = io.WriteString(w, "\n\n")
@@ -75,7 +75,7 @@ func ego_listScheduled(w io.Writer, req *http.Request, set storage.SortedSet, co
 //line scheduled.ego:43
 			_, _ = io.WriteString(w, "</th>\n          </tr>\n        </thead>\n        ")
 //line scheduled.ego:46
-			setJobs(set, count, currentPage, func(idx int, key []byte, job *client.Job) {
+			setJobs(req, set, count, currentPage, func(idx int, key []byte, job *client.Job) {
 //line scheduled.ego:47
 				_, _ = io.WriteString(w, "\n          <tr>\n            <td>\n              <input type=\"checkbox\" name=\"key\" value=\"")
 //line scheduled.ego:49

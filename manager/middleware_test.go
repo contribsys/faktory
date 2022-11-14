@@ -43,10 +43,11 @@ func TestMiddlewareUsage(t *testing.T) {
 func TestLiveMiddleware(t *testing.T) {
 
 	withRedis(t, "middleware", func(t *testing.T, store storage.Store) {
+		bg := context.Background()
 
 		t.Run("Push", func(t *testing.T) {
 			denied := ExpectedError("DENIED", "push denied")
-			store.Flush()
+			store.Flush(bg)
 			m := NewManager(store)
 			counter := 0
 
@@ -59,42 +60,42 @@ func TestLiveMiddleware(t *testing.T) {
 			})
 
 			job := client.NewJob("Yep", 1, 2, 3)
-			q, err := store.GetQueue(job.Queue)
+			q, err := store.GetQueue(bg, job.Queue)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 			assert.Empty(t, job.EnqueuedAt)
 
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 			assert.EqualValues(t, 1, counter)
 			assert.NotEmpty(t, job.EnqueuedAt)
 
 			job = client.NewJob("Nope", 1, 2, 3)
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.Equal(t, err, denied)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 			assert.EqualValues(t, 2, counter)
 
 			job = client.NewJob("Yep", 1, 2, 3)
 			job.At = util.Thens(time.Now().Add(1 * time.Minute))
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 			assert.EqualValues(t, 3, counter)
 		})
 
 		t.Run("Fetch", func(t *testing.T) {
 			denied := ExpectedError("DENIED", "fetch denied")
 
-			store.Flush()
+			store.Flush(bg)
 			m := NewManager(store)
 			m.AddMiddleware("fetch", func(next func() error, ctx Context) error {
 				kv := ctx.Manager().KV()
 
-				err := kv.Set("foo", []byte("bar"))
+				err := kv.Set(bg, "foo", []byte("bar"))
 				assert.NoError(t, err)
-				val, err := kv.Get("foo")
+				val, err := kv.Get(bg, "foo")
 				assert.NoError(t, err)
 				assert.Equal(t, "bar", string(val))
 
@@ -108,77 +109,77 @@ func TestLiveMiddleware(t *testing.T) {
 			})
 
 			job := client.NewJob("Yep", 1, 2, 3)
-			q, err := store.GetQueue(job.Queue)
+			q, err := store.GetQueue(bg, job.Queue)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 
 			job = client.NewJob("Bad", 1, 2, 3)
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 2, q.Size())
+			assert.EqualValues(t, 2, q.Size(bg))
 
 			job = client.NewJob("Nope", 1, 2, 3)
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 3, q.Size())
+			assert.EqualValues(t, 3, q.Size(bg))
 
 			j1, err := m.Fetch(context.Background(), "12345", "default")
 			assert.NoError(t, err)
 			assert.Equal(t, "Yep", j1.Type)
-			assert.EqualValues(t, 2, q.Size())
+			assert.EqualValues(t, 2, q.Size(bg))
 
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			j2, err := m.Fetch(ctx, "12345", "default")
 			assert.Equal(t, denied, err)
 			assert.Nil(t, j2)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 		})
 
 		t.Run("Ack", func(t *testing.T) {
-			store.Flush()
+			store.Flush(bg)
 			m := newManager(store)
 			m.AddMiddleware("push", func(next func() error, ctx Context) error {
-				_, err := m.Redis().Set(ctx.Job().Jid, []byte("bar"), 1*time.Second).Result()
+				_, err := m.Redis().Set(ctx.Context(), ctx.Job().Jid, []byte("bar"), 1*time.Second).Result()
 				assert.NoError(t, err)
 				return next()
 			})
 			m.AddMiddleware("ack", func(next func() error, ctx Context) error {
-				val, err := m.Redis().Unlink(ctx.Job().Jid).Result()
+				val, err := m.Redis().Unlink(ctx.Context(), ctx.Job().Jid).Result()
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, val)
 				return next()
 			})
 
 			job := client.NewJob("Yep", 1, 2, 3)
-			q, err := store.GetQueue(job.Queue)
+			q, err := store.GetQueue(bg, job.Queue)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 
 			jid := job.Jid
 
-			err = m.Push(job)
+			err = m.Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 
-			val, err := m.Redis().Get(jid).Result()
+			val, err := m.Redis().Get(bg, jid).Result()
 			assert.NoError(t, err)
 			assert.Equal(t, "bar", string(val))
 
-			j1, err := m.Fetch(context.Background(), "12345", "default")
+			j1, err := m.Fetch(bg, "12345", "default")
 			assert.NoError(t, err)
 			assert.Equal(t, "Yep", j1.Type)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 
-			job, err = m.Acknowledge(j1.Jid)
+			job, err = m.Acknowledge(bg, j1.Jid)
 			assert.NoError(t, err)
 			assert.NotNil(t, job)
 
-			boolint, err := m.Redis().Exists(job.Jid).Result()
+			boolint, err := m.Redis().Exists(bg, job.Jid).Result()
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, boolint)
 		})

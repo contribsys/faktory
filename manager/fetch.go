@@ -8,7 +8,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 var (
@@ -17,10 +17,10 @@ var (
 	Nothing Lease = &simpleLease{}
 )
 
-func (m *manager) RemoveQueue(qName string) error {
-	q, ok := m.store.ExistingQueue(qName)
+func (m *manager) RemoveQueue(ctx context.Context, qName string) error {
+	q, ok := m.store.ExistingQueue(ctx, qName)
 	if ok {
-		_, err := q.Clear()
+		_, err := q.Clear(ctx)
 		if err != nil {
 			return fmt.Errorf("cannot remove queue: %w", err)
 		}
@@ -29,10 +29,10 @@ func (m *manager) RemoveQueue(qName string) error {
 	return nil
 }
 
-func (m *manager) PauseQueue(qName string) error {
-	q, ok := m.store.ExistingQueue(qName)
+func (m *manager) PauseQueue(ctx context.Context, qName string) error {
+	q, ok := m.store.ExistingQueue(ctx, qName)
 	if ok {
-		err := q.Pause()
+		err := q.Pause(ctx)
 		if err != nil {
 			return fmt.Errorf("cannot pause queue: %w", err)
 		}
@@ -41,10 +41,10 @@ func (m *manager) PauseQueue(qName string) error {
 	return nil
 }
 
-func (m *manager) ResumeQueue(qName string) error {
-	q, ok := m.store.ExistingQueue(qName)
+func (m *manager) ResumeQueue(ctx context.Context, qName string) error {
+	q, ok := m.store.ExistingQueue(ctx, qName)
 	if ok {
-		err := q.Resume()
+		err := q.Resume(ctx)
 		if err != nil {
 			return fmt.Errorf("cannot resume queue: %w", err)
 		}
@@ -108,7 +108,7 @@ restart:
 			return nil, err
 		}
 		err = callMiddleware(m.fetchChain, Ctx{ctx, job, m, nil}, func() error {
-			return m.reserve(wid, lease)
+			return m.reserve(ctx, wid, lease)
 		})
 		if h, ok := err.(KnownError); ok {
 			util.Infof("JID %s: %s", job.Jid, h.Error())
@@ -172,7 +172,7 @@ func BasicFetcher(r *redis.Client) Fetcher {
 }
 
 func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) (Lease, error) {
-	data, err := brpop(f.r, queues...)
+	data, err := brpop(ctx, f.r, queues...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +182,8 @@ func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) (L
 	return Nothing, nil
 }
 
-func brpop(r *redis.Client, queues ...string) ([]byte, error) {
-	val, err := r.BRPop(2*time.Second, queues...).Result()
+func brpop(ctx context.Context, r *redis.Client, queues ...string) ([]byte, error) {
+	val, err := r.BRPop(ctx, 2*time.Second, queues...).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil

@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 
 func TestPages(t *testing.T) {
 	bootRuntime(t, "pages", func(ui *WebUI, s *server.Server, t *testing.T) {
+		bg := context.Background()
 
 		t.Run("Index", func(t *testing.T) {
 			req, err := ui.NewRequest("GET", "http://localhost:7420/", nil)
@@ -39,15 +41,15 @@ func TestPages(t *testing.T) {
 
 			s.Stats.StartedAt = time.Now().Add(-1234567 * time.Second)
 			str := s.Store()
-			_, err = str.GetQueue("default")
+			_, err = str.GetQueue(bg, "default")
 			assert.NoError(t, err)
-			q, err := str.GetQueue("foobar")
+			q, err := str.GetQueue(bg, "foobar")
 			assert.NoError(t, err)
-			_, err = q.Clear()
+			_, err = q.Clear(bg)
 			assert.NoError(t, err)
 			args := []string{"faktory", "rocks", "!!", ":)"}
 			for _, v := range args {
-				err = q.Push([]byte(v))
+				err = q.Push(bg, []byte(v))
 				assert.NoError(t, err)
 			}
 
@@ -76,13 +78,13 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 
 			str := s.Store()
-			_, err = str.GetQueue("default")
+			_, err = str.GetQueue(bg, "default")
 			assert.NoError(t, err)
-			q, err := str.GetQueue("foobar")
+			q, err := str.GetQueue(bg, "foobar")
 			assert.NoError(t, err)
-			_, err = q.Clear()
+			_, err = q.Clear(bg)
 			assert.NoError(t, err)
-			err = q.Push([]byte("1l23j12l3"))
+			err = q.Push(bg, []byte("1l23j12l3"))
 			assert.NoError(t, err)
 
 			w := httptest.NewRecorder()
@@ -93,22 +95,22 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("Queue", func(t *testing.T) {
-			s.Store().Flush()
+			s.Store().Flush(bg)
 			req, err := ui.NewRequest("GET", "http://localhost:7420/queues/foobar", nil)
 			assert.NoError(t, err)
 
 			str := s.Store()
-			q, err := str.GetQueue("foobar")
+			q, err := str.GetQueue(bg, "foobar")
 			assert.NoError(t, err)
-			_, err = q.Clear()
+			_, err = q.Clear(bg)
 			assert.NoError(t, err)
 
 			job := client.NewJob("SomeWorker", "1l23j12l3")
 			job.Queue = "foobar"
 
-			err = s.Manager().Push(job)
+			err = s.Manager().Push(bg, job)
 			assert.NoError(t, err)
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 
 			w := httptest.NewRecorder()
 			queueHandler(w, req)
@@ -125,33 +127,33 @@ func TestPages(t *testing.T) {
 			w = httptest.NewRecorder()
 			queueHandler(w, req)
 
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 			assert.Equal(t, 302, w.Code)
 		})
 
 		t.Run("Retries", func(t *testing.T) {
-			s.Store().Flush()
+			s.Store().Flush(bg)
 			req, err := ui.NewRequest("GET", "http://localhost:7420/retries", nil)
 			assert.NoError(t, err)
 
 			str := s.Store()
 			retries := str.Retries()
-			err = retries.Clear()
+			err = retries.Clear(bg)
 			assert.NoError(t, err)
 			jid1, data := fakeJob()
-			err = retries.AddElement(util.Nows(), jid1, data)
+			err = retries.AddElement(bg, util.Nows(), jid1, data)
 			assert.NoError(t, err)
 
 			jid2, data := fakeJob()
-			err = retries.AddElement(util.Nows(), jid2, data)
+			err = retries.AddElement(bg, util.Nows(), jid2, data)
 			assert.NoError(t, err)
 
 			jid3, data := fakeJob()
-			err = retries.AddElement(util.Nows(), jid3, data)
+			err = retries.AddElement(bg, util.Nows(), jid3, data)
 			assert.NoError(t, err)
 
 			var key []byte
-			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
+			err = retries.Each(bg, func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -164,15 +166,15 @@ func TestPages(t *testing.T) {
 			assert.True(t, strings.Contains(w.Body.String(), jid1), w.Body.String())
 			assert.True(t, strings.Contains(w.Body.String(), jid2), w.Body.String())
 
-			def, err := str.GetQueue("default")
+			def, err := str.GetQueue(bg, "default")
 			assert.NoError(t, err)
-			sz := def.Size()
-			cnt, err := def.Clear()
+			sz := def.Size(bg)
+			cnt, err := def.Clear(bg)
 			assert.NoError(t, err)
 			assert.Equal(t, sz, cnt)
 
-			assert.EqualValues(t, 0, def.Size())
-			assert.EqualValues(t, 3, retries.Size())
+			assert.EqualValues(t, 0, def.Size(bg))
+			assert.EqualValues(t, 3, retries.Size(bg))
 			payload := url.Values{
 				"key":    {keys},
 				"action": {"retry"},
@@ -185,10 +187,10 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 2, retries.Size())
-			assert.EqualValues(t, 1, def.Size())
+			assert.EqualValues(t, 2, retries.Size(bg))
+			assert.EqualValues(t, 1, def.Size(bg))
 
-			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
+			err = retries.Each(bg, func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -199,7 +201,7 @@ func TestPages(t *testing.T) {
 				"key":    {keys},
 				"action": {"kill"},
 			}
-			assert.EqualValues(t, 0, str.Dead().Size())
+			assert.EqualValues(t, 0, str.Dead().Size(bg))
 			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -208,12 +210,12 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 1, retries.Size())
-			assert.EqualValues(t, 1, str.Dead().Size())
+			assert.EqualValues(t, 1, retries.Size(bg))
+			assert.EqualValues(t, 1, str.Dead().Size(bg))
 
 			// Now try to operate on an element which disappears by clearing the sset
 			// manually before submitting
-			err = retries.Each(func(idx int, entry storage.SortedEntry) error {
+			err = retries.Each(bg, func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -224,7 +226,7 @@ func TestPages(t *testing.T) {
 				"key":    {keys},
 				"action": {"kill"},
 			}
-			err = retries.Clear() // clear it under us!
+			err = retries.Clear(bg) // clear it under us!
 			assert.NoError(t, err)
 			req, err = ui.NewRequest("POST", "http://localhost:7420/retries", strings.NewReader(payload.Encode()))
 			assert.NoError(t, err)
@@ -234,19 +236,19 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, "", w.Body.String())
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 0, retries.Size())
-			assert.EqualValues(t, 1, str.Dead().Size())
+			assert.EqualValues(t, 0, retries.Size(bg))
+			assert.EqualValues(t, 1, str.Dead().Size(bg))
 		})
 
 		t.Run("Retry", func(t *testing.T) {
 			str := s.Store()
 			q := str.Retries()
-			err := q.Clear()
+			err := q.Clear(bg)
 			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Nows()
 
-			err = q.AddElement(ts, jid, data)
+			err = q.AddElement(bg, ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/retries/%s|%s", ts, jid), nil)
@@ -263,15 +265,15 @@ func TestPages(t *testing.T) {
 
 			str := s.Store()
 			q := str.Scheduled()
-			err = q.Clear()
+			err = q.Clear(bg)
 			assert.NoError(t, err)
 			jid, data := fakeJob()
 
-			err = q.AddElement(util.Nows(), jid, data)
+			err = q.AddElement(bg, util.Nows(), jid, data)
 			assert.NoError(t, err)
 
 			var key []byte
-			err = q.Each(func(idx int, entry storage.SortedEntry) error {
+			err = q.Each(bg, func(idx int, entry storage.SortedEntry) error {
 				key, err = entry.Key()
 				return err
 			})
@@ -284,7 +286,7 @@ func TestPages(t *testing.T) {
 			assert.True(t, strings.Contains(w.Body.String(), "SomeWorker"), w.Body.String())
 			assert.True(t, strings.Contains(w.Body.String(), keys), w.Body.String())
 
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 			payload := url.Values{
 				"key":    {keys},
 				"action": {"add_to_queue"},
@@ -296,19 +298,19 @@ func TestPages(t *testing.T) {
 			scheduledHandler(w, req)
 
 			assert.Equal(t, 302, w.Code)
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 			assert.False(t, strings.Contains(w.Body.String(), keys), w.Body.String())
 		})
 
 		t.Run("ScheduledJob", func(t *testing.T) {
 			str := s.Store()
 			q := str.Scheduled()
-			err := q.Clear()
+			err := q.Clear(bg)
 			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Thens(time.Now().Add(1e6 * time.Second))
 
-			err = q.AddElement(ts, jid, data)
+			err = q.AddElement(bg, ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/scheduled/%s|%s", ts, jid), nil)
@@ -325,11 +327,11 @@ func TestPages(t *testing.T) {
 
 			str := s.Store()
 			q := str.Dead()
-			err = q.Clear()
+			err = q.Clear(bg)
 			assert.NoError(t, err)
 			jid, data := fakeJob()
 
-			err = q.AddElement(util.Nows(), jid, data)
+			err = q.AddElement(bg, util.Nows(), jid, data)
 			assert.NoError(t, err)
 
 			w := httptest.NewRecorder()
@@ -341,12 +343,12 @@ func TestPages(t *testing.T) {
 		t.Run("Dead", func(t *testing.T) {
 			str := s.Store()
 			q := str.Dead()
-			err := q.Clear()
+			err := q.Clear(bg)
 			assert.NoError(t, err)
 			jid, data := fakeJob()
 			ts := util.Nows()
 
-			err = q.AddElement(ts, jid, data)
+			err = q.AddElement(bg, ts, jid, data)
 			assert.NoError(t, err)
 
 			req, err := ui.NewRequest("GET", fmt.Sprintf("http://localhost:7420/morgue/%s|%s", ts, jid), nil)
@@ -356,7 +358,7 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
 
-			assert.EqualValues(t, 1, q.Size())
+			assert.EqualValues(t, 1, q.Size(bg))
 			payload := url.Values{
 				"key":    {"all"},
 				"action": {"delete"},
@@ -369,7 +371,7 @@ func TestPages(t *testing.T) {
 
 			assert.Equal(t, 302, w.Code)
 			assert.Equal(t, "", w.Body.String())
-			assert.EqualValues(t, 0, q.Size())
+			assert.EqualValues(t, 0, q.Size(bg))
 		})
 
 		t.Run("Busy", func(t *testing.T) {

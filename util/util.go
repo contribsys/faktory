@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -20,14 +21,18 @@ const (
 	maxInt63 = int64(^uint64(0) >> 1)
 )
 
-func Retryable(name string, count int, fn func() error) error {
+func Retryable(ctx context.Context, name string, count int, fn func() error) error {
 	var err error
 	for i := 0; i < count; i++ {
 		err = fn()
 		if err == nil {
 			return nil
 		}
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(10 * time.Millisecond):
+		}
 		Debugf("Retrying %s due to %v", name, err)
 	}
 	return err

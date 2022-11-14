@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"fmt"
@@ -19,7 +20,7 @@ import (
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 type RuntimeStats struct {
@@ -326,7 +327,10 @@ func (s *Server) processLines(conn *Connection) {
 			_ = conn.Error(cmd, fmt.Errorf("unknown command %s", verb))
 		} else {
 			atomic.AddUint64(&s.Stats.Commands, 1)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
+			conn.Context = ctx
 			proc(conn, s, cmd)
+			cancel()
 		}
 		if verb == "END" {
 			break
@@ -339,10 +343,12 @@ func (s *Server) uptimeInSeconds() int {
 }
 
 func (s *Server) CurrentState() (map[string]interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	queueCmd := map[string]*redis.IntCmd{}
-	_, err := s.store.Redis().Pipelined(func(pipe redis.Pipeliner) error {
-		s.store.EachQueue(func(q storage.Queue) {
-			queueCmd[q.Name()] = pipe.LLen(q.Name())
+	_, err := s.store.Redis().Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		s.store.EachQueue(ctx, func(q storage.Queue) {
+			queueCmd[q.Name()] = pipe.LLen(ctx, q.Name())
 		})
 		return nil
 	})
@@ -363,8 +369,8 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 		"now":             util.Nows(),
 		"server_utc_time": time.Now().UTC().Format("15:04:05 UTC"),
 		"faktory": map[string]interface{}{
-			"total_failures":  s.store.TotalFailures(),
-			"total_processed": s.store.TotalProcessed(),
+			"total_failures":  s.store.TotalFailures(ctx),
+			"total_processed": s.store.TotalProcessed(ctx),
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
 			"queues":          queues,

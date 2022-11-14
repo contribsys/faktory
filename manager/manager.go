@@ -10,7 +10,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 const (
@@ -54,12 +54,12 @@ func ExpectedError(code string, msg string) error {
 }
 
 type Manager interface {
-	Push(job *client.Job) error
+	Push(ctx context.Context, job *client.Job) error
 	// TODO PushBulk(jobs []*client.Job) map[*client.Job]error
 
-	PauseQueue(qName string) error
-	ResumeQueue(qName string) error
-	RemoveQueue(qName string) error
+	PauseQueue(ctx context.Context, qName string) error
+	ResumeQueue(ctx context.Context, qName string) error
+	RemoveQueue(ctx context.Context, qName string) error
 
 	// Dispatch operations:
 	//
@@ -86,27 +86,27 @@ type Manager interface {
 	// If all nil, the connection registers itself, blocking for a job.
 	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
 
-	Acknowledge(jid string) (*client.Job, error)
+	Acknowledge(ctx context.Context, jid string) (*client.Job, error)
 
-	Fail(fail *FailPayload) error
+	Fail(ctx context.Context, fail *FailPayload) error
 
 	// Allows arbitrary extension of a job's current reservation
 	// This is a no-op if you set the time before the current
 	// reservation expiry.
-	ExtendReservation(jid string, until time.Time) error
+	ExtendReservation(ctx context.Context, jid string, until time.Time) error
 
 	WorkingCount() int
 
-	ReapExpiredJobs(when time.Time) (int64, error)
+	ReapExpiredJobs(ctx context.Context, when time.Time) (int64, error)
 
 	// Purge deletes all dead jobs
-	Purge(when time.Time) (int64, error)
+	Purge(ctx context.Context, when time.Time) (int64, error)
 
 	// EnqueueScheduledJobs enqueues scheduled jobs
-	EnqueueScheduledJobs(when time.Time) (int64, error)
+	EnqueueScheduledJobs(ctx context.Context, when time.Time) (int64, error)
 
 	// RetryJobs enqueues failed jobs
-	RetryJobs(when time.Time) (int64, error)
+	RetryJobs(ctx context.Context, when time.Time) (int64, error)
 
 	BusyCount(wid string) int
 
@@ -130,8 +130,9 @@ func newManager(s storage.Store) *manager {
 		ackChain:   make(MiddlewareChain, 0),
 		fetchChain: make(MiddlewareChain, 0),
 	}
-	_ = m.loadWorkingSet()
-	p, _ := s.PausedQueues()
+	ctx := context.Background()
+	_ = m.loadWorkingSet(ctx)
+	p, _ := s.PausedQueues(ctx)
 	m.paused = p
 	m.fetcher = BasicFetcher(m.Redis())
 	return m
@@ -187,7 +188,7 @@ type manager struct {
 	paused       []string
 }
 
-func (m *manager) Push(job *client.Job) error {
+func (m *manager) Push(ctx context.Context, job *client.Job) error {
 	if job.Jid == "" || len(job.Jid) < 8 {
 		return fmt.Errorf("jobs must have a reasonable jid parameter")
 	}
@@ -218,7 +219,7 @@ func (m *manager) Push(job *client.Job) error {
 		}
 	}
 
-	err = callMiddleware(m.pushChain, Ctx{context.Background(), job, m, nil}, func() error {
+	err = callMiddleware(m.pushChain, Ctx{ctx, job, m, nil}, func() error {
 		if job.At != "" {
 			if t.After(time.Now()) {
 				data, err := json.Marshal(job)
@@ -227,10 +228,10 @@ func (m *manager) Push(job *client.Job) error {
 				}
 
 				// scheduler for later
-				return m.store.Scheduled().AddElement(job.At, job.Jid, data)
+				return m.store.Scheduled().AddElement(ctx, job.At, job.Jid, data)
 			}
 		}
-		return m.enqueue(job)
+		return m.enqueue(ctx, job)
 	})
 	if err != nil {
 		if k, ok := err.(KnownError); ok {
@@ -240,8 +241,8 @@ func (m *manager) Push(job *client.Job) error {
 	return err
 }
 
-func (m *manager) enqueue(job *client.Job) error {
-	q, err := m.store.GetQueue(job.Queue)
+func (m *manager) enqueue(ctx context.Context, job *client.Job) error {
+	q, err := m.store.GetQueue(ctx, job.Queue)
 	if err != nil {
 		return fmt.Errorf("cannot get %q queue: %w", job.Queue, err)
 	}
@@ -251,5 +252,5 @@ func (m *manager) enqueue(job *client.Job) error {
 	if err != nil {
 		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
-	return q.Push(data)
+	return q.Push(ctx, data)
 }

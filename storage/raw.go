@@ -1,9 +1,10 @@
 package storage
 
 import (
+	"context"
 	"errors"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 var (
@@ -11,8 +12,8 @@ var (
 )
 
 type KV interface {
-	Get(key string) ([]byte, error)
-	Set(key string, value []byte) error
+	Get(ctx context.Context, key string) ([]byte, error)
+	Set(ctx context.Context, key string, value []byte) error
 }
 
 // Provide a basic KV scratch pad, for misc feature usage.
@@ -25,8 +26,8 @@ func (s *redisStore) Raw() KV {
 	return &redisKV{s}
 }
 
-func (kv *redisKV) Get(key string) ([]byte, error) {
-	value, err := kv.store.rclient.Get(key).Result()
+func (kv *redisKV) Get(ctx context.Context, key string) ([]byte, error) {
+	value, err := kv.store.rclient.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
@@ -36,9 +37,9 @@ func (kv *redisKV) Get(key string) ([]byte, error) {
 	return []byte(value), nil
 }
 
-func (kv *redisKV) Set(key string, value []byte) error {
+func (kv *redisKV) Set(ctx context.Context, key string, value []byte) error {
 	if value == nil {
 		return ErrNilValue
 	}
-	return kv.store.rclient.Set(key, value, 0).Err()
+	return kv.store.rclient.Set(ctx, key, value, 0).Err()
 }

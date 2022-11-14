@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"context"
 	"fmt"
 	"net/http/httptest"
 	"os"
@@ -109,7 +110,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 		panic(err)
 	}
 	defer s.Stop(nil)
-	s.Store().Flush()
+	s.Store().Flush(context.Background())
 
 	go func() {
 		err := s.Run()

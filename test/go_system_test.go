@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
@@ -71,8 +72,9 @@ func TestSystem(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.EqualValues(t, 3*each, int(s.Store().TotalProcessed()))
-	assert.EqualValues(t, 3*(each/100), int(s.Store().TotalFailures()))
+	bg := context.Background()
+	assert.EqualValues(t, 3*each, int(s.Store().TotalProcessed(bg)))
+	assert.EqualValues(t, 3*(each/100), int(s.Store().TotalFailures(bg)))
 
 	s.Stop(nil)
 }

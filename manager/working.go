@@ -37,7 +37,7 @@ func (res *Reservation) ExpiresAt() time.Time {
 	return res.texpiry
 }
 
-func (m *manager) ExtendReservation(jid string, until time.Time) error {
+func (m *manager) ExtendReservation(ctx context.Context, jid string, until time.Time) error {
 	m.workingMutex.Lock()
 	if localres, ok := m.workingMap[jid]; ok {
 		if localres.texpiry.Before(until) {
@@ -76,12 +76,12 @@ func (m *manager) BusyCount(wid string) int {
  * The alternative is that a server restart would re-execute
  * all outstanding jobs, something to be avoided when possible.
  */
-func (m *manager) loadWorkingSet() error {
+func (m *manager) loadWorkingSet(ctx context.Context) error {
 	m.workingMutex.Lock()
 	defer m.workingMutex.Unlock()
 
 	addedCount := 0
-	err := m.store.Working().Each(func(idx int, entry storage.SortedEntry) error {
+	err := m.store.Working().Each(ctx, func(idx int, entry storage.SortedEntry) error {
 		var res Reservation
 		err := json.Unmarshal(entry.Value(), &res)
 		if err != nil {
@@ -108,7 +108,7 @@ func (m *manager) loadWorkingSet() error {
 	return nil
 }
 
-func (m *manager) reserve(wid string, lease Lease) error {
+func (m *manager) reserve(ctx context.Context, wid string, lease Lease) error {
 	now := time.Now()
 	job, _ := lease.Job()
 	timeout := job.ReserveFor
@@ -142,7 +142,7 @@ func (m *manager) reserve(wid string, lease Lease) error {
 		return fmt.Errorf("cannot marshal reservation payload: %w", err)
 	}
 
-	err = m.store.Working().AddElement(res.Expiry, job.Jid, data)
+	err = m.store.Working().AddElement(ctx, res.Expiry, job.Jid, data)
 	if err != nil {
 		return fmt.Errorf("cannot add element in the working set: %w", err)
 	}
@@ -154,7 +154,7 @@ func (m *manager) reserve(wid string, lease Lease) error {
 	return nil
 }
 
-func (m *manager) Acknowledge(jid string) (*client.Job, error) {
+func (m *manager) Acknowledge(ctx context.Context, jid string) (*client.Job, error) {
 	res := m.clearReservation(jid)
 	if res == nil {
 		util.Infof("No such job to acknowledge %s", jid)
@@ -162,7 +162,7 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	}
 
 	// doesn't matter, might not have acknowledged in time
-	_, err := m.store.Working().RemoveElement(res.Expiry, jid)
+	_, err := m.store.Working().RemoveElement(ctx, res.Expiry, jid)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +177,8 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	}
 
 	if res.Job != nil {
-		_ = m.store.Success()
-		err = callMiddleware(m.ackChain, Ctx{context.Background(), res.Job, m, res}, func() error {
+		_ = m.store.Success(ctx)
+		err = callMiddleware(m.ackChain, Ctx{ctx, res.Job, m, res}, func() error {
 			return nil
 		})
 	}
@@ -186,11 +186,11 @@ func (m *manager) Acknowledge(jid string) (*client.Job, error) {
 	return res.Job, err
 }
 
-func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
+func (m *manager) ReapExpiredJobs(ctx context.Context, when time.Time) (int64, error) {
 	total := int64(0)
 	for {
 		tm := util.Thens(when)
-		count, err := m.store.Working().RemoveBefore(tm, 10, func(data []byte) error {
+		count, err := m.store.Working().RemoveBefore(ctx, tm, 10, func(data []byte) error {
 			var res Reservation
 			err := json.Unmarshal(data, &res)
 			if err != nil {
@@ -211,7 +211,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 				localres.texpiry = localres.extension
 				localres.Expiry = util.Thens(localres.extension)
 				util.Debugf("Auto-extending reservation time for %s to %s", jid, localres.Expiry)
-				err = m.store.Working().AddElement(localres.Expiry, jid, data)
+				err = m.store.Working().AddElement(ctx, localres.Expiry, jid, data)
 				if err != nil {
 					return fmt.Errorf("cannot extend reservation for %q job: %w", jid, err)
 				}
@@ -219,7 +219,7 @@ func (m *manager) ReapExpiredJobs(when time.Time) (int64, error) {
 			}
 
 			job := res.Job
-			err = m.processFailure(job.Jid, JobReservationExpired)
+			err = m.processFailure(ctx, job.Jid, JobReservationExpired)
 			if err != nil {
 				return fmt.Errorf("cannot retry reservation: %w", err)
 			}

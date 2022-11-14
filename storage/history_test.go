@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -9,32 +10,33 @@ import (
 
 func TestStats(t *testing.T) {
 	withRedis(t, "history", func(t *testing.T, store Store) {
-		store.Flush()
+		bg := context.Background()
+		store.Flush(bg)
 		var err error
 
 		for i := 0; i < 10000; i++ {
 			if i%100 == 99 {
-				err = store.Failure()
+				err = store.Failure(bg)
 				assert.NoError(t, err)
 			} else {
-				err = store.Success()
+				err = store.Success(bg)
 				assert.NoError(t, err)
 			}
 		}
 
-		assert.EqualValues(t, 10000, store.TotalProcessed())
-		assert.EqualValues(t, 100, store.TotalFailures())
+		assert.EqualValues(t, 10000, store.TotalProcessed(bg))
+		assert.EqualValues(t, 100, store.TotalFailures(bg))
 
-		err = store.Failure()
+		err = store.Failure(bg)
 		assert.NoError(t, err)
-		err = store.Success()
+		err = store.Success(bg)
 		assert.NoError(t, err)
 
-		assert.EqualValues(t, 10002, store.TotalProcessed())
-		assert.EqualValues(t, 101, store.TotalFailures())
+		assert.EqualValues(t, 10002, store.TotalProcessed(bg))
+		assert.EqualValues(t, 101, store.TotalFailures(bg))
 
 		hash := map[string][2]uint64{}
-		err = store.History(3, func(day string, p, f uint64) {
+		err = store.History(bg, 3, func(day string, p, f uint64) {
 			hash[day] = [2]uint64{p, f}
 		})
 		assert.NoError(t, err)

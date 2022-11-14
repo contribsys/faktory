@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -35,8 +36,8 @@ type task struct {
 
 type Taskable interface {
 	Name() string
-	Execute() error
-	Stats() map[string]interface{}
+	Execute(context.Context) error
+	Stats(context.Context) map[string]interface{}
 }
 
 func newTaskRunner() *taskRunner {
@@ -76,10 +77,11 @@ func (ts *taskRunner) Run(stopper chan bool) {
 func (ts *taskRunner) Stats() map[string]map[string]interface{} {
 	data := map[string]map[string]interface{}{}
 
+	ctx := context.Background()
 	ts.mutex.RLock()
 	defer ts.mutex.RUnlock()
 	for _, task := range ts.tasks {
-		data[task.runner.Name()] = task.runner.Stats()
+		data[task.runner.Name()] = task.runner.Stats(ctx)
 	}
 	return data
 }
@@ -96,7 +98,7 @@ func (ts *taskRunner) cycle() {
 		}
 		tstart := time.Now()
 		// util.Debugf("Running task %s", t.runner.Name())
-		err := t.runner.Execute()
+		err := t.runner.Execute(context.Background())
 		tend := time.Now()
 		if err != nil {
 			util.Warnf("Error running task %s: %v", t.runner.Name(), err)

@@ -20,7 +20,7 @@ type FailPayload struct {
 	Backtrace    []string `json:"backtrace"`
 }
 
-func (m *manager) Fail(failure *FailPayload) error {
+func (m *manager) Fail(ctx context.Context, failure *FailPayload) error {
 	if failure == nil {
 		return fmt.Errorf("missing failure info")
 	}
@@ -32,7 +32,7 @@ func (m *manager) Fail(failure *FailPayload) error {
 
 	cleanse(failure)
 
-	return m.processFailure(jid, failure)
+	return m.processFailure(ctx, jid, failure)
 }
 
 func cleanse(failure *FailPayload) {
@@ -76,7 +76,7 @@ func (m *manager) clearReservation(jid string) *Reservation {
 	return res
 }
 
-func (m *manager) processFailure(jid string, failure *FailPayload) error {
+func (m *manager) processFailure(ctx context.Context, jid string, failure *FailPayload) error {
 	res := m.clearReservation(jid)
 	if res == nil {
 		return fmt.Errorf("Job not found %s", jid)
@@ -93,7 +93,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 	// when expiring overdue jobs in the working set, we remove in
 	// bulk so this job is no longer in the working set already.
 	if failure != JobReservationExpired {
-		ok, err := m.store.Working().RemoveElement(res.Expiry, jid)
+		ok, err := m.store.Working().RemoveElement(ctx, res.Expiry, jid)
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,7 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 		}
 	}
 
-	_ = m.store.Failure()
+	_ = m.store.Failure(ctx)
 
 	job := res.Job
 
@@ -134,13 +134,13 @@ func (m *manager) processFailure(jid string, failure *FailPayload) error {
 			return nil
 		}
 		if job.Failure.RetryCount < *job.Retry {
-			return retryLater(m.store, job)
+			return retryLater(ctx, m.store, job)
 		}
-		return sendToMorgue(m.store, job)
+		return sendToMorgue(ctx, m.store, job)
 	})
 }
 
-func retryLater(store storage.Store, job *client.Job) error {
+func retryLater(ctx context.Context, store storage.Store, job *client.Job) error {
 	when := util.Thens(nextRetry(job))
 	job.Failure.NextAt = when
 	bytes, err := json.Marshal(job)
@@ -148,17 +148,17 @@ func retryLater(store storage.Store, job *client.Job) error {
 		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
 
-	return store.Retries().AddElement(when, job.Jid, bytes)
+	return store.Retries().AddElement(ctx, when, job.Jid, bytes)
 }
 
-func sendToMorgue(store storage.Store, job *client.Job) error {
+func sendToMorgue(ctx context.Context, store storage.Store, job *client.Job) error {
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return fmt.Errorf("cannot marshal job payload: %w", err)
 	}
 
 	expiry := util.Thens(time.Now().Add(DeadTTL))
-	return store.Dead().AddElement(expiry, job.Jid, bytes)
+	return store.Dead().AddElement(ctx, expiry, job.Jid, bytes)
 }
 
 func nextRetry(job *client.Job) time.Time {

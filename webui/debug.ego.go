@@ -18,7 +18,7 @@ import (
 )
 
 func ego_debug(w io.Writer, req *http.Request) {
-	stats := ctx(req).Store().Stats()
+	stats := ctx(req).Store().Stats(req.Context())
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	rdata, rtt := redis_info(req)

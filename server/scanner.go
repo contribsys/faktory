@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/contribsys/faktory/util"
 )
 
-type scannerTask func(time.Time) (int64, error)
+type scannerTask func(context.Context, time.Time) (int64, error)
 
 type scanner struct {
 	name     string
@@ -23,10 +24,9 @@ func (s *scanner) Name() string {
 	return s.name
 }
 
-func (s *scanner) Execute() error {
+func (s *scanner) Execute(ctx context.Context) error {
 	start := time.Now()
-
-	count, err := s.task(start)
+	count, err := s.task(ctx, start)
 	if err != nil {
 		return err
 	}
@@ -42,11 +42,11 @@ func (s *scanner) Execute() error {
 	return nil
 }
 
-func (s *scanner) Stats() map[string]interface{} {
+func (s *scanner) Stats(ctx context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"enqueued":      atomic.LoadInt64(&s.jobs),
 		"cycles":        atomic.LoadInt64(&s.cycles),
-		"size":          s.set.Size(),
+		"size":          s.set.Size(ctx),
 		"wall_time_sec": (float64(atomic.LoadInt64(&s.walltime)) / 1000000000),
 	}
 }

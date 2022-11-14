@@ -46,27 +46,28 @@ func batch(c *Connection, s *Server, cmd string) {
 // QUEUE RESUME *
 // QUEUE REMOVE [names...]
 func queue(c *Connection, s *Server, cmd string) {
+	ctx := c.Context
 	qs := strings.Split(cmd, " ")[1:]
 	m := s.Manager()
 	if qs[1] == "*" {
-		s.Store().EachQueue(func(q storage.Queue) {
+		s.Store().EachQueue(ctx, func(q storage.Queue) {
 			if qs[0] == "PAUSE" {
-				_ = m.PauseQueue(q.Name())
+				_ = m.PauseQueue(ctx, q.Name())
 			} else if qs[0] == "RESUME" {
-				_ = m.ResumeQueue(q.Name())
+				_ = m.ResumeQueue(ctx, q.Name())
 			} else if qs[0] == "REMOVE" {
-				_ = m.RemoveQueue(q.Name())
+				_ = m.RemoveQueue(ctx, q.Name())
 			}
 		})
 	} else {
 		names := qs[1:]
 		for idx := range names {
 			if qs[0] == "PAUSE" {
-				_ = m.PauseQueue(names[idx])
+				_ = m.PauseQueue(ctx, names[idx])
 			} else if qs[0] == "RESUME" {
-				_ = m.ResumeQueue(names[idx])
+				_ = m.ResumeQueue(ctx, names[idx])
 			} else if qs[0] == "REMOVE" {
-				_ = m.RemoveQueue(names[idx])
+				_ = m.RemoveQueue(ctx, names[idx])
 			}
 		}
 	}
@@ -80,7 +81,7 @@ func flush(c *Connection, s *Server, cmd string) {
 	} else {
 		util.Warn("Flushing dataset")
 	}
-	err := s.store.Flush()
+	err := s.store.Flush(c.Context)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return
@@ -120,7 +121,7 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 		}
 		// TODO we aren't optimizing the roundtrips to Redis yet
 		// We need a new `manager.PushBulk` API
-		err = s.manager.Push(&job)
+		err = s.manager.Push(c.Context, &job)
 		if err != nil {
 			result[job.Jid] = err.Error()
 		}
@@ -156,7 +157,7 @@ func push(c *Connection, s *Server, cmd string) {
 		job.Retry = &client.RetryPolicyDefault
 	}
 
-	err = s.manager.Push(&job)
+	err = s.manager.Push(c.Context, &job)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return
@@ -210,7 +211,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		_ = c.Error(cmd, fmt.Errorf("invalid ACK %s", data))
 		return
 	}
-	_, err = s.manager.Acknowledge(jid)
+	_, err = s.manager.Acknowledge(c.Context, jid)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return
@@ -230,7 +231,7 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = s.manager.Fail(&failure)
+	err = s.manager.Fail(c.Context, &failure)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return

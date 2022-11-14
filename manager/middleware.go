@@ -10,7 +10,7 @@ type MiddlewareFunc func(next func() error, ctx Context) error
 type MiddlewareChain []MiddlewareFunc
 
 type Context interface {
-	context.Context
+	Context() context.Context
 
 	Job() *client.Job
 	Manager() Manager
@@ -18,11 +18,15 @@ type Context interface {
 }
 
 type Ctx struct {
-	context.Context
+	ctxt context.Context
 
 	job *client.Job
 	mgr *manager
 	res *Reservation
+}
+
+func (c Ctx) Context() context.Context {
+	return c.ctxt
 }
 
 func (c Ctx) Reservation() *Reservation {

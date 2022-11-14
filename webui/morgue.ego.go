@@ -18,7 +18,7 @@ import (
 )
 
 func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
-	totalSize := uint64(set.Size())
+	totalSize := uint64(set.Size(req.Context()))
 
 //line morgue.ego:14
 	_, _ = io.WriteString(w, "\n\n")
@@ -79,7 +79,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 //line morgue.ego:45
 			_, _ = io.WriteString(w, "</th>\n          </tr>\n        </thead>\n        ")
 //line morgue.ego:48
-			setJobs(set, count, currentPage, func(idx int, key []byte, job *client.Job) {
+			setJobs(req, set, count, currentPage, func(idx int, key []byte, job *client.Job) {
 //line morgue.ego:49
 				_, _ = io.WriteString(w, "\n          <tr>\n            <td class=\"table-checkbox\">\n              <label>\n                <input type=\"checkbox\" name=\"key\" value=\"")
 //line morgue.ego:52

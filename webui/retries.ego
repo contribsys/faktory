@@ -9,7 +9,7 @@ import (
 )
 
 func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
-  totalSize := uint64(set.Size())
+  totalSize := uint64(set.Size(req.Context()))
 %>
 
 <% ego_layout(w, req, func() { %>
@@ -47,7 +47,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
             <th><%= t(req, "Error") %></th>
           </tr>
         </thead>
-        <% setJobs(set, count, currentPage, func(idx int, key []byte, job *client.Job) { %>
+        <% setJobs(req, set, count, currentPage, func(idx int, key []byte, job *client.Job) { %>
           <tr>
             <td class="table-checkbox">
               <label>

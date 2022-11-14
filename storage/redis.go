@@ -3,6 +3,7 @@ package storage
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 type redisStore struct {
@@ -33,6 +34,9 @@ type redisStore struct {
 }
 
 func NewRedisStore(name string, rclient *redis.Client) (Store, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
 	rs := &redisStore{
 		Name:     name,
 		mu:       sync.Mutex{},
@@ -41,13 +45,13 @@ func NewRedisStore(name string, rclient *redis.Client) (Store, error) {
 	}
 	rs.initSorted()
 
-	vals, err := rs.rclient.SMembers("queues").Result()
+	vals, err := rs.rclient.SMembers(ctx, "queues").Result()
 	if err != nil {
 		return nil, err
 	}
 	for idx := range vals {
 		q := rs.NewQueue(vals[idx])
-		err := q.init()
+		err := q.init(ctx)
 		if err != nil {
 			util.Warnf("Unable to initialize queue: %v", err)
 			continue
@@ -84,8 +88,10 @@ func bootRedis(path string, sock string) (func(), error) {
 		Network: "unix",
 		Addr:    sock,
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-	_, err = rclient.Ping().Result()
+	_, err = rclient.Ping(ctx).Result()
 	if err != nil {
 		// util.Debugf("Redis not alive, booting... -- %s", err)
 
@@ -164,7 +170,9 @@ func bootRedis(path string, sock string) (func(), error) {
 
 	secs := 600
 	for {
-		_, err = rclient.Ping().Result()
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+		_, err = rclient.Ping(ctx).Result()
+		cancel()
 		if err == nil {
 			break
 		} else if secs == 0 {
@@ -178,7 +186,9 @@ func bootRedis(path string, sock string) (func(), error) {
 		}
 	}
 
-	infos, err := rclient.Info().Result()
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	infos, err := rclient.Info(ctx).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -215,39 +225,41 @@ func openRedis(sock string, poolSize int) (Store, error) {
 		return nil, errors.New("redis not booted, cannot start")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	rclient := redis.NewClient(&redis.Options{
 		Network:  "unix",
 		Addr:     sock,
 		DB:       0,
 		PoolSize: poolSize,
 	})
-	_, err := rclient.Ping().Result()
+	_, err := rclient.Ping(ctx).Result()
 	if err != nil {
 		return nil, err
 	}
 	return NewRedisStore(sock, rclient)
 }
 
-func (store *redisStore) Stats() map[string]string {
+func (store *redisStore) Stats(ctx context.Context) map[string]string {
 	return map[string]string{
-		"stats": store.rclient.Info().String(),
+		"stats": store.rclient.Info(ctx).String(),
 		"name":  store.Name,
 	}
 }
 
-func (store *redisStore) PausedQueues() ([]string, error) {
-	return store.rclient.SMembers("paused").Result()
+func (store *redisStore) PausedQueues(ctx context.Context) ([]string, error) {
+	return store.rclient.SMembers(ctx, "paused").Result()
 }
 
 // queues are iterated in sorted, lexigraphical order
-func (store *redisStore) EachQueue(x func(Queue)) {
+func (store *redisStore) EachQueue(ctx context.Context, x func(Queue)) {
 	for _, k := range store.queueSet {
 		x(k)
 	}
 }
 
-func (store *redisStore) Flush() error {
-	return store.rclient.FlushDB().Err()
+func (store *redisStore) Flush(ctx context.Context) error {
+	return store.rclient.FlushDB(ctx).Err()
 }
 
 var (
@@ -255,13 +267,13 @@ var (
 )
 
 // returns an existing, known queue or nil
-func (store *redisStore) ExistingQueue(name string) (Queue, bool) {
+func (store *redisStore) ExistingQueue(_ context.Context, name string) (Queue, bool) {
 	q, ok := store.queueSet[name]
 	return q, ok
 }
 
 // creates the queue if it doesn't already exist
-func (store *redisStore) GetQueue(name string) (Queue, error) {
+func (store *redisStore) GetQueue(ctx context.Context, name string) (Queue, error) {
 	if name == "" {
 		return nil, fmt.Errorf("queue name cannot be blank")
 	}
@@ -279,11 +291,11 @@ func (store *redisStore) GetQueue(name string) (Queue, error) {
 	}
 
 	q = store.NewQueue(name)
-	err := q.init()
+	err := q.init(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = store.rclient.SAdd("queues", name).Err()
+	err = store.rclient.SAdd(ctx, "queues", name).Err()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to store queue name: %v", err)
 	}
@@ -359,8 +371,8 @@ func (store *redisStore) Dead() SortedSet {
 	return store.dead
 }
 
-func (store *redisStore) EnqueueAll(sset SortedSet) error {
-	return sset.Each(func(_ int, entry SortedEntry) error {
+func (store *redisStore) EnqueueAll(ctx context.Context, sset SortedSet) error {
+	return sset.Each(ctx, func(_ int, entry SortedEntry) error {
 		j, err := entry.Job()
 		if err != nil {
 			return err
@@ -371,12 +383,12 @@ func (store *redisStore) EnqueueAll(sset SortedSet) error {
 			return err
 		}
 
-		q, err := store.GetQueue(j.Queue)
+		q, err := store.GetQueue(ctx, j.Queue)
 		if err != nil {
 			return err
 		}
 
-		ok, err := sset.Remove(k)
+		ok, err := sset.Remove(ctx, k)
 		if err != nil {
 			return err
 		}
@@ -384,12 +396,12 @@ func (store *redisStore) EnqueueAll(sset SortedSet) error {
 			return nil
 		}
 
-		return q.Add(j)
+		return q.Add(ctx, j)
 	})
 }
 
-func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
-	entry, err := sset.Get(key)
+func (store *redisStore) EnqueueFrom(ctx context.Context, sset SortedSet, key []byte) error {
+	entry, err := sset.Get(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -403,12 +415,12 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 		return err
 	}
 
-	q, err := store.GetQueue(job.Queue)
+	q, err := store.GetQueue(ctx, job.Queue)
 	if err != nil {
 		return err
 	}
 
-	ok, err := sset.Remove(key)
+	ok, err := sset.Remove(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -416,7 +428,7 @@ func (store *redisStore) EnqueueFrom(sset SortedSet, key []byte) error {
 		return nil
 	}
 
-	return q.Add(job)
+	return q.Add(ctx, job)
 }
 
 var (

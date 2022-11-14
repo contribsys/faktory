@@ -18,7 +18,7 @@ import (
 )
 
 func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, count, currentPage uint64) {
-	totalSize := uint64(set.Size())
+	totalSize := uint64(set.Size(req.Context()))
 
 //line retries.ego:14
 	_, _ = io.WriteString(w, "\n\n")
@@ -83,7 +83,7 @@ func ego_listRetries(w io.Writer, req *http.Request, set storage.SortedSet, coun
 //line retries.ego:47
 			_, _ = io.WriteString(w, "</th>\n          </tr>\n        </thead>\n        ")
 //line retries.ego:50
-			setJobs(set, count, currentPage, func(idx int, key []byte, job *client.Job) {
+			setJobs(req, set, count, currentPage, func(idx int, key []byte, job *client.Job) {
 //line retries.ego:51
 				_, _ = io.WriteString(w, "\n          <tr>\n            <td class=\"table-checkbox\">\n              <label>\n                <input type='checkbox' name='key' value='")
 //line retries.ego:54

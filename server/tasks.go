@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -16,8 +17,8 @@ func (r *reservationReaper) Name() string {
 	return "Busy"
 }
 
-func (r *reservationReaper) Execute() error {
-	count, err := r.m.ReapExpiredJobs(time.Now())
+func (r *reservationReaper) Execute(ctx context.Context) error {
+	count, err := r.m.ReapExpiredJobs(ctx, time.Now())
 	if err != nil {
 		return err
 	}
@@ -26,7 +27,7 @@ func (r *reservationReaper) Execute() error {
 	return nil
 }
 
-func (r *reservationReaper) Stats() map[string]interface{} {
+func (r *reservationReaper) Stats(ctx context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"size":   r.m.WorkingCount(),
 		"reaped": atomic.LoadInt64(&r.count),
@@ -45,13 +46,13 @@ func (r *beatReaper) Name() string {
 	return "Workers"
 }
 
-func (r *beatReaper) Execute() error {
+func (r *beatReaper) Execute(ctx context.Context) error {
 	count := r.w.reapHeartbeats(time.Now().Add(-1 * time.Minute))
 	atomic.AddInt64(&r.count, int64(count))
 	return nil
 }
 
-func (r *beatReaper) Stats() map[string]interface{} {
+func (r *beatReaper) Stats(context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"size":   r.w.Count(),
 		"reaped": atomic.LoadInt64(&r.count),

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v9"
 )
 
 type redisSorted struct {
@@ -29,15 +30,15 @@ func (rs *redisSorted) Name() string {
 	return rs.name
 }
 
-func (rs *redisSorted) Size() uint64 {
-	return uint64(rs.store.rclient.ZCard(rs.name).Val())
+func (rs *redisSorted) Size(ctx context.Context) uint64 {
+	return uint64(rs.store.rclient.ZCard(ctx, rs.name).Val())
 }
 
-func (rs *redisSorted) Clear() error {
-	return rs.store.rclient.Unlink(rs.name).Err()
+func (rs *redisSorted) Clear(ctx context.Context) error {
+	return rs.store.rclient.Unlink(ctx, rs.name).Err()
 }
 
-func (rs *redisSorted) Add(job *client.Job) error {
+func (rs *redisSorted) Add(ctx context.Context, job *client.Job) error {
 	if job.At == "" {
 		return errors.New("Job does not have an At timestamp")
 	}
@@ -46,20 +47,20 @@ func (rs *redisSorted) Add(job *client.Job) error {
 		return err
 	}
 
-	return rs.AddElement(job.At, job.Jid, data)
+	return rs.AddElement(ctx, job.At, job.Jid, data)
 }
 
-func (rs *redisSorted) RemoveEntry(ent SortedEntry) error {
-	return rs.store.rclient.ZRem(rs.name, ent.Value()).Err()
+func (rs *redisSorted) RemoveEntry(ctx context.Context, ent SortedEntry) error {
+	return rs.store.rclient.ZRem(ctx, rs.name, ent.Value()).Err()
 }
 
-func (rs *redisSorted) AddElement(timestamp string, jid string, payload []byte) error {
+func (rs *redisSorted) AddElement(ctx context.Context, timestamp string, jid string, payload []byte) error {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
 		return err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
-	_, err = rs.store.rclient.ZAdd(rs.name, redis.Z{Score: time_f, Member: payload}).Result()
+	_, err = rs.store.rclient.ZAdd(ctx, rs.name, redis.Z{Score: time_f, Member: payload}).Result()
 	return err
 }
 
@@ -77,9 +78,9 @@ func decompose(key []byte) (float64, string, error) {
 	return time_f, slice[1], nil
 }
 
-func (rs *redisSorted) getScore(score float64) ([]string, error) {
+func (rs *redisSorted) getScore(ctx context.Context, score float64) ([]string, error) {
 	strf := strconv.FormatFloat(score, 'f', -1, 64)
-	elms, err := rs.store.rclient.ZRangeByScore(rs.name, redis.ZRangeBy{Min: strf, Max: strf}).Result()
+	elms, err := rs.store.rclient.ZRangeByScore(ctx, rs.name, &redis.ZRangeBy{Min: strf, Max: strf}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -87,12 +88,12 @@ func (rs *redisSorted) getScore(score float64) ([]string, error) {
 }
 
 // key is "timestamp|jid"
-func (rs *redisSorted) Get(key []byte) (SortedEntry, error) {
+func (rs *redisSorted) Get(ctx context.Context, key []byte) (SortedEntry, error) {
 	time_f, jid, err := decompose(key)
 	if err != nil {
 		return nil, err
 	}
-	elms, err := rs.getScore(time_f)
+	elms, err := rs.getScore(ctx, time_f)
 	if err != nil {
 		return nil, err
 	}
@@ -162,12 +163,12 @@ func (e *setEntry) Job() (*client.Job, error) {
 	return e.job, nil
 }
 
-func (rs *redisSorted) Find(match string, fn func(index int, e SortedEntry) error) error {
-	it := rs.store.rclient.ZScan(rs.name, 0, match, 100).Iterator()
+func (rs *redisSorted) Find(ctx context.Context, match string, fn func(index int, e SortedEntry) error) error {
+	it := rs.store.rclient.ZScan(ctx, rs.name, 0, match, 100).Iterator()
 	idx := 0
-	for it.Next() {
+	for it.Next(ctx) {
 		job := it.Val()
-		if !it.Next() {
+		if !it.Next(ctx) {
 			break
 		}
 		score := it.Val()
@@ -186,8 +187,8 @@ func (rs *redisSorted) Find(match string, fn func(index int, e SortedEntry) erro
 	return nil
 }
 
-func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEntry) error) (int, error) {
-	zs, err := rs.store.rclient.ZRangeWithScores(rs.name, int64(start), int64(start+count-1)).Result()
+func (rs *redisSorted) Page(ctx context.Context, start int, count int, fn func(index int, e SortedEntry) error) (int, error) {
+	zs, err := rs.store.rclient.ZRangeWithScores(ctx, rs.name, int64(start), int64(start+count-1)).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -201,12 +202,12 @@ func (rs *redisSorted) Page(start int, count int, fn func(index int, e SortedEnt
 	return len(zs), nil
 }
 
-func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
+func (rs *redisSorted) Each(ctx context.Context, fn func(idx int, e SortedEntry) error) error {
 	count := 50
 	current := 0
 
 	for {
-		elms, err := rs.Page(current, count, fn)
+		elms, err := rs.Page(ctx, current, count, fn)
 		if err != nil {
 			return err
 		}
@@ -219,8 +220,8 @@ func (rs *redisSorted) Each(fn func(idx int, e SortedEntry) error) error {
 	}
 }
 
-func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
-	elms, err := rs.getScore(time_f)
+func (rs *redisSorted) rem(ctx context.Context, time_f float64, jid string) (bool, error) {
+	elms, err := rs.getScore(ctx, time_f)
 	if err != nil {
 		return false, err
 	}
@@ -228,13 +229,13 @@ func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
 		return false, nil
 	}
 	if len(elms) == 1 {
-		count, err := rs.store.rclient.ZRem(rs.name, elms[0]).Result()
+		count, err := rs.store.rclient.ZRem(ctx, rs.name, elms[0]).Result()
 		return count == 1, err
 	}
 
 	for idx := range elms {
 		if strings.Index(elms[idx], jid) > 0 {
-			count, err := rs.store.rclient.ZRem(rs.name, elms[idx]).Result()
+			count, err := rs.store.rclient.ZRem(ctx, rs.name, elms[idx]).Result()
 			return count == 1, err
 		}
 	}
@@ -243,24 +244,24 @@ func (rs *redisSorted) rem(time_f float64, jid string) (bool, error) {
 
 // bool = was it removed?
 // err = any error
-func (rs *redisSorted) Remove(key []byte) (bool, error) {
+func (rs *redisSorted) Remove(ctx context.Context, key []byte) (bool, error) {
 	time_f, jid, err := decompose(key)
 	if err != nil {
 		return false, err
 	}
-	return rs.rem(time_f, jid)
+	return rs.rem(ctx, time_f, jid)
 }
 
-func (rs *redisSorted) RemoveElement(timestamp string, jid string) (bool, error) {
+func (rs *redisSorted) RemoveElement(ctx context.Context, timestamp string, jid string) (bool, error) {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
 		return false, err
 	}
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
-	return rs.rem(time_f, jid)
+	return rs.rem(ctx, time_f, jid)
 }
 
-func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(data []byte) error) (int64, error) {
+func (rs *redisSorted) RemoveBefore(ctx context.Context, timestamp string, maxCount int64, fn func(data []byte) error) (int64, error) {
 	tim, err := util.ParseTime(timestamp)
 	if err != nil {
 		return 0, err
@@ -268,7 +269,7 @@ func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(da
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
-	vals := rs.store.rclient.ZRangeByScore(rs.name, redis.ZRangeBy{Min: "-inf", Max: strf, Count: maxCount})
+	vals := rs.store.rclient.ZRangeByScore(ctx, rs.name, &redis.ZRangeBy{Min: "-inf", Max: strf, Count: maxCount})
 	jobs, err := vals.Result()
 	if err != nil {
 		return 0, err
@@ -280,7 +281,7 @@ func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(da
 	count := int64(0)
 	for idx := range jobs {
 		j := jobs[idx]
-		cnt, err := rs.store.rclient.ZRem(rs.name, j).Result()
+		cnt, err := rs.store.rclient.ZRem(ctx, rs.name, j).Result()
 		if err != nil {
 			return count, err
 		}
@@ -296,13 +297,13 @@ func (rs *redisSorted) RemoveBefore(timestamp string, maxCount int64, fn func(da
 	return count, nil
 }
 
-func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Time) error {
+func (rs *redisSorted) MoveTo(ctx context.Context, sset SortedSet, entry SortedEntry, newtime time.Time) error {
 	job, err := entry.Job()
 	if err != nil {
 		return err
 	}
 
-	cnt, err := rs.store.rclient.ZRem(rs.name, string(entry.Value())).Result()
+	cnt, err := rs.store.rclient.ZRem(ctx, rs.name, string(entry.Value())).Result()
 	if err != nil {
 		return err
 	}
@@ -311,5 +312,5 @@ func (rs *redisSorted) MoveTo(sset SortedSet, entry SortedEntry, newtime time.Ti
 		return nil
 	}
 
-	return sset.AddElement(util.Thens(newtime), job.Jid, entry.Value())
+	return sset.AddElement(ctx, util.Thens(newtime), job.Jid, entry.Value())
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -17,58 +18,58 @@ var (
 	}
 )
 
-func mutateKill(store storage.Store, op client.Operation) error {
+func mutateKill(ctx context.Context, store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
 		return fmt.Errorf("invalid target for mutation command")
 	}
 	match, matchfn := matchForFilter(op.Filter)
-	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
+	return ss.Find(ctx, match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
-			return ss.MoveTo(store.Dead(), ent, time.Now().Add(manager.DeadTTL))
+			return ss.MoveTo(ctx, store.Dead(), ent, time.Now().Add(manager.DeadTTL))
 		}
 		return nil
 	})
 }
 
-func mutateRequeue(store storage.Store, op client.Operation) error {
+func mutateRequeue(ctx context.Context, store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
 		return fmt.Errorf("invalid target for mutation command")
 	}
 	match, matchfn := matchForFilter(op.Filter)
-	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
+	return ss.Find(ctx, match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
 			j, err := ent.Job()
 			if err != nil {
 				return err
 			}
-			q, err := store.GetQueue(j.Queue)
+			q, err := store.GetQueue(ctx, j.Queue)
 			if err != nil {
 				return err
 			}
-			err = q.Push(ent.Value())
+			err = q.Push(ctx, ent.Value())
 			if err != nil {
 				return err
 			}
-			return ss.RemoveEntry(ent)
+			return ss.RemoveEntry(ctx, ent)
 		}
 		return nil
 	})
 }
 
-func mutateDiscard(store storage.Store, op client.Operation) error {
+func mutateDiscard(ctx context.Context, store storage.Store, op client.Operation) error {
 	ss := setForTarget(store, string(op.Target))
 	if ss == nil {
 		return fmt.Errorf("invalid target for mutation command")
 	}
 	if op.Filter == nil {
-		return ss.Clear()
+		return ss.Clear(ctx)
 	}
 	match, matchfn := matchForFilter(op.Filter)
-	return ss.Find(match, func(idx int, ent storage.SortedEntry) error {
+	return ss.Find(ctx, match, func(idx int, ent storage.SortedEntry) error {
 		if matchfn(string(ent.Value())) {
-			return ss.RemoveEntry(ent)
+			return ss.RemoveEntry(ctx, ent)
 		}
 		return nil
 	})
@@ -124,15 +125,17 @@ func mutate(c *Connection, s *Server, cmd string) {
 		return
 	}
 
+	ctx := c.Context
+
 	switch op.Cmd {
 	case "clear":
-		err = mutateClear(s.Store(), string(op.Target))
+		err = mutateClear(ctx, s.Store(), string(op.Target))
 	case "kill":
-		err = mutateKill(s.Store(), op)
+		err = mutateKill(ctx, s.Store(), op)
 	case "discard":
-		err = mutateDiscard(s.Store(), op)
+		err = mutateDiscard(ctx, s.Store(), op)
 	case "requeue":
-		err = mutateRequeue(s.Store(), op)
+		err = mutateRequeue(ctx, s.Store(), op)
 	default:
 		err = fmt.Errorf("unknown mutate operation")
 	}
@@ -145,12 +148,12 @@ func mutate(c *Connection, s *Server, cmd string) {
 	_ = c.Ok()
 }
 
-func mutateClear(store storage.Store, target string) error {
+func mutateClear(ctx context.Context, store storage.Store, target string) error {
 	ss := setForTarget(store, target)
 	if ss == nil {
 		return fmt.Errorf("invalid target for mutation command")
 	}
-	return ss.Clear()
+	return ss.Clear(ctx)
 }
 
 func setForTarget(store storage.Store, name string) storage.SortedSet {

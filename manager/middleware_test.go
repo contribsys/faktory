@@ -16,11 +16,11 @@ func TestMiddlewareUsage(t *testing.T) {
 
 	counter := 0
 
-	fn := func(next func() error, ctx Context) error {
+	fn := func(ctx context.Context, next func() error) error {
 		counter += 1
 		return next()
 	}
-	fn2 := func(next func() error, ctx Context) error {
+	fn2 := func(ctx context.Context, next func() error) error {
 		counter += 1
 		return next()
 	}
@@ -32,7 +32,9 @@ func TestMiddlewareUsage(t *testing.T) {
 
 	job := client.NewJob("Something", 1, 2)
 
-	err := callMiddleware(myMiddleware, Ctx{context.Background(), job, nil, nil}, func() error {
+	ctx := context.Background()
+	ctxh := context.WithValue(ctx, MiddlewareHelperKey, Ctx{job, nil, nil})
+	err := callMiddleware(ctxh, myMiddleware, func() error {
 		counter += 1
 		return nil
 	})
@@ -51,9 +53,10 @@ func TestLiveMiddleware(t *testing.T) {
 			m := NewManager(store)
 			counter := 0
 
-			m.AddMiddleware("push", func(next func() error, ctx Context) error {
+			m.AddMiddleware("push", func(ctx context.Context, next func() error) error {
 				counter += 1
-				if ctx.Job().Type == "Nope" {
+				mh := ctx.Value(MiddlewareHelperKey).(Ctx)
+				if mh.Job().Type == "Nope" {
 					return denied
 				}
 				return next()
@@ -90,8 +93,9 @@ func TestLiveMiddleware(t *testing.T) {
 
 			store.Flush(bg)
 			m := NewManager(store)
-			m.AddMiddleware("fetch", func(next func() error, ctx Context) error {
-				kv := ctx.Manager().KV()
+			m.AddMiddleware("fetch", func(ctx context.Context, next func() error) error {
+				mh := ctx.Value(MiddlewareHelperKey).(Ctx)
+				kv := mh.Manager().KV()
 
 				err := kv.Set(bg, "foo", []byte("bar"))
 				assert.NoError(t, err)
@@ -99,10 +103,10 @@ func TestLiveMiddleware(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "bar", string(val))
 
-				if ctx.Job().Type == "Nope" {
+				if mh.Job().Type == "Nope" {
 					return denied
 				}
-				if ctx.Job().Type == "Bad" {
+				if mh.Job().Type == "Bad" {
 					return Discard("Job is bad")
 				}
 				return next()
@@ -143,13 +147,15 @@ func TestLiveMiddleware(t *testing.T) {
 		t.Run("Ack", func(t *testing.T) {
 			store.Flush(bg)
 			m := newManager(store)
-			m.AddMiddleware("push", func(next func() error, ctx Context) error {
-				_, err := m.Redis().Set(ctx.Context(), ctx.Job().Jid, []byte("bar"), 1*time.Second).Result()
+			m.AddMiddleware("push", func(ctx context.Context, next func() error) error {
+				mh := ctx.Value(MiddlewareHelperKey).(Ctx)
+				_, err := m.Redis().Set(ctx, mh.Job().Jid, []byte("bar"), 1*time.Second).Result()
 				assert.NoError(t, err)
 				return next()
 			})
-			m.AddMiddleware("ack", func(next func() error, ctx Context) error {
-				val, err := m.Redis().Unlink(ctx.Context(), ctx.Job().Jid).Result()
+			m.AddMiddleware("ack", func(ctx context.Context, next func() error) error {
+				mh := ctx.Value(MiddlewareHelperKey).(Ctx)
+				val, err := m.Redis().Unlink(ctx, mh.Job().Jid).Result()
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, val)
 				return next()

@@ -6,27 +6,23 @@ import (
 	"github.com/contribsys/faktory/client"
 )
 
-type MiddlewareFunc func(next func() error, ctx Context) error
+type MiddlewareFunc func(ctx context.Context, next func() error) error
 type MiddlewareChain []MiddlewareFunc
 
-type Context interface {
-	Context() context.Context
+const (
+	MiddlewareHelperKey = "_mh"
+)
 
+type Context interface {
 	Job() *client.Job
-	Manager() Manager
 	Reservation() *Reservation
+	Manager() Manager
 }
 
 type Ctx struct {
-	ctxt context.Context
-
 	job *client.Job
 	mgr *manager
 	res *Reservation
-}
-
-func (c Ctx) Context() context.Context {
-	return c.ctxt
 }
 
 func (c Ctx) Reservation() *Reservation {
@@ -58,12 +54,12 @@ func Discard(msg string) error {
 
 // Run the given job through the given middleware chain.
 // `final` is the function called if the entire chain passes the job along.
-func callMiddleware(chain MiddlewareChain, ctx Context, final func() error) error {
+func callMiddleware(ctx context.Context, chain MiddlewareChain, final func() error) error {
 	if len(chain) == 0 {
 		return final()
 	}
 
 	link := chain[0]
 	rest := chain[1:]
-	return link(func() error { return callMiddleware(rest, ctx, final) }, ctx)
+	return link(ctx, func() error { return callMiddleware(ctx, rest, final) })
 }

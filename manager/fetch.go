@@ -107,8 +107,9 @@ restart:
 		if err != nil {
 			return nil, err
 		}
-		err = callMiddleware(m.fetchChain, Ctx{ctx, job, m, nil}, func() error {
-			return m.reserve(ctx, wid, lease)
+		ctxh := context.WithValue(ctx, MiddlewareHelperKey, Ctx{job, m, nil})
+		err = callMiddleware(ctxh, m.fetchChain, func() error {
+			return m.reserve(ctxh, wid, lease)
 		})
 		if h, ok := err.(KnownError); ok {
 			util.Infof("JID %s: %s", job.Jid, h.Error())

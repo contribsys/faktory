@@ -178,7 +178,8 @@ func (m *manager) Acknowledge(ctx context.Context, jid string) (*client.Job, err
 
 	if res.Job != nil {
 		_ = m.store.Success(ctx)
-		err = callMiddleware(m.ackChain, Ctx{ctx, res.Job, m, res}, func() error {
+		ctxh := context.WithValue(ctx, MiddlewareHelperKey, Ctx{res.Job, m, res})
+		err = callMiddleware(ctxh, m.ackChain, func() error {
 			return nil
 		})
 	}

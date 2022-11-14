@@ -128,7 +128,8 @@ func (m *manager) processFailure(ctx context.Context, jid string, failure *FailP
 		}
 	}
 
-	return callMiddleware(m.failChain, Ctx{context.Background(), job, m, res}, func() error {
+	ctxh := context.WithValue(ctx, MiddlewareHelperKey, Ctx{job, m, res})
+	return callMiddleware(ctxh, m.failChain, func() error {
 		if job.Retry == nil || *job.Retry == 0 {
 			// no retry, no death, completely ephemeral, goodbye
 			return nil

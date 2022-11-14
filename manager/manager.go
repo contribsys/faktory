@@ -219,7 +219,8 @@ func (m *manager) Push(ctx context.Context, job *client.Job) error {
 		}
 	}
 
-	err = callMiddleware(m.pushChain, Ctx{ctx, job, m, nil}, func() error {
+	ctxh := context.WithValue(ctx, MiddlewareHelperKey, Ctx{job, m, nil})
+	err = callMiddleware(ctxh, m.pushChain, func() error {
 		if job.At != "" {
 			if t.After(time.Now()) {
 				data, err := json.Marshal(job)

@@ -24,6 +24,7 @@ zh-cn: # <---- change this to your locale code
   ShowAll: 显示全部
   CurrentMessagesInQueue: 目前在<span class='title'>%{queue}</span>的作业
   Delete: 删除
+  ClearQueue: 清空队列
   AddToQueue: 添加至队列
   AreYouSureDeleteJob: 你确定要删除这个作业么？
   AreYouSureDeleteQueue: 你确定要删除%{queue}这个队列？
@@ -33,6 +34,7 @@ zh-cn: # <---- change this to your locale code
   NextRetry: 下次重试
   RetryCount: 重试次數
   RetryNow: 现在重试
+  Kill: 结束
   LastRetry: 最后一次重试
   OriginallyFailed: 原本已失败
   AreYouSure: 你确定？
@@ -66,3 +68,18 @@ zh-cn: # <---- change this to your locale code
   Thread: 线程
   Threads: 线程
   Jobs: 作业
+  Paused: 已暂停
+  Stop: 停止
+  Quiet: 静默
+  StopAll: 全部停止
+  QuietAll: 全部静默
+  PollingInterval: 拉取间隔
+  Plugins: 插件
+  NotYetEnqueued: 尚未入队
+  CreatedAt: 创建时间
+  BackToApp: 返回App
+  CommandsExecuted: 已执行命令
+  Pause: 暂停
+  Resume: 继续
+  RetriesRemaining: 剩余重试次数
+  

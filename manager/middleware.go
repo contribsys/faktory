@@ -9,8 +9,10 @@ import (
 type MiddlewareFunc func(ctx context.Context, next func() error) error
 type MiddlewareChain []MiddlewareFunc
 
+type helperKey string
+
 const (
-	MiddlewareHelperKey = "_mh"
+	MiddlewareHelperKey helperKey = "_mh"
 )
 
 type Context interface {

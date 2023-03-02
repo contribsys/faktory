@@ -5,8 +5,9 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 ## HEAD
 
 - Upgrade all internal APIs to propogate Context
-- Upgrade go-redis/redis dependency to the new v9 driver, requires Redis v6.0+ and RESP3
-- Upgrade datadog-go dependency to the new v5 driver.
+- Upgrade `redis/go-redis` to the new v9 driver, requires Redis v6.0+ and RESP3
+- Upgrade `datadog-go` to the new v5 driver
+- Upgrade to Go 1.20
 
 ## 1.6.2
 

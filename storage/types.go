@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 type BackupInfo struct {

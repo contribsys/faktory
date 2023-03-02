@@ -175,7 +175,7 @@ func fetch(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	qs := strings.Split(cmd, " ")[1:]

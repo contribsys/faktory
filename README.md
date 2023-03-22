@@ -1,4 +1,4 @@
-# Faktory [![Travis Build Status](https://travis-ci.org/contribsys/faktory.svg?branch=master)](https://travis-ci.org/contribsys/faktory?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory) [![Gitter](https://badges.gitter.im/contribsys/facktory.svg)](https://gitter.im/contribsys/faktory)
+# Faktory [![Travis Build Status](https://travis-ci.org/contribsys/faktory.svg?branch=master)](https://travis-ci.org/contribsys/faktory?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory)
 
 At a high level, Faktory is a work server.  It is the repository for
 background jobs within your application. Jobs have a type and a set of
@@ -30,7 +30,7 @@ Please [see the Faktory wiki](https://github.com/contribsys/faktory/wiki) for fu
 
 ## Support
 
-You can find help in the [contribsys/faktory](https://gitter.im/contribsys/faktory) chat channel. Stop by and say hi!
+Open up a Discussion or Issue.
 
 ## Author
 

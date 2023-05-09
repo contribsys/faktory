@@ -5,6 +5,11 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.7.0
+
+- Upgrade Redis driver to v9
+- Upgrade Datadog driver to v5
+
 ## 1.6.2
 
 - Fix crash when batch callback jobs retry [#408]

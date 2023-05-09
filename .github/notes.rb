@@ -19,7 +19,7 @@ Dir["packaging/output/systemd/*"].each do |fullname|
   sums[name] = output.split[0]
 end
 
-content = ERB.new(File.read("#{__dir__}/release-notes.md.erb"), nil, '-').result(binding)
+content = ERB.new(File.read("#{__dir__}/release-notes.md.erb"), trim_mode: '-').result(binding)
 File.open("/tmp/release-notes.md", "w") do |file|
   file.write(content)
 end

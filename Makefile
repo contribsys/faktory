@@ -28,7 +28,7 @@ release:
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
 		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.arm64.tbz \
 		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.amd64.tbz \
-	 	-F /tmp/release-notes.md -e -o
+		-F /tmp/release-notes.md -e -o || :
 
 prepare: ## install build prereqs
 	go install github.com/benbjohnson/ego/...@v0.4.1

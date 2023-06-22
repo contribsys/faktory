@@ -89,6 +89,22 @@ func (b *Batch) Push(job *Job) error {
 	return b.faktory.Push(job)
 }
 
+// Result is map[JID]ErrorMessage
+func (b *Batch) PushBulk(job []*Job) (map[string]string, error) {
+	if b.new {
+		return nil, ErrBatchNotOpen
+	}
+	if b.faktory == nil || b.committed {
+		return nil, ErrBatchAlreadyCommitted
+	}
+
+	for _, job := range jobs {
+		job.SetCustom("bid", b.Bid)
+	}
+	
+	return b.faktory.PushBulk(jobs)
+}
+
 // Commit any pushed jobs in the batch to Redis so they can fire callbacks.
 // A Batch object can only be committed once.
 // You must use client.BatchOpen to get a new copy if you want to commit more jobs.

@@ -338,6 +338,9 @@ func days(req *http.Request) int {
 	if err != nil {
 		return 30
 	}
+	if cnt > 180 {
+		return 180
+	}
 	return cnt
 }
 

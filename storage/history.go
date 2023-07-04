@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -33,6 +34,9 @@ func (store *redisStore) Failure(ctx context.Context) error {
 }
 
 func (store *redisStore) History(ctx context.Context, days int, fn func(day string, procCnt uint64, failCnt uint64)) error {
+	if days > 180 {
+		return errors.New("days value cannot be greater than 180")
+	}
 	ts := time.Now()
 	daystrs := make([]string, days)
 	fails := make([]*redis.IntCmd, days)

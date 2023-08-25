@@ -160,8 +160,9 @@ func ego_index(w io.Writer, req *http.Request) {
 	})
 //line index.ego:87
 	_, _ = io.WriteString(w, "\n")
-//line index.ego:87
 	// vim: set ft=html
+	//
+//line index.ego:87
 //line index.ego:88
 	_, _ = io.WriteString(w, "\n")
 //line index.ego:88

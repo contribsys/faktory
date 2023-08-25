@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.7.1
+
+- Validate and limit `days` parameter to Dashboard. [#431]
+
 ## 1.7.0
 
 - Upgrade all internal APIs to propogate Context

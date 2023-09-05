@@ -18,8 +18,8 @@ var nodes=vis.selectAll("path").data(series.stack.filter(function(d){return d.y!
 var poller;
 
 var realtimeGraph = function(updatePath) {
-  var timeInterval = parseInt(localStorage.timeInterval || '5000');
-
+  let timeInterval = parseInt(localStorage.timeInterval) || 5000;
+  if (timeInterval < 2000) { timeInterval = 2000; }
   var graphElement = document.getElementById("realtime");
 
   var graph = new Rickshaw.Graph( {

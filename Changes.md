@@ -4,7 +4,8 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## 1.7.1
 
-- Validate and limit `days` parameter to Dashboard. [#431]
+- Validate and limit `days` parameter for Dashboard [#431]
+- Validate and limit `timeInterval` refresh paramter for Dashboard
 
 ## 1.7.0
 

@@ -57,6 +57,8 @@ function updateFuzzyTimes(locale) {
 }
 
 function updatePage(url) {
+  let d = parseInt(localStorage.timeInterval) || 5000;
+  if (d < 2000) { d = 2000; }
   setInterval(function () {
     $.ajax({
       url: url,
@@ -72,7 +74,7 @@ function updatePage(url) {
 
       updateFuzzyTimes($('body').data('locale'));
     })
-  }, parseInt(localStorage.timeInterval) || 5000);
+  }, d)
 }
 
 

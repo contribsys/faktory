@@ -29,6 +29,7 @@ $pool.with do |faktory|
   puts faktory.push({ queue: :bulk, jobtype: 'Failer', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"], 'retry': 5 })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[1,2,3,"\r\n"], at: (Time.now.utc + 3600).iso8601 })
 
+  puts faktory.push({ queue: 'manual', jobtype: 'SomeJob', jid: SecureRandom.hex(8), args:["Some&String"] })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[8,2,3,"\r\n"], custom: { unique_for: 30 }, })
   puts faktory.push({ jobtype: 'SomeWorker', jid: SecureRandom.hex(8), args:[<<~EOS

@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -426,12 +427,15 @@ func displayLimitedArgs(args []interface{}, limit int) string {
 	var b strings.Builder
 	for idx := range args {
 		var s string
-		data, err := json.Marshal(args[idx])
+		var data bytes.Buffer
+		enc := json.NewEncoder(&data)
+		enc.SetEscapeHTML(false)
+		err := enc.Encode(args[idx])
 		if err != nil {
 			util.Warnf("Unable to marshal argument for display: %s", err)
 			s = fmt.Sprintf("%#v", args[idx])
 		} else {
-			s = string(data)
+			s = data.String()
 		}
 		if len(s) > limit {
 			fmt.Fprintf(&b, s[0:limit])

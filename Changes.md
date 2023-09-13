@@ -4,8 +4,8 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## 1.7.1
 
-- Don't double encode HTML entities in Web UI [#440]
-- Validate and limit `days` parameter for Dashboard [#431]
+- Don't double encode HTML entities for display in Web UI [#440]
+- Validate and limit `days` parameter for Dashboard [#431] CVE-2023-37279
 - Validate and limit `timeInterval` refresh parameter for Dashboard
 
 ## 1.7.0

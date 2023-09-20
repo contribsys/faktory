@@ -2,8 +2,9 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## 1.7.1
+## 1.8.0
 
+- Upgrade to Go 1.21 and go-redis 9.2.0.
 - Don't double encode HTML entities for display in Web UI [#440]
 - Validate and limit `days` parameter for Dashboard [#431] CVE-2023-37279
 - Validate and limit `timeInterval` refresh parameter for Dashboard

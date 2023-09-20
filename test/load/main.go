@@ -42,15 +42,6 @@ func main() {
 		threads = athreads
 	}
 
-	seed := int64(420)
-	if argc > 3 {
-		aseed, err := strconv.ParseInt(os.Args[3], 10, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-		seed = aseed
-	}
-
 	fmt.Printf("Running loadtest with %d jobs and %d threads\n", jobs, threads)
 
 	client, err := faktory.Open()
@@ -61,7 +52,6 @@ func main() {
 	defer client.Close()
 	client.Flush()
 
-	rand.Seed(int64(seed))
 	opsCount = make([]int, threads)
 	run()
 }

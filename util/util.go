@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/big"
-	mathrand "math/rand"
 	"os"
 	"runtime"
 	"time"
@@ -58,8 +57,7 @@ func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
 	if err != nil {
-		//nolint:gosec
-		mathrand.Read(bytes)
+		panic(fmt.Errorf("unable to read random bytes: %w", err))
 	}
 
 	return base64.RawURLEncoding.EncodeToString(bytes)

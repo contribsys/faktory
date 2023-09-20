@@ -3,7 +3,7 @@ package client
 import (
 	cryptorand "crypto/rand"
 	"encoding/base64"
-	mathrand "math/rand"
+	"fmt"
 	"time"
 )
 
@@ -65,8 +65,7 @@ func RandomJid() string {
 	bytes := make([]byte, 12)
 	_, err := cryptorand.Read(bytes)
 	if err != nil {
-		//nolint:gosec
-		mathrand.Read(bytes)
+		panic(fmt.Errorf("unable to read random bytes: %w", err))
 	}
 
 	return base64.RawURLEncoding.EncodeToString(bytes)
@@ -108,10 +107,10 @@ func (j *Job) SetUniqueFor(secs uint) *Job {
 // Configure the uniqueness deadline for this job, legal values
 // are:
 //
-// - "success" - the job will be considered unique until it has successfully processed
-//   or the +unique_for+ TTL has passed, this is the default value.
-// - "start" - the job will be considered unique until it starts processing. Retries
-//   may lead to multiple copies of the job running.
+//   - "success" - the job will be considered unique until it has successfully processed
+//     or the +unique_for+ TTL has passed, this is the default value.
+//   - "start" - the job will be considered unique until it starts processing. Retries
+//     may lead to multiple copies of the job running.
 func (j *Job) SetUniqueness(until UniqueUntil) *Job {
 	return j.SetCustom("unique_until", until)
 }

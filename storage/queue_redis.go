@@ -101,8 +101,7 @@ func (q *redisQueue) Add(ctx context.Context, job *client.Job) error {
 }
 
 func (q *redisQueue) Push(ctx context.Context, payload []byte) error {
-	q.store.rclient.LPush(ctx, q.name, payload)
-	return nil
+	return q.store.rclient.LPush(ctx, q.name, payload).Err()
 }
 
 // non-blocking, returns immediately if there's nothing enqueued

@@ -1,4 +1,4 @@
-# Faktory [![Travis Build Status](https://travis-ci.org/contribsys/faktory.svg?branch=master)](https://travis-ci.org/contribsys/faktory?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory)
+# Faktory [![CI](https://github.com/contribsys/faktory/actions/workflows/ci.yml/badge.svg)](https://github.com/contribsys/faktory/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory)
 
 At a high level, Faktory is a work server.  It is the repository for
 background jobs within your application. Jobs have a type and a set of

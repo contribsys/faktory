@@ -419,6 +419,22 @@ func displayJobType(j *client.Job) string {
 	if j.Type == "ActiveJob::QueueAdapters::FaktoryAdapter::JobWrapper" {
 		jobClass, ok := j.Custom["wrapped"].(string)
 		if ok {
+			if jobClass == "ActionMailer::DeliveryJob" || jobClass == "ActionMailer::MailDeliveryJob" {
+				args, ok := j.Args[0].(map[string]interface{})
+				if ok {
+					// Get the actual job arguments
+					arguments, ok := args["arguments"].([]interface{})
+					if ok {
+						if len(arguments) >= 2 {
+							mailerClass, ok1 := arguments[0].(string)
+							mailerMethod, ok2 := arguments[1].(string)
+							if ok1 && ok2 {
+								return fmt.Sprintf("%s#%s", mailerClass, mailerMethod)
+							}
+						}
+					}
+				}
+			}
 			return jobClass
 		}
 	}

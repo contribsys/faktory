@@ -102,7 +102,7 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
 	# brew install upx
 	upx -qq ./faktory
 

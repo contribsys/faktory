@@ -417,12 +417,9 @@ func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
 
 func displayJobType(j *client.Job) string {
 	if j.Type == "ActiveJob::QueueAdapters::FaktoryAdapter::JobWrapper" {
-		args, ok := j.Args[0].(map[string]interface{})
+		jobClass, ok := j.Custom["wrapped"].(string)
 		if ok {
-			jobClass, ok := args["job_class"].(string)
-			if ok {
-				return jobClass
-			}
+			return jobClass
 		}
 	}
 	return j.Type

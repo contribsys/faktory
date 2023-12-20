@@ -214,7 +214,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:111
 			_, _ = io.WriteString(w, "</a>\n        </td>\n        <td><code>")
 //line busy.ego:113
-			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Type)))
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayJobType(job))))
 //line busy.ego:113
 			_, _ = io.WriteString(w, "</code></td>\n        <td>\n          <div class=\"args\">")
 //line busy.ego:115

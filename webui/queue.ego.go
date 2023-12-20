@@ -68,7 +68,7 @@ func ego_queue(w io.Writer, req *http.Request, q storage.Queue, count, currentPa
 //line queue.ego:41
 			_, _ = io.WriteString(w, "</td>\n          <td>")
 //line queue.ego:42
-			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Type)))
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayJobType(job))))
 //line queue.ego:42
 			_, _ = io.WriteString(w, "</td>\n          <td><div class=\"args\">")
 //line queue.ego:43

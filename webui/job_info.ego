@@ -26,7 +26,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
       <tr>
         <th><%= t(req, "Job") %></th>
         <td>
-          <code><%= job.Type %></code>
+          <code><%= displayJobType(job) %></code>
         </td>
       </tr>
       <tr>

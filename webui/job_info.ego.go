@@ -33,7 +33,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
 //line job_info.ego:27
 	_, _ = io.WriteString(w, "</th>\n        <td>\n          <code>")
 //line job_info.ego:29
-	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(job.Type)))
+	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(displayJobType(job))))
 //line job_info.ego:29
 	_, _ = io.WriteString(w, "</code>\n        </td>\n      </tr>\n      <tr>\n        <th>")
 //line job_info.ego:33

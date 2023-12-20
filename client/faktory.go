@@ -2,5 +2,5 @@ package client
 
 var (
 	Name    = "Faktory"
-	Version = "1.8.0"
+	Version = "1.8.1"
 )

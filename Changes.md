@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Unwrap and display ActiveJob class names [#460, ibrahima]
+
 ## 1.8.0
 
 - Upgrade to Go 1.21 and go-redis 9.2.0.

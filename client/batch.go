@@ -37,17 +37,15 @@ type Batch struct {
 	new       bool
 }
 
-//
 // Allocate a new Batch.
 // Caller must set one or more callbacks and
 // push one or more jobs in the batch.
 //
-//   b := faktory.NewBatch(cl)
-//   b.Success = faktory.NewJob("MySuccessCallback", 12345)
-//   b.Jobs(func() error {
-//     b.Push(...)
-//   })
-//
+//	b := faktory.NewBatch(cl)
+//	b.Success = faktory.NewJob("MySuccessCallback", 12345)
+//	b.Jobs(func() error {
+//	  b.Push(...)
+//	})
 func NewBatch(cl *Client) *Batch {
 	return &Batch{
 		committed: false,
@@ -90,7 +88,7 @@ func (b *Batch) Push(job *Job) error {
 }
 
 // Result is map[JID]ErrorMessage
-func (b *Batch) PushBulk(job []*Job) (map[string]string, error) {
+func (b *Batch) PushBulk(jobs []*Job) (map[string]string, error) {
 	if b.new {
 		return nil, ErrBatchNotOpen
 	}
@@ -101,7 +99,7 @@ func (b *Batch) PushBulk(job []*Job) (map[string]string, error) {
 	for _, job := range jobs {
 		job.SetCustom("bid", b.Bid)
 	}
-	
+
 	return b.faktory.PushBulk(jobs)
 }
 

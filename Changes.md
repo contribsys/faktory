@@ -5,6 +5,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 ## HEAD
 
 - Unwrap and display ActiveJob class names [#460, ibrahima]
+- Add Go client API so batches can push jobs in bulk [#437, tylerian]
 
 ## 1.8.0
 

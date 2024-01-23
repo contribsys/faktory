@@ -11,72 +11,10 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
-	"github.com/justinas/nosurf"
+	redis "github.com/redis/go-redis/v9"
 )
-
-var (
-	utcFormat = "15:04:05 UTC"
-)
-
-func productTitle(req *http.Request) string {
-	return ctx(req).webui.Title
-}
-
-func extraCss(req *http.Request) string {
-	url := ctx(req).webui.ExtraCssUrl
-	if url != "" && strings.HasPrefix(url, "http") {
-		return fmt.Sprintf("<link href='%s' media='screen' rel='stylesheet' type='text/css'/>", url)
-	}
-	return ""
-}
-
-func root(req *http.Request) string {
-	return ctx(req).Root
-}
-
-func relative(req *http.Request, relpath string) string {
-	return fmt.Sprintf("%s%s", root(req), relpath)
-}
-
-func serverUtcTime() string {
-	return time.Now().UTC().Format(utcFormat)
-}
-
-func serverLocation(req *http.Request) string {
-	return ctx(req).Server().Options.Binding
-}
-
-func rtl(req *http.Request) bool {
-	return t(req, "TextDirection") == "rtl"
-}
-
-func textDir(req *http.Request) string {
-	dir := t(req, "TextDirection")
-	if dir == "" || dir == "TextDirection" {
-		dir = "ltr"
-	}
-	return dir
-}
-
-func t(req *http.Request, word string) string {
-	dc := req.Context().(*DefaultContext)
-	return dc.Translation(word)
-}
-
-func pageparam(req *http.Request, pageValue uint64) string {
-	return fmt.Sprintf("page=%d", pageValue)
-}
-
-func currentStatus(req *http.Request) string {
-	if ctx(req).Server().Manager().WorkingCount() == 0 {
-		return "idle"
-	}
-	return "active"
-}
 
 type Queue struct {
 	Name     string
@@ -84,39 +22,38 @@ type Queue struct {
 	IsPaused bool
 }
 
-func queues(req *http.Request) []Queue {
-	// ctx := req.Context()
-	c := req.Context()
+func (pd *PageData) Queues() ([]Queue, error) {
+	c := pd.Context()
 	queues := make([]Queue, 0)
-	s := ctx(req).Store()
+	s := c.Store()
 	pq, _ := s.PausedQueues(c)
 
-	s.EachQueue(c, func(q storage.Queue) {
+	queueCmd := map[string]*redis.IntCmd{}
+	_, err := s.Redis().Pipelined(c.Context, func(pipe redis.Pipeliner) error {
+		s.EachQueue(c.Context, func(q storage.Queue) {
+			queueCmd[q.Name()] = pipe.LLen(c, q.Name())
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for name, cmd := range queueCmd {
+		qsize := cmd.Val()
 		paused := false
 		for idx := range pq {
-			if q.Name() == pq[idx] {
+			if name == pq[idx] {
 				paused = true
 			}
 		}
-		queues = append(queues, Queue{q.Name(), q.Size(c), paused})
-	})
+		queues = append(queues, Queue{name, uint64(qsize), paused})
+	}
 
 	sort.Slice(queues, func(i, j int) bool {
 		return queues[i].Name < queues[j].Name
 	})
-	return queues
-}
-
-func ctx(req *http.Request) *DefaultContext {
-	return req.Context().(*DefaultContext)
-}
-
-func csrfTag(req *http.Request) string {
-	if ctx(req).UseCsrf() {
-		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
-	} else {
-		return ""
-	}
+	return queues, nil
 }
 
 func uintWithDelimiter(val uint64) string {
@@ -139,30 +76,32 @@ func uintWithDelimiter(val uint64) string {
 	}
 }
 
-func queueJobs(r *http.Request, q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	c := r.Context()
-	err := q.Page(c, int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
+func startsWith(a, b string) bool {
+	return strings.HasPrefix(a, b)
+}
+
+type JobRecord struct {
+	Key string
+	Job *client.Job
+}
+
+func (pd *PageData) QueueJobs() ([]JobRecord, error) {
+	c := pd.Context()
+	q := pd.Element.(storage.Queue)
+	jobs := make([]JobRecord, 0)
+	err := q.Page(c, int64((pd.CurrentPage-1)*pd.Count), int64(pd.Count), func(idx int, data []byte) error {
 		var job client.Job
 		err := json.Unmarshal(data, &job)
 		if err != nil {
-			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
 		}
-		fn(idx, data, &job)
+		jobs = append(jobs, JobRecord{string(data), &job})
 		return nil
 	})
 	if err != nil {
-		util.Warnf("Error iterating queue: %s", err.Error())
+		return nil, err
 	}
-}
-
-func enqueuedSize(req *http.Request) uint64 {
-	c := req.Context()
-	var total uint64
-	ctx(req).Store().EachQueue(c, func(q storage.Queue) {
-		total += q.Size(c)
-	})
-	return total
+	return jobs, nil
 }
 
 func relativeTime(moment string) string {
@@ -173,17 +112,12 @@ func relativeTime(moment string) string {
 	return Timeago(tm)
 }
 
-func unfiltered() bool {
-	return true
-}
+func (pd *PageData) SetJobs() ([]JobRecord, error) {
+	c := pd.Context()
+	set := pd.Element.(storage.SortedSet)
+	jobs := make([]JobRecord, 0)
 
-func filtering(set string) string {
-	return ""
-}
-
-func setJobs(req *http.Request, set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
-	c := req.Context()
-	_, err := set.Page(c, int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
+	_, err := set.Page(c, int((pd.CurrentPage-1)*pd.Count), int(pd.Count), func(idx int, entry storage.SortedEntry) error {
 		job, err := entry.Job()
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(entry.Value()))
@@ -193,47 +127,17 @@ func setJobs(req *http.Request, set storage.SortedSet, count, currentPage uint64
 		if err != nil {
 			return err
 		}
-		fn(idx, key, job)
+		jobs = append(jobs, JobRecord{string(key), job})
 		return nil
 	})
 	if err != nil {
-		util.Error("Error iterating sorted set", err)
+		return nil, err
 	}
-}
-
-func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
-	c := req.Context()
-	err := ctx(req).Store().Working().Each(c, func(idx int, entry storage.SortedEntry) error {
-		var res manager.Reservation
-		err := json.Unmarshal(entry.Value(), &res)
-		if err != nil {
-			util.Error("Cannot unmarshal reservation", err)
-		} else {
-			fn(&res)
-		}
-		return err
-	})
-	if err != nil {
-		util.Error("Error iterating reservations", err)
-	}
-}
-
-func busyWorkers(req *http.Request, fn func(proc *server.ClientData)) {
-	hb := ctx(req).Server().Heartbeats()
-	wids := make([]string, len(hb))
-	idx := 0
-	for wid := range hb {
-		wids[idx] = wid
-		idx++
-	}
-	sort.Strings(wids)
-	for idx := range wids {
-		fn(hb[wids[idx]])
-	}
+	return jobs, nil
 }
 
 func actOn(req *http.Request, set storage.SortedSet, action string, keys []string) error {
-	c := req.Context()
+	c := req.Context().(*DefaultContext)
 	switch action {
 	case "delete":
 		if len(keys) == 1 && keys[0] == "all" {
@@ -250,10 +154,10 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		}
 	case "add_to_queue", "retry":
 		if len(keys) == 1 && keys[0] == "all" {
-			return ctx(req).Store().EnqueueAll(c, set)
+			return c.Store().EnqueueAll(c, set)
 		} else {
 			for idx := range keys {
-				err := ctx(req).Store().EnqueueFrom(c, set, []byte(keys[idx]))
+				err := c.Store().EnqueueFrom(c, set, []byte(keys[idx]))
 				if err != nil {
 					return err
 				}
@@ -262,7 +166,7 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 		}
 	case "kill":
 		if len(keys) == 1 && keys[0] == "all" {
-			return ctx(req).Store().EnqueueAll(c, set)
+			return c.Store().EnqueueAll(c, set)
 		} else {
 			// TODO Make this 180 day dead job expiry dynamic per-job or
 			// a global variable in TOML? PRs welcome.
@@ -273,7 +177,7 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 					return err
 				}
 				if entry != nil {
-					err = set.MoveTo(c, ctx(req).Store().Dead(), entry, expiry)
+					err = set.MoveTo(c, c.Store().Dead(), entry, expiry)
 					if err != nil {
 						return err
 					}
@@ -286,10 +190,6 @@ func actOn(req *http.Request, set storage.SortedSet, action string, keys []strin
 	}
 }
 
-func uptimeInDays(req *http.Request) string {
-	return fmt.Sprintf("%.0f", time.Since(ctx(req).Server().Stats.StartedAt).Seconds()/float64(86400))
-}
-
 func displayRss(rssKb int64) string {
 	if rssKb < 100000 {
 		return strconv.FormatInt(rssKb, 10) + " KB"
@@ -300,7 +200,7 @@ func displayRss(rssKb int64) string {
 	}
 }
 
-func category_for_rtt(lat float64) string {
+func categoryForRTT(lat float64) string {
 	if lat == 0 {
 		return "danger"
 	} else if lat < 1000 {
@@ -312,108 +212,20 @@ func category_for_rtt(lat float64) string {
 	}
 }
 
-func redis_info(req *http.Request) (string, float64) {
-	c := req.Context()
-	store := ctx(req).Store().(storage.Redis)
-	redis := store.Redis()
-	a := time.Now().UnixNano()
-	res := redis.Info(c)
-	b := time.Now().UnixNano()
-	val, err := res.Result()
-	if err != nil {
-		return fmt.Sprintf("%v", err), 0
-	}
-	return val, (float64(b-a) / 1000)
-}
+// func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
+// 	c := req.Context().(*DefaultContext)
+// 	names := make(sort.StringSlice, len(locales))
+// 	i := 0
+// 	for name := range locales {
+// 		names[i] = name
+// 		i++
+// 	}
+// 	names.Sort()
 
-func days(req *http.Request) int {
-	days := req.URL.Query()["days"]
-	if len(days) == 0 {
-		return 30
-	}
-	daystr := days[0]
-	if daystr == "" {
-		return 30
-	}
-	cnt, err := strconv.Atoi(daystr)
-	if err != nil {
-		return 30
-	}
-	if cnt > 180 {
-		return 180
-	}
-	return cnt
-}
-
-func daysMatches(req *http.Request, value string, defalt bool) string {
-	days := req.URL.Query()["days"]
-	daysValue := ""
-	if len(days) > 0 {
-		daysValue = days[0]
-	}
-	if daysValue == value {
-		return "active"
-	}
-	if daysValue == "" && defalt {
-		return "active"
-	}
-	return ""
-}
-
-func processedHistory(req *http.Request) string {
-	c := req.Context()
-	cnt := days(req)
-	procd := map[string]uint64{}
-	// faild := map[string]int64{}
-
-	err := ctx(req).Store().History(c, cnt, func(daystr string, p, f uint64) {
-		procd[daystr] = p
-		// faild[daystr] = f
-	})
-	if err != nil {
-		return err.Error()
-	}
-	str, err := json.Marshal(procd)
-	if err != nil {
-		return err.Error()
-	}
-	return string(str)
-}
-
-func failedHistory(req *http.Request) string {
-	c := req.Context()
-	cnt := days(req)
-	// procd := map[string]int64{}
-	faild := map[string]uint64{}
-
-	err := ctx(req).Store().History(c, cnt, func(daystr string, p, f uint64) {
-		// procd[daystr] = p
-		faild[daystr] = f
-	})
-	if err != nil {
-		return err.Error()
-	}
-	str, err := json.Marshal(faild)
-	if err != nil {
-		return err.Error()
-	}
-	return string(str)
-}
-
-func sortedLocaleNames(req *http.Request, fn func(string, bool)) {
-	c := ctx(req)
-	names := make(sort.StringSlice, len(locales))
-	i := 0
-	for name := range locales {
-		names[i] = name
-		i++
-	}
-	names.Sort()
-
-	for idx := range names {
-		fn(names[idx], names[idx] == c.locale)
-	}
-}
+// 	for idx := range names {
+// 		fn(names[idx], names[idx] == c.locale)
+// 	}
+// }
 
 func displayJobType(j *client.Job) string {
 	if j.Type == "ActiveJob::QueueAdapters::FaktoryAdapter::JobWrapper" {

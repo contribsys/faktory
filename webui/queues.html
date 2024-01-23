@@ -1,0 +1,42 @@
+{{ define "content" }}
+<h3> {{ .T "Queues" }} </h3>
+
+<div class="table-responsive">
+  <table class="queues table table-hover table-bordered table-striped table-light">
+    <thead>
+      <th> {{ .T "Queue" }} </th>
+      <th> {{ .T "Size" }} </th>
+      <th> {{ .T "Actions" }} </th>
+    </thead>
+    {{ range $queue := .Queues }}
+    <tr>
+      <td>
+        <a href="{{ $.Root }}/queues/{{ $queue.Name }}">
+          {{ $queue.Name }}
+        </a>
+      </td>
+      <td>
+        {{ uintWithDelimiter $queue.Size }}
+      </td>
+      <td class="delete-confirm">
+        <form action="{{ $.Root }}/queues/{{ $queue.Name }}" method="post">
+          {{ $.CsrfTag }}
+          <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"
+            data-confirm='{{ $.T "AreYouSure" }}'>{{ $.T "ClearQueue" }}</button>
+          {{ if $queue.IsPaused }}
+          <button class="btn btn-primary btn-sm" type="submit" name="action" value="resume">
+            {{ $.T "Resume" }}
+          </button>
+          {{ else }}
+          <button class="btn btn-primary btn-sm" type="submit" name="action" value="pause">
+            {{ $.T "Pause" }}
+          </button>
+          {{ end }}
+        </form>
+      </td>
+    </tr>
+    {{ end }}
+  </table>
+</div>
+
+{{ end }}

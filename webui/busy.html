@@ -1,0 +1,102 @@
+{{ define "content" }}
+
+<div class="row header mt-3">
+  <div class="col-5">
+    <h3>{{ .T "Processes" }}</h3>
+  </div>
+  <div class="col-7">
+    <form method="POST" action="{{ .Root }}/busy" class="warning-messages d-flex justify-content-end">
+      {{ .CsrfTag }}
+      <input type="hidden" name="wid" value="all" />
+      <button class="btn btn-primary" type="submit" name="signal" value="quiet" data-confirm='{{ .T "AreYouSure" }}'>{{
+        .T "QuietAll" }}</button>
+      <button class="btn btn-danger" type="submit" name="signal" value="terminate"
+        data-confirm='{{ .T "AreYouSure" }}'>{{ .T "StopAll" }}</button>
+    </form>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="processes table table-hover table-bordered table-striped table-light">
+    <thead>
+      <th>{{ .T "ID" }}</th>
+      <th>{{ .T "Name" }}</th>
+      <th>{{ .T "Started" }}</th>
+      <th>{{ .T "Connections" }}</th>
+      <th>{{ .T "RSS" }}</th>
+      <th>{{ .T "Busy" }}</th>
+      <th>&nbsp;</th>
+    </thead>
+    {{ range $worker := .BusyWorkers }}
+    <tr>
+      <td>
+        <code>{{ $worker.Wid }}</code>
+      </td>
+      <td>
+        <code>{{ $worker.Hostname }}:{{ $worker.Pid }}</code>
+        {{ range $label := $worker.Labels }}
+        <span class="badge bg-primary">{{ $label }}</span>
+        {{ end }}
+        {{ if $worker.IsQuiet }} <span class="badge bg-danger">quiet</span> {{ end }}
+      </td>
+      <td>{{ relativeTime $worker.StartedAt }}</td>
+      <td>{{ $worker.ConnectionCount }}</td>
+      <td>{{ displayRss $worker.RssKb }}</td>
+      <td>{{ $worker.BusyCount }}</td>
+      <td>
+        <div class="btn-group d-flex justify-content-end">
+          <form method="POST">
+            {{ .CsrfTag }}
+            <input type="hidden" name="wid" value="{{ $worker.Wid }}" />
+            <div class="text-end">
+              {{ if not $worker.IsQuiet }}
+              <button class="btn btn-primary btn-sm" type="submit" name="signal" value="quiet">{{ .T "Quiet" }}</button>
+              {{ end }}
+              <button class="btn btn-danger btn-sm" type="submit" name="signal" value="terminate">{{ .T "Stop"
+                }}</button>
+            </div>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {{ end }}
+  </table>
+</div>
+
+<div class="row header mt-3">
+  <div class="col-12">
+    <h3>{{ .T "Jobs" }}</h3>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="workers table table-hover table-bordered table-striped table-light">
+    <thead>
+      <th>{{ .T "Process" }}</th>
+      <th>{{ .T "JID" }}</th>
+      <th>{{ .T "Queue" }}</th>
+      <th>{{ .T "Job" }}</th>
+      <th>{{ .T "Arguments" }}</th>
+      <th>{{ .T "Started" }}</th>
+    </thead>
+    {{ range $res := .BusyReservations }}
+    <tr>
+      <td>
+        <code>{{ $res.Wid }}</code>
+      </td>
+      <td>
+        <code>{{ $res.Job.Jid }}</code>
+      </td>
+      <td>
+        <a href="{{ .Root }}/queues/{{ $res.Job.Queue }}">{{ $res.Job.Queue }}</a>
+      </td>
+      <td><code>{{ displayJobType $res.Job }}</code></td>
+      <td>
+        <div class="args">{{ displayArgs $res.Job.Args }}</div>
+      </td>
+      <td>{{ relativeTime $res.Since }}</td>
+    </tr>
+    {{ end }}
+  </table>
+</div>
+{{ end }}

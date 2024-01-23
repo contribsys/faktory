@@ -1,0 +1,67 @@
+{{ define "content" }}
+
+<header class="row">
+  <div class="col-5">
+    <h3>
+      {{ .T "ScheduledJobs" }}
+    </h3>
+  </div>
+  {{ template "paging" . }}
+</header>
+
+{{ if .TotalSize }}
+<form action="{{ .Root }}/scheduled" method="post">
+  {{ .CsrfTag }}
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered table-light">
+      <thead>
+        <tr>
+          <th class="checkbox-column">
+            <input type="checkbox" class="check_all" />
+          </th>
+          <th> {{ .T "When" }} </th>
+          <th> {{ .T "Queue" }} </th>
+          <th> {{ .T "Job" }} </th>
+          <th> {{ .T "Arguments" }} </th>
+        </tr>
+      </thead>
+      {{ range $rec := .SetJobs }}
+      <tr>
+        <td>
+          <input type="checkbox" name="key" value="{{ $rec.Key }}" />
+        </td>
+        <td>
+          <a href="{{ $.Root }}/scheduled/{{ $rec.Key }}">
+            {{ relativeTime $rec.Job.At }}
+          </a>
+        </td>
+        <td>
+          <a href="{{ $.Root }}/queues/{{ $rec.Job.Queue }}">
+            {{ $rec.Job.Queue }}
+          </a>
+        </td>
+        <td><code>{{ displayJobType $rec.Job }}</code></td>
+        <td>
+          <div class="args">
+            {{ displayArgs $rec.Job.Args }}
+          </div>
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </div>
+  <div class="pull-right">
+    <button class="btn btn-primary" type="submit" name="action" value="add_to_queue">
+      {{ .T "AddToQueue" }}
+    </button>
+    <button class="btn btn-danger" type="submit" name="action" value="delete">
+      {{ .T "Delete" }}
+    </button>
+  </div>
+</form>
+{{ else }}
+<div class="alert alert-success">
+  {{ .T "NoScheduledFound" }}
+</div>
+{{ end }}
+{{ end }}

@@ -1,0 +1,39 @@
+{{ define "nav" }}
+<div class="fixed-top bg-light navbar-default">
+  <div class="container-fluid">
+    <div class="navbar navbar-light navbar-fixed-top navbar-expand-md py-0">
+      <a class="navbar-brand flex-grow-1" href='{{ .Root }}/'>
+        <span class="status">
+          {{ $status := .CurrentStatus }}
+          <i class='status-sprite status-{{ $status }}'
+            style='background-image: url("{{ .Root }}/static/img/status.png");'>
+          </i>
+        </span>
+        {{ .Name }}
+      </a>
+
+      <span class="status-text">
+        <i class="status-icon status-{{ $status }}"></i>
+        {{ .T $status }}
+      </span>
+
+      <button class=" navbar-toggler ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
+        aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-center" id="navbar-menu">
+        <ul class="navbar-nav" data-navbar="static">
+          {{ range $tab := .Tabs }}
+          <li class='nav-item{{ $tab.Active $.Request }}'>
+            <a class="nav-link p-3" href='{{ $.Root }}{{ $tab.Path }}'>
+              {{ $.T $tab.Name }}
+            </a>
+          </li>
+          {{ end }}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}

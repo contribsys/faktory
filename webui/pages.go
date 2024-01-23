@@ -13,7 +13,8 @@ import (
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := ctx(r).Server().CurrentState()
+	c := r.Context().(*DefaultContext)
+	hash, err := c.Server().CurrentState()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -30,15 +31,17 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if ctx(r).Server() == nil {
+	c := r.Context().(*DefaultContext)
+	if c.Server() == nil {
 		http.Error(w, "Server not booted", http.StatusInternalServerError)
 		return
 	}
-	ego_index(w, r)
+
+	Render("index", w, &PageData{r, 0, 0, 0, nil, ""})
 }
 
 func queuesHandler(w http.ResponseWriter, r *http.Request) {
-	ego_listQueues(w, r)
+	Render("queues", w, &PageData{r, 0, 0, 0, nil, ""})
 }
 
 var (
@@ -46,14 +49,14 @@ var (
 )
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
+	c := r.Context().(*DefaultContext)
 	name := LAST_ELEMENT.FindStringSubmatch(r.URL.Path)
 	if name == nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
-	c := r.Context()
 	queueName := name[1]
-	q, ok := ctx(r).Store().ExistingQueue(c, queueName)
+	q, ok := c.Store().ExistingQueue(c, queueName)
 	if !ok {
 		Redirect(w, r, "/queues", http.StatusFound)
 		return
@@ -93,13 +96,13 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else if action == "pause" {
-				err := ctx(r).webui.Server.Manager().PauseQueue(c, q.Name())
+				err := c.webui.Server.Manager().PauseQueue(c, q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			} else if action == "resume" {
-				err := ctx(r).webui.Server.Manager().ResumeQueue(c, q.Name())
+				err := c.webui.Server.Manager().ResumeQueue(c, q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -124,12 +127,14 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		currentPage = uint64(val)
 	}
 	count := uint64(25)
+	total := q.Size(c)
 
-	ego_queue(w, r, q, count, currentPage)
+	Render("queue", w, &PageData{r, currentPage, count, total, q, ""})
 }
 
 func retriesHandler(w http.ResponseWriter, r *http.Request) {
-	set := ctx(r).Store().Retries()
+	c := r.Context().(*DefaultContext)
+	set := c.Store().Retries()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
@@ -154,8 +159,9 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 		currentPage = uint64(val)
 	}
 	count := uint64(25)
+	total := set.Size(c)
 
-	ego_listRetries(w, r, set, count, currentPage)
+	Render("retries", w, &PageData{r, currentPage, count, total, set, ""})
 }
 
 func retryHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,8 +176,8 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := r.Context()
-	set := ctx(r).Store().Retries()
+	c := r.Context().(*DefaultContext)
+	set := c.Store().Retries()
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := []string{key}
@@ -206,11 +212,12 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Job %s is not a retry", job.Jid), http.StatusInternalServerError)
 		return
 	}
-	ego_retry(w, r, key, job)
+	Render("retry", w, &PageData{r, 0, 0, 0, job, key})
 }
 
 func scheduledHandler(w http.ResponseWriter, r *http.Request) {
-	set := ctx(r).Store().Scheduled()
+	c := r.Context().(*DefaultContext)
+	set := c.Store().Scheduled()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
@@ -235,8 +242,9 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 		currentPage = uint64(val)
 	}
 	count := uint64(25)
+	total := set.Size(c)
 
-	ego_listScheduled(w, r, set, count, currentPage)
+	Render("scheduled", w, &PageData{r, currentPage, count, total, set, ""})
 }
 
 func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +259,8 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := r.Context()
-	set := ctx(r).Store().Scheduled()
+	c := r.Context().(*DefaultContext)
+	set := c.Store().Scheduled()
 	if r.Method == "POST" {
 		action := r.FormValue("action")
 		keys := []string{key}
@@ -283,11 +291,12 @@ func scheduledJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ego_scheduled_job(w, r, key, job)
+	Render("scheduled_job", w, &PageData{r, 0, 0, 0, job, key})
 }
 
 func morgueHandler(w http.ResponseWriter, r *http.Request) {
-	set := ctx(r).Store().Dead()
+	c := r.Context().(*DefaultContext)
+	set := c.Store().Dead()
 
 	if r.Method == "POST" {
 		action := r.FormValue("action")
@@ -312,8 +321,9 @@ func morgueHandler(w http.ResponseWriter, r *http.Request) {
 		currentPage = uint64(val)
 	}
 	count := uint64(25)
+	total := set.Size(c)
 
-	ego_listDead(w, r, set, count, currentPage)
+	Render("morgue", w, &PageData{r, currentPage, count, total, set, ""})
 }
 
 func deadHandler(w http.ResponseWriter, r *http.Request) {
@@ -327,8 +337,8 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL input", http.StatusBadRequest)
 		return
 	}
-	c := r.Context()
-	data, err := ctx(r).Store().Dead().Get(c, []byte(key))
+	c := r.Context().(*DefaultContext)
+	data, err := c.Store().Dead().Get(c, []byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -346,7 +356,7 @@ func deadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ego_dead(w, r, key, job)
+	Render("dead", w, &PageData{r, 0, 0, 0, job, key})
 }
 
 func busyHandler(w http.ResponseWriter, r *http.Request) {
@@ -364,7 +374,8 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			for _, client := range ctx(r).Server().Heartbeats() {
+			c := r.Context().(*DefaultContext)
+			for _, client := range c.Server().Heartbeats() {
 				if wid == "all" || wid == client.Wid {
 					client.Signal(signal)
 				}
@@ -373,13 +384,14 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 		Redirect(w, r, "/busy", http.StatusFound)
 		return
 	}
-	ego_busy(w, r)
+	Render("busy", w, &PageData{r, 0, 0, 0, nil, ""})
 }
 
 func debugHandler(w http.ResponseWriter, r *http.Request) {
-	ego_debug(w, r)
+	Render("debug", w, &PageData{r, 0, 0, 0, nil, ""})
 }
 
 func Redirect(w http.ResponseWriter, r *http.Request, path string, code int) {
-	http.Redirect(w, r, relative(r, path), code)
+	c := r.Context().(*DefaultContext)
+	http.Redirect(w, r, fmt.Sprintf("%s%s", c.Root, path), code)
 }

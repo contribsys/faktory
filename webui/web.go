@@ -6,8 +6,9 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io"
+	"html/template"
 	"net/http"
+	"sync"
 	"sync/atomic"
 
 	"strings"
@@ -19,11 +20,17 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-//go:generate ego .
-
 type Tab struct {
 	Name string
 	Path string
+}
+
+func (t Tab) Active(r *http.Request) string {
+	if (r.RequestURI == "/" && t.Path == "/") ||
+		strings.HasPrefix(r.RequestURI, t.Path) {
+		return " active"
+	}
+	return ""
 }
 
 var (
@@ -42,10 +49,18 @@ var (
 	//go:embed static/locales/*
 	localeFiles embed.FS
 
+	//go:embed *.html
+	templateFiles embed.FS
+
 	staticHandler = cache(http.FileServer(http.FS(staticFiles)))
 
-	LicenseStatus = func(w io.Writer, req *http.Request) string {
+	LicenseStatus = func(req *http.Request) string {
 		return ""
+	}
+
+	KnownTemplates = []string{
+		"index", "queues", "queue", "retries", "retry", "scheduled",
+		"scheduled_job", "morgue", "dead", "busy", "debug",
 	}
 )
 
@@ -90,7 +105,9 @@ type WebUI struct {
 	Title       string
 	ExtraCssUrl string
 
-	proxy *http.ServeMux
+	proxy         *http.ServeMux
+	templateCache map[string]*template.Template
+	templateLock  sync.Mutex
 }
 
 type Options struct {
@@ -109,9 +126,10 @@ func defaultOptions() Options {
 
 func newWeb(s *server.Server, opts Options) *WebUI {
 	ui := &WebUI{
-		Options: opts,
-		Server:  s,
-		Title:   client.Name,
+		Options:       opts,
+		Server:        s,
+		Title:         client.Name,
+		templateCache: map[string]*template.Template{},
 	}
 
 	app := http.NewServeMux()
@@ -256,10 +274,53 @@ func (l *Lifecycle) Shutdown(s *server.Server) error {
 	return nil
 }
 
+func (ui *WebUI) Template(name string) (*template.Template, error) {
+	ui.templateLock.Lock()
+	result := ui.templateCache[name]
+	ui.templateLock.Unlock()
+	if result != nil {
+		return result, nil
+	}
+
+	fmt.Printf("Parsing template %s\n", name)
+	tmp := template.New(name)
+	tmp.Funcs(template.FuncMap{
+		"uintWithDelimiter": uintWithDelimiter,
+		"relativeTime":      relativeTime,
+		"displayRss":        displayRss,
+		"categoryForRTT":    categoryForRTT,
+		"displayJobType":    displayJobType,
+		"displayArgs":       displayArgs,
+		"displayFullArgs":   displayFullArgs,
+		"startsWith":        startsWith,
+	})
+	result, err := tmp.ParseFS(templateFiles,
+		"footer.html", // partials
+		"job_info.html",
+		"layout.html",
+		"scheduled_job.html",
+		"paging.html",
+		"summary.html",
+		"nav.html",
+		name+".html")
+	if err != nil {
+		return nil, err
+	}
+	ui.templateLock.Lock()
+	ui.templateCache[name] = result
+	ui.templateLock.Unlock()
+	return result, nil
+}
+
 func (ui *WebUI) Run() (func(), error) {
 	if ui.Options.Binding == ":0" {
 		// disable webui
 		return nil, nil
+	}
+
+	_, err := ui.Template("index")
+	if err != nil {
+		return nil, err
 	}
 
 	s := &http.Server{
@@ -278,10 +339,6 @@ func (ui *WebUI) Run() (func(), error) {
 	}()
 	util.Infof("Web server now listening at %s", ui.Options.Binding)
 	return func() { _ = s.Shutdown(context.Background()) }, nil
-}
-
-func Layout(w io.Writer, req *http.Request, yield func()) {
-	ego_layout(w, req, yield)
 }
 
 /////////////////////////////////////

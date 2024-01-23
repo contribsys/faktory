@@ -1,0 +1,83 @@
+{{ define "content" }}
+{{ .LicenseStatus }}
+<script type="text/javascript" src="{{ .Root }}/static/dashboard.js"></script>
+<div class="dashboard clearfix">
+  <h3>
+    {{ .T "Dashboard" }}
+    <span class="beacon">
+      <span class="ring"></span>
+      <span class="dot"></span>
+    </span>
+  </h3>
+  <div class="interval-slider ltr">
+    <span class="interval-slider-label">
+      {{ .T "PollingInterval" }}:
+    </span>
+    <span class="current-interval">5 sec</span>
+    <br />
+    <input type="range" min="2000" max="20000" step="1000" value="5000" />
+  </div>
+</div>
+
+<div class="row chart">
+  <div id="realtime" data-processed-label='{{ .T "Processed" }}' data-failed-label='{{ .T " Failed" }}'></div>
+  <div id="realtime-legend"></div>
+</div>
+
+<div class="row chart">
+  <h6>
+    <span class="pe-3"> {{ .T "History" }} </span>
+    {{ $days := .Parameter "days" }}
+    <a href="{{ .Root }}/?days=7" class='history-graph {{ if eq $days "7" }}active{{end}}'>{{ .T "OneWeek" }}</a>
+    <a href="{{ .Root }}/" class='history-graph {{ if eq $days "30" }}active{{end}}{{if eq $days ""}}active{{ end }}'>{{
+      .T "OneMonth" }}</a>
+    <a href="{{ .Root }}/?days=90" class='history-graph {{ if eq $days "90" }}active{{end}}'>{{ .T "ThreeMonths" }}</a>
+    <a href="{{ .Root }}/?days=180" class=' history-graph {{ if eq $days "180" }}active{{end}}'>{{ .T "SixMonths" }}</a>
+  </h6>
+
+  {{ $result := .History }}
+  <div id="history" data-processed-label=' {{ .T "Processed" }}' data-failed-label='{{ .T "Failed" }}'
+    data-processed="{{ $result.Processed }}" data-failed="{{ $result.Failed }}" data-update-url="{{ .Root }}/stats">
+  </div>
+  <div id="history-legend"></div>
+</div>
+
+<br />
+<h6>Faktory</h6>
+<div class="row">
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
+      <h3 class="faktory_version"> {{ .Version }} </h3>
+      <p> {{ .T "Version" }} </p>
+    </div>
+  </div>
+
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
+      <h3 class="uptime_in_days"> {{ .Uptime }} </h3>
+      <p> {{ .T "Uptime" }} </p>
+    </div>
+  </div>
+
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
+      <h3 class="connections"> {{ .Connections }} </h3>
+      <p> {{ .T "Connections" }} </p>
+    </div>
+  </div>
+
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
+      <h3 class="used_memory_human"> {{ .MemoryUsage }} MB </h3>
+      <p> {{ .T "MemoryUsage" }} </p>
+    </div>
+  </div>
+
+  <div class="stat col-12 col-md-2">
+    <div class="border pt-0 pt-md-2 mb-3">
+      <h3 class="commands"> {{ .CommandsExecuted }} </h3>
+      <p> {{ .T "CommandsExecuted" }} </p>
+    </div>
+  </div>
+</div>
+{{ end }}

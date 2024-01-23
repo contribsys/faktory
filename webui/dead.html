@@ -1,0 +1,51 @@
+{{ define "content" }}
+
+{{ template "job_info" . }}
+
+{{ if .Job.Failure }}
+<h3> {{ .T "Error" }} </h3>
+<div class="table-responsive">
+  <table class="error table table-bordered table-striped table-light">
+    <tbody>
+      <tr>
+        <th> {{ .T "ErrorClass" }} </th>
+        <td>
+          <code>{{ .Job.Failure.ErrorType }}</code>
+        </td>
+      </tr>
+      <tr>
+        <th> {{ .T "ErrorMessage" }} </th>
+        <td>
+          {{ .Job.Failure.ErrorMessage }}
+        </td>
+      </tr>
+      {{ if .Job.Failure.Backtrace }}
+      <tr>
+        <th> {{ .T "ErrorBacktrace" }} </th>
+        <td>
+          <code>
+            {{ range $line := .Job.Failure.Backtrace }}
+              {{ $line }}<br/>
+            {{ end }}
+            </code>
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+
+<form class="form-horizontal" action="{{ .Root }}/morgue/{{ .Key }}" method="post">
+  {{ .CsrfTag }}
+  <div class="pull-left">
+    <a class="btn btn-default" href="{{ .Root }}/morgue">{{ .T "GoBack" }}</a>
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry">
+      {{ .T "RetryNow" }}
+    </button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete">
+      {{ .T "Delete" }}
+    </button>
+  </div>
+</form>
+{{ end }}
+{{ end }}

@@ -1,0 +1,98 @@
+{{ define "content" }}
+
+<header class="row">
+  <div class="col-5">
+    <h3>
+      {{ .T "Retries" }}
+    </h3>
+  </div>
+  {{ template "paging" . }}
+</header>
+
+{{ if .TotalSize }}
+<form action="{{ .Root }}/retries" method="post">
+  {{ .CsrfTag }}
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered table-light">
+      <thead>
+        <tr>
+          <th class="table-checkbox checkbox-column">
+            <label>
+              <input type="checkbox" class="check_all" />
+            </label>
+          </th>
+          <th>
+            {{ .T "NextRetry" }}
+          </th>
+          <th>
+            {{ .T "RetryCount" }}
+          </th>
+          <th>
+            {{ .T "Queue" }}
+          </th>
+          <th>
+            {{ .T "Job" }}
+          </th>
+          <th>
+            {{ .T "Arguments" }}
+          </th>
+          <th>
+            {{ .T "Error" }}
+          </th>
+        </tr>
+      </thead>
+      {{ range $rec := .SetJobs }}
+      <tr>
+        <td class="table-checkbox">
+          <label>
+            <input type='checkbox' name='key' value='{{ $rec.Key }}' />
+          </label>
+        </td>
+        <td>
+          <a href="{{ $.Root }}/retries/{{ $rec.Key }}">{{ relativeTime $rec.Job.Failure.NextAt }} </a>
+        </td>
+        <td> {{ $rec.Job.Failure.RetryCount }} </td>
+        <td>
+          <a href="{{ $.Root }}/queues/{{ $rec.Job.Queue }}"> {{ $rec.Job.Queue }} </a>
+        </td>
+        <td><code>{{ displayJobType $rec.Job }}</code></td>
+        <td>
+          <div class="args">{{ displayArgs $rec.Job.Args }}</div>
+        </td>
+        <td>
+          <div> {{ $rec.Job.Failure.ErrorType }}: {{ $rec.Job.Failure.ErrorMessage }} </div>
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </div>
+  <div class="pull-left">
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry">
+      {{ .T "RetryNow" }}
+    </button>
+    <button class="btn btn-warn btn-sm" type="submit" name="action" value="delete">
+      {{ .T "Delete" }}
+    </button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="kill">
+      {{ .T "Kill" }}
+    </button>
+  </div>
+</form>
+
+<form action="{{ .Root }}/retries" method="post">
+  {{ .CsrfTag }}
+  <input type="hidden" name="key" value="all" />
+  <div class="pull-right">
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"
+      data-confirm='{{ .T "AreYouSure" }}'>{{ .T "RetryAll" }}</button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"
+      data-confirm='{{ .T "AreYouSure" }}'>{{ .T "DeleteAll" }}</button>
+  </div>
+</form>
+
+{{ else }}
+<div class="alert alert-success">
+  {{ .T "NoRetriesFound" }}
+</div>
+{{ end }}
+{{ end }}

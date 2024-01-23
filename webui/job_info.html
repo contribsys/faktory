@@ -1,0 +1,112 @@
+{{ define "job_info" }}
+
+<header>
+  <h3>{{ .T "Job" }}</h3>
+</header>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-striped table-light">
+    <tbody>
+      <tr>
+        <th>JID</th>
+        <td>
+          <code>{{ .Job.Jid }}</code>
+        </td>
+      </tr>
+      <tr>
+        <th>{{ .T "Job" }}</th>
+        <td>
+          <code>{{ displayJobType .Job }}</code>
+        </td>
+      </tr>
+      <tr>
+        <th>{{ .T "Arguments" }}</th>
+        <td>
+          <code class="code-wrap">
+            <!-- We don't want to truncate any job arguments when viewing a single job's status page -->
+            <div class="args-extended">{{ displayFullArgs .Job.Args }}</div>
+          </code>
+        </td>
+      </tr>
+      <tr>
+        <th>{{ .T "CreatedAt" }}</th>
+        <td>
+          {{ relativeTime .Job.CreatedAt }}
+        </td>
+      </tr>
+
+      {{ if .Job.At }}
+      <tr>
+        <th> {{ .T "Scheduled" }} </th>
+        <td>
+          {{ relativeTime .Job.At }}
+        </td>
+      </tr>
+      {{ end }}
+
+      <tr>
+        <th> {{ .T "Queue" }} </th>
+        <td>
+          <a href="{{ .Root }}/queues/{{ .Job.Queue }}">
+            {{ .Job.Queue }}
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <th> {{ .T "Enqueued" }} </th>
+        <td>
+          {{ if .Job.EnqueuedAt }}
+          {{ relativeTime .Job.EnqueuedAt }}
+          {{ else }}
+          {{ .T "NotYetEnqueued" }}
+          {{ end }}
+        </td>
+      </tr>
+
+      {{ if .Job.Custom }}
+      <tr>
+        <th> {{ .T "Custom" }} </th>
+        <td>
+          {{ range $key, $val := .Job.Custom }}
+          <code>{{ $key }}: {{ printf "%#v" $val }}</code><br />
+          {{ end }}
+        </td>
+      </tr>
+      {{ end }}
+
+      {{ if .Job.Failure }}
+      <tr>
+        <th> {{ .T "RetryCount" }} </th>
+        <td>
+          {{ .Job.Failure.RetryCount }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "RetriesRemaining" }}
+        </th>
+        <td>
+          {{ .Job.Failure.RetryRemaining }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "OriginallyFailed" }}
+        </th>
+        <td>
+          {{ relativeTime .Job.Failure.FailedAt }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "NextRetry" }}
+        </th>
+        <td>
+          {{ relativeTime .Job.Failure.NextAt }}
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}

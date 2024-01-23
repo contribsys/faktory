@@ -1,0 +1,103 @@
+{{ define "content" }}
+
+<header class="row">
+  <div class="col-5">
+    <h3>
+      {{ .T "DeadJobs" }}
+    </h3>
+  </div>
+  {{ template "paging" . }}
+</header>
+
+{{ if .TotalSize }}
+<form action="{{ .Root }}/morgue" method="post">
+  {{ .CsrfTag }}
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered table-light">
+      <thead>
+        <tr>
+          <th class="table-checkbox checkbox-column">
+            <label>
+              <input type="checkbox" class="check_all" />
+            </label>
+          </th>
+          <th>
+            {{ .T "LastRetry" }}
+          </th>
+          <th>
+            {{ .T "Queue" }}
+          </th>
+          <th>
+            {{ .T "Job" }}
+          </th>
+          <th>
+            {{ .T "Arguments" }}
+          </th>
+          <th>
+            {{ .T "Error" }}
+          </th>
+        </tr>
+      </thead>
+      {{ range $rec := .SetJobs }}
+      <tr>
+        <td class="table-checkbox">
+          <label>
+            <input type="checkbox" name="key" value="{{ $rec.Key }}" />
+          </label>
+        </td>
+        <td>
+          <a href="{{ $.Root }}/morgue/{{ $rec.Key }}">
+            {{ relativeTime $rec.Job.EnqueuedAt }}
+          </a>
+        </td>
+        <td>
+          <a href="{{ $.Root }}/queues/{{ $rec.Job.Queue }}">
+            {{ $rec.Job.Queue }}
+          </a>
+        </td>
+        <td><code>{{ displayJobType $rec.Job }}</code></td>
+        <td>
+          <div class="args">
+            {{ displayArgs $rec.Job.Args }}
+          </div>
+        </td>
+        <td>
+          {{ if $rec.Job.Failure }}
+          <div>
+            {{ $rec.Job.Failure.ErrorType }}: {{ $rec.Job.Failure.ErrorMessage }}
+          </div>
+          {{ end }}
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </div>
+  <div class="pull-left">
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry">
+      {{ .T "RetryNow" }}
+    </button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete">
+      {{ .T "Delete" }}
+    </button>
+  </div>
+</form>
+
+<form action="{{ .Root }}/morgue" method="post">
+  {{ .CsrfTag }}
+  <input type="hidden" name="key" value="all" />
+  <div class="pull-right">
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry">
+      {{ .T "RetryAll" }}
+    </button>
+    <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete">
+      {{ .T "DeleteAll" }}
+    </button>
+  </div>
+</form>
+
+{{ else }}
+<div class="alert alert-success">
+  {{ .T "NoDeadJobsFound" }}
+</div>
+{{ end }}
+{{ end }}

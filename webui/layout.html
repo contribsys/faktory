@@ -1,0 +1,54 @@
+{{ define "layout" }}
+<!doctype html>
+<html lang="{{ .Context.Locale }}" dir="{{ .Context.TextDirection }}">
+
+<head>
+  <title>{{ block "title" .}}{{ .Name }}{{end}}</title>
+  <meta charset="utf8" />
+  <link rel="shortcut icon" href='{{ .Root }}/static/img/favicon.ico'>
+  <link rel=" mask-icon" href='{{ .Root }}/static/img/favicon.svg' color="#000000">
+  <link rel="apple-touch-icon" sizes="180x180" href='{{ .Root }}/static/img/apple-touch-icon.png'>
+  <link rel="icon" type="image/png" sizes="32x32" href='{{ .Root }}/static/img/favicon-32x32.png'>
+  <link rel="icon" type="image/png" sizes="16x16" href='{{ .Root }}/static/img/favicon-16x16.png'>
+
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+  {{ if .Context.Rtl }}
+  <link href='{{ .Root }}/static/bootstrap-rtl.min.css' media="screen" rel="stylesheet" type="text/css" />
+  {{ else }}
+  <link href='{{ .Root }}/static/bootstrap.css' media="screen" rel="stylesheet" type="text/css" />
+  {{ end }}
+
+  <link href=' {{ .Root }}/static/application.css' media="screen" rel="stylesheet" type="text/css" />
+  {{ if .Context.Rtl }}
+  <link href='{{ .Root }}/static/application-rtl.css' media="screen" rel="stylesheet" type="text/css" />
+  {{ end }}
+  {{ with .Context.ExtraCssUrl }}
+  <link href='{{.}}' media='screen' rel='stylesheet' type='text/css' />
+  {{ end }}
+
+  <script type="text/javascript" src='{{ .Root }}/static/application.js'>
+  </script>
+  <meta name="google" content="notranslate" />
+</head>
+
+<body class="admin d-flex flex-column" data-locale="{{ .Context.Locale }}" data-poll-path="">
+  {{ template "nav" . }}
+  <div id="page" class="flex-fill">
+    <div class="container-xl">
+      <div class="row">
+        <div class="col-12 summary_bar">
+          {{ template "summary" . }}
+        </div>
+
+        <div class="col-12">
+          {{ template "content" . }}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{ template "footer" . }}
+</body>
+
+</html>
+{{ end }}

@@ -1,0 +1,56 @@
+{{ define "summary" }}
+<ul class="list-unstyled summary row justify-content-around">
+  <li class="processed col-12 col-md-auto">
+    <span class="count">
+      {{ .Metric "processed" }}
+    </span>
+    <span class="desc">{{ .T "Processed" }}</span>
+  </li>
+  <li class="failed col-12 col-md-auto">
+    <span class="count">
+      {{ .Metric "failures" }}
+    </span>
+    <span class="desc">{{ .T "Failed" }}</span>
+  </li>
+  <li class="busy col-12 col-md-auto">
+    <a href='{{ .Root }}/busy'>
+      <span class="count">
+        {{ .Metric "working" }}
+      </span>
+      <span class="desc">{{ .T "Busy" }}</span>
+    </a>
+  </li>
+  <li class="enqueued col-12 col-md-auto">
+    <a href='{{ .Root }}/queues'>
+      <span class="count">
+        {{ .Metric "enqueued" }}
+      </span>
+      <span class="desc">{{ .T "Enqueued" }}</span>
+    </a>
+  </li>
+  <li class="retries col-12 col-md-auto">
+    <a href='{{ .Root }}/retries'>
+      <span class="count">
+        {{ .Metric "retries" }}
+      </span>
+      <span class="desc">{{ .T "Retries" }}</span>
+    </a>
+  </li>
+  <li class="scheduled col-12 col-md-auto">
+    <a href='{{ .Root }}/scheduled'>
+      <span class="count">
+        {{ .Metric "scheduled" }}
+      </span>
+      <span class="desc">{{ .T "Scheduled" }}</span>
+    </a>
+  </li>
+  <li class="dead col-12 col-md-auto">
+    <a href='{{ .Root }}/morgue'>
+      <span class="count">
+        {{ .Metric "dead" }}
+      </span>
+      <span class="desc">{{ .T "Dead" }}</span>
+    </a>
+  </li>
+</ul>
+{{end}}

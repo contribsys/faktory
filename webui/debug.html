@@ -1,0 +1,105 @@
+{{define "content"}}
+<h3>{{ .T "Debugging" }}</h3>
+
+<div class="table-responsive">
+  <table class="error table table-bordered table-striped table-light">
+    <tbody>
+      <tr>
+        <th>
+          {{ .T "Locale" }}
+        </th>
+        <td>
+          <select name="locales" id="faktory_locale">
+            {{ range $locale := .Context.LocaleNames }}
+            <option name="{{ $locale }}" {{ if eq $locale $.Context.Locale }} selected {{ end }}>
+              {{ $locale }}
+            </option>
+            {{ end }}
+          </select>
+          <span style="font-size: small">
+            Want to help improve the translations?
+            <a href="https://github.com/contribsys/faktory/tree/master/webui/static/locales">Submit a PR</a>.
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "Version" }}
+        </th>
+        <td>
+          {{ .Name }} {{ .Version }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "Data Location" }}
+        </th>
+        <td>
+          {{ .Context.Store.Name }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "Runtime" }}
+        </th>
+        <td>Goroutines: {{ .Goroutines }}, CPUs: {{ .NumCPU }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "Memory" }}
+        </th>
+        <td>
+          {{ with .RssKb }}
+          RSS: {{ displayRss . }}
+          {{ end }}
+          {{ with .MemoryStats }}
+          <br />Alloc: {{ .Alloc }}
+          <br />Mallocs: {{ .Mallocs }}
+          <br />Frees: {{ .Frees }}
+          {{ end }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "GC" }}
+        </th>
+        <td>
+          {{ with .MemoryStats }}
+          PauseTotal (ns): {{ .PauseTotalNs }}<br />
+          NumGC: {{ .NumGC }}
+          {{ end }}
+        </td>
+      </tr>
+      <tr>
+        <th>
+          {{ .T "Redis RTT" }}
+          <a href="https://github.com/contribsys/faktory/wiki/Storage#rtt"><span class="info-circle"
+              title="Click to learn more about RTT">?</span></a>
+        </th>
+        {{ with .RedisLatency }}
+        <td class="bg-{{ categoryForRTT . }}">
+          {{ . }} µs
+        </td>
+        {{ end }}
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>
+  {{ .T "Redis Info" }}
+</h3>
+<pre>
+  {{ .RedisInfo }}
+</pre>
+
+<h3>
+  {{ .T "Disk Usage" }}
+</h3>
+<pre>
+<code>&gt; df -h</code>
+{{ .Df_h }}
+</pre>
+
+{{ end }}

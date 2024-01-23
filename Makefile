@@ -31,13 +31,12 @@ release:
 		-F /tmp/release-notes.md -e -o || :
 
 prepare: ## install build prereqs
-	go install github.com/benbjohnson/ego/...@v0.4.1
 	@echo Now you should be ready to run "make"
 
 tags: clean ## Create tags file for vim, etc
 	find . -name "*.go" | grep -v "./vendor" | gotags -L - > tags
 
-test: clean generate ## Execute test suite
+test: clean ## Execute test suite
 	go test $(TEST_FLAGS) \
 		github.com/contribsys/faktory/client \
 		github.com/contribsys/faktory/cli \
@@ -53,14 +52,14 @@ kill:
 
 # docker buildx create --name cross
 # docker buildx use cross
-dimg: clean generate ## Make cross-platform Docker images for the current version
+dimg: clean ## Make cross-platform Docker images for the current version
 	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/faktory/daemon.go
 	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/faktory/daemon.go
 	upx -qq ./tmp/linux/amd64
 	upx -qq ./tmp/linux/arm64
 	docker buildx build --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
-dpush: clean generate
+dpush: clean 
 	GOOS=linux GOARCH=amd64 go build -o tmp/linux/amd64 cmd/faktory/daemon.go
 	GOOS=linux GOARCH=arm64 go build -o tmp/linux/arm64 cmd/faktory/daemon.go
 	upx -qq ./tmp/linux/amd64
@@ -86,9 +85,6 @@ dmon: ## Monitor Redis within the running Docker image
 		#-v faktory-data:/var/lib/faktory \
 		#contribsys/faktory:$(VERSION) /bin/bash
 
-generate:
-	go generate github.com/contribsys/faktory/webui
-
 cover:
 	go test -coverprofile cover.out \
 		github.com/contribsys/faktory/cli \
@@ -101,12 +97,12 @@ cover:
 	go tool cover -html=cover.out -o coverage.html
 	open coverage.html
 
-xbuild: clean generate
+xbuild: clean
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
 	# brew install upx
 	upx -qq ./faktory
 
-build: clean generate
+build: clean
 	go build -o $(NAME) cmd/faktory/daemon.go
 
 mon:
@@ -141,7 +137,7 @@ clean: ## Clean the project, set it up for a new build
 	@mkdir -p packaging/output/systemd
 	@mkdir -p tmp/linux
 
-run: clean generate ## Run Faktory daemon locally
+run: clean ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
 
 cssh:

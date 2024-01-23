@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/contribsys/faktory/server"
@@ -59,6 +60,14 @@ func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *Default
 	}
 }
 
+func (d *DefaultContext) ExtraCssUrl() string {
+	return d.webui.ExtraCssUrl
+}
+
+func (d *DefaultContext) Title() string {
+	return d.webui.Title
+}
+
 func (d *DefaultContext) Response() http.ResponseWriter {
 	return d.response
 }
@@ -79,9 +88,27 @@ func (d *DefaultContext) Server() *server.Server {
 	return d.webui.Server
 }
 
-type Translator interface {
-	Locale() string
-	Translation(string) string
+func (d *DefaultContext) Rtl() bool {
+	return d.TextDirection() == "rtl"
+}
+
+func (d *DefaultContext) TextDirection() string {
+	dir := d.Translation("TextDirection")
+	if dir == "" || dir == "TextDirection" {
+		dir = "ltr"
+	}
+	return dir
+}
+
+func (d *DefaultContext) LocaleNames() []string {
+	names := make(sort.StringSlice, len(locales))
+	i := 0
+	for name := range locales {
+		names[i] = name
+		i++
+	}
+	names.Sort()
+	return names
 }
 
 func (d *DefaultContext) Locale() string {

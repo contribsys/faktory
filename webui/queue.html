@@ -1,0 +1,51 @@
+{{ define "content" }}
+<header class="row">
+  <div class="col-5">
+    <h3>{{ .Element.Name }}</h3>
+  </div>
+  <div class="col-7 d-flex justify-content-end">
+    {{ template "paging" . }}
+  </div>
+</header>
+
+<form action="{{ .Root }}/queues/{{ .Element.Name }}" method="post">
+  {{ .CsrfTag }}
+
+  <div class="table-responsive">
+    <table class="queue table table-hover table-bordered table-striped table-light">
+      <thead>
+        <th class="checkbox-column"><input type="checkbox" class="check_all" /></th>
+        <th>{{ .T "JID" }}</th>
+        <th>{{ .T "Type" }}</th>
+        <th>{{ .T "Arguments" }}</th>
+      </thead>
+      {{ range $rec := .QueueJobs }}
+      <tr>
+        <td><input type="checkbox" name="bkey" value="{{ $rec.Key }}" /></td>
+        <td>
+          {{ $rec.Job.Jid }}
+        </td>
+        <td>
+          {{ displayJobType $rec.Job }}
+        </td>
+        <td>
+          <div class="args">
+            {{ displayArgs $rec.Job.Args }}
+          </div>
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </div>
+  <div class="row">
+    <div class="col-5">
+      <button class="btn btn-danger" type="submit" name="action" value="delete" data-confirm='{{ .T "AreYouSure" }}'>
+        {{ .T "Delete" }}</button>
+    </div>
+    <div class="col-7 d-flex justify-content-end">
+      {{ template "paging" . }}
+    </div>
+  </div>
+</form>
+
+{{ end }}

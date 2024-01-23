@@ -1,0 +1,31 @@
+{{ define "paging" }}
+{{ if gt .TotalSize .Count }}
+<ul class="pagination">
+  <li class="page-item{{ if eq .CurrentPage 1 }} disabled{{ end }}">
+    <a class="page-link" href=".?page=1">&laquo;</a>
+  </li>
+  {{ if gt .CurrentPage 1 }}
+  <li class="page-item">
+    <a class="page-link" href="?page={{ .PreviousPage }}">
+      {{ .PreviousPage }}
+    </a>
+  </li>
+  {{ end }}
+  <li class="page-item disabled">
+    <a class="page-link" href=".">
+      {{ .CurrentPage }}
+    </a>
+  </li>
+  {{ if gt .TotalSize .TotalSoFar }}
+  <li class="page-item">
+    <a class="page-link" href="?page={{ .NextPage }}">
+      {{ .NextPage }}
+    </a>
+  </li>
+  {{ end }}
+  <li class="page-item{{ if le .TotalSize .TotalSoFar }} disabled{{ end }}">
+    <a class="page-link" href="?page={{ .LastPage }}">&raquo;</a>
+  </li>
+</ul>
+{{ end }}
+{{ end }}

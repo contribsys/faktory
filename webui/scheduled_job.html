@@ -1,0 +1,20 @@
+{{ define "content" }}
+
+{{ template "job_info" . }}
+
+<form class="form-horizontal" action="{{ .Root }}/scheduled/{{ .Key }}" method="post">
+  {{ .CsrfTag }}
+  <div>
+    <a class="btn btn-default" href="{{ .Root }}/scheduled">
+      {{ .T "GoBack" }}
+    </a>
+    <button class="btn btn-primary" type="submit" name="action" value="add_to_queue">
+      {{ .T "AddToQueue" }}
+    </button>
+    <button class="btn btn-danger" type="submit" name="action" value="delete">
+      {{ .T "Delete" }}
+    </button>
+  </div>
+</form>
+
+{{ end }}

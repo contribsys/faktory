@@ -282,7 +282,7 @@ func (ui *WebUI) Template(name string) (*template.Template, error) {
 		return result, nil
 	}
 
-	fmt.Printf("Parsing template %s\n", name)
+	// fmt.Printf("Parsing template %s\n", name)
 	tmp := template.New(name)
 	tmp.Funcs(template.FuncMap{
 		"uintWithDelimiter": uintWithDelimiter,

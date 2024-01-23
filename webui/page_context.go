@@ -20,7 +20,7 @@ import (
 )
 
 func Render(s string, w http.ResponseWriter, pp *PageData) {
-	fmt.Printf("Rendering %s\n", s)
+	// fmt.Printf("Rendering %s\n", s)
 	tmpl, err := pp.Context().webui.Template(s)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -42,7 +42,9 @@
         <th>
           {{ .T "Runtime" }}
         </th>
-        <td>Goroutines: {{ .Goroutines }}, CPUs: {{ .NumCPU }}
+        <td>
+          Goroutines: {{ .Goroutines }}<br />
+          CPUs: {{ .NumCPU }}
         </td>
       </tr>
       <tr>
@@ -50,9 +52,7 @@
           {{ .T "Memory" }}
         </th>
         <td>
-          {{ with .RssKb }}
-          RSS: {{ displayRss . }}
-          {{ end }}
+          RSS: {{ displayRss .RssKb }}
           {{ with .MemoryStats }}
           <br />Alloc: {{ .Alloc }}
           <br />Mallocs: {{ .Mallocs }}

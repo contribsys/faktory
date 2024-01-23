@@ -78,7 +78,7 @@
               title="Click to learn more about RTT">?</span></a>
         </th>
         {{ with .RedisLatency }}
-        <td class="bg-{{ categoryForRTT . }}">
+        <td class="fw-bold text-{{ categoryForRTT . }}">
           {{ . }} µs
         </td>
         {{ end }}

@@ -68,7 +68,7 @@ func ego_debug(w io.Writer, req *http.Request) {
         <%= t(req, "Redis RTT") %>
         <a href="https://github.com/contribsys/faktory/wiki/Storage#rtt"><span class="info-circle" title="Click to learn more about RTT">?</span></a>
       </th>
-      <td class="bg-<%= category_for_rtt(rtt) %>">
+      <td class="fw-bold text-<%= category_for_rtt(rtt) %>">
         <%= rtt %> µs
       </td>
     </tr>

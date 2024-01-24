@@ -304,9 +304,9 @@ func category_for_rtt(lat float64) string {
 	if lat == 0 {
 		return "danger"
 	} else if lat < 1000 {
-		return "info"
+		return "success"
 	} else if lat < 10000 {
-		return "warning"
+		return "primary"
 	} else {
 		return "danger"
 	}

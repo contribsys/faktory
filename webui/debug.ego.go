@@ -132,7 +132,7 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:68
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis RTT"))))
 //line debug.ego:69
-		_, _ = io.WriteString(w, "\n        <a href=\"https://github.com/contribsys/faktory/wiki/Storage#rtt\"><span class=\"info-circle\" title=\"Click to learn more about RTT\">?</span></a>\n      </th>\n      <td class=\"bg-")
+		_, _ = io.WriteString(w, "\n        <a href=\"https://github.com/contribsys/faktory/wiki/Storage#rtt\"><span class=\"info-circle\" title=\"Click to learn more about RTT\">?</span></a>\n      </th>\n      <td class=\"fw-bold text-")
 //line debug.ego:71
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(category_for_rtt(rtt))))
 //line debug.ego:71

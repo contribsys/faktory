@@ -1,0 +1,44 @@
+# This is a CI workflow that runs the test against Enterprise Edition of Faktory.
+# The binary (for macos only) is avalable for download for testing purposes with each Faktory release.
+permissions:
+  contents: read
+on:
+  push:
+    # branches:
+    #   - main
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+name: enterprise
+jobs:
+  test:
+    runs-on: macos-latest
+    env:
+      GO_VERSION: "1.20"
+      FAKTORY_VERSION: 1.8.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install redis
+        run: brew install redis
+      - name: Download Faktory binary
+        run: |
+          wget -O faktory.tbz https://github.com/contribsys/faktory/releases/download/v${{ env.FAKTORY_VERSION }}/faktory-ent_${{ env.FAKTORY_VERSION }}.macos.amd64.tbz
+          tar xfv faktory.tbz
+          cp ./faktory /usr/local/bin
+      - name: Launch Faktory in background
+        run: faktory &
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Prepare
+        run: make prepare
+      - name: Test
+        env:
+          FAKTORY_URL: tcp://127.0.0.1:7419
+          FAKTORY_ENT: true
+        run: |
+          make clean
+          make generate
+          go test -parallel 4 ./test/ent

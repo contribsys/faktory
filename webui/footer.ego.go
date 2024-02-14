@@ -42,8 +42,8 @@ func ego_footer(w io.Writer, req *http.Request) {
 //line footer.ego:29
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/debug"))))
 //line footer.ego:29
-	_, _ = io.WriteString(w, "\">debug</a></p>\n          </li>\n        </ul>\n      </div>\n    </div>\n  </div>\n</footer>\n")
-//line footer.ego:36
+	_, _ = io.WriteString(w, "\">debug</a></p>\n          </li>\n          <li class=\"nav-item me-md-4\">\n            <p class=\"navbar-text mb-0\"><a style=\"color: #666\" href=\"https://github.com/contribsys/faktory/wiki/\">docs</a></p>\n          </li>\n        </ul>\n      </div>\n    </div>\n  </div>\n</footer>\n")
+//line footer.ego:39
 }
 
 var _ fmt.Stringer

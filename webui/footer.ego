@@ -28,6 +28,9 @@ func ego_footer(w io.Writer, req *http.Request) {
           <li class="nav-item me-md-4">
             <p class="navbar-text mb-0"><a style="color: #666" href="<%= relative(req, "/debug") %>">debug</a></p>
           </li>
+          <li class="nav-item me-md-4">
+            <p class="navbar-text mb-0"><a style="color: #666" href="https://github.com/contribsys/faktory/wiki/">docs</a></p>
+          </li>
         </ul>
       </div>
     </div>

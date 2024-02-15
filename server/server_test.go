@@ -31,7 +31,7 @@ func runServer(binding string, runner func()) {
 		Binding:          binding,
 		StorageDirectory: dir,
 		RedisSock:        sock,
-		ConfigDirectory:  os.ExpandEnv("$HOME/.faktory"),
+		ConfigDirectory:  os.ExpandEnv("test/.faktory"),
 	}
 	s, err := NewServer(opts)
 	if err != nil {

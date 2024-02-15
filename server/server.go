@@ -5,11 +5,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,6 +37,10 @@ type Server struct {
 	Stats      *RuntimeStats
 	Subsystems []Subsystem
 
+	TLSPublicCert string
+	TLSPrivateKey string
+
+	tlsConfig  *tls.Config
 	listener   net.Listener
 	store      storage.Store
 	manager    manager.Manager
@@ -42,6 +49,41 @@ type Server struct {
 	mu         sync.Mutex
 	stopper    chan bool
 	closed     bool
+}
+
+func (s *Server) useTLS() error {
+	privateKey := filepath.Join(s.Options.ConfigDirectory, "private.key.pem")
+	publicCert := filepath.Join(s.Options.ConfigDirectory, "public.cert.pem")
+
+	if _, err := os.Stat(privateKey); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if _, err := os.Stat(publicCert); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	x, err := os.Open(privateKey)
+	if err != nil {
+		return fmt.Errorf("Unable to open private key: %w", err)
+	}
+	defer x.Close()
+	y, err := os.Open(publicCert)
+	if err != nil {
+		return fmt.Errorf("Unable to open public cert: %w", err)
+	}
+	defer y.Close()
+	cert, err := tls.LoadX509KeyPair(publicCert, privateKey)
+	if err != nil {
+		return fmt.Errorf("Unable to initialize TLS certificate: %w", err)
+	}
+	util.Infof("TLS activated with %s", publicCert)
+
+	s.TLSPublicCert = publicCert
+	s.TLSPrivateKey = privateKey
+	s.tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+	return nil
 }
 
 func NewServer(opts *ServerOptions) (*Server, error) {
@@ -95,7 +137,17 @@ func (s *Server) Boot() error {
 		return fmt.Errorf("cannot open redis database: %w", err)
 	}
 
-	listener, err := net.Listen("tcp", s.Options.Binding)
+	err = s.useTLS()
+	if err != nil {
+		return err
+	}
+
+	var listener net.Listener
+	if s.tlsConfig != nil {
+		listener, err = tls.Listen("tcp", s.Options.Binding, s.tlsConfig)
+	} else {
+		listener, err = net.Listen("tcp", s.Options.Binding)
+	}
 	if err != nil {
 		store.Close()
 		return fmt.Errorf("cannot listen on %s: %w", s.Options.Binding, err)
@@ -221,19 +273,32 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	line, err := buf.ReadString('\n')
 	if err != nil {
+		defer conn.Close()
 		// TCP probes on the socket will close connection
 		// immediately and lead to EOF. Don't flood logs with them.
-		if err != io.EOF {
-			util.Error("Bad connection", err)
+		if errors.Is(err, io.EOF) {
+			return nil
 		}
-		conn.Close()
+
+		opErr, ok := err.(net.Error)
+		if ok && opErr.Timeout() {
+			// util.Debugf("Error establishing connection with client %v", err)
+			return nil
+		}
+		_, ok = err.(tls.RecordHeaderError)
+		if ok {
+			// util.Debugf("Client not using TLS %v", err)
+			return nil
+
+		}
+		util.Infof("Bad connection %T: %v", err, err)
 		return nil
 	}
 
 	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
-		util.Infof("Invalid preamble: %s", line)
-		util.Info("Need a valid HELLO")
+		util.Debugf("Invalid preamble: %s", line)
+		util.Debug("Need a valid HELLO, is client using TLS?")
 		conn.Close()
 		return nil
 	}

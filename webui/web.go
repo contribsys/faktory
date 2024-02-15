@@ -271,12 +271,18 @@ func (ui *WebUI) Run() (func(), error) {
 	}
 
 	go func() {
-		err := s.ListenAndServe()
+		var err error
+		if ui.Server.TLSPrivateKey != "" {
+			util.Infof("Web server now listening via TLS at %s", ui.Options.Binding)
+			err = s.ListenAndServeTLS(ui.Server.TLSPublicCert, ui.Server.TLSPrivateKey)
+		} else {
+			util.Infof("Web server now listening at %s", ui.Options.Binding)
+			err = s.ListenAndServe()
+		}
 		if err != http.ErrServerClosed {
 			util.Error(fmt.Sprintf("%s server crashed", ui.Options.Binding), err)
 		}
 	}()
-	util.Infof("Web server now listening at %s", ui.Options.Binding)
 	return func() { _ = s.Shutdown(context.Background()) }, nil
 }
 

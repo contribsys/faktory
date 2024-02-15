@@ -2,8 +2,11 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.9.0
 
+- Implement native TLS support [#469]
+  Put `public.cert.pem` and `private.key.pem` in your config directory
+  and Faktory will automatically enable TLS on port 7419 and 7420.
 - Unwrap and display ActiveJob class names [#460, ibrahima]
 - Add Go client API so batches can push jobs in bulk [#437, tylerian]
 

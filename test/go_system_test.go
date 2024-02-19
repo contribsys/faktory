@@ -2,6 +2,7 @@ package tester
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"math/rand"
@@ -29,7 +30,7 @@ func TestSystem(t *testing.T) {
 	dir := "/tmp/system.db"
 	defer os.RemoveAll(dir)
 
-	opts.ConfigDirectory = "."
+	opts.ConfigDirectory = "./cfg"
 	opts.StorageDirectory = dir
 	s, stopper, err := cli.BuildServer(&opts)
 	if stopper != nil {
@@ -81,7 +82,16 @@ func TestSystem(t *testing.T) {
 
 func pushAndPop(t *testing.T, count int) {
 	time.Sleep(300 * time.Millisecond)
-	cl, err := client.Dial(client.DefaultServer(), "123456")
+	s := &client.Server{
+		Network:  "tcp+tls",
+		Address:  "localhost:7419",
+		Username: "",
+		Password: "",
+		Timeout:  1 * time.Second,
+		TLS: &tls.Config{InsecureSkipVerify: true, // nolint:gosec
+			MinVersion: tls.VersionTLS12},
+	}
+	cl, err := client.Dial(s, "123456")
 	if err != nil {
 		handleError(err)
 		return

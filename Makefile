@@ -49,7 +49,7 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/webui
 
 kill:
-	@killall -m -9 redis-server || :
+	@killall -m -9 -e redis || :
 
 # docker buildx create --name cross
 # docker buildx use cross

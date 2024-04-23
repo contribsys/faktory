@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/BurntSushi/toml v0.4.1
 	github.com/justinas/nosurf v1.1.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.9.0
 )
 
 require github.com/redis/go-redis/v9 v9.2.0

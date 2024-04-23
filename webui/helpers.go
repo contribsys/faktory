@@ -143,7 +143,7 @@ func queueJobs(r *http.Request, q storage.Queue, count, currentPage uint64, fn f
 	c := r.Context()
 	err := q.Page(c, int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
 		var job client.Job
-		err := json.Unmarshal(data, &job)
+		err := util.JsonUnmarshal(data, &job)
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(data))
 			return err
@@ -205,7 +205,7 @@ func busyReservations(req *http.Request, fn func(worker *manager.Reservation)) {
 	c := req.Context()
 	err := ctx(req).Store().Working().Each(c, func(idx int, entry storage.SortedEntry) error {
 		var res manager.Reservation
-		err := json.Unmarshal(entry.Value(), &res)
+		err := util.JsonUnmarshal(entry.Value(), &res)
 		if err != nil {
 			util.Error("Cannot unmarshal reservation", err)
 		} else {

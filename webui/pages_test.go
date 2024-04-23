@@ -58,19 +58,24 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, 200, w.Code)
 			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
-			var content map[string]interface{}
+			// data := w.Body.Bytes()
+			// fmt.Println(string(data))
+			var content client.FaktoryState
 			err = json.Unmarshal(w.Body.Bytes(), &content)
 			assert.NoError(t, err)
 
-			s := content["server"].(map[string]interface{})
-			uid := s["uptime"].(float64)
-			assert.Equal(t, float64(1234567), uid)
+			uid := content.Server.Uptime
+			assert.NoError(t, err)
+			assert.EqualValues(t, 1234567, uid)
 
-			queues := content["faktory"].(map[string]interface{})["queues"].(map[string]interface{})
-			defaultQ := queues["default"].(float64)
-			assert.Equal(t, 0.0, defaultQ)
-			foobarQ := queues["foobar"]
-			assert.Nil(t, foobarQ)
+			queues := content.Data.Queues
+			fmt.Println(queues)
+			defaultQ := queues["default"]
+			assert.NoError(t, err)
+			assert.EqualValues(t, 0, defaultQ)
+			foobarQ, ok := queues["foobar"]
+			assert.False(t, ok)
+			assert.EqualValues(t, 0, foobarQ)
 		})
 
 		t.Run("Queues", func(t *testing.T) {

@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -158,7 +157,7 @@ func (el *simpleLease) Job() (*client.Job, error) {
 	}
 	if el.job == nil {
 		var job client.Job
-		err := json.Unmarshal(el.payload, &job)
+		err := util.JsonUnmarshal(el.payload, &job)
 		if err != nil {
 			return nil, fmt.Errorf("cannot unmarshal job payload: %w", err)
 		}

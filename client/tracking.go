@@ -28,7 +28,7 @@ func (c *Client) TrackGet(jid string) (*JobTrack, error) {
 	}
 
 	var trck JobTrack
-	err = json.Unmarshal(data, &trck)
+	err = util.JsonUnmarshal(data, &trck)
 	if err != nil {
 		return nil, err
 	}

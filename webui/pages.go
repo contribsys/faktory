@@ -13,12 +13,12 @@ import (
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
-	hash, err := ctx(r).Server().CurrentState()
+	thing, err := ctx(r).Server().CurrentState()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data, err := json.Marshal(hash)
+	data, err := json.Marshal(thing)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

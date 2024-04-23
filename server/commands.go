@@ -100,7 +100,7 @@ func pushBulk(c *Connection, s *Server, cmd string) {
 	data := cmd[6:]
 	jobs := make([]client.Job, 0)
 
-	err := json.Unmarshal([]byte(data), &jobs)
+	err := util.JsonUnmarshal([]byte(data), &jobs)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("invalid JSON: %w", err))
 		return
@@ -147,7 +147,7 @@ func push(c *Connection, s *Server, cmd string) {
 	var job client.Job
 	job.Retry = &client.RetryPolicyDefault
 
-	err := json.Unmarshal([]byte(data), &job)
+	err := util.JsonUnmarshal([]byte(data), &job)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("invalid JSON: %w", err))
 		return
@@ -201,7 +201,7 @@ func ack(c *Connection, s *Server, cmd string) {
 	data := cmd[4:]
 
 	var hash map[string]string
-	err := json.Unmarshal([]byte(data), &hash)
+	err := util.JsonUnmarshal([]byte(data), &hash)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("invalid ACK %s", data))
 		return
@@ -225,7 +225,7 @@ func fail(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
 	var failure manager.FailPayload
-	err := json.Unmarshal([]byte(data), &failure)
+	err := util.JsonUnmarshal([]byte(data), &failure)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("invalid FAIL %s", data))
 		return
@@ -266,7 +266,7 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	data := cmd[5:]
 
 	var beat ClientBeat
-	err := json.Unmarshal([]byte(data), &beat)
+	err := util.JsonUnmarshal([]byte(data), &beat)
 	if err != nil {
 		_ = c.Error(cmd, fmt.Errorf("invalid BEAT %s", data))
 		return

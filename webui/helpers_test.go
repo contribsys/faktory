@@ -1,11 +1,11 @@
 package webui
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/util"
 )
 
 type testJob struct {
@@ -47,7 +47,7 @@ func makeActiveJob(jobType string) *client.Job {
 }
 `, jobType))
 	job := &client.Job{}
-	err := json.Unmarshal(payload, job)
+	err := util.JsonUnmarshal(payload, job)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +99,7 @@ func makeActionMailerJob(jobType string, mailerClass string, mailerMethod string
 }
 `, jobType, mailerClass, mailerMethod))
 	job := &client.Job{}
-	err := json.Unmarshal(payload, job)
+	err := util.JsonUnmarshal(payload, job)
 	if err != nil {
 		panic(err)
 	}

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/internal/pool"
+	"github.com/contribsys/faktory/util"
 )
 
 const (
@@ -152,7 +153,7 @@ func DefaultServer() *Server {
 //
 // Use the URL to configure any necessary password:
 //
-//    tcp://:mypassword@localhost:7419
+//	tcp://:mypassword@localhost:7419
 //
 // By default Open assumes localhost with no password
 // which is appropriate for local development.
@@ -182,8 +183,7 @@ func OpenWithDialer(dialer Dialer) (*Client, error) {
 // a *tls.Dialer if "tcp+tls" and a *net.Dialer if
 // not.
 //
-//   client.Dial(client.Localhost, "topsecret")
-//
+//	client.Dial(client.Localhost, "topsecret")
 func Dial(srv *Server, password string) (*Client, error) {
 	d := &net.Dialer{Timeout: srv.Timeout}
 	dialer := Dialer(d)
@@ -196,6 +196,12 @@ func Dial(srv *Server, password string) (*Client, error) {
 // DialWithDialer connects to the faktory server
 func DialWithDialer(srv *Server, password string, dialer Dialer) (*Client, error) {
 	return dial(srv, password, dialer)
+}
+
+type HIv2 struct {
+	V int    `json:"v"`           // version, should be 2
+	I int    `json:"i,omitempty"` // iterations
+	S string `json:"s,omitempty"` // salt
 }
 
 // dial connects to the remote faktory server.
@@ -227,27 +233,19 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 	if strings.HasPrefix(line, "HI ") {
 		str := strings.TrimSpace(line)[3:]
 
-		var hi map[string]interface{}
-		err = json.Unmarshal([]byte(str), &hi)
+		var hi HIv2
+		err = util.JsonUnmarshal([]byte(str), &hi)
 		if err != nil {
 			conn.Close()
 			return nil, err
 		}
-		v, ok := hi["v"].(float64)
-		if ok {
-			if ExpectedProtocolVersion != int(v) {
-				fmt.Println("Warning: server and client protocol versions out of sync:", v, ExpectedProtocolVersion)
-			}
+		if ExpectedProtocolVersion != hi.V {
+			util.Infof("Warning: server and client protocol versions out of sync: want %d, got %d", ExpectedProtocolVersion, hi.V)
 		}
 
-		salt, ok := hi["s"].(string)
-		if ok {
-			iter := 1
-			iterVal, ok := hi["i"]
-			if ok {
-				iter = int(iterVal.(float64))
-			}
-
+		salt := hi.S
+		if salt != "" {
+			iter := hi.I
 			client.PasswordHash = hash(password, salt, iter)
 		}
 	} else {
@@ -303,7 +301,7 @@ func (c *Client) PushBulk(jobs []*Job) (map[string]string, error) {
 		return nil, err
 	}
 	results := map[string]string{}
-	err = json.Unmarshal(data, &results)
+	err = util.JsonUnmarshal(data, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +340,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 	}
 
 	var job Job
-	err = json.Unmarshal(data, &job)
+	err = util.JsonUnmarshal(data, &job)
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +419,11 @@ func (c *Client) ResumeQueues(names ...string) error {
 	return c.ok(c.rdr)
 }
 
+// deprecated, this returns an untyped map.
+// use CurrentState() instead which provides strong typing
 func (c *Client) Info() (map[string]interface{}, error) {
+	util.Info("client.Info() is deprecated, use client.CurrentState() instead")
+
 	err := c.writeLine(c.wtr, "INFO", nil)
 	if err != nil {
 		return nil, err
@@ -435,42 +437,43 @@ func (c *Client) Info() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	var hash map[string]interface{}
-	err = json.Unmarshal(data, &hash)
+	var cur map[string]interface{}
+	err = util.JsonUnmarshal(data, &cur)
 	if err != nil {
 		return nil, err
 	}
 
-	return hash, nil
+	return cur, nil
+}
+
+func (c *Client) CurrentState() (*FaktoryState, error) {
+	err := c.writeLine(c.wtr, "INFO", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := c.readResponse(c.rdr)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	var cur FaktoryState
+	err = util.JsonUnmarshal(data, &cur)
+	if err != nil {
+		return nil, err
+	}
+	return &cur, nil
 }
 
 func (c *Client) QueueSizes() (map[string]uint64, error) {
-	hash, err := c.Info()
+	state, err := c.CurrentState()
 	if err != nil {
 		return nil, err
 	}
-
-	faktory, ok := hash["faktory"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid info hash: %s", hash)
-	}
-
-	queues, ok := faktory["queues"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid info hash: %s", hash)
-	}
-
-	sizes := make(map[string]uint64)
-	for name, size := range queues {
-		size, ok := size.(float64)
-		if !ok {
-			return nil, fmt.Errorf("invalid queue size: %v", size)
-		}
-
-		sizes[name] = uint64(size)
-	}
-
-	return sizes, nil
+	return state.Data.Queues, nil
 }
 
 func (c *Client) Generic(cmdline string) (string, error) {

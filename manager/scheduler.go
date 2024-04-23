@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -38,7 +37,7 @@ func (m *manager) schedule(ctx context.Context, when time.Time, set storage.Sort
 	for {
 		count, err := set.RemoveBefore(ctx, util.Thens(when), 100, func(data []byte) error {
 			var job client.Job
-			if err := json.Unmarshal(data, &job); err != nil {
+			if err := util.JsonUnmarshal(data, &job); err != nil {
 				return fmt.Errorf("cannot unmarshal job payload: %w", err)
 			}
 

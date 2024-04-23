@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/util"
 )
 
 var (
@@ -119,7 +119,7 @@ func mutate(c *Connection, s *Server, cmd string) {
 
 	var err error
 	var op client.Operation
-	err = json.Unmarshal([]byte(parts[1]), &op)
+	err = util.JsonUnmarshal([]byte(parts[1]), &op)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return

@@ -122,13 +122,13 @@ func TestClientOperations(t *testing.T) {
 		resp <- "$36\r\n{\"faktory\":{\"queues\":{\"default\":2}}}\r\n"
 		sizes, err := cl.QueueSizes()
 		assert.NoError(t, err)
-		assert.Equal(t, sizes["default"], uint64(2))
+		assert.EqualValues(t, 2, sizes["default"])
 		assert.Contains(t, <-req, "INFO")
 
 		resp <- "$39\r\n{\"faktory\":{\"queues\":{\"invalid\":null}}}\r\n"
 		sizes, err = cl.QueueSizes()
-		assert.Error(t, err)
-		assert.Nil(t, sizes)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 0, sizes["invalid"])
 		assert.Contains(t, <-req, "INFO")
 
 		err = cl.Close()

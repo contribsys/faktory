@@ -83,7 +83,7 @@ func (m *manager) loadWorkingSet(ctx context.Context) error {
 	addedCount := 0
 	err := m.store.Working().Each(ctx, func(idx int, entry storage.SortedEntry) error {
 		var res Reservation
-		err := json.Unmarshal(entry.Value(), &res)
+		err := util.JsonUnmarshal(entry.Value(), &res)
 		if err != nil {
 			//  We can't return an error here, this method is best effort
 			// as we are booting the server. We can't allow corrupted data
@@ -193,7 +193,7 @@ func (m *manager) ReapExpiredJobs(ctx context.Context, when time.Time) (int64, e
 		tm := util.Thens(when)
 		count, err := m.store.Working().RemoveBefore(ctx, tm, 10, func(data []byte) error {
 			var res Reservation
-			err := json.Unmarshal(data, &res)
+			err := util.JsonUnmarshal(data, &res)
 			if err != nil {
 				return fmt.Errorf("cannot unmarshal reservation payload: %w", err)
 			}

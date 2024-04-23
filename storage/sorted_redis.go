@@ -154,7 +154,7 @@ func (e *setEntry) Job() (*client.Job, error) {
 	}
 
 	var job client.Job
-	err := json.Unmarshal(e.value, &job)
+	err := util.JsonUnmarshal(e.value, &job)
 	if err != nil {
 		return nil, err
 	}

@@ -58,8 +58,6 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, 200, w.Code)
 			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
-			// data := w.Body.Bytes()
-			// fmt.Println(string(data))
 			var content client.FaktoryState
 			err = json.Unmarshal(w.Body.Bytes(), &content)
 			assert.NoError(t, err)
@@ -69,7 +67,6 @@ func TestPages(t *testing.T) {
 			assert.EqualValues(t, 1234567, uid)
 
 			queues := content.Data.Queues
-			fmt.Println(queues)
 			defaultQ := queues["default"]
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, defaultQ)
@@ -551,7 +548,6 @@ func findCSRFTokens(w http.ResponseWriter, body string) (string, string) {
 	// parse body token
 	results := searchBody.FindStringSubmatch(body)
 	if len(results) > 1 {
-		fmt.Println(results)
 		bodyToken = results[1]
 	}
 
@@ -561,7 +557,6 @@ func findCSRFTokens(w http.ResponseWriter, body string) (string, string) {
 		results2 := searchCookie.FindStringSubmatch(rawCookie)
 		if len(results2) > 1 {
 			cookieToken = results2[1]
-			fmt.Println(rawCookie)
 		}
 	}
 	return bodyToken, cookieToken

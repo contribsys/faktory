@@ -157,7 +157,6 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')
 			if err != nil {
-				fmt.Println(err)
 				conn.Close()
 				break
 			}

@@ -135,12 +135,12 @@ func pushAndPop(t *testing.T, count int) {
 	}
 
 	util.Info("Done")
-	hash, err := cl.Info()
+	hash, err := cl.CurrentState()
 	if err != nil {
 		handleError(err)
 		return
 	}
-	util.Infof("%v", hash)
+	util.Infof("%+v", hash)
 }
 
 func pushJob(cl *client.Client, idx int) error {

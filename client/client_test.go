@@ -2,7 +2,6 @@ package client
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"net"
 	"os"

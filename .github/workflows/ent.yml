@@ -15,8 +15,8 @@ jobs:
   test:
     runs-on: macos-latest
     env:
-      GO_VERSION: "1.21"
-      FAKTORY_VERSION: 1.8.0
+      GO_VERSION: "1.22"
+      FAKTORY_VERSION: 1.9.0
     steps:
       - uses: actions/checkout@v4
       - name: Install redis

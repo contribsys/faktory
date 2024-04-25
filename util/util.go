@@ -1,6 +1,7 @@
 package util
 
 import (
+	"cmp"
 	"context"
 	cryptorand "crypto/rand"
 	"encoding/base64"
@@ -8,6 +9,7 @@ import (
 	"math/big"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -18,6 +20,11 @@ const (
 	SIGTERM = 0xF
 
 	maxInt63 = int64(^uint64(0) >> 1)
+)
+
+var (
+	// Set FAKTORY2_PREVIEW=true to enable breaking changes coming in Faktory 2.0.
+	Faktory2Preview bool = Must(strconv.ParseBool(cmp.Or(os.Getenv("FAKTORY2_PREVIEW"), "false")))
 )
 
 func Retryable(ctx context.Context, name string, count int, fn func() error) error {

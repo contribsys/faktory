@@ -5,12 +5,19 @@ import (
 	"encoding/json"
 )
 
+func Must[T any](obj T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
 var (
 	// If true, activates encoding/json's Decoder and its UseNumber()
 	// option to preserve number precision.
 	// Defaults to false in Faktory 1.x.
 	// Will default to true in Faktory 2.x
-	JsonUseNumber bool = false
+	JsonUseNumber bool = Faktory2Preview
 )
 
 func JsonUnmarshal(data []byte, target any) error {

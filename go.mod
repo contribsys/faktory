@@ -1,6 +1,6 @@
 module github.com/contribsys/faktory
 
-go 1.21
+go 1.22
 
 require (
 	github.com/BurntSushi/toml v0.4.1

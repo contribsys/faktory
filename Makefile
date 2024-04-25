@@ -140,6 +140,7 @@ clean: ## Clean the project, set it up for a new build
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
 	@mkdir -p tmp/linux
+	@go clean -testcache
 
 run: clean generate ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development

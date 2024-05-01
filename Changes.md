@@ -4,6 +4,9 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## 1.9.0
 
+- The `INFO` response has changed slightly, all elements now have well-defined types [#474]
+  Deprecate `client.Info` Go API, add new `client.CurrentState` Go API which
+  is almost identical to `client.Info` but has a strongly-typed response.
 - Implement native TLS support [#469]
   Put `public.cert.pem` and `private.key.pem` in your config directory
   and Faktory will automatically enable TLS on port 7419 and 7420.

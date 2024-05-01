@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/storage"
+	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,7 +105,7 @@ func TestServerStart(t *testing.T) {
 		assert.Regexp(t, "\"retry\":", result)
 
 		hash := make(map[string]interface{})
-		err = json.Unmarshal([]byte(result), &hash)
+		err = util.JsonUnmarshal([]byte(result), &hash)
 		assert.NoError(t, err)
 		// fmt.Println(hash)
 		assert.Equal(t, "12345678901234567890abcd", hash["jid"])
@@ -127,7 +128,7 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 
 		var stats map[string]interface{}
-		err = json.Unmarshal([]byte(result), &stats)
+		err = util.JsonUnmarshal([]byte(result), &stats)
 		assert.NoError(t, err)
 		assert.Equal(t, 4, len(stats))
 

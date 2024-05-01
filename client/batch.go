@@ -3,6 +3,8 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/contribsys/faktory/util"
 )
 
 type BatchStatus struct {
@@ -176,7 +178,7 @@ func (c *Client) BatchStatus(bid string) (*BatchStatus, error) {
 	}
 
 	var stat BatchStatus
-	err = json.Unmarshal(data, &stat)
+	err = util.JsonUnmarshal(data, &stat)
 	if err != nil {
 		return nil, err
 	}

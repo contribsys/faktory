@@ -403,51 +403,71 @@ func (s *Server) processLines(conn *Connection) {
 	}
 }
 
-func (s *Server) uptimeInSeconds() int {
-	return int(time.Since(s.Stats.StartedAt).Seconds())
+func (s *Server) uptimeInSeconds() uint64 {
+	return uint64(time.Since(s.Stats.StartedAt).Seconds())
 }
 
-func (s *Server) CurrentState() (map[string]interface{}, error) {
+func (s *Server) CurrentState() (*client.FaktoryState, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	queueCmd := map[string]*redis.IntCmd{}
+	setCmd := map[string]*redis.IntCmd{}
 	_, err := s.store.Redis().Pipelined(ctx, func(pipe redis.Pipeliner) error {
 		s.store.EachQueue(ctx, func(q storage.Queue) {
 			queueCmd[q.Name()] = pipe.LLen(ctx, q.Name())
 		})
+		setCmd["scheduled"] = pipe.ZCard(ctx, "scheduled")
+		setCmd["retries"] = pipe.ZCard(ctx, "retries")
+		setCmd["dead"] = pipe.ZCard(ctx, "dead")
+		setCmd["working"] = pipe.ZCard(ctx, "working")
+		setCmd["failures"] = pipe.IncrBy(ctx, "failures", 0)
+		setCmd["processed"] = pipe.IncrBy(ctx, "processed", 0)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	queues := map[string]int64{}
-	totalQueued := int64(0)
+	queues := map[string]uint64{}
+	totalQueued := uint64(0)
 	totalQueues := len(queueCmd)
 	for name, cmd := range queueCmd {
-		qsize := cmd.Val()
+		qsize, _ := cmd.Uint64()
 		totalQueued += qsize
 		queues[name] = qsize
 	}
 
-	return map[string]interface{}{
-		"now":             util.Nows(),
-		"server_utc_time": time.Now().UTC().Format("15:04:05 UTC"),
-		"faktory": map[string]interface{}{
-			"total_failures":  s.store.TotalFailures(ctx),
-			"total_processed": s.store.TotalProcessed(ctx),
-			"total_enqueued":  totalQueued,
-			"total_queues":    totalQueues,
-			"queues":          queues,
-			"tasks":           s.taskRunner.Stats(),
+	snap := &client.FaktoryState{
+		Now:           util.Nows(),
+		ServerUtcTime: time.Now().UTC().Format("15:04:05 UTC"),
+		Data: client.DataSnapshot{
+			TotalFailures:  size(setCmd["failures"]),
+			TotalProcessed: size(setCmd["processed"]),
+			TotalEnqueued:  totalQueued,
+			TotalQueues:    uint64(totalQueues),
+			Queues:         queues,
+			Tasks:          s.taskRunner.Stats(),
+			Sets: map[string]uint64{
+				"scheduled": size(setCmd["scheduled"]),
+				"retries":   size(setCmd["retries"]),
+				"dead":      size(setCmd["dead"]),
+				"working":   size(setCmd["working"]),
+			},
 		},
-		"server": map[string]interface{}{
-			"description":     client.Name,
-			"faktory_version": client.Version,
-			"uptime":          s.uptimeInSeconds(),
-			"connections":     atomic.LoadUint64(&s.Stats.Connections),
-			"command_count":   atomic.LoadUint64(&s.Stats.Commands),
-			"used_memory_mb":  util.MemoryUsageMB(),
+		Server: client.ServerSnapshot{
+			Description:  client.Name,
+			Version:      client.Version,
+			Uptime:       s.uptimeInSeconds(),
+			Connections:  atomic.LoadUint64(&s.Stats.Connections),
+			CommandCount: atomic.LoadUint64(&s.Stats.Commands),
+			UsedMemoryMB: util.MemoryUsageMB(),
 		},
-	}, nil
+	}
+	return snap, nil
+}
+
+func size(cmd *redis.IntCmd) uint64 {
+	s, _ := cmd.Uint64()
+	return s
 }

@@ -20,10 +20,6 @@ func TestMutateCommands(t *testing.T) {
 		err = cl.Clear(faktory.Retries)
 		assert.NoError(t, err)
 
-		hash, err := cl.Info()
-		assert.NoError(t, err)
-		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
-
 		j := faktory.NewJob("AnotherJob", "truid:67123", 3)
 		j.At = util.Thens(time.Now().Add(10 * time.Second))
 		err = cl.Push(j)
@@ -49,17 +45,17 @@ func TestMutateCommands(t *testing.T) {
 		err = cl.Push(j)
 		assert.NoError(t, err)
 
-		hash, err = cl.Info()
+		state, err := cl.CurrentState()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 4, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 4, state.Data.Sets["scheduled"])
 
 		err = cl.Discard(faktory.Scheduled, faktory.OfType("SomeJob").Matching("*uid:67123*"))
 		assert.NoError(t, err)
 
-		hash, err = cl.Info()
+		state, err = cl.CurrentState()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 3, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
-		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 3, state.Data.Sets["scheduled"])
+		assert.EqualValues(t, 0, state.Data.Sets["dead"])
 
 		err = cl.Kill(faktory.Scheduled, faktory.OfType("AnotherJob"))
 		assert.NoError(t, err)
@@ -67,26 +63,27 @@ func TestMutateCommands(t *testing.T) {
 		err = cl.Kill("", faktory.OfType("AnotherJob"))
 		assert.Error(t, err)
 
-		hash, err = cl.Info()
+		state, err = cl.CurrentState()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
-		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
-		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
+		assert.EqualValues(t, 2, state.Data.Sets["scheduled"])
+		assert.EqualValues(t, 1, state.Data.Sets["dead"])
+		assert.EqualValues(t, 1, state.Data.Queues["default"])
 
 		err = cl.Requeue(faktory.Scheduled, faktory.WithJids(targetJid))
 		assert.NoError(t, err)
 
-		hash, err = cl.Info()
+		state, err = cl.CurrentState()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Scheduled"].(map[string]interface{})["size"])
-		assert.EqualValues(t, 2, hash["faktory"].(map[string]interface{})["queues"].(map[string]interface{})["default"])
-		assert.EqualValues(t, 1, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 1, state.Data.Sets["scheduled"])
+		assert.EqualValues(t, 1, state.Data.Sets["dead"])
+		assert.EqualValues(t, 2, state.Data.Queues["default"])
 
 		err = cl.Clear(faktory.Dead)
 		assert.NoError(t, err)
-		hash, err = cl.Info()
+
+		state, err = cl.CurrentState()
 		assert.NoError(t, err)
-		assert.EqualValues(t, 0, hash["faktory"].(map[string]interface{})["tasks"].(map[string]interface{})["Dead"].(map[string]interface{})["size"])
+		assert.EqualValues(t, 0, state.Data.Sets["dead"])
 
 	})
 }

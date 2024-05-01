@@ -22,6 +22,13 @@ const (
 	maxInt63 = int64(^uint64(0) >> 1)
 )
 
+func Must[T any](obj T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
 var (
 	// Set FAKTORY2_PREVIEW=true to enable breaking changes coming in Faktory 2.0.
 	Faktory2Preview bool = Must(strconv.ParseBool(cmp.Or(os.Getenv("FAKTORY2_PREVIEW"), "false")))

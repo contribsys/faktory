@@ -33,6 +33,7 @@ func runServer(binding string, runner func()) {
 		StorageDirectory: dir,
 		RedisSock:        sock,
 		ConfigDirectory:  os.ExpandEnv("test/.faktory"),
+		PoolSize:         DefaultMaxPoolSize,
 	}
 	s, err := NewServer(opts)
 	if err != nil {

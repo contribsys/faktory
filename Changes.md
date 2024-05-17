@@ -4,6 +4,8 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## 1.9.0
 
+- Faktory now refuses further connections on :7419 if the connection count is larger than
+  allowed, 2000 in Faktory or your licensed amount in Faktory Enterprise. [#476]
 - The `INFO` response has changed slightly, all elements now have well-defined types [#474]
   Deprecate `client.Info` Go API, add new `client.CurrentState` Go API which
   is almost identical to `client.Info` but has a strongly-typed response.

@@ -100,6 +100,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 		Binding:          "localhost:7418",
 		StorageDirectory: dir,
 		RedisSock:        sock,
+		PoolSize:         server.DefaultMaxPoolSize,
 	})
 
 	if err != nil {

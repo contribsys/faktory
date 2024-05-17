@@ -364,6 +364,8 @@ func (s *Server) processLines(conn *Connection) {
 			// This will trigger in Faktory Enterprise if over the licensed connection count.
 			util.Warnf("%s has over %d active client connections and may exhibit poor performance. Ensure your worker processes are using no more than your licensed connection count.", client.Name, s.Options.PoolSize)
 		}
+		_ = conn.Error("Overloaded", fmt.Errorf("too many connections: %d", s.Stats.Connections))
+		return
 	}
 
 	for {

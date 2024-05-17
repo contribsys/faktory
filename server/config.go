@@ -2,7 +2,7 @@ package server
 
 import "github.com/contribsys/faktory/util"
 
-var DefaultMaxPoolSize = 1000
+var DefaultMaxPoolSize = 2000
 
 type ServerOptions struct {
 	Binding          string

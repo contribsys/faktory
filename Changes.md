@@ -14,6 +14,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
   and Faktory will automatically enable TLS on port 7419 and 7420.
 - Unwrap and display ActiveJob class names [#460, ibrahima]
 - Add Go client API so batches can push jobs in bulk [#437, tylerian]
+- Go 1.22, go-redis 9.5.1
 
 ## 1.8.0
 

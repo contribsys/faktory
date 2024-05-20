@@ -5,7 +5,7 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
-## HEAD
+## 1.9.0
 
 - Add Redis round trip time (in µs) to Statsd, "ops.redis.rtt_us" [#475]
 

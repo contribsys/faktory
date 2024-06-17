@@ -44,7 +44,10 @@ func main() {
 
 	go cli.HandleSignals(s)
 	go func() {
-		_ = s.Run()
+		err = s.Run()
+                if err != nil {
+                  util.Error("Unable to start Faktory", err)
+                }
 	}()
 
 	<-s.Stopper()

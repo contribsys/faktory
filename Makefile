@@ -1,6 +1,5 @@
 NAME=faktory
 VERSION=1.9.1
-ARCH=amd64
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -26,7 +25,9 @@ release:
 	@echo Releasing $(NAME) $(VERSION)
 	hub release create v$(VERSION) \
 		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
+		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_arm64.deb \
 		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
+		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).aarch64.rpm \
 		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.arm64.tbz \
 		-a packaging/output/systemd/faktory-ent_$(VERSION).macos.amd64.tbz \
 		-F /tmp/release-notes.md -e -o || :
@@ -103,7 +104,12 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -o $(NAME) cmd/faktory/daemon.go
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	# brew install upx
+	upx -qq ./$(NAME)
+
+xbuild_arm64: clean generate
+	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
 	# brew install upx
 	upx -qq ./$(NAME)
 
@@ -134,14 +140,20 @@ fmt: ## Format the code
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean: ## Clean the project, set it up for a new build
+clean_project: ## Clean the project, set it up for a new build
 	@rm -rf tmp
-	@rm -f main faktory templates.go
+	@rm -f main faktory templates.go	
+	@mkdir -p tmp/linux
+	@go clean -testcache
+
+clean: 
+	@rm -rf tmp
+	@rm -f main faktory templates.go	
+	@mkdir -p tmp/linux
+	@go clean -testcache
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd
-	@mkdir -p tmp/linux
-	@go clean -testcache
 
 run: clean generate ## Run Faktory daemon locally
 	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
@@ -155,22 +167,7 @@ ussh:
 # gem install fpm
 # Packaging uses Go's cross compile + fpm so we can build Linux packages on macOS.
 
-package: clean xbuild deb rpm 
-package_rpm: clean xbuild rpm
-package_deb: clean xbuild deb
-
-package_amd64: clean xbuild deb rpm 
-package_rpm_amd64: clean xbuild rpm
-package_deb_amd64: clean xbuild deb
-
-package_arm64: ARCH=arm64
-package_arm64: clean xbuild deb rpm 
-
-package_rpm_arm64: ARCH=arm64
-package_rpm_arm64: clean xbuild rpm
-
-package_deb_arm64: ARCH=arm64
-package_deb_arm64: clean xbuild deb
+package: clean deb rpm clean_project deb_arm64 rpm_arm64
 
 package_base_name: 
 	@echo $(BASENAME)
@@ -199,7 +196,23 @@ rpm: xbuild
 		--description "Background job server" \
 		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a $(ARCH) \
+		--vendor "Contributed Systems" -a amd64 \
+		faktory=/usr/bin/faktory \
+		packaging/root/=/
+
+rpm_arm64: xbuild_arm64
+	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
+		--depends redis \
+		--rpm-compression bzip2 \
+	 	--rpm-os linux \
+	 	--after-install packaging/scripts/postinst.rpm.systemd \
+	 	--before-remove packaging/scripts/prerm.rpm.systemd \
+		--after-remove packaging/scripts/postrm.rpm.systemd \
+		--url https://contribsys.com/faktory \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
+		--iteration $(ITERATION) --license "GPL 3.0" \
+		--vendor "Contributed Systems" -a arm64 \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
@@ -215,7 +228,23 @@ deb: xbuild
 		--description "Background job server" \
 		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a $(ARCH) \
+		--vendor "Contributed Systems" -a amd64 \
+		faktory=/usr/bin/faktory \
+		packaging/root/=/
+
+deb_arm64: xbuild_arm64
+	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
+		--depends redis-server \
+		--deb-priority optional --category admin \
+		--no-deb-no-default-config-files \
+	 	--after-install packaging/scripts/postinst.deb.systemd \
+	 	--before-remove packaging/scripts/prerm.deb.systemd \
+		--after-remove packaging/scripts/postrm.deb.systemd \
+		--url https://contribsys.com/faktory \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
+		--iteration $(ITERATION) --license "GPL 3.0" \
+		--vendor "Contributed Systems" -a arm64 \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 

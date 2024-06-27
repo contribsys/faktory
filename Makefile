@@ -1,5 +1,6 @@
 NAME=faktory
 VERSION=1.9.1
+ARCH=amd64
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
@@ -102,9 +103,9 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	@CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -o $(NAME) cmd/faktory/daemon.go
 	# brew install upx
-	upx -qq ./faktory
+	upx -qq ./$(NAME)
 
 build: clean generate
 	go build -o $(NAME) cmd/faktory/daemon.go
@@ -153,7 +154,26 @@ ussh:
 
 # gem install fpm
 # Packaging uses Go's cross compile + fpm so we can build Linux packages on macOS.
-package: clean xbuild deb rpm
+
+package: clean xbuild deb rpm 
+package_rpm: clean xbuild rpm
+package_deb: clean xbuild deb
+
+package_amd64: clean xbuild deb rpm 
+package_rpm_amd64: clean xbuild rpm
+package_deb_amd64: clean xbuild deb
+
+package_arm64: ARCH=arm64
+package_arm64: clean xbuild deb rpm 
+
+package_rpm_arm64: ARCH=arm64
+package_rpm_arm64: clean xbuild rpm
+
+package_deb_arm64: ARCH=arm64
+package_deb_arm64: clean xbuild deb
+
+package_base_name: 
+	@echo $(BASENAME)
 
 version_check:
 	@grep -q $(VERSION) client/faktory.go || (echo VERSIONS OUT OF SYNC && false)
@@ -179,7 +199,7 @@ rpm: xbuild
 		--description "Background job server" \
 		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
+		--vendor "Contributed Systems" -a $(ARCH) \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 
@@ -195,7 +215,7 @@ deb: xbuild
 		--description "Background job server" \
 		-m "Contributed Systems LLC <info@contribsys.com>" \
 		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
+		--vendor "Contributed Systems" -a $(ARCH) \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
 

@@ -20,6 +20,8 @@ vendor/
 .DS_Store
 
 /faktory
+/faktory_amd64
+/faktory_arm64
 /faktory-cli
 /loadtest
 /coverage.html

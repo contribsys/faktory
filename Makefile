@@ -104,14 +104,12 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME)_amd64 cmd/faktory/daemon.go
 	# brew install upx
-	upx -qq ./$(NAME)
-
-xbuild_arm64: clean generate
-	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
+	upx -qq ./$(NAME)_amd64
+	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(NAME)_arm64 cmd/faktory/daemon.go
 	# brew install upx
-	upx -qq ./$(NAME)
+	upx -qq ./$(NAME)_arm64
 
 build: clean generate
 	go build -o $(NAME) cmd/faktory/daemon.go
@@ -140,15 +138,9 @@ fmt: ## Format the code
 work: ## Run a simple Ruby worker, see also "make run"
 	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
 
-clean_project: ## Clean the project, set it up for a new build
+clean: ## Clean the project, set it up for a new build
 	@rm -rf tmp
-	@rm -f main faktory templates.go	
-	@mkdir -p tmp/linux
-	@go clean -testcache
-
-clean: 
-	@rm -rf tmp
-	@rm -f main faktory templates.go	
+	@rm -f main $(NAME) $(NAME)_amd64 $(NAME)_arm64 templates.go	
 	@mkdir -p tmp/linux
 	@go clean -testcache
 	@rm -rf packaging/output
@@ -167,7 +159,7 @@ ussh:
 # gem install fpm
 # Packaging uses Go's cross compile + fpm so we can build Linux packages on macOS.
 
-package: clean deb rpm clean_project deb_arm64 rpm_arm64
+package: clean deb rpm
 
 package_base_name: 
 	@echo $(BASENAME)
@@ -185,22 +177,7 @@ reload_deb:
 	sudo dpkg -i packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
 
 rpm: xbuild
-	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
-		--depends redis \
-		--rpm-compression bzip2 \
-	 	--rpm-os linux \
-	 	--after-install packaging/scripts/postinst.rpm.systemd \
-	 	--before-remove packaging/scripts/prerm.rpm.systemd \
-		--after-remove packaging/scripts/postrm.rpm.systemd \
-		--url https://contribsys.com/faktory \
-		--description "Background job server" \
-		-m "Contributed Systems LLC <info@contribsys.com>" \
-		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
-		faktory=/usr/bin/faktory \
-		packaging/root/=/
-
-rpm_arm64: xbuild_arm64
+	@cp $(NAME)_arm64 $(NAME)
 	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis \
 		--rpm-compression bzip2 \
@@ -215,24 +192,25 @@ rpm_arm64: xbuild_arm64
 		--vendor "Contributed Systems" -a arm64 \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
+	@cp -f $(NAME)_amd64 $(NAME)
+	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
+		--depends redis \
+		--rpm-compression bzip2 \
+	 	--rpm-os linux \
+	 	--after-install packaging/scripts/postinst.rpm.systemd \
+	 	--before-remove packaging/scripts/prerm.rpm.systemd \
+		--after-remove packaging/scripts/postrm.rpm.systemd \
+		--url https://contribsys.com/faktory \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
+		--iteration $(ITERATION) --license "GPL 3.0" \
+		--vendor "Contributed Systems" -a amd64 \
+		faktory=/usr/bin/faktory \
+		packaging/root/=/
+#	@rm $(NAME)
 
 deb: xbuild
-	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
-		--depends redis-server \
-		--deb-priority optional --category admin \
-		--no-deb-no-default-config-files \
-	 	--after-install packaging/scripts/postinst.deb.systemd \
-	 	--before-remove packaging/scripts/prerm.deb.systemd \
-		--after-remove packaging/scripts/postrm.deb.systemd \
-		--url https://contribsys.com/faktory \
-		--description "Background job server" \
-		-m "Contributed Systems LLC <info@contribsys.com>" \
-		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
-		faktory=/usr/bin/faktory \
-		packaging/root/=/
-
-deb_arm64: xbuild_arm64
+	@cp $(NAME)_arm64 $(NAME)
 	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
 		--depends redis-server \
 		--deb-priority optional --category admin \
@@ -247,6 +225,22 @@ deb_arm64: xbuild_arm64
 		--vendor "Contributed Systems" -a arm64 \
 		faktory=/usr/bin/faktory \
 		packaging/root/=/
+	@cp -f $(NAME)_amd64 $(NAME)
+	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
+		--depends redis-server \
+		--deb-priority optional --category admin \
+		--no-deb-no-default-config-files \
+	 	--after-install packaging/scripts/postinst.deb.systemd \
+	 	--before-remove packaging/scripts/prerm.deb.systemd \
+		--after-remove packaging/scripts/postrm.deb.systemd \
+		--url https://contribsys.com/faktory \
+		--description "Background job server" \
+		-m "Contributed Systems LLC <info@contribsys.com>" \
+		--iteration $(ITERATION) --license "GPL 3.0" \
+		--vendor "Contributed Systems" -a amd64 \
+		faktory=/usr/bin/faktory \
+		packaging/root/=/
+#	@rm $(NAME)
 
 tag:
 	git tag v$(VERSION) && git push --tags || :

@@ -8,7 +8,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 )
 
-require github.com/redis/go-redis/v9 v9.5.1
+require github.com/redis/go-redis/v9 v9.5.3
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

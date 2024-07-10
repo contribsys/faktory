@@ -46,7 +46,6 @@ func ego_index(w io.Writer, req *http.Request) {
 </div>
 
 <br/>
-<h6>Faktory</h6>
 <div class="row">
   <div class="stat col-12 col-md-2">
     <div class="border pt-0 pt-md-2 mb-3">

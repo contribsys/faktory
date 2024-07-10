@@ -115,57 +115,57 @@ func ego_index(w io.Writer, req *http.Request) {
 //line index.ego:44
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/stats"))))
 //line index.ego:44
-		_, _ = io.WriteString(w, "\"></div>\n  <div id=\"history-legend\"></div>\n</div>\n\n<br/>\n<h6>Faktory</h6>\n<div class=\"row\">\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"faktory_version\">")
-//line index.ego:53
+		_, _ = io.WriteString(w, "\"></div>\n  <div id=\"history-legend\"></div>\n</div>\n\n<br/>\n<div class=\"row\">\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"faktory_version\">")
+//line index.ego:52
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(client.Version)))
+//line index.ego:52
+		_, _ = io.WriteString(w, "</h3>\n      <p>")
 //line index.ego:53
-		_, _ = io.WriteString(w, "</h3>\n      <p>")
-//line index.ego:54
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Version"))))
-//line index.ego:54
+//line index.ego:53
 		_, _ = io.WriteString(w, "</p>\n    </div>\n  </div>\n\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"uptime_in_days\">")
-//line index.ego:60
+//line index.ego:59
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(uptimeInDays(req))))
+//line index.ego:59
+		_, _ = io.WriteString(w, "</h3>\n      <p>")
 //line index.ego:60
-		_, _ = io.WriteString(w, "</h3>\n      <p>")
-//line index.ego:61
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Uptime"))))
-//line index.ego:61
+//line index.ego:60
 		_, _ = io.WriteString(w, "</p>\n    </div>\n  </div>\n\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"connections\">")
-//line index.ego:67
+//line index.ego:66
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Stats.Connections)))
+//line index.ego:66
+		_, _ = io.WriteString(w, "</h3>\n      <p>")
 //line index.ego:67
-		_, _ = io.WriteString(w, "</h3>\n      <p>")
-//line index.ego:68
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Connections"))))
-//line index.ego:68
+//line index.ego:67
 		_, _ = io.WriteString(w, "</p>\n    </div>\n  </div>\n\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"used_memory_human\">")
-//line index.ego:74
+//line index.ego:73
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(util.MemoryUsageMB())))
-//line index.ego:74
+//line index.ego:73
 		_, _ = io.WriteString(w, " MB</h3>\n      <p>")
-//line index.ego:75
+//line index.ego:74
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "MemoryUsage"))))
-//line index.ego:75
+//line index.ego:74
 		_, _ = io.WriteString(w, "</p>\n    </div>\n  </div>\n\n  <div class=\"stat col-12 col-md-2\">\n    <div class=\"border pt-0 pt-md-2 mb-3\">\n      <h3 class=\"commands\">")
-//line index.ego:81
+//line index.ego:80
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Stats.Commands)))
-//line index.ego:81
+//line index.ego:80
 		_, _ = io.WriteString(w, "</h3>\n      <p>")
-//line index.ego:82
+//line index.ego:81
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "CommandsExecuted"))))
-//line index.ego:82
+//line index.ego:81
 		_, _ = io.WriteString(w, "</p>\n    </div>\n  </div>\n</div>\n  ")
-//line index.ego:86
+//line index.ego:85
 	})
-//line index.ego:87
+//line index.ego:86
 	_, _ = io.WriteString(w, "\n")
 	// vim: set ft=html
 	//
+//line index.ego:86
 //line index.ego:87
-//line index.ego:88
 	_, _ = io.WriteString(w, "\n")
-//line index.ego:88
+//line index.ego:87
 }
 
 var _ fmt.Stringer

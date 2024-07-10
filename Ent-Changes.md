@@ -7,6 +7,7 @@ Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
 ## HEAD
 
+- Fix "concurrent write" crash with heavily contended per-worker throttles [#483]
 - Add support for `DD_DOGSTATSD_URL`, you do not need statsd.toml at all anymore [#479]
   `DD_DOGSTATSD_URL=udp://localhost:8125 faktory ...`
 - Upgrade datadog client to v5.5.0 [#479]

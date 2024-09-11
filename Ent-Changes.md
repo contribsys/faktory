@@ -5,7 +5,7 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
-## HEAD
+## 1.9.1
 
 - Fix "concurrent write" crash with heavily contended per-worker throttles [#483]
 - Add support for `DD_DOGSTATSD_URL`, you do not need statsd.toml at all anymore [#479]

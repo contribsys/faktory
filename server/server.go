@@ -356,7 +356,7 @@ func (s *Server) processLines(conn *Connection) {
 	defer atomic.AddUint64(&s.Stats.Connections, ^uint64(0))
 	defer conn.Close()
 
-	if s.Stats.Connections > uint64(s.Options.PoolSize) {
+	if s.Stats.Connections > s.Options.PoolSize {
 		if client.Name == "Faktory" {
 			// This will trigger in Faktory OSS if over the default max pool size.
 			util.Warnf("%s has over %d active client connections and may exhibit poor performance. Ensure your worker processes are using a connection pool and closing unused connections.", client.Name, s.Options.PoolSize)

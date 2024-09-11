@@ -36,8 +36,10 @@ func TestBatches(t *testing.T) {
 
 	// push a couple of jobs but do not commit just
 	assert.NoError(t, createBatchError, "Batch should be registered just fine by Ent (!?) Faktory.")
-	batch.Push(localJob(cl, "Common", "TestBatches"))
-	batch.Push(localJob(cl, "Common", "TestBatches"))
+	pushErr := batch.Push(localJob(cl, "Common", "TestBatches"))
+	assert.NoError(t, pushErr)
+	pushErr = batch.Push(localJob(cl, "Common", "TestBatches"))
+	assert.NoError(t, pushErr)
 
 	// let's try to open a batch we have never committed ...
 	openedBatch, openError := cl.BatchOpen(batch.Bid)
@@ -96,13 +98,15 @@ func TestBatches(t *testing.T) {
 	j, fetchErr := cl.Fetch("TestBatches_Nested")
 	assert.NoError(t, fetchErr, "fetched ok")
 	assert.Equal(t, "NestedJob", j.Type, "expected a job of type 'NestedJob'")
-	cl.Ack(j.Jid)
+	ackErr := cl.Ack(j.Jid)
+	assert.NoError(t, ackErr)
 
 	// job 2
 	j, fetchErr = cl.Fetch("TestBatches_Nested")
 	assert.NoError(t, fetchErr, "fetched ok")
 	assert.Equal(t, "NestedJob", j.Type, "expected a job of type 'NestedJob'")
-	cl.Ack(j.Jid)
+	ackErr = cl.Ack(j.Jid)
+	assert.NoError(t, ackErr)
 
 	// let Faktory enqueue the callbacks
 	time.Sleep(time.Duration(2) * time.Second)
@@ -120,7 +124,8 @@ func TestBatches(t *testing.T) {
 	j, fetchErr = cl.Fetch("TestBatches_CallbacksQueue")
 	assert.NoError(t, fetchErr, "fetched ok")
 	assert.Equal(t, "OnNestedComplete", j.Type, "expected a job of type 'OnNestedComplete'")
-	cl.Ack(j.Jid)
+	ackErr = cl.Ack(j.Jid)
+	assert.NoError(t, ackErr)
 
 	// ... and check the status again
 	batchStatus, getStatusError = cl.BatchStatus(nestedBatch.Bid)

@@ -2,7 +2,7 @@ package server
 
 import "github.com/contribsys/faktory/util"
 
-var DefaultMaxPoolSize = 2000
+var DefaultMaxPoolSize uint64 = 2000
 
 type ServerOptions struct {
 	Binding          string
@@ -11,7 +11,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	Password         string
-	PoolSize         int
+	PoolSize         uint64
 	GlobalConfig     map[string]interface{}
 }
 

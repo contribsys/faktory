@@ -17,10 +17,10 @@ func (store *redisStore) Success(ctx context.Context) error {
 }
 
 func (store *redisStore) TotalProcessed(ctx context.Context) uint64 {
-	return uint64(store.rclient.IncrBy(ctx, "processed", 0).Val())
+	return uint64(store.rclient.IncrBy(ctx, "processed", 0).Val()) // nolint:gosec
 }
 func (store *redisStore) TotalFailures(ctx context.Context) uint64 {
-	return uint64(store.rclient.IncrBy(ctx, "failures", 0).Val())
+	return uint64(store.rclient.IncrBy(ctx, "failures", 0).Val()) // nolint:gosec
 }
 
 func (store *redisStore) Failure(ctx context.Context) error {
@@ -57,7 +57,7 @@ func (store *redisStore) History(ctx context.Context, days int, fn func(day stri
 	}
 
 	for idx := 0; idx < days; idx++ {
-		fn(daystrs[idx], uint64(procds[idx].Val()), uint64(fails[idx].Val()))
+		fn(daystrs[idx], uint64(procds[idx].Val()), uint64(fails[idx].Val())) // nolint:gosec
 	}
 	return nil
 }

@@ -87,7 +87,7 @@ func (q *redisQueue) init(ctx context.Context) error {
 }
 
 func (q *redisQueue) Size(ctx context.Context) uint64 {
-	return uint64(q.store.rclient.LLen(ctx, q.name).Val())
+	return uint64(q.store.rclient.LLen(ctx, q.name).Val()) // nolint:gosec
 }
 
 func (q *redisQueue) Add(ctx context.Context, job *client.Job) error {

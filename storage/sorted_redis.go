@@ -31,7 +31,7 @@ func (rs *redisSorted) Name() string {
 }
 
 func (rs *redisSorted) Size(ctx context.Context) uint64 {
-	return uint64(rs.store.rclient.ZCard(ctx, rs.name).Val())
+	return uint64(rs.store.rclient.ZCard(ctx, rs.name).Val()) // nolint:gosec
 }
 
 func (rs *redisSorted) Clear(ctx context.Context) error {

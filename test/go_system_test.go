@@ -74,8 +74,8 @@ func TestSystem(t *testing.T) {
 
 	wg.Wait()
 	bg := context.Background()
-	assert.EqualValues(t, 3*each, int(s.Store().TotalProcessed(bg)))
-	assert.EqualValues(t, 3*(each/100), int(s.Store().TotalFailures(bg)))
+	assert.EqualValues(t, 3*each, s.Store().TotalProcessed(bg))
+	assert.EqualValues(t, 3*(each/100), s.Store().TotalFailures(bg))
 
 	s.Stop(nil)
 }

@@ -67,7 +67,7 @@ func t(req *http.Request, word string) string {
 	return dc.Translation(word)
 }
 
-func pageparam(req *http.Request, pageValue uint64) string {
+func pageparam(_ *http.Request, pageValue uint64) string {
 	return fmt.Sprintf("page=%d", pageValue)
 }
 
@@ -141,7 +141,7 @@ func uintWithDelimiter(val uint64) string {
 
 func queueJobs(r *http.Request, q storage.Queue, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	c := r.Context()
-	err := q.Page(c, int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error {
+	err := q.Page(c, int64((currentPage-1)*count), int64(count), func(idx int, data []byte) error { // nolint:gosec
 		var job client.Job
 		err := util.JsonUnmarshal(data, &job)
 		if err != nil {
@@ -177,13 +177,13 @@ func unfiltered() bool {
 	return true
 }
 
-func filtering(set string) string {
+func filtering(_ string) string {
 	return ""
 }
 
 func setJobs(req *http.Request, set storage.SortedSet, count, currentPage uint64, fn func(idx int, key []byte, job *client.Job)) {
 	c := req.Context()
-	_, err := set.Page(c, int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error {
+	_, err := set.Page(c, int((currentPage-1)*count), int(count), func(idx int, entry storage.SortedEntry) error { // nolint:gosec
 		job, err := entry.Job()
 		if err != nil {
 			util.Warnf("Error parsing JSON: %s", string(entry.Value()))
@@ -464,7 +464,7 @@ func displayLimitedArgs(args []interface{}, limit int) string {
 			s = data.String()
 		}
 		if len(s) > limit {
-			fmt.Fprintf(&b, s[0:limit])
+			fmt.Fprintf(&b, "%s", s[0:limit])
 			b.WriteRune('…')
 		} else {
 			fmt.Fprint(&b, s)

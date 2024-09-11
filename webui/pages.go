@@ -117,11 +117,11 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
-		if err != nil {
+		if err != nil || val < 0 {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = uint64(val)
+		currentPage = uint64(val) // nolint:gosec
 	}
 	count := uint64(25)
 
@@ -147,11 +147,11 @@ func retriesHandler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
-		if err != nil {
+		if err != nil || val < 0 {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = uint64(val)
+		currentPage = uint64(val) // nolint:gosec
 	}
 	count := uint64(25)
 
@@ -228,11 +228,11 @@ func scheduledHandler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
-		if err != nil {
+		if err != nil || val < 0 {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = uint64(val)
+		currentPage = uint64(val) // nolint:gosec
 	}
 	count := uint64(25)
 
@@ -305,11 +305,11 @@ func morgueHandler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query()["page"]
 	if p != nil {
 		val, err := strconv.Atoi(p[0])
-		if err != nil {
+		if err != nil || val < 0 {
 			http.Error(w, "Invalid parameter", http.StatusBadRequest)
 			return
 		}
-		currentPage = uint64(val)
+		currentPage = uint64(val) // nolint:gosec
 	}
 	count := uint64(25)
 

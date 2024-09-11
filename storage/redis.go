@@ -97,7 +97,7 @@ func bootRedis(path string, sock string) (func(), error) {
 
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
-			if err != nil && os.IsNotExist(err) {
+			if os.IsNotExist(err) {
 				// nolint:gosec
 				err := os.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0o444)
 				if err != nil {
@@ -231,7 +231,7 @@ func openRedis(sock string, poolSize uint64) (Store, error) {
 		Network:  "unix",
 		Addr:     sock,
 		DB:       0,
-		PoolSize: int(poolSize),
+		PoolSize: int(poolSize), // nolint:gosec
 	})
 	_, err := rclient.Ping(ctx).Result()
 	if err != nil {

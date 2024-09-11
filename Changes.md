@@ -2,6 +2,12 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.9.1
+
+- Fix top-error silently crashing Faktory [#479]
+- Various lint fixes for golangci-lint
+- Go 1.22, go-redis 9.6.1, alpine 3.20
+
 ## 1.9.0
 
 - Faktory now refuses further connections on :7419 if the connection count is larger than

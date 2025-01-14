@@ -5,6 +5,10 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## HEAD
+
+- Remove reserved tag validation [#490]
+
 ## 1.9.1
 
 - Fix "concurrent write" crash with heavily contended per-worker throttles [#483]

@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Upgrade BurntSushi/toml to 1.4.0
+
 ## 1.9.1
 
 - Fix top-error silently crashing Faktory [#479]

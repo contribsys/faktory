@@ -56,11 +56,9 @@ func (c *Connection) Result(msg []byte) error {
 	if err != nil {
 		return err
 	}
-	if msg != nil {
-		_, err = c.conn.Write(msg)
-		if err != nil {
-			return err
-		}
+	_, err = c.conn.Write(msg)
+	if err != nil {
+		return err
 	}
 	_, err = c.conn.Write([]byte("\r\n"))
 	return err

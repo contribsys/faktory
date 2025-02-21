@@ -307,16 +307,54 @@ commands.
 
 When the server `HI` includes an iteration count `i` and a salt `s`,
 a client MUST include a `pwdhash` String-typed field in their `HELLO`.
-This field should be the hexadecimal representation of the `i`th SHA256
-hash of the client password concatenated with the value in `s`.
+This field should be the PBKDF2-HMAC-SHA256 digest represented
+as a hex string.
 
-```example
-hash = password + s
-for 0..i {
-  hash = sha256(hash)
+Here's how to implement that in Go.
+
+```go
+import (
+    "crypto/sha256"
+    "golang.org/x/crypto/pbkdf2"
+    "encoding/hex"
+)
+
+func hash(pwd, salt string, iterations int) string {
+    pwdBytes := []byte(pwd)
+    saltBytes := []byte(salt)
+
+    // Generate the hash using PBKDF2-HMAC-SHA256. The '32' parameter 
+    // specifies the key length in bytes (256 bits for SHA-256).
+    hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
+
+    return hex.EncodeToString(hash)
 }
-hex(hash)
 ```
+
+And in Python.
+
+```python
+import hashlib
+
+def hash(pwd: str, salt: str, iterations: int) -> str:
+    pwd_bytes = pwd.encode('utf-8')
+    salt_bytes = salt.encode('utf-8')
+
+    # Generate the hash using PBKDF2-HMAC-SHA256. The dklen parameter
+    # specifies the key length in bytest (256 bits for SHA-256).
+    hash = hashlib.pbkdf2_hmac(
+        'sha256',
+        pwd_bytes,
+        salt_bytes,
+        iterations,
+        dklen=32,
+    )
+
+    return hash.hex()
+```
+
+You can gut-check your own implementation by checking that `hash("password", "salt", 50)`
+returns `926891811ee18e4539b150e9c3888a1afb0eb6fb827ad0c01ab6b4b918a513ac`.
 
 #### Required Fields for Consumers
 

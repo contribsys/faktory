@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 type RuntimeStats struct {
@@ -230,14 +232,13 @@ func cleanupConnection(s *Server, c *Connection) {
 }
 
 func hash(pwd, salt string, iterations int) string {
-	bytes := []byte(pwd + salt)
-	hash := sha256.Sum256(bytes)
-	if iterations > 1 {
-		for i := 1; i < iterations; i++ {
-			hash = sha256.Sum256(hash[:])
-		}
-	}
-	return fmt.Sprintf("%x", hash)
+	pwdBytes := []byte(pwd)
+	saltBytes := []byte(salt)
+
+	// The '32' parameter specifies the key length in bytes (256 bits for SHA-256)
+	hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
+
+	return hex.EncodeToString(hash)
 }
 
 func startConnection(conn net.Conn, s *Server) *Connection {

@@ -12,9 +12,9 @@ import (
 type scannerTask func(context.Context, time.Time) (int64, error)
 
 type scanner struct {
-	name     string
-	task     scannerTask
 	set      storage.SortedSet
+	task     scannerTask
+	name     string
 	jobs     int64
 	cycles   int64
 	walltime int64

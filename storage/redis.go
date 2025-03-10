@@ -22,8 +22,6 @@ import (
 )
 
 type redisStore struct {
-	Name      string
-	mu        sync.Mutex
 	queueSet  map[string]*redisQueue
 	scheduled *redisSorted
 	retries   *redisSorted
@@ -31,6 +29,8 @@ type redisStore struct {
 	working   *redisSorted
 
 	rclient *redis.Client
+	Name    string
+	mu      sync.Mutex
 }
 
 func NewRedisStore(name string, rclient *redis.Client) (Store, error) {

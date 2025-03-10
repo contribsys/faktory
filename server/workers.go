@@ -46,21 +46,21 @@ import (
 // Workers will typically also respond to standard Unix signals.
 // faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
 type ClientData struct {
-	Hostname     string   `json:"hostname"`
-	Wid          string   `json:"wid"`
-	Pid          int      `json:"pid"`
-	RssKb        int64    `json:"rss_kb"`
-	Labels       []string `json:"labels"`
-	PasswordHash string   `json:"pwdhash"`
-	Username     string   `json:"username"`
-	Version      uint8    `json:"v"`
-	StartedAt    time.Time
+	StartedAt time.Time
 
 	// this only applies to clients that are workers and
 	// are sending BEAT
 	lastHeartbeat time.Time
-	state         WorkerState
 	connections   map[io.Closer]bool
+	Hostname      string   `json:"hostname"`
+	Wid           string   `json:"wid"`
+	PasswordHash  string   `json:"pwdhash"`
+	Username      string   `json:"username"`
+	Labels        []string `json:"labels"`
+	Pid           int      `json:"pid"`
+	RssKb         int64    `json:"rss_kb"`
+	state         WorkerState
+	Version       uint8 `json:"v"`
 }
 
 type WorkerState int

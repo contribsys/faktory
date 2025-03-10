@@ -5,6 +5,7 @@ import "github.com/contribsys/faktory/util"
 var DefaultMaxPoolSize uint64 = 2000
 
 type ServerOptions struct {
+	GlobalConfig     map[string]interface{}
 	Binding          string
 	StorageDirectory string
 	RedisSock        string
@@ -12,7 +13,6 @@ type ServerOptions struct {
 	Environment      string
 	Password         string
 	PoolSize         uint64
-	GlobalConfig     map[string]interface{}
 }
 
 func (so *ServerOptions) String(subsys string, key string, defval string) string {

@@ -15,8 +15,8 @@ import (
 )
 
 type redisSorted struct {
-	name  string
 	store *redisStore
+	name  string
 }
 
 func (rs *redisStore) initSorted() {
@@ -113,11 +113,11 @@ func (rs *redisSorted) Get(ctx context.Context, key []byte) (SortedEntry, error)
 }
 
 type setEntry struct {
-	value []byte
-	score float64
 	// these two are lazy-loaded
-	job *client.Job
-	key []byte
+	job   *client.Job
+	value []byte
+	key   []byte
+	score float64
 }
 
 func NewEntry(score float64, value []byte) *setEntry {

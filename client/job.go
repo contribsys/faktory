@@ -21,31 +21,32 @@ const (
 )
 
 type Failure struct {
-	RetryCount     int      `json:"retry_count"`
-	RetryRemaining int      `json:"remaining"`
 	FailedAt       string   `json:"failed_at"`
 	NextAt         string   `json:"next_at,omitempty"`
 	ErrorMessage   string   `json:"message,omitempty"`
 	ErrorType      string   `json:"errtype,omitempty"`
 	Backtrace      []string `json:"backtrace,omitempty"`
+	RetryCount     int      `json:"retry_count"`
+	RetryRemaining int      `json:"remaining"`
 }
 
 type Job struct {
+	Retry   *int                   `json:"retry"`
+	Failure *Failure               `json:"failure,omitempty"`
+	Custom  map[string]interface{} `json:"custom,omitempty"`
 	// required
-	Jid   string        `json:"jid"`
-	Queue string        `json:"queue"`
-	Type  string        `json:"jobtype"`
-	Args  []interface{} `json:"args"`
+	Jid   string `json:"jid"`
+	Queue string `json:"queue"`
+	Type  string `json:"jobtype"`
 
 	// optional
-	CreatedAt  string                 `json:"created_at,omitempty"`
-	EnqueuedAt string                 `json:"enqueued_at,omitempty"`
-	At         string                 `json:"at,omitempty"`
-	ReserveFor int                    `json:"reserve_for,omitempty"`
-	Retry      *int                   `json:"retry"`
-	Backtrace  int                    `json:"backtrace,omitempty"`
-	Failure    *Failure               `json:"failure,omitempty"`
-	Custom     map[string]interface{} `json:"custom,omitempty"`
+	CreatedAt  string        `json:"created_at,omitempty"`
+	EnqueuedAt string        `json:"enqueued_at,omitempty"`
+	At         string        `json:"at,omitempty"`
+	Args       []interface{} `json:"args"`
+
+	ReserveFor int `json:"reserve_for,omitempty"`
+	Backtrace  int `json:"backtrace,omitempty"`
 }
 
 // Clients should use this constructor to build a Job, not allocate

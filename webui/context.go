@@ -22,13 +22,14 @@ type Context interface {
 type DefaultContext struct {
 	context.Context
 
-	webui    *WebUI
 	response http.ResponseWriter
-	request  *http.Request
-	locale   string
-	strings  map[string]string
-	csrf     bool
-	Root     string
+
+	webui   *WebUI
+	request *http.Request
+	strings map[string]string
+	locale  string
+	Root    string
+	csrf    bool
 }
 
 func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *DefaultContext {

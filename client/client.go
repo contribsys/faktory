@@ -41,12 +41,12 @@ type Dialer interface {
 // of Clients in a multi-threaded process.  See faktory_worker_go's
 // internal connection pool for example.
 type Client struct {
-	Location string
+	conn     net.Conn
 	Options  *ClientData
 	rdr      *bufio.Reader
 	wtr      *bufio.Writer
-	conn     net.Conn
 	poolConn *pool.PoolConn
+	Location string
 }
 
 // ClientData is serialized to JSON and sent
@@ -59,10 +59,8 @@ type Client struct {
 // The other elements can be useful for debugging
 // and are displayed on the Busy tab.
 type ClientData struct {
-	Hostname string   `json:"hostname"`
-	Wid      string   `json:"wid"`
-	Pid      int      `json:"pid"`
-	Labels   []string `json:"labels"`
+	Hostname string `json:"hostname"`
+	Wid      string `json:"wid"`
 
 	// this can be used by proxies to route the connection.
 	// it is ignored by Faktory.
@@ -71,6 +69,10 @@ type ClientData struct {
 	// Hash is hex(sha256(password + nonce))
 	PasswordHash string `json:"pwdhash"`
 
+	Labels []string `json:"labels"`
+
+	Pid int `json:"pid"`
+
 	// The protocol version used by this client.
 	// The server can reject this connection if the version will not work
 	// The server advertises its protocol version in the HI.
@@ -78,12 +80,12 @@ type ClientData struct {
 }
 
 type Server struct {
+	TLS      *tls.Config
 	Network  string
 	Address  string
 	Username string
 	Password string
 	Timeout  time.Duration
-	TLS      *tls.Config
 }
 
 // OpenWithDialer creates a *Client with the dialer.
@@ -142,7 +144,13 @@ FOO_URL=tcp://:mypassword@faktory.example.com:7419`)
 }
 
 func DefaultServer() *Server {
-	return &Server{"tcp", "localhost:7419", "", "", 1 * time.Second, &tls.Config{MinVersion: tls.VersionTLS12}}
+	return &Server{
+		Network:  "tcp",
+		Address:  "localhost:7419",
+		Username: "",
+		Password: "",
+		Timeout:  1 * time.Second,
+		TLS:      &tls.Config{MinVersion: tls.VersionTLS12}}
 }
 
 // Open connects to a Faktory server based on
@@ -199,9 +207,9 @@ func DialWithDialer(srv *Server, password string, dialer Dialer) (*Client, error
 }
 
 type HIv2 struct {
+	S string `json:"s,omitempty"` // salt
 	V int    `json:"v"`           // version, should be 2
 	I int    `json:"i,omitempty"` // iterations
-	S string `json:"s,omitempty"` // salt
 }
 
 // dial connects to the remote faktory server.

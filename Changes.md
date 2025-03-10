@@ -4,6 +4,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
+- Rejigger structs to use less memory via `betteralign`
 - Upgrade BurntSushi/toml to 1.4.0
 
 ## 1.9.1

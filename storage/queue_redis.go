@@ -11,8 +11,8 @@ import (
 )
 
 type redisQueue struct {
-	name  string
 	store *redisStore
+	name  string
 	done  bool
 }
 

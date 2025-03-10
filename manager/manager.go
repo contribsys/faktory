@@ -174,18 +174,19 @@ type Lease interface {
 type manager struct {
 	store storage.Store
 
+	fetcher Fetcher
+
 	// Hold the working set in memory so we don't need to burn CPU
 	// when doing 1000s of jobs/sec.
 	// When client ack's JID, we can lookup reservation
 	// and remove stored entry quickly.
 	workingMap   map[string]*Reservation
-	workingMutex sync.RWMutex
 	pushChain    MiddlewareChain
 	fetchChain   MiddlewareChain
 	failChain    MiddlewareChain
 	ackChain     MiddlewareChain
-	fetcher      Fetcher
 	paused       []string
+	workingMutex sync.RWMutex
 }
 
 func (m *manager) Push(ctx context.Context, job *client.Job) error {

@@ -60,8 +60,8 @@ type Pool interface {
 // net.Conn's Close() method.
 type PoolConn struct {
 	Closeable
-	mu       sync.RWMutex
 	c        *channelPool
+	mu       sync.RWMutex
 	unusable bool
 }
 
@@ -95,12 +95,12 @@ func (c *channelPool) wrapConn(conn Closeable) Closeable {
 
 // channelPool implements the Pool interface based on buffered channels.
 type channelPool struct {
-	// storage for our net.Conn connections
-	mu    sync.Mutex
 	conns chan Closeable
 
 	// net.Conn generator
 	factory Factory
+	// storage for our net.Conn connections
+	mu sync.Mutex
 }
 
 // Factory is a function to create new connections.

@@ -12,18 +12,22 @@ type BatchStatus struct {
 	ParentBid   string `json:"parent_bid,omitempty"`
 	Description string `json:"description,omitempty"`
 	CreatedAt   string `json:"created_at"`
-	Total       int64  `json:"total"`
-	Pending     int64  `json:"pending"`
-	Failed      int64  `json:"failed"`
 
 	// "" if pending,
 	// "1" if callback enqueued,
 	// "2" if callback finished successfully
 	CompleteState string `json:"complete_st"`
 	SuccessState  string `json:"success_st"`
+	Total         int64  `json:"total"`
+	Pending       int64  `json:"pending"`
+	Failed        int64  `json:"failed"`
 }
 
 type Batch struct {
+	Success  *Job `json:"success,omitempty"`
+	Complete *Job `json:"complete,omitempty"`
+
+	faktory *Client
 	// Unique identifier for each batch.
 	// NB: the caller should not set this, it is generated
 	// by Faktory when the batch is persisted to Redis.
@@ -31,12 +35,8 @@ type Batch struct {
 
 	ParentBid   string `json:"parent_bid,omitempty"`
 	Description string `json:"description,omitempty"`
-	Success     *Job   `json:"success,omitempty"`
-	Complete    *Job   `json:"complete,omitempty"`
-
-	faktory   *Client
-	committed bool
-	new       bool
+	committed   bool
+	new         bool
 }
 
 // Allocate a new Batch.

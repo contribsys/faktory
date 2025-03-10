@@ -16,9 +16,9 @@ import (
 type Structure string
 
 type JobFilter struct {
-	Jids    []string `json:"jids,omitempty"`
 	Regexp  string   `json:"regexp,omitempty"`
 	Jobtype string   `json:"jobtype,omitempty"`
+	Jids    []string `json:"jids,omitempty"`
 }
 
 func (jf JobFilter) WithJids(jids ...string) JobFilter {
@@ -70,7 +70,7 @@ func WithJids(jids ...string) JobFilter {
 //
 // Example: discard any job retries whose payload contains the special word "uid:12345":
 //
-//     client.Discard(faktory.Retries, faktory.Matching("*uid:12345*"))
+//	client.Discard(faktory.Retries, faktory.Matching("*uid:12345*"))
 //
 // See the Redis SCAN documentation for pattern matching examples.
 // https://redis.io/commands/scan
@@ -89,9 +89,9 @@ func OfType(jobtype string) JobFilter {
 }
 
 type Operation struct {
+	Filter *JobFilter `json:"filter,omitempty"`
 	Cmd    string     `json:"cmd"`
 	Target Structure  `json:"target"`
-	Filter *JobFilter `json:"filter,omitempty"`
 }
 
 // Commands which allow you to perform admin tasks on various Faktory structures.

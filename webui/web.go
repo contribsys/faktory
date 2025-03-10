@@ -73,8 +73,8 @@ func init() {
 
 type Lifecycle struct {
 	WebUI          *WebUI
-	defaultBinding string
 	closer         func()
+	defaultBinding string
 }
 
 func Subsystem(binding string) *Lifecycle {
@@ -84,13 +84,14 @@ func Subsystem(binding string) *Lifecycle {
 }
 
 type WebUI struct {
-	Options     Options
-	Server      *server.Server
-	App         *http.ServeMux
+	Server *server.Server
+	App    *http.ServeMux
+
+	proxy       *http.ServeMux
 	Title       string
 	ExtraCssUrl string
 
-	proxy *http.ServeMux
+	Options Options
 }
 
 type Options struct {

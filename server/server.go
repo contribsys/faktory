@@ -27,28 +27,30 @@ import (
 )
 
 type RuntimeStats struct {
+	StartedAt   time.Time
 	Connections uint64
 	Commands    uint64
-	StartedAt   time.Time
 }
 
 type Server struct {
-	Options    *ServerOptions
-	Stats      *RuntimeStats
-	Subsystems []Subsystem
+	listener net.Listener
+	store    storage.Store
+	manager  manager.Manager
+	Options  *ServerOptions
+	Stats    *RuntimeStats
+
+	tlsConfig  *tls.Config
+	workers    *workers
+	taskRunner *taskRunner
+	stopper    chan bool
 
 	TLSPublicCert string
 	TLSPrivateKey string
 
-	tlsConfig  *tls.Config
-	listener   net.Listener
-	store      storage.Store
-	manager    manager.Manager
-	workers    *workers
-	taskRunner *taskRunner
-	mu         sync.Mutex
-	stopper    chan bool
-	closed     bool
+	Subsystems []Subsystem
+
+	mu     sync.Mutex
+	closed bool
 }
 
 func (s *Server) useTLS() error {

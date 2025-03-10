@@ -19,14 +19,14 @@ var (
 )
 
 type Reservation struct {
-	Job       *client.Job `json:"job"`
-	Since     string      `json:"reserved_at"`
-	Expiry    string      `json:"expires_at"`
-	Wid       string      `json:"wid"`
 	tsince    time.Time
 	texpiry   time.Time
 	extension time.Time
 	lease     Lease
+	Job       *client.Job `json:"job"`
+	Since     string      `json:"reserved_at"`
+	Expiry    string      `json:"expires_at"`
+	Wid       string      `json:"wid"`
 }
 
 func (res *Reservation) ReservedAt() time.Time {

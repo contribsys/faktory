@@ -10,10 +10,10 @@ import (
 
 type JobTrack struct {
 	Jid         string `json:"jid"`
-	Percent     int    `json:"percent,omitempty"`
 	Description string `json:"desc,omitempty"`
 	State       string `json:"state"`
 	UpdatedAt   string `json:"updated_at"`
+	Percent     int    `json:"percent,omitempty"`
 }
 
 func (c *Client) TrackGet(jid string) (*JobTrack, error) {
@@ -38,9 +38,9 @@ func (c *Client) TrackGet(jid string) (*JobTrack, error) {
 
 type setJobTrack struct {
 	Jid          string `json:"jid"`
-	Percent      int    `json:"percent,omitempty"`
 	Description  string `json:"desc,omitempty"`
 	ReserveUntil string `json:"reserve_until,omitempty"`
+	Percent      int    `json:"percent,omitempty"`
 }
 
 func (c *Client) TrackSet(jid string, percent int, desc string, reserveUntil *time.Time) error {

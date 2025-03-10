@@ -134,8 +134,8 @@ type BasicFetch struct {
 }
 
 type simpleLease struct {
-	payload  []byte
 	job      *client.Job
+	payload  []byte
 	released bool
 }
 

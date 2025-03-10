@@ -14,13 +14,13 @@ type FaktoryState struct {
 }
 
 type DataSnapshot struct {
+	Queues         map[string]uint64                 `json:"queues"`
+	Sets           map[string]uint64                 `json:"sets"`
+	Tasks          map[string]map[string]interface{} `json:"tasks"` // deprecated
 	TotalFailures  uint64                            `json:"total_failures"`
 	TotalProcessed uint64                            `json:"total_processed"`
 	TotalEnqueued  uint64                            `json:"total_enqueued"`
 	TotalQueues    uint64                            `json:"total_queues"`
-	Queues         map[string]uint64                 `json:"queues"`
-	Sets           map[string]uint64                 `json:"sets"`
-	Tasks          map[string]map[string]interface{} `json:"tasks"` // deprecated
 }
 
 type ServerSnapshot struct {

@@ -7,6 +7,7 @@ Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
 ## HEAD
 
+- Optimize struct alignment with `betteralign`
 - Remove reserved tag validation [#490]
 
 ## 1.9.1

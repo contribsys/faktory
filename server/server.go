@@ -232,13 +232,27 @@ func cleanupConnection(s *Server, c *Connection) {
 }
 
 func hash(pwd, salt string, iterations int) string {
-	pwdBytes := []byte(pwd)
-	saltBytes := []byte(salt)
+	if strings.HasPrefix(pwd, "sha256:") {
+		pwd := strings.TrimPrefix(pwd, "sha256:")
+		pwdBytes := []byte(pwd)
+		saltBytes := []byte(salt)
 
-	// The '32' parameter specifies the key length in bytes (256 bits for SHA-256)
-	hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
+		// The '32' parameter specifies the key length in bytes (256 bits for SHA-256)
+		hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
 
-	return hex.EncodeToString(hash)
+		return hex.EncodeToString(hash)
+	} else {
+		bytes := []byte(pwd + salt)
+		hash := sha256.Sum256(bytes)
+
+		if iterations > 1 {
+			for i := 1; i < iterations; i++ {
+				hash = sha256.Sum256(hash[:])
+			}
+		}
+
+		return fmt.Sprintf("%x", hash)
+	}
 }
 
 func startConnection(conn net.Conn, s *Server) *Connection {

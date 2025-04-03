@@ -315,6 +315,7 @@ Here's how to implement that in Go.
 ```go
 import (
     "crypto/sha256"
+	"fmt"
     "golang.org/x/crypto/pbkdf2"
     "encoding/hex"
 )
@@ -327,7 +328,7 @@ func hash(pwd, salt string, iterations int) string {
     // specifies the key length in bytes (256 bits for SHA-256).
     hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
 
-    return hex.EncodeToString(hash)
+    return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash))
 }
 ```
 
@@ -350,7 +351,7 @@ def hash(pwd: str, salt: str, iterations: int) -> str:
         dklen=32,
     )
 
-    return hash.hex()
+    return f"sha256:{hash.hex()}"
 ```
 
 You can gut-check your own implementation by checking that `hash("password", "salt", 50)`

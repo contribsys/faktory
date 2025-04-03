@@ -692,5 +692,5 @@ func hash(pwd, salt string, iterations int) string {
 	// The '32' parameter specifies the key length in bytes (256 bits for SHA-256)
 	hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
 
-	return hex.EncodeToString(hash)
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash))
 }

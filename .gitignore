@@ -18,6 +18,7 @@ packaging/output/
 vendor/
 
 .DS_Store
+.vscode
 
 /faktory
 /faktory_amd64

@@ -87,7 +87,7 @@ func RandomInt63() (int64, error) {
 
 const (
 	// This is the canonical timestamp format used by Faktory.
-	// Always UTC, lexigraphically sortable.  This is the best
+	// Always UTC, lexicographically sortable. This is the best
 	// timestamp format, accept no others.
 	TimestampFormat = time.RFC3339Nano
 )

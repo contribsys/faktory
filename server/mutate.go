@@ -80,6 +80,20 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 		return "*", AlwaysMatch
 	}
 
+	if len(filter.Jids) > 0 {
+		// `Jid` is a unique identifier of a job, so if they have specified
+		// `Jid`s _and_ `Regexp` and/or `Jobtype`, we are only taking `Jid`s
+		// into account and returning early:
+		return "*", func(value string) bool {
+			for idx := range filter.Jids {
+				if strings.Index(value, fmt.Sprintf(`"jid":%q`, filter.Jids[idx])) > 0 {
+					return true
+				}
+			}
+			return false
+		}
+	}
+
 	if filter.Regexp != "" {
 		if filter.Jobtype == "" {
 			return filter.Regexp, AlwaysMatch
@@ -97,16 +111,6 @@ func matchForFilter(filter *client.JobFilter) (string, func(value string) bool) 
 		return fmt.Sprintf(`*"jobtype":%q*`, filter.Jobtype), AlwaysMatch
 	}
 
-	if len(filter.Jids) > 0 {
-		return "*", func(value string) bool {
-			for idx := range filter.Jids {
-				if strings.Index(value, fmt.Sprintf(`"jid":%q`, filter.Jids[idx])) > 0 {
-					return true
-				}
-			}
-			return false
-		}
-	}
 	return "*", AlwaysMatch
 }
 

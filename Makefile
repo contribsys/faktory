@@ -50,6 +50,9 @@ test: clean generate ## Execute test suite
 		github.com/contribsys/faktory/util \
 		github.com/contribsys/faktory/webui
 
+test/package: clean generate
+	go test github.com/contribsys/faktory/$(PACKAGE_NAME)
+
 kill:
 	@killall -m -9 -e redis || :
 
@@ -245,7 +248,7 @@ deb: xbuild
 tag:
 	git tag v$(VERSION) && git push --tags || :
 
-.PHONY: help all clean test build package
+.PHONY: help all clean test test/package build package
 
 
 help:

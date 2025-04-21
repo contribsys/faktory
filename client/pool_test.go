@@ -121,3 +121,40 @@ func TestPoolClosePool(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestNewPoolWithClientConstructor(t *testing.T) {
+	s := DefaultServer()
+	s.Password = "foobar"
+	s.Address = fakeServerBinding
+
+	p, err := NewPoolWithClientConstructor(10, s.Open)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	cl, err := p.Get()
+	assert.Error(t, err)
+	assert.Nil(t, cl)
+
+	withFakeServer(t, func(req, resp chan string, addr string) {
+		resp <- "+OK\r\n"
+		cl, err := p.Get()
+		assert.NoError(t, err)
+		assert.NotNil(t, cl)
+		s := <-req
+		assert.Contains(t, s, "HELLO")
+		assert.Contains(t, s, "pwdhash")
+		p.Put(cl)
+
+		err = p.With(func(conn *Client) error {
+			// Should be able to use the client like normal
+			resp <- "+OK\r\n"
+			res, err := cl.Beat()
+			assert.NoError(t, err)
+			assert.Equal(t, "", res)
+			assert.Contains(t, <-req, "BEAT")
+			return nil
+		})
+		assert.NoError(t, err)
+	})
+}

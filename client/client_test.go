@@ -136,10 +136,10 @@ func TestClientOperations(t *testing.T) {
 	})
 }
 
-func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
-	binding := "localhost:44434"
+const fakeServerBinding = "localhost:44434"
 
-	addr, err := net.ResolveTCPAddr("tcp", binding)
+func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
+	addr, err := net.ResolveTCPAddr("tcp", fakeServerBinding)
 	assert.NoError(t, err)
 	listener, err := net.ListenTCP("tcp", addr)
 	assert.NoError(t, err)
@@ -167,7 +167,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 		}
 	}()
 
-	fn(req, resp, binding)
+	fn(req, resp, fakeServerBinding)
 	listener.Close()
 }
 

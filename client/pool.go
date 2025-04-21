@@ -29,6 +29,29 @@ func NewPoolWithDialer(capacity int, dialer Dialer) (*Pool, error) {
 	return newPool(capacity, fn)
 }
 
+type ClientConstructor func() (*Client, error)
+
+// NewPoolWithClientConstructor creates a new Pool object through which multiple clients will be managed on your behalf.
+// This is similar to NewPool, but the clients are created using the provided ClientConstructor function.
+//
+// Example:
+//
+//	s := DefaultServer()
+//	NewPoolWithClientConstructor(10, s.Open)
+//	// OR
+//	var customDialer Dialer = SomeCustomDialer()
+//	NewPoolWithClientConstructor(10, func() (*Client, error) {
+//		return s.OpenWithDialer(customDialer)
+//	})
+//
+// Call Get() to retrieve a client instance and Put() to return it to the pool. If you do not call
+// Put(), the connection will be leaked, and the pool will stop working once it hits capacity.
+//
+// Do NOT call Close() on the client, as the lifecycle is managed internally.
+func NewPoolWithClientConstructor(capacity int, fn ClientConstructor) (*Pool, error) {
+	return newPool(capacity, func() (pool.Closeable, error) { return fn() })
+}
+
 // newPool creates a *Pool channel with the provided capacity and opener.
 func newPool(capacity int, opener pool.Factory) (*Pool, error) {
 	var p Pool

@@ -11,6 +11,7 @@ import (
 	"github.com/contribsys/faktory/manager"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
+	"github.com/redis/go-redis/v9"
 )
 
 // A command responds to an client request.
@@ -46,32 +47,97 @@ func batch(c *Connection, s *Server, cmd string) {
 // QUEUE RESUME *
 // QUEUE REMOVE [names...]
 func queue(c *Connection, s *Server, cmd string) {
-	ctx := c.Context
 	qs := strings.Split(cmd, " ")[1:]
+	subcmd := strings.ToUpper(qs[0])
+
+	if subcmd == "LATENCY" {
+		queueLatency(c, s, cmd, qs[1:])
+		return
+	}
+
+	ctx := c.Context
 	m := s.Manager()
 	if qs[1] == "*" {
 		s.Store().EachQueue(ctx, func(q storage.Queue) {
-			if qs[0] == "PAUSE" {
+			if subcmd == "PAUSE" {
 				_ = m.PauseQueue(ctx, q.Name())
-			} else if qs[0] == "RESUME" {
+			} else if subcmd == "RESUME" {
 				_ = m.ResumeQueue(ctx, q.Name())
-			} else if qs[0] == "REMOVE" {
+			} else if subcmd == "REMOVE" {
 				_ = m.RemoveQueue(ctx, q.Name())
 			}
 		})
 	} else {
 		names := qs[1:]
 		for idx := range names {
-			if qs[0] == "PAUSE" {
+			if subcmd == "PAUSE" {
 				_ = m.PauseQueue(ctx, names[idx])
-			} else if qs[0] == "RESUME" {
+			} else if subcmd == "RESUME" {
 				_ = m.ResumeQueue(ctx, names[idx])
-			} else if qs[0] == "REMOVE" {
+			} else if subcmd == "REMOVE" {
 				_ = m.RemoveQueue(ctx, names[idx])
 			}
 		}
 	}
 	_ = c.Ok()
+}
+
+func queueLatency(c *Connection, s *Server, cmd string, names []string) {
+	if len(names) == 1 && names[0] == "*" {
+		_ = c.Error(cmd, fmt.Errorf("QUEUE LATENCY does not support wildcards"))
+		return
+	}
+
+	times, err := gatherLatencies(c.Context, names, s.Store())
+	if err != nil {
+		_ = c.Error(cmd, fmt.Errorf("QUEUE: %w", err))
+		return
+	}
+	res, err := json.Marshal(times)
+	if err != nil {
+		_ = c.Error(cmd, fmt.Errorf("QUEUE: %w", err))
+		return
+	}
+
+	_ = c.Result(res)
+}
+
+func gatherLatencies(ctx context.Context, qs []string, store storage.Store) (map[string]float64, error) {
+	queueCmd := map[string]*redis.StringCmd{}
+	_, err := store.Redis().Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, q := range qs {
+			queueCmd[q] = pipe.LIndex(ctx, q, -1)
+		}
+		return nil
+	})
+	if err != nil && err != redis.Nil {
+		util.Error("Unable to gather queue latencies", err)
+		return nil, err
+	}
+
+	result := map[string]float64{}
+	for name, lindex := range queueCmd {
+		latency := 0.0
+		payload := lindex.Val()
+		if payload != "" {
+			var job client.Job
+			err := json.Unmarshal([]byte(payload), &job)
+			if err != nil {
+				return nil, err
+			} else {
+				tm, err := util.ParseTime(job.EnqueuedAt)
+				if err != nil {
+					return nil, err
+				} else {
+					latency = float64(time.Since(tm)) / float64(time.Second)
+				}
+			}
+			result[name] = latency
+		} else {
+			result[name] = 0
+		}
+	}
+	return result, nil
 }
 
 // FLUSH

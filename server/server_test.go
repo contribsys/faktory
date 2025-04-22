@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runServer(binding string, runner func()) {
+func runServer(binding string, runner func(*Server)) {
 	dir := fmt.Sprintf("/tmp/%s", strings.Replace(binding, ":", "_", 1))
 	defer os.RemoveAll(dir)
 
@@ -50,12 +50,12 @@ func runServer(binding string, runner func()) {
 			panic(err)
 		}
 	}()
-	runner()
+	runner(s)
 	s.Stop(nil)
 }
 
 func TestServerStart(t *testing.T) {
-	runServer("localhost:4477", func() {
+	runServer("localhost:4477", func(s *Server) {
 		conn, err := net.DialTimeout("tcp", "localhost:4477", 1*time.Second)
 		assert.NoError(t, err)
 		buf := bufio.NewReader(conn)

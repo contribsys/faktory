@@ -2,7 +2,7 @@ package client
 
 var (
 	Name    = "Faktory"
-	Version = "1.9.1"
+	Version = "1.9.2"
 )
 
 // Structs for parsing the INFO response

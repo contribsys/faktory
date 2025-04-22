@@ -297,7 +297,7 @@ func (store *redisStore) GetQueue(ctx context.Context, name string) (Queue, erro
 	}
 	err = store.rclient.SAdd(ctx, "queues", name).Err()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to store queue name: %v", err)
+		return nil, fmt.Errorf("unable to store queue name: %v", err)
 	}
 	store.queueSet[name] = q
 	return q, nil

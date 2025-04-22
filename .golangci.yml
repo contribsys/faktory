@@ -1,28 +1,39 @@
-linters-settings:
-  gocritic:
-    # Which checks should be enabled; can't be combined with 'disabled-checks';
-    # See https://go-critic.github.io/overview#checks-overview
-    # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
-    # By default list of stable checks is used.
-    disabled-checks:
-      - commentedOutCode
-      - paramTypeCombine
-      - ifElseChain
-      - unnamedResult
-
-    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
-    # Empty list by default. See https://github.com/go-critic/go-critic#usage -> section "Tags".
-    enabled-tags:
-      - performance
-      - diagnostic
-      - opinionated
-
-    settings: # settings passed to gocritic
-      rangeExprCopy:
-        sizeThreshold: 24
-      rangeValCopy:
-        sizeThreshold: 24
+version: "2"
 linters:
   enable:
     - gocritic
     - gosec
+  settings:
+    gocritic:
+      disabled-checks:
+        - commentedOutCode
+        - paramTypeCombine
+        - ifElseChain
+        - unnamedResult
+      enabled-tags:
+        - performance
+        - diagnostic
+        - opinionated
+      settings:
+        rangeExprCopy:
+          sizeThreshold: 24
+        rangeValCopy:
+          sizeThreshold: 24
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

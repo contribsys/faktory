@@ -67,7 +67,7 @@ func (rs *redisSorted) AddElement(ctx context.Context, timestamp string, jid str
 func decompose(key []byte) (float64, string, error) {
 	slice := strings.Split(string(key), "|")
 	if len(slice) != 2 {
-		return 0, "", fmt.Errorf("Invalid key, expected \"timestamp|jid\", not %s", string(key))
+		return 0, "", fmt.Errorf("invalid key, expected \"timestamp|jid\", not %s", string(key))
 	}
 	timestamp := slice[0]
 	tim, err := util.ParseTime(timestamp)

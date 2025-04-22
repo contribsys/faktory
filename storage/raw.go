@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrNilValue = errors.New("Nil value not allowed")
+	ErrNilValue = errors.New("nil value not allowed")
 )
 
 type KV interface {

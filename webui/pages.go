@@ -85,20 +85,21 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			action := r.FormValue("action")
-			if action == "delete" {
+			switch action {
+			case "delete":
 				// clear entire queue
 				_, err := q.Clear(c)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-			} else if action == "pause" {
+			case "pause":
 				err := ctx(r).webui.Server.Manager().PauseQueue(c, q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-			} else if action == "resume" {
+			case "resume":
 				err := ctx(r).webui.Server.Manager().ResumeQueue(c, q.Name())
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -355,11 +356,12 @@ func busyHandler(w http.ResponseWriter, r *http.Request) {
 		action := r.FormValue("signal")
 		if wid != "" {
 			var signal server.WorkerState
-			if action == "quiet" {
+			switch action {
+			case "quiet":
 				signal = server.Quiet
-			} else if action == "terminate" {
+			case "terminate":
 				signal = server.Terminate
-			} else {
+			default:
 				http.Error(w, fmt.Sprintf("Invalid signal: %s", action), http.StatusInternalServerError)
 				return
 			}

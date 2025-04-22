@@ -65,17 +65,17 @@ func (s *Server) useTLS() error {
 	}
 	x, err := os.Open(privateKey)
 	if err != nil {
-		return fmt.Errorf("Unable to open private key: %w", err)
+		return fmt.Errorf("unable to open private key: %w", err)
 	}
 	defer x.Close()
 	y, err := os.Open(publicCert)
 	if err != nil {
-		return fmt.Errorf("Unable to open public cert: %w", err)
+		return fmt.Errorf("unable to open public cert: %w", err)
 	}
 	defer y.Close()
 	cert, err := tls.LoadX509KeyPair(publicCert, privateKey)
 	if err != nil {
-		return fmt.Errorf("Unable to initialize TLS certificate: %w", err)
+		return fmt.Errorf("unable to initialize TLS certificate: %w", err)
 	}
 	util.Infof("TLS activated with %s", publicCert)
 

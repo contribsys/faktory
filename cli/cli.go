@@ -52,7 +52,8 @@ func ParseArguments() CliOptions {
 		os.Exit(0)
 	}
 
-	if defaults.Environment == "development" {
+	switch defaults.Environment {
+	case "development":
 		envdir, ok := os.LookupEnv("HOME")
 		var dir string
 		if ok && envdir != "" {
@@ -70,8 +71,9 @@ func ParseArguments() CliOptions {
 		if defaults.ConfigDirectory == "/etc/faktory" {
 			defaults.ConfigDirectory = filepath.Join(dir, ".faktory")
 		}
-	} else if defaults.Environment == "staging" || defaults.Environment == "production" {
-	} else {
+	case "staging", "production":
+		// nothing
+	default:
 		help()
 		log.Println("")
 		log.Fatalf(`Invalid environment "%s": legal values are development, staging or production`, defaults.Environment)

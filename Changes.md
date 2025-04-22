@@ -2,8 +2,13 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.9.2
 
+- Implement `QUEUE LATENCY` command:
+```
+> QUEUE LATENCY low default high
+=> {"low":8.14,"default":0.32,"high":0}
+```
 - Rejigger structs to use less memory via `betteralign`
 - Upgrade BurntSushi/toml to 1.4.0
 

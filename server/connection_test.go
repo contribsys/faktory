@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -66,9 +67,10 @@ func dummyConnection() *Connection {
 	wc := &TestingWriteCloser{output: writeBuffer, Writer: bufio.NewWriter(writeBuffer)}
 
 	return &Connection{
-		client: dummyClientData(),
-		conn:   wc,
-		buf:    bufio.NewReader(strings.NewReader("")),
+		client:  dummyClientData(),
+		conn:    wc,
+		buf:     bufio.NewReader(strings.NewReader("")),
+		Context: context.Background(),
 	}
 }
 

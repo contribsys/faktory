@@ -66,15 +66,12 @@ var (
 	redisMutex = sync.Mutex{}
 )
 
-func bootRedis(path string, sock string) (func(), error) {
+func bootRedis(path string, sock string) (func() error, error) {
 	redisMutex.Lock()
 	defer redisMutex.Unlock()
 	if _, ok := instances[sock]; ok {
-		return func() {
-			err := stopRedis(sock)
-			if err != nil {
-				util.Error("Unable to stop Redis", err)
-			}
+		return func() error {
+			return stopRedis(sock)
 		}, nil
 	}
 	util.Infof("Initializing redis storage at %s, socket %s", path, sock)
@@ -210,11 +207,8 @@ func bootRedis(path string, sock string) (func(), error) {
 		return nil, err
 	}
 
-	return func() {
-		err := stopRedis(sock)
-		if err != nil {
-			util.Error("Unable to stop Redis", err)
-		}
+	return func() error {
+		return stopRedis(sock)
 	}, nil
 }
 
@@ -332,7 +326,6 @@ func stopRedis(sock string) error {
 	// this call frequently errs and the returned error is a string,
 	// not easy to build logic around and too noisy to log
 	// "os: process already finished"
-	// TODO revisit error handling in versions after Go 1.14.
 	_ = p.Signal(syscall.SIGTERM)
 	delete(instances, sock)
 
@@ -340,14 +333,15 @@ func stopRedis(sock string) error {
 	// don't give it enough time to reopen the RDB
 	// file before deleting the entire storage directory.
 	// time.Sleep(100 * time.Millisecond)
-	i := 500
+	i := 1000
 	for ; i > 0; i-- {
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		err := syscall.Kill(pid, syscall.Signal(0))
 		if errors.Is(err, syscall.ESRCH) {
 			util.Debugf("Redis dead in %v", time.Since(before))
 			return nil
-		} else {
+		} else if err != nil {
+			util.Error("Unable to stop Redis", err)
 			return err
 		}
 	}

@@ -10,8 +10,7 @@ import (
 )
 
 func TestMutateCommands(t *testing.T) {
-	runServer(":7419", func() {
-		// launch the Faktory server
+	runServer(":7419", func(*Server) {
 		cl, err := faktory.Open()
 		assert.NoError(t, err)
 

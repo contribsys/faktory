@@ -208,7 +208,7 @@ func (s *Server) Stopper() chan bool {
 	return s.stopper
 }
 
-func (s *Server) Stop(f func()) {
+func (s *Server) Stop(onStop func()) {
 	// Don't allow new network connections
 	s.mu.Lock()
 	s.closed = true
@@ -219,8 +219,8 @@ func (s *Server) Stop(f func()) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if f != nil {
-		f()
+	if onStop != nil {
+		onStop()
 	}
 
 	s.store.Close()

@@ -138,7 +138,7 @@ func threadDump(s *server.Server) {
 	util.DumpProcessTrace()
 }
 
-func BuildServer(opts *CliOptions) (*server.Server, func(), error) {
+func BuildServer(opts *CliOptions) (*server.Server, func() error, error) {
 	globalConfig, err := readConfig(opts.ConfigDirectory, opts.Environment)
 	if err != nil {
 		return nil, nil, err

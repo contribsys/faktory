@@ -49,35 +49,36 @@ func batch(c *Connection, s *Server, cmd string) {
 func queue(c *Connection, s *Server, cmd string) {
 	qs := strings.Split(cmd, " ")[1:]
 	subcmd := strings.ToUpper(qs[0])
-
-	if subcmd == "LATENCY" {
-		queueLatency(c, s, cmd, qs[1:])
-		return
-	}
-
 	ctx := c.Context
 	m := s.Manager()
-	if qs[1] == "*" {
-		s.Store().EachQueue(ctx, func(q storage.Queue) {
-			if subcmd == "PAUSE" {
-				_ = m.PauseQueue(ctx, q.Name())
-			} else if subcmd == "RESUME" {
-				_ = m.ResumeQueue(ctx, q.Name())
-			} else if subcmd == "REMOVE" {
-				_ = m.RemoveQueue(ctx, q.Name())
-			}
-		})
-	} else {
-		names := qs[1:]
-		for idx := range names {
-			if subcmd == "PAUSE" {
-				_ = m.PauseQueue(ctx, names[idx])
-			} else if subcmd == "RESUME" {
-				_ = m.ResumeQueue(ctx, names[idx])
-			} else if subcmd == "REMOVE" {
-				_ = m.RemoveQueue(ctx, names[idx])
+	var op func(ctx context.Context, qName string) error
+
+	switch subcmd {
+	case "LATENCY":
+		queueLatency(c, s, cmd, qs[1:])
+		return
+	case "PAUSE":
+		op = m.PauseQueue
+	case "RESUME":
+		op = m.ResumeQueue
+	case "REMOVE":
+		op = m.RemoveQueue
+	}
+
+	if op != nil {
+		if qs[1] == "*" {
+			s.Store().EachQueue(ctx, func(q storage.Queue) {
+				_ = op(ctx, q.Name())
+			})
+		} else {
+			names := qs[1:]
+			for idx := range names {
+				_ = op(ctx, names[idx])
 			}
 		}
+	} else {
+		_ = c.Error(cmd, fmt.Errorf("No such QUEUE subcommand: %s", subcmd))
+		return
 	}
 	_ = c.Ok()
 }

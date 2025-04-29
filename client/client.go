@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/contribsys/faktory/internal/pool"
 	"github.com/contribsys/faktory/util"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
@@ -692,12 +694,11 @@ func readResponse(rdr *bufio.Reader) ([]byte, error) {
 }
 
 func hash(pwd, salt string, iterations int) string {
-	data := []byte(pwd + salt)
-	hash := sha256.Sum256(data)
-	if iterations > 1 {
-		for i := 1; i < iterations; i++ {
-			hash = sha256.Sum256(hash[:])
-		}
-	}
-	return fmt.Sprintf("%x", hash)
+	pwdBytes := []byte(pwd)
+	saltBytes := []byte(salt)
+
+	// The '32' parameter specifies the key length in bytes (256 bits for SHA-256)
+	hash := pbkdf2.Key(pwdBytes, saltBytes, iterations, 32, sha256.New)
+
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash))
 }

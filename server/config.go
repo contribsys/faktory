@@ -2,6 +2,8 @@ package server
 
 import "github.com/contribsys/faktory/util"
 
+// This is the ultimate scalability limitation in Faktory,
+// we only allow this many connections to Redis.
 var DefaultMaxPoolSize uint64 = 2000
 
 type ServerOptions struct {

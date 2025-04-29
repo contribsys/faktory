@@ -102,7 +102,7 @@ func TestCommands(t *testing.T) {
 			cmd = fmt.Sprintf("pushb %s", data)
 			pushBulk(c, s, cmd)
 			txt = output(c)
-			assert.Equal(t, fmt.Sprintf("$57\r\n{\"%s\":\"jobs must have a jobtype parameter\"}\r\n", job1.Jid), txt)
+			assert.Equal(t, fmt.Sprintf("$57\r\n{%q:\"jobs must have a jobtype parameter\"}\r\n", job1.Jid), txt)
 		})
 	})
 }

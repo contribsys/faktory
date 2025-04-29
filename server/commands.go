@@ -77,7 +77,7 @@ func queue(c *Connection, s *Server, cmd string) {
 			}
 		}
 	} else {
-		_ = c.Error(cmd, fmt.Errorf("No such QUEUE subcommand: %s", subcmd))
+		_ = c.Error(cmd, fmt.Errorf("no such QUEUE subcommand: %s", subcmd))
 		return
 	}
 	_ = c.Ok()

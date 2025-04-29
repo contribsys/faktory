@@ -7,7 +7,7 @@ import "github.com/contribsys/faktory/util"
 var DefaultMaxPoolSize uint64 = 2000
 
 type ServerOptions struct {
-	GlobalConfig     map[string]interface{}
+	GlobalConfig     map[string]any
 	Binding          string
 	StorageDirectory string
 	RedisSock        string
@@ -27,13 +27,13 @@ func (so *ServerOptions) String(subsys string, key string, defval string) string
 	return str
 }
 
-func (so *ServerOptions) Config(subsys string, key string, defval interface{}) interface{} {
+func (so *ServerOptions) Config(subsys string, key string, defval any) any {
 	mapp, ok := so.GlobalConfig[subsys]
 	if !ok {
 		return defval
 	}
 
-	maps, ok := mapp.(map[string]interface{})
+	maps, ok := mapp.(map[string]any)
 	if !ok {
 		util.Warnf("Invalid configuration, expected a %s subsystem, using default", subsys)
 		return defval

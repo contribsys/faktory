@@ -14,7 +14,7 @@ func TestStats(t *testing.T) {
 		store.Flush(bg)
 		var err error
 
-		for i := 0; i < 10000; i++ {
+		for i := range 10000 {
 			if i%100 == 99 {
 				err = store.Failure(bg)
 				assert.NoError(t, err)

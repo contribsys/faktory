@@ -150,9 +150,9 @@ func newWeb(s *server.Server, opts Options) *WebUI {
 func healthHandler(ui *WebUI) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s := ui.Server
-		payload := map[string]interface{}{
+		payload := map[string]any{
 			"now": util.Nows(),
-			"server": map[string]interface{}{
+			"server": map[string]any{
 				"description":     client.Name,
 				"faktory_version": client.Version,
 				"connections":     atomic.LoadUint64(&s.Stats.Connections),

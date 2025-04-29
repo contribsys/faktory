@@ -286,7 +286,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Ack(jid string) error {
-	err := c.writeLine(c.wtr, "ACK", []byte(fmt.Sprintf(`{"jid":%q}`, jid)))
+	err := c.writeLine(c.wtr, "ACK", fmt.Appendf(nil, `{"jid":%q}`, jid))
 	if err != nil {
 		return err
 	}
@@ -366,7 +366,7 @@ func (c *Client) Fetch(q ...string) (*Job, error) {
 // If backtrace is non-nil, it is assumed to be the output from
 // runtime/debug.Stack().
 func (c *Client) Fail(jid string, err error, backtrace []byte) error {
-	failure := map[string]interface{}{
+	failure := map[string]any{
 		"message": err.Error(),
 		"errtype": "unknown",
 		"jid":     jid,
@@ -429,7 +429,7 @@ func (c *Client) ResumeQueues(names ...string) error {
 
 // deprecated, this returns an untyped map.
 // use CurrentState() instead which provides strong typing
-func (c *Client) Info() (map[string]interface{}, error) {
+func (c *Client) Info() (map[string]any, error) {
 	util.Info("client.Info() is deprecated, use client.CurrentState() instead")
 
 	err := c.writeLine(c.wtr, "INFO", nil)
@@ -445,7 +445,7 @@ func (c *Client) Info() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	var cur map[string]interface{}
+	var cur map[string]any
 	err = util.JsonUnmarshal(data, &cur)
 	if err != nil {
 		return nil, err
@@ -507,7 +507,7 @@ func (c *Client) Beat(args ...string) (string, error) {
 	if len(args) > 0 {
 		state = args[0]
 	}
-	hash := map[string]interface{}{}
+	hash := map[string]any{}
 	hash["wid"] = RandomProcessWid
 	hash["rss_kb"] = RssKb()
 

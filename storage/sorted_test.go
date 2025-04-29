@@ -20,7 +20,7 @@ func TestBasicSortedOps(t *testing.T) {
 			err := sset.Clear(bg)
 			assert.NoError(t, err)
 
-			for i := 0; i < 550; i++ {
+			for i := range 550 {
 				job := client.NewJob("OtherType", 1, 2, 3)
 				if i%100 == 0 {
 					job = client.NewJob("SpecialType", 1, 2, 3)

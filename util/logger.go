@@ -88,7 +88,7 @@ func Warn(arg string) {
 	llog(WarnLevel, arg)
 }
 
-func Warnf(msg string, args ...interface{}) {
+func Warnf(msg string, args ...any) {
 	llog(WarnLevel, fmt.Sprintf(msg, args...))
 }
 
@@ -100,14 +100,15 @@ func Info(arg string) {
 }
 
 // Typical logging output, the default level
-func Infof(msg string, args ...interface{}) {
+func Infof(msg string, args ...any) {
 	if LogInfo {
 		llog(InfoLevel, fmt.Sprintf(msg, args...))
 	}
 }
 
 // Verbosity level helps track down production issues:
-//  -l debug
+//
+//	-l debug
 func Debug(arg string) {
 	if LogDebug {
 		llog(DebugLevel, arg)
@@ -115,8 +116,9 @@ func Debug(arg string) {
 }
 
 // Verbosity level helps track down production issues:
-//  -l debug
-func Debugf(msg string, args ...interface{}) {
+//
+//	-l debug
+func Debugf(msg string, args ...any) {
 	if LogDebug {
 		llog(DebugLevel, fmt.Sprintf(msg, args...))
 	}

@@ -420,10 +420,10 @@ func displayJobType(j *client.Job) string {
 		jobClass, ok := j.Custom["wrapped"].(string)
 		if ok {
 			if jobClass == "ActionMailer::DeliveryJob" || jobClass == "ActionMailer::MailDeliveryJob" {
-				args, ok := j.Args[0].(map[string]interface{})
+				args, ok := j.Args[0].(map[string]any)
 				if ok {
 					// Get the actual job arguments
-					arguments, ok := args["arguments"].([]interface{})
+					arguments, ok := args["arguments"].([]any)
 					if ok {
 						if len(arguments) >= 2 {
 							mailerClass, ok1 := arguments[0].(string)
@@ -441,15 +441,15 @@ func displayJobType(j *client.Job) string {
 	return j.Type
 }
 
-func displayArgs(args []interface{}) string {
+func displayArgs(args []any) string {
 	return displayLimitedArgs(args, 1024)
 }
 
-func displayFullArgs(args []interface{}) string {
+func displayFullArgs(args []any) string {
 	return displayLimitedArgs(args, 1024*1024)
 }
 
-func displayLimitedArgs(args []interface{}, limit int) string {
+func displayLimitedArgs(args []any, limit int) string {
 	var b strings.Builder
 	for idx := range args {
 		var s string

@@ -63,7 +63,7 @@ func TestSystem(t *testing.T) {
 	start := time.Now()
 
 	var wg sync.WaitGroup
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -103,7 +103,7 @@ func pushAndPop(t *testing.T, count int) {
 	assert.NoError(t, err)
 
 	util.Info("Pushing")
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if err = pushJob(cl, i); err != nil {
 			handleError(err)
 			return
@@ -111,7 +111,7 @@ func pushAndPop(t *testing.T, count int) {
 	}
 	util.Info("Popping")
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		job, err := cl.Fetch("default")
 		if err != nil {
 			handleError(err)

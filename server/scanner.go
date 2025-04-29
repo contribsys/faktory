@@ -42,8 +42,8 @@ func (s *scanner) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (s *scanner) Stats(ctx context.Context) map[string]interface{} {
-	return map[string]interface{}{
+func (s *scanner) Stats(ctx context.Context) map[string]any {
+	return map[string]any{
 		"enqueued":      atomic.LoadInt64(&s.jobs),
 		"cycles":        atomic.LoadInt64(&s.cycles),
 		"size":          s.set.Size(ctx),

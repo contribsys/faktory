@@ -144,7 +144,7 @@ func (e *setEntry) Key() ([]byte, error) {
 	nsecs := int64((e.score - float64(secs)) * 1000000000)
 	tim := time.Unix(secs, nsecs)
 
-	e.key = []byte(fmt.Sprintf("%s|%s", util.Thens(tim), j.Jid))
+	e.key = fmt.Appendf(nil, "%s|%s", util.Thens(tim), j.Jid)
 	return e.key, nil
 }
 

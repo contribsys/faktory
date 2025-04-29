@@ -348,6 +348,6 @@ func heartbeat(c *Connection, s *Server, cmd string) {
 	if worker.state == Running {
 		_ = c.Ok()
 	} else {
-		_ = c.Result([]byte(fmt.Sprintf(`{"state":%q}`, stateString(worker.state))))
+		_ = c.Result(fmt.Appendf(nil, `{"state":%q}`, stateString(worker.state)))
 	}
 }

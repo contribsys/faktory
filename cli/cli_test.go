@@ -12,14 +12,14 @@ func TestReadConfig(t *testing.T) {
 	wd, _ := os.Getwd()
 	config, _ := readConfig(filepath.Join(wd, "test-fixtures", "case-one"), "")
 
-	schedule := config["cron"].([]map[string]interface{})
-	jobOne := schedule[0]["job"].(map[string]interface{})
+	schedule := config["cron"].([]map[string]any)
+	jobOne := schedule[0]["job"].(map[string]any)
 
 	if len(schedule) < 2 {
 		t.Fatalf("Schedule did not include both items %v", schedule)
 	}
 
-	jobTwo := schedule[1]["job"].(map[string]interface{})
+	jobTwo := schedule[1]["job"].(map[string]any)
 
 	got := jobOne["type"]
 	if got != "OneJob" {

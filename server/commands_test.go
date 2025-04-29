@@ -25,7 +25,7 @@ func TestCommands(t *testing.T) {
 
 			queue(c, s, "QUEUE UNPAUSE *")
 			txt = output(c)
-			assert.Regexp(t, "^-ERR No such QUEUE subcommand", txt)
+			assert.Equal(t, "-ERR no such QUEUE subcommand: UNPAUSE\r\n", txt)
 
 			queue(c, s, "QUEUE RESUME *")
 			txt = output(c)

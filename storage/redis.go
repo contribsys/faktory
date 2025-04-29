@@ -96,7 +96,7 @@ func bootRedis(path string, sock string) (func() error, error) {
 		if _, err := os.Stat(conffilename); err != nil {
 			if os.IsNotExist(err) {
 				// nolint:gosec
-				err := os.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0o444)
+				err := os.WriteFile("/tmp/redis.conf", fmt.Appendf(nil, redisconf, client.Version), 0o444)
 				if err != nil {
 					return nil, err
 				}
@@ -143,7 +143,7 @@ func bootRedis(path string, sock string) (func() error, error) {
 
 		// wait a few seconds for Redis to start
 		start := time.Now()
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			conn, err := net.Dial("unix", sock)
 			if err == nil {
 				conn.Close()

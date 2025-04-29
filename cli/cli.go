@@ -187,9 +187,9 @@ func BuildServer(opts *CliOptions) (*server.Server, func() error, error) {
 	return s, stopper, nil
 }
 
-func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval string) string {
+func stringConfig(cfg map[string]any, subsys string, elm string, defval string) string {
 	if mapp, ok := cfg[subsys]; ok {
-		if mappp, ok := mapp.(map[string]interface{}); ok {
+		if mappp, ok := mapp.(map[string]any); ok {
 			if val, ok := mappp[elm]; ok {
 				if sval, ok := val.(string); ok {
 					return sval
@@ -208,8 +208,8 @@ func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval 
 // They are read in alphabetical order.
 // File contents are shallow merged, a latter file
 // can override a value from an earlier file.
-func readConfig(cdir string, env string) (map[string]interface{}, error) {
-	hash := map[string]interface{}{}
+func readConfig(cdir string, env string) (map[string]any, error) {
+	hash := map[string]any{}
 
 	globs := []string{
 		fmt.Sprintf("%s/conf.d/*.toml", cdir),
@@ -247,7 +247,7 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 // [faktory]
 // password = "foobar" # or...
 // password = "/run/secrets/my_faktory_password"
-func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
+func fetchPassword(cfg map[string]any, env string) (string, error) {
 	password := ""
 
 	// allow the password to be injected via ENV rather than committed
@@ -264,7 +264,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 			password = val
 
 			// clear password so we can log it safely
-			x := cfg["faktory"].(map[string]interface{})
+			x := cfg["faktory"].(map[string]any)
 			x["password"] = "********"
 		}
 	}

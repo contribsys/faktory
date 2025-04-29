@@ -33,6 +33,7 @@ release:
 		-F /tmp/release-notes.md -e -o || :
 
 prepare: ## install build prereqs
+	go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest
 	go install github.com/benbjohnson/ego/...@v0.4.3
 	@echo Now you should be ready to run "make"
 

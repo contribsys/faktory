@@ -88,7 +88,7 @@ func TestBasicQueueOps(t *testing.T) {
 			n := 5000
 			// Push N jobs to queue
 			// Get Size() each time
-			for i := 0; i < n; i++ {
+			for i := range n {
 				_, data := fakeJob()
 				err = q.Push(bg, data)
 				assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestBasicQueueOps(t *testing.T) {
 			data, err := q.Pop(bg)
 			assert.NoError(t, err)
 			assert.Equal(t, []byte("first"), data)
-			for i := 0; i < n; i++ {
+			for i := range n {
 				_, err := q.Pop(bg)
 				assert.NoError(t, err)
 				assert.EqualValues(t, n-i, q.Size(bg))
@@ -132,7 +132,7 @@ func TestBasicQueueOps(t *testing.T) {
 			n := 1000
 
 			var wg sync.WaitGroup
-			for i := 0; i < tcnt; i++ {
+			for range tcnt {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
@@ -161,14 +161,14 @@ var (
 
 func pushAndPop(t *testing.T, n int, q Queue) {
 	bg := context.Background()
-	for i := 0; i < n; i++ {
+	for range n {
 		_, data := fakeJob()
 		err := q.Push(bg, data)
 		assert.NoError(t, err)
 		atomic.AddInt64(&counter, 1)
 	}
 
-	for i := 0; i < n; i++ {
+	for range n {
 		value, err := q.Pop(bg)
 		assert.NoError(t, err)
 		assert.NotNil(t, value)
@@ -179,5 +179,5 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 func fakeJob() (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{"jid":%q,"created_at":%q,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows))
+	return jid, fmt.Appendf(nil, `{"jid":%q,"created_at":%q,"queue":"default","args":[1,2,3],"class":"SomeWorker"}`, jid, nows)
 }

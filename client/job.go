@@ -31,19 +31,19 @@ type Failure struct {
 }
 
 type Job struct {
-	Retry   *int                   `json:"retry"`
-	Failure *Failure               `json:"failure,omitempty"`
-	Custom  map[string]interface{} `json:"custom,omitempty"`
+	Retry   *int           `json:"retry"`
+	Failure *Failure       `json:"failure,omitempty"`
+	Custom  map[string]any `json:"custom,omitempty"`
 	// required
 	Jid   string `json:"jid"`
 	Queue string `json:"queue"`
 	Type  string `json:"jobtype"`
 
 	// optional
-	CreatedAt  string        `json:"created_at,omitempty"`
-	EnqueuedAt string        `json:"enqueued_at,omitempty"`
-	At         string        `json:"at,omitempty"`
-	Args       []interface{} `json:"args"`
+	CreatedAt  string `json:"created_at,omitempty"`
+	EnqueuedAt string `json:"enqueued_at,omitempty"`
+	At         string `json:"at,omitempty"`
+	Args       []any  `json:"args"`
 
 	ReserveFor int `json:"reserve_for,omitempty"`
 	Backtrace  int `json:"backtrace,omitempty"`
@@ -51,7 +51,7 @@ type Job struct {
 
 // Clients should use this constructor to build a Job, not allocate
 // a bare struct directly.
-func NewJob(jobtype string, args ...interface{}) *Job {
+func NewJob(jobtype string, args ...any) *Job {
 	return &Job{
 		Type:      jobtype,
 		Queue:     "default",
@@ -72,7 +72,7 @@ func RandomJid() string {
 	return base64.RawURLEncoding.EncodeToString(bytes)
 }
 
-func (j *Job) GetCustom(name string) (interface{}, bool) {
+func (j *Job) GetCustom(name string) (any, bool) {
 	if j.Custom == nil {
 		return nil, false
 	}
@@ -84,9 +84,9 @@ func (j *Job) GetCustom(name string) (interface{}, bool) {
 // Set custom metadata for this job. Faktory reserves all
 // element names starting with "_" for internal use, e.g.
 // SetCustom("_txid", "12345")
-func (j *Job) SetCustom(name string, value interface{}) *Job {
+func (j *Job) SetCustom(name string, value any) *Job {
 	if j.Custom == nil {
-		j.Custom = map[string]interface{}{}
+		j.Custom = map[string]any{}
 	}
 
 	j.Custom[name] = value

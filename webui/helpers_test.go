@@ -15,7 +15,7 @@ type testJob struct {
 }
 
 func makeActiveJob(jobType string) *client.Job {
-	var payload = []byte(fmt.Sprintf(`
+	var payload = fmt.Appendf(nil, `
 {
   "jid": "bb2a34025e7ce72a064d10d6",
   "queue": "default",
@@ -45,7 +45,7 @@ func makeActiveJob(jobType string) *client.Job {
     "wrapped": "%[1]s"
   }
 }
-`, jobType))
+`, jobType)
 	job := &client.Job{}
 	err := util.JsonUnmarshal(payload, job)
 	if err != nil {
@@ -55,7 +55,7 @@ func makeActiveJob(jobType string) *client.Job {
 }
 
 func makeActionMailerJob(jobType string, mailerClass string, mailerMethod string) *client.Job {
-	var payload = []byte(fmt.Sprintf(`
+	var payload = fmt.Appendf(nil, `
 {
   "jid": "60259247a836111c54b5ddf7",
   "queue": "default",
@@ -97,7 +97,7 @@ func makeActionMailerJob(jobType string, mailerClass string, mailerMethod string
     "wrapped": "%[1]s"
   }
 }
-`, jobType, mailerClass, mailerMethod))
+`, jobType, mailerClass, mailerMethod)
 	job := &client.Job{}
 	err := util.JsonUnmarshal(payload, job)
 	if err != nil {

@@ -128,7 +128,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 func fakeJob() (string, []byte) {
 	jid := util.RandomJid()
 	nows := util.Nows()
-	return jid, []byte(fmt.Sprintf(`{
+	return jid, fmt.Appendf(nil, `{
 		"jid":"%s",
 		"created_at":"%s",
 		"queue":"default",
@@ -146,5 +146,5 @@ func fakeJob() (string, []byte) {
 			"foo":"bar",
 			"tenant":1
 		}
-	}`, jid, nows, nows, nows, nows))
+	}`, jid, nows, nows, nows, nows)
 }

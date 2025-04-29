@@ -43,7 +43,7 @@ func (store *redisStore) History(ctx context.Context, days int, fn func(day stri
 	procds := make([]*redis.IntCmd, days)
 
 	_, err := store.rclient.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		for idx := 0; idx < days; idx++ {
+		for idx := range days {
 			daystr := ts.Format("2006-01-02")
 			daystrs[idx] = daystr
 			procds[idx] = pipe.IncrBy(ctx, fmt.Sprintf("processed:%s", daystr), 0)
@@ -56,7 +56,7 @@ func (store *redisStore) History(ctx context.Context, days int, fn func(day stri
 		return err
 	}
 
-	for idx := 0; idx < days; idx++ {
+	for idx := range days {
 		fn(daystrs[idx], uint64(procds[idx].Val()), uint64(fails[idx].Val())) // nolint:gosec
 	}
 	return nil

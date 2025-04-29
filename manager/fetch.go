@@ -8,6 +8,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/redis/go-redis/v9"
+	"slices"
 )
 
 var (
@@ -62,7 +63,7 @@ func filter(paused []string, queues []string) []string {
 	qs := make([]string, len(queues))
 	count := 0
 
-	for qidx := 0; qidx < len(queues); qidx++ {
+	for qidx := range queues {
 		if !contains(queues[qidx], paused) {
 			qs[count] = queues[qidx]
 			count++
@@ -72,12 +73,7 @@ func filter(paused []string, queues []string) []string {
 }
 
 func contains(a string, slc []string) bool {
-	for x := range slc {
-		if a == slc[x] {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slc, a)
 }
 
 func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {

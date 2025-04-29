@@ -21,7 +21,7 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	svr := data["server"].(map[string]interface{})
+	svr := data["server"].(map[string]any)
 	fmt.Printf("Connected to %s %s\n", svr["description"], svr["faktory_version"])
 
 	reader := bufio.NewReader(os.Stdin)

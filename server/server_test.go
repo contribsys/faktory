@@ -105,7 +105,7 @@ func TestServerStart(t *testing.T) {
 		assert.Regexp(t, "12345678901234567890abcd", result)
 		assert.Regexp(t, "\"retry\":", result)
 
-		hash := make(map[string]interface{})
+		hash := make(map[string]any)
 		err = util.JsonUnmarshal([]byte(result), &hash)
 		assert.NoError(t, err)
 		// fmt.Println(hash)
@@ -128,7 +128,7 @@ func TestServerStart(t *testing.T) {
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)
 
-		var stats map[string]interface{}
+		var stats map[string]any
 		err = util.JsonUnmarshal([]byte(result), &stats)
 		assert.NoError(t, err)
 		assert.Equal(t, 4, len(stats))
@@ -168,7 +168,7 @@ func TestPasswordHashing(t *testing.T) {
 }
 
 func BenchmarkHash(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		// 1550 µs per call with 5545 iterations
 		iterations := 5545
 		pwd := "foobar"

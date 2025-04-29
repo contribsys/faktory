@@ -124,7 +124,7 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 
 	// create initial connections, if something goes wrong,
 	// just close the pool error out.
-	for i := 0; i < initialCap; i++ {
+	for range initialCap {
 		conn, err := factory()
 		if err != nil {
 			c.Close()

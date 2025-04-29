@@ -36,7 +36,7 @@ var (
 
 func Retryable(ctx context.Context, name string, count int, fn func() error) error {
 	var err error
-	for i := 0; i < count; i++ {
+	for range count {
 		err = fn()
 		if err == nil {
 			return nil
@@ -128,7 +128,7 @@ func Backtrace(size int) []string {
 
 	// Loop to get frames.
 	// A fixed number of pcs can expand to an indefinite number of Frames.
-	for i := 0; i < size; i++ {
+	for i := range size {
 		frame, more := frames.Next()
 		str[i] = fmt.Sprintf("in %s:%d %s", frame.File, frame.Line, frame.Function)
 		count++

@@ -25,14 +25,11 @@ func main() {
 	util.Debugf("Options: %v", opts)
 
 	s, stopper, err := cli.BuildServer(&opts)
-	if stopper != nil {
-		defer stopper()
-	}
-
 	if err != nil {
 		util.Error("Unable to create Faktory server", err)
 		return
 	}
+	defer func() { _ = stopper() }()
 
 	err = s.Boot()
 	if err != nil {
@@ -45,9 +42,9 @@ func main() {
 	go cli.HandleSignals(s)
 	go func() {
 		err = s.Run()
-                if err != nil {
-                  util.Error("Unable to start Faktory", err)
-                }
+		if err != nil {
+			util.Error("Unable to start Faktory", err)
+		}
 	}()
 
 	<-s.Stopper()

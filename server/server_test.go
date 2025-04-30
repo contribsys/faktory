@@ -26,7 +26,7 @@ func runServer(binding string, runner func(*Server)) {
 	if err != nil {
 		panic(err)
 	}
-	defer stopper()
+	defer func() { _ = stopper() }()
 
 	opts := &ServerOptions{
 		Binding:          binding,

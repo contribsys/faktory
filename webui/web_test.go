@@ -94,7 +94,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 	if err != nil {
 		panic(err)
 	}
-	defer stopper()
+	defer func() { _ = stopper() }()
 
 	s, err := server.NewServer(&server.ServerOptions{
 		Binding:          "localhost:7418",

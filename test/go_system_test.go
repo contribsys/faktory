@@ -33,13 +33,10 @@ func TestSystem(t *testing.T) {
 	opts.ConfigDirectory = "./cfg"
 	opts.StorageDirectory = dir
 	s, stopper, err := cli.BuildServer(&opts)
-	if stopper != nil {
-		defer stopper()
-	}
-
 	if err != nil {
 		panic(err)
 	}
+	defer func() { _ = stopper() }()
 
 	util.LogInfo = true
 

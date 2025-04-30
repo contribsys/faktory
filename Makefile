@@ -75,7 +75,7 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		-v faktory-data:/var/lib/faktory \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		contribsys/faktory:latest /faktory -e production
+		contribsys/faktory:latest /faktory -w 0.0.0.0:7420 -b 0.0.0.0:7419 -e production
 
 dmon: ## Monitor Redis within the running Docker image
 	docker run --rm -it -t -i \

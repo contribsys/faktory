@@ -10,7 +10,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 => {"low":8.14,"default":0.32,"high":0}
 ```
 - Rejigger structs to use less memory via `betteralign`
-- Upgrades: toml 1.5.0, go-redis 9.7.3
+- Upgrades: toml 1.5.0, go-redis 9.7.3, go 1.24
 - `NewPoolWithClientFactory` constructor [#503]
 
 ## 1.9.1

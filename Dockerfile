@@ -1,4 +1,4 @@
-FROM alpine:3.20
+FROM alpine:3.21
 ARG TARGETPLATFORM
 RUN apk add --no-cache redis ca-certificates socat
 COPY ./tmp/$TARGETPLATFORM /faktory

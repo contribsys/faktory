@@ -4,8 +4,7 @@ go 1.24
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/contribsys/faktory_worker_go v1.7.0
-	github.com/justinas/nosurf v1.1.1
+	github.com/justinas/nosurf v1.2.0
 	github.com/redis/go-redis/v9 v9.7.3
 )
 

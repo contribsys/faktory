@@ -467,6 +467,7 @@ func TestPages(t *testing.T) {
 			req, err = ui.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
 
 			assert.NoError(t, err)
+			req.Header.Set("Sec-Fetch-Site", "same-origin")
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Header.Set("Cookie", "csrf_token="+cookieToken)
 			w = httptest.NewRecorder()

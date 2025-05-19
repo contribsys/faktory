@@ -4,6 +4,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## 1.9.2
 
+- Upgrade nosurf 1.2.0 for CVE-2025-46721
 - Implement `QUEUE LATENCY` command [#504]
 ```
 > QUEUE LATENCY low default high

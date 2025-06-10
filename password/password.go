@@ -3,10 +3,10 @@ package password
 import (
 	"crypto/subtle"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/contribsys/faktory/util"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,103 +18,105 @@ const (
 	hashIDArgon2id hashID = "argon2id"
 )
 
-type hashAlgorithmType string
+type PasswordType interface {
+	Verify(candidate string) (bool, error)
+}
 
-const (
-	hashAlgorithmTypeBCrypt   hashAlgorithmType = "bcrypt"
-	hashAlgorithmTypeArgon2id hashAlgorithmType = "argon2id"
-	hashAlgorithmTypeUnknown  hashAlgorithmType = ""
-)
+type basePasswordType struct {
+	Hashed string
+}
+type plainPasswordType struct {
+	basePasswordType
+}
 
-func Verify(candidate string, configured string) (bool, error) {
-	if isSupportedPasswordHash(configured) {
-		return verifyAgainstHash(candidate, configured)
+func (p plainPasswordType) Verify(candidate string) (bool, error) {
+	return subtle.ConstantTimeCompare([]byte(p.Hashed), []byte(candidate)) == 1, nil
+}
+
+type bcryptPasswordType struct {
+	basePasswordType
+}
+
+func (p bcryptPasswordType) Verify(candidate string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(p.Hashed), []byte(candidate))
+	if err != nil {
+		return false, err
 	} else {
-		return verifyAgainstPlaintext(candidate, configured), nil
+		return true, nil
 	}
 }
 
-func verifyAgainstHash(password string, hashedPassword string) (bool, error) {
-	algo, err := detectHashAlgorithm(hashedPassword)
+type argon2idPasswordType struct {
+	basePasswordType
+	Version int
+	Memory  uint32
+	Time    uint32
+	Threads uint8
+	Salt    []byte
+	Key     []byte
+	KeyLen  int32
+}
+
+func (p argon2idPasswordType) Verify(candidate string) (bool, error) {
+	candidateKey := argon2.IDKey([]byte(candidate), p.Salt, p.Time, p.Memory, p.Threads, uint32(p.KeyLen))
+	candidateKeylen := int32(len(candidateKey))
+
+	if subtle.ConstantTimeEq(p.KeyLen, candidateKeylen) == 0 {
+		return false, nil
+	}
+	if subtle.ConstantTimeCompare(p.Key, candidateKey) == 1 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func Verify(candidate string, configured string) (bool, error) {
+	algo, err := detectHashAlgorithm(configured)
 	if err != nil {
 		return false, err
 	}
-	if algo == hashAlgorithmTypeBCrypt {
-		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-		if err != nil {
-			return false, err
-		} else {
-			return true, nil
-		}
-	} else if algo == hashAlgorithmTypeArgon2id {
-		var ver int
-		parts := strings.Split(hashedPassword, "$")
-		_, err = fmt.Sscanf(parts[2], "v=%d", &ver)
-		if ver != argon2.Version {
-			return false, fmt.Errorf("Password hash uses incompatible version of Argon2id (want %d, given %d)", argon2.Version, ver)
+	return algo.Verify(candidate)
+}
+
+func detectHashAlgorithm(pwd string) (PasswordType, error) {
+	// TODO: do a fulsome parsing of PHC format
+	parts := strings.Split(pwd, "$")
+	upt := plainPasswordType{}
+	upt.Hashed = pwd
+	if parts[0] != "" || len(parts) < 2 || len(parts[1]) < 1 {
+		util.Warn("Not a recognizable password hash format, assuming plaintext")
+		return upt, nil
+	}
+	if hashID(parts[1][0]) == hashIDBCrypt2 {
+		pt := bcryptPasswordType{}
+		pt.Hashed = pwd
+		return pt, nil
+	}
+	if hashID(parts[1]) == hashIDArgon2id {
+		pt := argon2idPasswordType{}
+		pt.Hashed = pwd
+		_, err := fmt.Sscanf(parts[2], "v=%d", &pt.Version)
+		if pt.Version != argon2.Version {
+			return nil, fmt.Errorf("Password hash uses incompatible version of Argon2id (want %d, given %d)", argon2.Version, pt.Version)
 		}
 		// TODO: These are technically optional. Use defaults if absent
-		var mem uint32
-		var iter uint32
-		var para uint8
-		_, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &iter, &para)
+		_, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &pt.Memory, &pt.Time, &pt.Threads)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		salt, err := base64.RawStdEncoding.Strict().DecodeString(parts[4])
 		if err != nil {
-			return false, err
+			return nil, err
 		}
+		pt.Salt = salt
 		key, err := base64.RawStdEncoding.Strict().DecodeString(parts[5])
 		if err != nil {
-			return false, err
+			return nil, err
 		}
-		keylen := int32(len(key))
-		candidateKey := argon2.IDKey([]byte(password), salt, iter, mem, para, uint32(keylen))
-		candidateKeylen := int32(len(candidateKey))
-
-		if subtle.ConstantTimeEq(keylen, candidateKeylen) == 0 {
-			return false, nil
-		}
-		if subtle.ConstantTimeCompare(key, candidateKey) == 1 {
-			return true, nil
-		}
-		return false, nil
+		pt.Key = key
+		pt.KeyLen = int32(len(pt.Key))
+		return pt, nil
 	}
-	panic(fmt.Sprintf("Password hash algorithm not implemented: %s", algo))
-}
-
-func verifyAgainstPlaintext(pwd1 string, pwd2 string) bool {
-	return subtle.ConstantTimeCompare([]byte(pwd1), []byte(pwd2)) == 1
-}
-
-// isSupportedPasswordHash returns true if the supplied password is actually a
-// hash as defined by the PHC format that Faktory supports. Per OWASP guidance,
-// only Argon2id, scrypt, bcrypt, and PBKDF2 hashes are supported.
-//
-// https://github.com/P-H-C/phc-string-format
-// https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-func isSupportedPasswordHash(pwd string) bool {
-	algo, err := detectHashAlgorithm(pwd)
-	if err != nil {
-		return false
-	}
-	return algo != hashAlgorithmTypeUnknown
-}
-
-// TODO: return a genericish struct/interface or something so we don't
-// wastefully keep parsing the string over and over
-func detectHashAlgorithm(pwd string) (hashAlgorithmType, error) {
-	// TODO: do a fulsome parsing of PHC format
-	parts := strings.Split(pwd, "$")
-	if parts[0] != "" || len(parts) < 2 || len(parts[1]) < 1 {
-		return hashAlgorithmTypeUnknown, errors.New("not a recognizable password hash format")
-	}
-	if hashID(parts[1][0]) == hashIDBCrypt2 {
-		return hashAlgorithmTypeBCrypt, nil
-	}
-	if hashID(parts[1]) == hashIDArgon2id {
-		return hashAlgorithmTypeArgon2id, nil
-	}
-	return hashAlgorithmTypeUnknown, fmt.Errorf("unknown password hash algorithm id %s", parts[1])
+	util.Warnf("Unknown password hash algorithm ID %s, assuming plaintext", parts[1])
+	return upt, nil
 }

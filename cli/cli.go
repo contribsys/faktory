@@ -27,6 +27,13 @@ type CliOptions struct {
 	StorageDirectory string
 }
 
+type passwordType string
+
+const (
+	passwordTypeWebUI  passwordType = "webui"
+	passwordTypeServer passwordType = "server"
+)
+
 func ParseArguments() CliOptions {
 
 	fenv := os.Getenv("FAKTORY_ENV")
@@ -146,9 +153,13 @@ func BuildServer(opts *CliOptions) (*server.Server, func() error, error) {
 		return nil, nil, err
 	}
 
-	pwd, err := fetchPassword(globalConfig, opts.Environment)
+	pwd, err := fetchPassword(globalConfig, opts.Environment, passwordTypeServer)
 	if err != nil {
 		return nil, nil, err
+	}
+	webPwd, err := fetchPassword(globalConfig, opts.Environment, passwordTypeWebUI)
+	if err != nil {
+		util.Warnf("unable to fetch Web UI password, defaulting to server's: %v", err)
 	}
 
 	sock := fmt.Sprintf("%s/redis.sock", opts.StorageDirectory)
@@ -172,6 +183,7 @@ func BuildServer(opts *CliOptions) (*server.Server, func() error, error) {
 		RedisSock:        sock,
 		GlobalConfig:     globalConfig,
 		Password:         pwd,
+		WebUIPassword:    webPwd,
 		PoolSize:         server.DefaultMaxPoolSize,
 	}
 
@@ -247,33 +259,54 @@ func readConfig(cdir string, env string) (map[string]any, error) {
 // [faktory]
 // password = "foobar" # or...
 // password = "/run/secrets/my_faktory_password"
-func fetchPassword(cfg map[string]any, env string) (string, error) {
+//
+// [web]
+// password = "foobar" # or...
+// password = "/run/secrets/my_faktory_password"
+func fetchPassword(cfg map[string]any, env string, pwdtype passwordType) (string, error) {
 	password := ""
+
+	var envKey string
+	var pwdPath string
+	cfgPath := struct {
+		Subsys string
+		Elm    string
+	}{}
+	if pwdtype == passwordTypeServer {
+		envKey = "FAKTORY_PASSWORD"
+		pwdPath = "/etc/faktory/password"
+		cfgPath.Subsys = "faktory"
+		cfgPath.Elm = "password"
+	} else {
+		envKey = "FAKTORY_WEBUI_PASSWORD"
+		pwdPath = "/etc/faktory/webui_password"
+		cfgPath.Subsys = "web"
+		cfgPath.Elm = "password"
+	}
 
 	// allow the password to be injected via ENV rather than committed
 	// to filesystem.  Note if this value starts with a /, then it is
 	// considered a pointer to a file on the filesystem with the password
 	// value, e.g. FAKTORY_PASSWORD=/run/secrets/my_faktory_password.
-	val, ok := os.LookupEnv("FAKTORY_PASSWORD")
+	val, ok := os.LookupEnv(envKey)
 	if ok {
 		password = val
 	} else {
 
-		val := stringConfig(cfg, "faktory", "password", "")
+		val := stringConfig(cfg, cfgPath.Subsys, cfgPath.Elm, "")
 		if val != "" {
 			password = val
 
 			// clear password so we can log it safely
-			x := cfg["faktory"].(map[string]any)
-			x["password"] = "********"
+			x := cfg[cfgPath.Subsys].(map[string]any)
+			x[cfgPath.Elm] = "********"
 		}
 	}
 
 	if env != "development" && !skip() && password == "" {
-		ok, _ := util.FileExists("/etc/faktory/password")
+		ok, _ := util.FileExists(pwdPath)
 		if ok {
-			//nolint:gosec
-			password = "/etc/faktory/password"
+			password = pwdPath
 		}
 	}
 
@@ -288,7 +321,7 @@ func fetchPassword(cfg map[string]any, env string) (string, error) {
 		password = strings.TrimSpace(string(data))
 	}
 
-	if env != "development" && !skip() && password == "" {
+	if env != "development" && !skip() && password == "" && pwdtype == passwordTypeServer {
 		return "", fmt.Errorf("faktory requires a password to be set in staging or production, see the Security wiki page")
 	}
 

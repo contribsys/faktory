@@ -2,7 +2,6 @@ package webui
 
 import (
 	"context"
-	"crypto/subtle"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/contribsys/faktory/client"
+	"github.com/contribsys/faktory/password"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
 	"github.com/justinas/nosurf"
@@ -205,8 +205,9 @@ func (l *Lifecycle) opts(s *server.Server) Options {
 	}
 	// Allow the Web UI to have a different password from the command port
 	// so you can rotate user-used passwords and machine-used passwords separately
-	pwd := s.Options.String("web", "password", "")
+	pwd := s.Options.WebUIPassword
 	if pwd == "" {
+		util.Info("Defaulting Web UI password to server's")
 		pwd = s.Options.Password
 	}
 	opts.Password = pwd
@@ -324,15 +325,20 @@ func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
 	return genericSetup
 }
 
-func basicAuth(pwd string, pass http.HandlerFunc) http.HandlerFunc {
+func basicAuth(srvPwd string, pass http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, password, ok := r.BasicAuth()
+		_, pwd, ok := r.BasicAuth()
 		if !ok {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			http.Error(w, "Authorization required", http.StatusUnauthorized)
 			return
 		}
-		if subtle.ConstantTimeCompare([]byte(password), []byte(pwd)) != 1 {
+		// Web UI's configured password is actually a hash.
+		verified, err := password.Verify(pwd, srvPwd)
+		if !verified {
+			if err != nil {
+				util.Error("Failed password verification", err)
+			}
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			http.Error(w, "Authorization failed", http.StatusUnauthorized)
 			return

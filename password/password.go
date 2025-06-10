@@ -48,7 +48,7 @@ func verifyAgainstHash(password string, hashedPassword string) (bool, error) {
 }
 
 func verifyAgainstPlaintext(pwd1 string, pwd2 string) bool {
-	return subtle.ConstantTimeCompare([]byte(pwd1), []byte(pwd2)) != 1
+	return subtle.ConstantTimeCompare([]byte(pwd1), []byte(pwd2)) == 1
 }
 
 // isSupportedPasswordHash returns true if the supplied password is actually a

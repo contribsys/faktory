@@ -14,6 +14,13 @@ func pwdCfg(value string) map[string]any {
 		},
 	}
 }
+func webPwdCfg(value string) map[string]any {
+	return map[string]any{
+		"web": map[string]any{
+			"password": value,
+		},
+	}
+}
 
 func TestPasswords(t *testing.T) {
 	emptyCfg := map[string]any{}
@@ -27,6 +34,15 @@ func TestPasswords(t *testing.T) {
 		assert.Equal(t, 16, len(pwd))
 		assert.Equal(t, "cce29d6565ab7376", pwd)
 		assert.Equal(t, "********", cfg["faktory"].(map[string]any)["password"])
+	})
+
+	t.Run("DevWithWebPassword", func(t *testing.T) {
+		cfg := webPwdCfg(pwd)
+		pwd, err := fetchPassword(cfg, "development", passwordTypeWebUI)
+		assert.NoError(t, err)
+		assert.Equal(t, 16, len(pwd))
+		assert.Equal(t, "cce29d6565ab7376", pwd)
+		assert.Equal(t, "********", cfg["web"].(map[string]any)["password"])
 	})
 
 	t.Run("DevWithoutPassword", func(t *testing.T) {
@@ -70,6 +86,16 @@ func TestPasswords(t *testing.T) {
 
 	os.Unsetenv("FAKTORY_PASSWORD")
 
+	t.Run("ProductionEnvPassword", func(t *testing.T) {
+		os.Setenv("FAKTORY_WEBUI_PASSWORD", "webuipass")
+
+		pwd, err := fetchPassword(emptyCfg, "production", passwordTypeWebUI)
+		assert.NoError(t, err)
+		assert.Equal(t, "webuipass", pwd)
+	})
+
+	os.Unsetenv("FAKTORY_WEBUI_PASSWORD")
+
 	t.Run("ProductionSkipPassword", func(t *testing.T) {
 		os.Setenv("FAKTORY_SKIP_PASSWORD", "yes")
 
@@ -79,4 +105,5 @@ func TestPasswords(t *testing.T) {
 	})
 
 	os.Unsetenv("FAKTORY_SKIP_PASSWORD")
+
 }

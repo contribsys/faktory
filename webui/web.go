@@ -337,7 +337,7 @@ func basicAuth(srvPwd string, pass http.HandlerFunc) http.HandlerFunc {
 		verified, err := password.Verify(pwd, srvPwd)
 		if !verified {
 			if err != nil {
-				util.Error("Failed password verification", err)
+				util.Error("Error during password verification", err)
 			}
 			w.Header().Set("WWW-Authenticate", `Basic realm="Faktory"`)
 			http.Error(w, "Authorization failed", http.StatusUnauthorized)

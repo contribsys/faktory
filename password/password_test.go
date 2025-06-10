@@ -58,6 +58,42 @@ func TestPasswordVerify(t *testing.T) {
 				verified:   false,
 			},
 			{
+				name:       "pbkdf2-hmac-sha1 correct",
+				candidate:  "a",
+				configured: "$pbkdf2$131000$j3FurVUqxbiXUuqdc865Fw$khjQ9RJHk0901AZmqtUnudHQmDg",
+				verified:   true,
+			},
+			{
+				name:       "pbkdf2-hmac-sha1 incorrect",
+				candidate:  "wrong",
+				configured: "$pbkdf2$131000$j3FurVUqxbiXUuqdc865Fw$khjQ9RJHk0901AZmqtUnudHQmDg",
+				verified:   false,
+			},
+			{
+				name:       "pbkdf2-hmac-sha256 correct",
+				candidate:  "a",
+				configured: "$pbkdf2-sha256$29000$EqJUqlXqfa/13hsDYGyNsQ$mySn2pP1vbxyIA2/ExJqoHDc0ywnwf4SSJPavT6n3oA",
+				verified:   true,
+			},
+			{
+				name:       "pbkdf2-hmac-sha256 incorrect",
+				candidate:  "wrong",
+				configured: "$pbkdf2-sha256$29000$EqJUqlXqfa/13hsDYGyNsQ$mySn2pP1vbxyIA2/ExJqoHDc0ywnwf4SSJPavT6n3oA",
+				verified:   false,
+			},
+			{
+				name:       "pbkdf2-hmac-sha512 correct",
+				candidate:  "a",
+				configured: "$pbkdf2-sha512$25000$QmhtjZEyJuR8r3UOoVRKaQ$EiqzPjoOZkEt3SKVZv9g31/kaj8WXIaey5pNWWVczZrJXXeuA9CU.vlJ3AgYS6CqojXtpgC1P0kJwkevKDMqMw",
+				verified:   true,
+			},
+			{
+				name:       "pbkdf2-hmac-sha512 incorrect",
+				candidate:  "wrong",
+				configured: "$pbkdf2-sha512$25000$QmhtjZEyJuR8r3UOoVRKaQ$EiqzPjoOZkEt3SKVZv9g31/kaj8WXIaey5pNWWVczZrJXXeuA9CU.vlJ3AgYS6CqojXtpgC1P0kJwkevKDMqMw",
+				verified:   false,
+			},
+			{
 				name:       "plaintext correct",
 				candidate:  "a",
 				configured: "a",
@@ -80,15 +116,20 @@ func TestPasswordVerify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v, err := Verify(tt.candidate, tt.configured)
-			if v != tt.verified {
-				t.Errorf("Verify(\"%s\", \"%s\") = %v; want %v", tt.candidate, tt.configured, v, tt.verified)
-			}
+
 			if tt.expectErr {
 				if err == nil {
 					t.Fatalf("expected error but got nil")
 				}
 				if err.Error() != tt.errMessage {
 					t.Errorf("expected error %q, got %q", tt.errMessage, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("did not expect error, got %q", err.Error())
+				}
+				if v != tt.verified {
+					t.Errorf("Verify(\"%s\", \"%s\") = %v; want %v", tt.candidate, tt.configured, v, tt.verified)
 				}
 			}
 		})

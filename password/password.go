@@ -77,11 +77,7 @@ func (p argon2idPasswordType) Verify(candidate string) (bool, error) {
 		p.Threads,
 		uint32(p.KeyLen),
 	)
-	candidateKeyLen := int32(len(candidateKey))
 
-	if subtle.ConstantTimeEq(p.KeyLen, candidateKeyLen) == 0 {
-		return false, nil
-	}
 	if subtle.ConstantTimeCompare(p.Key, candidateKey) == 1 {
 		return true, nil
 	}
@@ -107,13 +103,9 @@ func (p scryptPasswordType) Verify(candidate string) (bool, error) {
 		p.Parallelism,
 		p.KeyLen,
 	)
-	candidateKeyLen := int32(len(candidateKey))
 
 	if err != nil {
 		return false, err
-	}
-	if subtle.ConstantTimeEq(int32(p.KeyLen), candidateKeyLen) == 0 {
-		return false, nil
 	}
 	if subtle.ConstantTimeCompare(p.Key, candidateKey) == 1 {
 		return true, nil
@@ -138,13 +130,9 @@ func (p pbkdf2PasswordType) Verify(candidate string) (bool, error) {
 		p.Rounds,
 		p.KeyLen,
 	)
-	candidateKeyLen := int32(len(candidateKey))
 
 	if err != nil {
 		return false, err
-	}
-	if subtle.ConstantTimeEq(int32(p.KeyLen), candidateKeyLen) == 0 {
-		return false, nil
 	}
 	if subtle.ConstantTimeCompare(p.Key, candidateKey) == 1 {
 		return true, nil

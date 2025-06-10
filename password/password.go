@@ -15,12 +15,12 @@ const (
 	hashIDBCrypt2 hashID = "2" // technically a major ver only
 )
 
-type HashAlgorithmType string
+type hashAlgorithmType string
 
 const (
-	HashAlgorithmTypeBCrypt  HashAlgorithmType = "bcrypt"
-	HashAlgorithmTypeArgon   HashAlgorithmType = "argon"
-	HashAlgorithmTypeUnknown HashAlgorithmType = ""
+	hashAlgorithmTypeBCrypt  hashAlgorithmType = "bcrypt"
+	hashAlgorithmTypeArgon   hashAlgorithmType = "argon"
+	hashAlgorithmTypeUnknown hashAlgorithmType = ""
 )
 
 func Verify(candidate string, configured string) (bool, error) {
@@ -36,7 +36,7 @@ func verifyAgainstHash(password string, hashedPassword string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if algo == HashAlgorithmTypeBCrypt {
+	if algo == hashAlgorithmTypeBCrypt {
 		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 		if err != nil {
 			return false, err
@@ -62,17 +62,17 @@ func isSupportedPasswordHash(pwd string) bool {
 	if err != nil {
 		return false
 	}
-	return algo != HashAlgorithmTypeUnknown
+	return algo != hashAlgorithmTypeUnknown
 }
 
-func detectHashAlgorithm(pwd string) (HashAlgorithmType, error) {
+func detectHashAlgorithm(pwd string) (hashAlgorithmType, error) {
 	// TODO: do a fulsome parsing of PHC format
 	parts := strings.Split(pwd, "$")
 	if parts[0] != "" || len(parts) < 2 || len(parts[1]) < 1 {
-		return HashAlgorithmTypeUnknown, errors.New("not a recognizable password hash format")
+		return hashAlgorithmTypeUnknown, errors.New("not a recognizable password hash format")
 	}
 	if hashID(parts[1][0]) == hashIDBCrypt2 {
-		return HashAlgorithmTypeBCrypt, nil
+		return hashAlgorithmTypeBCrypt, nil
 	}
-	return HashAlgorithmTypeUnknown, fmt.Errorf("unknown password hash algorithm id %s", parts[1])
+	return hashAlgorithmTypeUnknown, fmt.Errorf("unknown password hash algorithm id %s", parts[1])
 }

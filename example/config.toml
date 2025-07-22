@@ -1,3 +1,15 @@
+[faktory]
+# Required for production. Can use `FAKTORY_PASSWORD` env var instead
+password = "a-password-for-clients-to-connect-with"
+
+[web]
+# Optional. Specify to make the Web UI's HTTP Basic auth password different
+# from the Faktory server password clients connect with. Supports PHC-formatted
+# argon2id, bcrypt, scrypt, and pbkdf2 hashes and not just plaintext.
+# e.g. "$2b$12$xbQjW9Gtc35jLaAnGp7iV.PMoDuu0SdfWUrv30B6NT1vTrGc4LTPW"
+# Can use `FAKTORY_WEBUI_PASSWORD` env var instead.
+password = "an-optionally-different-http-basic-webui-password-from-faktory-server"
+
 [queues]
 # disable backpressure by default
 backpressure = 0

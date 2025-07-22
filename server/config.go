@@ -1,6 +1,8 @@
 package server
 
-import "github.com/contribsys/faktory/util"
+import (
+	"github.com/contribsys/faktory/util"
+)
 
 // This is the ultimate scalability limitation in Faktory,
 // we only allow this many connections to Redis.
@@ -14,6 +16,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	Password         string
+	WebUIPassword    string
 	PoolSize         uint64
 }
 

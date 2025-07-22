@@ -5,6 +5,10 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/master/Changes.m
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.9.3
+
+- No changes.
+
 ## 1.9.2
 
 - Run `modernize` on codebase

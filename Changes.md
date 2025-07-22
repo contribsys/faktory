@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## 1.9.3
+
+- Fix bad release which resulted in checksum mismatch errors [#512]
+
 ## 1.9.2
 
 - Upgrade nosurf 1.2.0 for CVE-2025-46721

@@ -177,15 +177,16 @@ func Proxy(ui *WebUI) http.HandlerFunc {
 		// Note that it's super critical that location == X-Script-Name
 		// Example config:
 		/*
-		   location /faktory {
-		       proxy_set_header X-Script-Name /faktory;
+			# NB: location MUST == X-Script-Name
+			location /faktory {
+				proxy_set_header X-Script-Name /faktory;
 
-		       proxy_pass   http://127.0.0.1:7420;
-		       proxy_set_header Host $host;
-		       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		       proxy_set_header X-Scheme $scheme;
-		       proxy_set_header X-Real-IP $remote_addr;
-		   }
+				proxy_pass   http://127.0.0.1:7420;
+				proxy_set_header Host $host;
+				proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+				proxy_set_header X-Scheme $scheme;
+				proxy_set_header X-Real-IP $remote_addr;
+			}
 		*/
 
 		prefix := r.Header.Get("X-Script-Name")

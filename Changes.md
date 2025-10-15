@@ -2,6 +2,10 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
+## HEAD
+
+- Migrate to Go 1.25's new CrossOriginProtection, remove nosurf [#517]
+
 ## 1.9.3
 
 - Fix bad release which resulted in checksum mismatch errors [#512]

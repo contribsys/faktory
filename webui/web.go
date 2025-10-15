@@ -16,7 +16,6 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/util"
-	"github.com/justinas/nosurf"
 )
 
 //go:generate ego .
@@ -95,16 +94,14 @@ type WebUI struct {
 }
 
 type Options struct {
-	Binding    string
-	Password   string
-	EnableCSRF bool
+	Binding  string
+	Password string
 }
 
 func defaultOptions() Options {
 	return Options{
-		Password:   "",
-		Binding:    "localhost:7420",
-		EnableCSRF: true,
+		Password: "",
+		Binding:  "localhost:7420",
 	}
 }
 
@@ -301,7 +298,7 @@ func DebugLog(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
 }
 
 func Log(ui *WebUI, pass http.HandlerFunc) http.HandlerFunc {
-	return protect(ui.Options.EnableCSRF, setup(ui, pass, false))
+	return protect(setup(ui, pass, false))
 }
 
 func setup(ui *WebUI, pass http.HandlerFunc, debug bool) http.HandlerFunc {
@@ -369,12 +366,10 @@ func cache(h http.Handler) http.HandlerFunc {
 	}
 }
 
-func protect(enabled bool, h http.HandlerFunc) http.HandlerFunc {
-	hndlr := nosurf.New(h)
-	hndlr.ExemptFunc(func(r *http.Request) bool {
-		return !enabled
-	})
+func protect(h http.HandlerFunc) http.HandlerFunc {
+	csrfProtection := http.NewCrossOriginProtection()
+	handler := csrfProtection.Handler(h)
 	return func(w http.ResponseWriter, r *http.Request) {
-		hndlr.ServeHTTP(w, r)
+		handler.ServeHTTP(w, r)
 	}
 }

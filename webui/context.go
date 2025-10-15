@@ -55,7 +55,6 @@ func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *Default
 		response: resp,
 		locale:   locale,
 		strings:  translations(locale),
-		csrf:     ui.Options.EnableCSRF,
 		Root:     req.Header.Get("X-Script-Name"),
 	}
 }
@@ -66,10 +65,6 @@ func (d *DefaultContext) Response() http.ResponseWriter {
 
 func (d *DefaultContext) Request() *http.Request {
 	return d.request
-}
-
-func (d *DefaultContext) UseCsrf() bool {
-	return d.csrf
 }
 
 func (d *DefaultContext) Store() storage.Store {

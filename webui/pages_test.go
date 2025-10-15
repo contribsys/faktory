@@ -413,7 +413,8 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("RequireCSRF", func(t *testing.T) {
-			req, err := ui.NewRequest("GET", "http://localhost:7420/busy", nil)
+			req, err := ui.NewRequest("GET", "http://mike.example:7420/busy", nil)
+			// req.Header.Set("Sec-Fetch-Site", "same-origin")
 			assert.NoError(t, err)
 
 			wid := "1239123oim,bnsad"
@@ -431,45 +432,41 @@ func TestPages(t *testing.T) {
 
 			// Wrap the handler with CSRF protection
 			hndlr := setup(ui, busyHandler, false)
-			csrfBusyHandler := protect(true, hndlr)
+			csrfBusyHandler := protect(hndlr)
 			csrfBusyHandler.ServeHTTP(w, req)
+			// GET should always pass
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
 			assert.True(t, strings.Contains(w.Body.String(), "foobar.local"), w.Body.String())
 			assert.True(t, strings.Contains(w.Body.String(), "bubba"), w.Body.String())
 			assert.False(t, wrk.IsQuiet())
 
-			// Retrieve the CSRF token needed in the future POST request
-			token, cookieToken := findCSRFTokens(w, w.Body.String())
-
 			// Make the POST request without any CSRF tokens present
 			data := url.Values{
 				"signal": {"quiet"},
 				"wid":    {wid},
 			}
-			req, err = ui.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+			req, err = ui.NewRequest("POST", "http://mike.example:7420/busy", strings.NewReader(data.Encode()))
 
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Header.Set("Sec-Fetch-Site", "cross-site")
 			w = httptest.NewRecorder()
 			csrfBusyHandler.ServeHTTP(w, req)
+			// POST without same-origin should fail
+			assert.Equal(t, 403, w.Code)
 
-			// Request without CSRF should fail
-			assert.Equal(t, 400, w.Code)
-
-			// Make the POST request including the CSRF token
+			// Make the POST request with same-origin
 			data = url.Values{
-				"signal":     {"quiet"},
-				"wid":        {wid},
-				"csrf_token": {token},
+				"signal": {"quiet"},
+				"wid":    {wid},
 			}
 
-			req, err = ui.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
+			req, err = ui.NewRequest("POST", "http://mike.example:7420/busy", strings.NewReader(data.Encode()))
 
 			assert.NoError(t, err)
 			req.Header.Set("Sec-Fetch-Site", "same-origin")
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			req.Header.Set("Cookie", "csrf_token="+cookieToken)
 			w = httptest.NewRecorder()
 			csrfBusyHandler.ServeHTTP(w, req)
 
@@ -478,50 +475,6 @@ func TestPages(t *testing.T) {
 			assert.True(t, wrk.IsQuiet())
 		})
 
-		t.Run("RespectUseCSRFGlobal", func(t *testing.T) {
-			req, err := ui.NewRequest("GET", "http://localhost:7420/busy", nil)
-			assert.NoError(t, err)
-
-			wid := "1239123oim,bnsad"
-			wrk := &server.ClientData{
-				Hostname:  "foobar.local",
-				Pid:       12345,
-				Wid:       wid,
-				Labels:    []string{"bubba"},
-				StartedAt: time.Now(),
-				Version:   2,
-			}
-			s.Heartbeats()[wid] = wrk
-
-			w := httptest.NewRecorder()
-
-			// Wrap the handler with CSRF protection
-			hndlr := setup(ui, busyHandler, false)
-			csrfBusyHandler := protect(false, hndlr)
-			csrfBusyHandler.ServeHTTP(w, req)
-			assert.Equal(t, 200, w.Code)
-
-			assert.True(t, strings.Contains(w.Body.String(), wid), w.Body.String())
-			assert.True(t, strings.Contains(w.Body.String(), "foobar.local"), w.Body.String())
-			assert.True(t, strings.Contains(w.Body.String(), "bubba"), w.Body.String())
-			assert.False(t, wrk.IsQuiet())
-
-			// Make the POST request without any CSRF tokens present
-			data := url.Values{
-				"signal": {"quiet"},
-				"wid":    {wid},
-			}
-			req, err = ui.NewRequest("POST", "http://localhost:7420/busy", strings.NewReader(data.Encode()))
-
-			assert.NoError(t, err)
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			w = httptest.NewRecorder()
-			csrfBusyHandler.ServeHTTP(w, req)
-
-			// Request without CSRF should pass
-			assert.Equal(t, 302, w.Code)
-			assert.True(t, wrk.IsQuiet())
-		})
 	})
 }
 

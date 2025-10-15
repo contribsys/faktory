@@ -15,7 +15,6 @@ import (
 	"github.com/contribsys/faktory/server"
 	"github.com/contribsys/faktory/storage"
 	"github.com/contribsys/faktory/util"
-	"github.com/justinas/nosurf"
 )
 
 var (
@@ -112,11 +111,8 @@ func ctx(req *http.Request) *DefaultContext {
 }
 
 func csrfTag(req *http.Request) string {
-	if ctx(req).UseCsrf() {
-		return `<input type="hidden" name="csrf_token" value="` + nosurf.Token(req) + `"/>`
-	} else {
-		return ""
-	}
+	// No longer needed after issue #517
+	return ""
 }
 
 func uintWithDelimiter(val uint64) string {

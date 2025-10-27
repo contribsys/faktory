@@ -29,7 +29,6 @@ type DefaultContext struct {
 	strings map[string]string
 	locale  string
 	Root    string
-	csrf    bool
 }
 
 func NewContext(ui *WebUI, req *http.Request, resp http.ResponseWriter) *DefaultContext {

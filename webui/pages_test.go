@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -488,30 +487,4 @@ func (ui *WebUI) NewRequest(method string, urlstr string, body io.Reader) (*http
 		strings: translations("en"),
 	}
 	return r.WithContext(dctx), nil
-}
-
-var (
-	searchBody   = regexp.MustCompile(`name="csrf_token" value="(.*)"/>`)
-	searchCookie = regexp.MustCompile(`csrf_token=(.*);`)
-)
-
-func findCSRFTokens(w http.ResponseWriter, body string) (string, string) {
-	bodyToken := ""
-	cookieToken := ""
-
-	// parse body token
-	results := searchBody.FindStringSubmatch(body)
-	if len(results) > 1 {
-		bodyToken = results[1]
-	}
-
-	// parse header token
-	rawCookie := w.Header().Get("Set-Cookie")
-	if rawCookie != "" {
-		results2 := searchCookie.FindStringSubmatch(rawCookie)
-		if len(results2) > 1 {
-			cookieToken = results2[1]
-		}
-	}
-	return bodyToken, cookieToken
 }

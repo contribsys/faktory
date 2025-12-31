@@ -44,8 +44,9 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
   </table>
 </div>
 
-<form class="form-horizontal" action="<%= root(req) %>/morgue/<%= key %>" method="post">
+<form class="form-horizontal" action="<%= root(req) %>/morgue" method="post">
   <%== csrfTag(req) %>
+  <input type="hidden" name="key" value="<%= key %>" />
   <div class="pull-left">
     <a class="btn btn-default" href="<%= relative(req, "/morgue") %>"><%= t(req, "GoBack") %></a>
     <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>

@@ -360,8 +360,9 @@ func TestPages(t *testing.T) {
 			assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
 
 			assert.EqualValues(t, 1, q.Size(bg))
+			key := fmt.Sprintf("%s|%s", ts, jid)
 			payload := url.Values{
-				"key":    {"all"},
+				"key":    {key},
 				"action": {"delete"},
 			}
 			req, err = ui.NewRequest("POST", "http://localhost:7420/morgue", strings.NewReader(payload.Encode()))

@@ -75,36 +75,36 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:47
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(root(req))))
 //line dead.ego:47
-		_, _ = io.WriteString(w, "/morgue/")
-//line dead.ego:47
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(key)))
-//line dead.ego:47
-		_, _ = io.WriteString(w, "\" method=\"post\">\n  ")
+		_, _ = io.WriteString(w, "/morgue\" method=\"post\">\n  ")
 //line dead.ego:48
 		_, _ = fmt.Fprint(w, csrfTag(req))
 //line dead.ego:49
-		_, _ = io.WriteString(w, "\n  <div class=\"pull-left\">\n    <a class=\"btn btn-default\" href=\"")
-//line dead.ego:50
+		_, _ = io.WriteString(w, "\n  <input type=\"hidden\" name=\"key\" value=\"")
+//line dead.ego:49
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(key)))
+//line dead.ego:49
+		_, _ = io.WriteString(w, "\" />\n  <div class=\"pull-left\">\n    <a class=\"btn btn-default\" href=\"")
+//line dead.ego:51
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(relative(req, "/morgue"))))
-//line dead.ego:50
+//line dead.ego:51
 		_, _ = io.WriteString(w, "\">")
-//line dead.ego:50
+//line dead.ego:51
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "GoBack"))))
-//line dead.ego:50
+//line dead.ego:51
 		_, _ = io.WriteString(w, "</a>\n    <button class=\"btn btn-primary btn-sm\" type=\"submit\" name=\"action\" value=\"retry\">")
-//line dead.ego:51
+//line dead.ego:52
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetryNow"))))
-//line dead.ego:51
+//line dead.ego:52
 		_, _ = io.WriteString(w, "</button>\n    <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\">")
-//line dead.ego:52
+//line dead.ego:53
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Delete"))))
-//line dead.ego:52
+//line dead.ego:53
 		_, _ = io.WriteString(w, "</button>\n  </div>\n</form>\n")
-//line dead.ego:55
+//line dead.ego:56
 	})
-//line dead.ego:56
+//line dead.ego:57
 	_, _ = io.WriteString(w, "\n")
-//line dead.ego:56
+//line dead.ego:57
 }
 
 var _ fmt.Stringer

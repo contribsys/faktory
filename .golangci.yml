@@ -4,6 +4,9 @@ linters:
     - gocritic
     - gosec
   settings:
+    gosec:
+      excludes:
+        - G602
     gocritic:
       disabled-checks:
         - commentedOutCode

@@ -45,7 +45,7 @@ func TestStats(t *testing.T) {
 		daystr := time.Now().Format("2006-01-02")
 		counts := hash[daystr]
 		assert.NotNil(t, counts)
-		assert.EqualValues(t, 10002, counts[0]) // false alarms, buggy G602 in gosec
-		assert.EqualValues(t, 101, counts[1])   // https://github.com/golangci/golangci-lint/issues/6334
+		assert.EqualValues(t, 10002, counts[0])
+		assert.EqualValues(t, 101, counts[1])
 	})
 }

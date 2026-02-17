@@ -36,11 +36,11 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:24
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Locale"))))
 //line debug.ego:24
-		_, _ = io.WriteString(w, "</th>\n        <td>\n          <select name=\"locales\" id=\"faktory_locale\">\n            ")
+		_, _ = io.WriteString(w, "</th>\n        <td>\n          <select name=\"locales\" id=\"faktory_locale\" onchange=\"saveLocale(this.value)\">\n            ")
 //line debug.ego:27
 		sortedLocaleNames(req, func(locale string, current bool) {
 //line debug.ego:28
-			_, _ = io.WriteString(w, "\n              <option name=\"")
+			_, _ = io.WriteString(w, "\n              <option value=\"")
 //line debug.ego:28
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(locale)))
 //line debug.ego:28

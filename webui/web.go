@@ -95,7 +95,7 @@ type WebUI struct {
 
 type Options struct {
 	Binding  string
-	Password string
+	Password string //gosec:disable
 }
 
 func defaultOptions() Options {

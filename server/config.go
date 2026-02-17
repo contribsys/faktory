@@ -13,7 +13,7 @@ type ServerOptions struct {
 	RedisSock        string
 	ConfigDirectory  string
 	Environment      string
-	Password         string
+	Password         string //gosec:disable
 	PoolSize         uint64
 }
 

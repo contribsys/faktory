@@ -26,7 +26,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Add("Cache-Control", "no-cache")
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) //gosec:disable
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {

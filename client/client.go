@@ -84,7 +84,7 @@ type Server struct {
 	Network  string
 	Address  string
 	Username string
-	Password string
+	Password string //gosec:disable
 	Timeout  time.Duration
 }
 

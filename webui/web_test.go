@@ -23,7 +23,7 @@ func TestLiveServer(t *testing.T) {
 			w := httptest.NewRecorder()
 			staticHandler(w, req)
 			assert.Equal(t, 200, w.Code)
-			assert.True(t, strings.Contains(w.Body.String(), "Fuzzy"), w.Body.String())
+			assert.True(t, strings.Contains(w.Body.String(), "ready"), w.Body.String())
 		})
 
 		t.Run("Debug", func(t *testing.T) {

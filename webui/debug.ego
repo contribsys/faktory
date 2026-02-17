@@ -23,9 +23,9 @@ func ego_debug(w io.Writer, req *http.Request) {
       <tr>
         <th><%= t(req, "Locale") %></th>
         <td>
-          <select name="locales" id="faktory_locale">
+          <select name="locales" id="faktory_locale" onchange="saveLocale(this.value)">
             <% sortedLocaleNames(req, func(locale string, current bool) { %>
-              <option name="<%= locale %>" <% if current { %> selected <% } %> > <%= locale %> </option>
+              <option value="<%= locale %>" <% if current { %> selected <% } %> > <%= locale %> </option>
             <% }) %>
           </select>
           <span style="font-size: small">

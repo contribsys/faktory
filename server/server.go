@@ -386,10 +386,10 @@ func (s *Server) processLines(conn *Connection) {
 		cmd = strings.TrimSuffix(cmd, "\n")
 		// util.Debug(cmd)
 
-		idx := strings.Index(cmd, " ")
+		before, _, ok := strings.Cut(cmd, " ")
 		verb := cmd
-		if idx >= 0 {
-			verb = cmd[0:idx]
+		if ok {
+			verb = before
 		}
 		proc, ok := CommandSet[verb]
 		if !ok {

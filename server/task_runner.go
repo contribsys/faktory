@@ -93,7 +93,6 @@ func (ts *taskRunner) cycle() {
 	ts.mutex.RLock()
 	defer ts.mutex.RUnlock()
 	for _, t := range ts.tasks {
-		t := t
 		if sec%t.every != 0 {
 			continue
 		}

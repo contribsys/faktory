@@ -61,12 +61,10 @@ func TestSystem(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range 3 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			pushAndPop(t, each)
 			util.Infof("Processed %d jobs in %v", 3*each, time.Since(start))
-		}()
+		})
 	}
 
 	wg.Wait()

@@ -4,6 +4,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
+- Modernize JavaScript code [#524]
 - Migrate to Go 1.25's new CrossOriginProtection, remove nosurf [#517]
 - Fix "Retry Now" button on Dead job page [#522]
 

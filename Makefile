@@ -143,7 +143,7 @@ clean: ## Clean the project, set it up for a new build
 	@rm -rf tmp
 	@rm -f main $(NAME) $(NAME)_amd64 $(NAME)_arm64 templates.go	
 	@mkdir -p tmp/linux
-	@go clean -testcache
+	@go clean -cache
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd

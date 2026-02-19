@@ -2,7 +2,7 @@
 
 Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
 
-## HEAD
+## 1.9.4
 
 - Modernize JavaScript code [#524]
 - Migrate to Go 1.25's new CrossOriginProtection, remove nosurf [#517]

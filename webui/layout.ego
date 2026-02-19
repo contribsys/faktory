@@ -32,7 +32,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
     <script type="text/javascript" src="<%= relative(req, "/static/application.js") %>"></script>
     <meta name="google" content="notranslate" />
   </head>
-  <body class="admin d-flex flex-column" data-locale="<%= ctx(req).locale %>" data-poll-path="">
+  <body class="admin d-flex flex-column" data-locale="<%= ctx(req).locale %>">
     <% ego_nav(w, req) %>
     <div id="page" class="flex-fill">
       <div class="container-xl">

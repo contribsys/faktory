@@ -94,7 +94,7 @@ func ego_layout(w io.Writer, req *http.Request, yield func()) {
 //line layout.ego:35
 	_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).locale)))
 //line layout.ego:35
-	_, _ = io.WriteString(w, "\" data-poll-path=\"\">\n    ")
+	_, _ = io.WriteString(w, "\">\n    ")
 //line layout.ego:36
 	ego_nav(w, req)
 //line layout.ego:37

@@ -12,7 +12,7 @@ func ego_index(w io.Writer, req *http.Request) {
     <%== LicenseStatus(w, req) %>
 <script type="text/javascript" src="<%= relative(req, "/static/dashboard.js") %>"></script>
 <div class= "dashboard clearfix">
-  <h3 >
+  <h3>
     <%= t(req, "Dashboard") %>
     <span class="beacon">
       <span class="ring"></span>

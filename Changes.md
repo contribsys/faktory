@@ -1,6 +1,6 @@
 # Faktory Changelog
 
-Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/master/Ent-Changes.md)
+Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory/blob/main/Ent-Changes.md)
 
 ## 1.9.4
 

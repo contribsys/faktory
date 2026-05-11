@@ -146,7 +146,7 @@ func bootRedis(path string, sock string) (func() error, error) {
 		for range 1000 {
 			conn, err := net.Dial("unix", sock)
 			if err == nil {
-				conn.Close()
+				_ = conn.Close()
 				break
 			}
 

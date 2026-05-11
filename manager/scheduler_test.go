@@ -17,7 +17,7 @@ func TestScheduler(t *testing.T) {
 		bg := context.Background()
 
 		t.Run("Purge", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			assert.EqualValues(t, 0, store.Dead().Size(bg))
@@ -52,7 +52,7 @@ func TestScheduler(t *testing.T) {
 		})
 
 		t.Run("EnqueueScheduledJobs", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ScheduledJob", 1, 2, 3)
@@ -74,7 +74,7 @@ func TestScheduler(t *testing.T) {
 		})
 
 		t.Run("EnqueueScheduledMultipleJobs", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ScheduledJob1", 1, 2, 3)
@@ -105,7 +105,7 @@ func TestScheduler(t *testing.T) {
 		})
 
 		t.Run("RetryJobs", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("FailedJob", 1, 2, 3)

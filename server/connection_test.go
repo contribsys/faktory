@@ -37,7 +37,7 @@ func TestConnectionBasics(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "-ERR permission denied\r\n", output(dc))
 
-	dc.Close()
+	_ = dc.Close()
 	assert.Equal(t, "", output(dc))
 }
 
@@ -51,7 +51,7 @@ func (wc *TestingWriteCloser) Close() error {
 }
 
 func (wc *TestingWriteCloser) Output() string {
-	wc.Flush()
+	_ = wc.Flush()
 	data := wc.output.String()
 	wc.output.Reset()
 	return data

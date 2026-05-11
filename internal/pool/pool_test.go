@@ -24,7 +24,7 @@ func TestPool(t *testing.T) {
 	assert.NotNil(t, thng)
 	assert.Equal(t, 0, pool.Len())
 
-	thng.Close()
+	_ = thng.Close()
 	assert.Equal(t, 1, pool.Len())
 
 	pool.Close()

@@ -151,7 +151,7 @@ func (s *Server) Boot() error {
 		listener, err = net.Listen("tcp", s.Options.Binding)
 	}
 	if err != nil {
-		store.Close()
+		_ = store.Close()
 		return fmt.Errorf("cannot listen on %s: %w", s.Options.Binding, err)
 	}
 
@@ -213,7 +213,7 @@ func (s *Server) Stop(onStop func()) {
 	s.mu.Lock()
 	s.closed = true
 	if s.listener != nil {
-		s.listener.Close()
+		_ = s.listener.Close()
 	}
 	s.mu.Unlock()
 
@@ -223,7 +223,7 @@ func (s *Server) Stop(onStop func()) {
 		onStop()
 	}
 
-	s.store.Close()
+	_ = s.store.Close()
 }
 
 func cleanupConnection(s *Server, c *Connection) {
@@ -301,14 +301,14 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	if !valid {
 		util.Debugf("Invalid preamble: %s", line)
 		util.Debug("Need a valid HELLO, is client using TLS?")
-		conn.Close()
+		_ = conn.Close()
 		return nil
 	}
 
 	cl, err := clientDataFromHello(line[5:])
 	if err != nil {
 		util.Error("Invalid client data in HELLO", err)
-		conn.Close()
+		_ = conn.Close()
 		return nil
 	}
 
@@ -339,7 +339,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	_, err = conn.Write([]byte("+OK\r\n"))
 	if err != nil {
 		util.Error("Closing connection", err)
-		conn.Close()
+		_ = conn.Close()
 		return nil
 	}
 

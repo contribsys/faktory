@@ -211,7 +211,7 @@ func (c *channelPool) Close() {
 
 	close(conns)
 	for conn := range conns {
-		conn.Close()
+		_ = conn.Close()
 	}
 }
 

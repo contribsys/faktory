@@ -237,7 +237,7 @@ func (w *workers) reapHeartbeats(t time.Time) int {
 		for idx := range toDelete {
 			cd := w.heartbeats[toDelete[idx]]
 			for conn := range cd.connections {
-				conn.Close()
+				_ = conn.Close()
 				conns += 1
 			}
 			delete(w.heartbeats, toDelete[idx])

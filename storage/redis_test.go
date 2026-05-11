@@ -12,7 +12,7 @@ import (
 func TestRedisKV(t *testing.T) {
 	withRedis(t, "default", func(t *testing.T, store Store) {
 		ctx := context.Background()
-		store.Flush(ctx)
+		assert.NoError(t, store.Flush(ctx))
 		kv := store.Raw()
 		assert.NotNil(t, kv)
 

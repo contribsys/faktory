@@ -16,7 +16,7 @@ func TestBasicQueueOps(t *testing.T) {
 		bg := context.Background()
 
 		t.Run("Push", func(t *testing.T) {
-			store.Flush(bg)
+			_ = store.Flush(bg)
 			q, err := store.GetQueue(bg, "default")
 			assert.NoError(t, err)
 
@@ -78,7 +78,7 @@ func TestBasicQueueOps(t *testing.T) {
 		})
 
 		t.Run("heavy", func(t *testing.T) {
-			store.Flush(bg)
+			_ = store.Flush(bg)
 			q, err := store.GetQueue(bg, "default")
 			assert.NoError(t, err)
 
@@ -124,7 +124,7 @@ func TestBasicQueueOps(t *testing.T) {
 		})
 
 		t.Run("threaded", func(t *testing.T) {
-			store.Flush(bg)
+			_ = store.Flush(bg)
 			q, err := store.GetQueue(bg, "default")
 			assert.NoError(t, err)
 

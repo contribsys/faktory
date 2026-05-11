@@ -156,7 +156,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 			buf := bufio.NewReader(conn)
 			line, err := buf.ReadString('\n')
 			if err != nil {
-				conn.Close()
+				_ = conn.Close()
 				break
 			}
 			// util.Infof("> %s", line)
@@ -168,7 +168,7 @@ func withFakeServer(t *testing.T, fn func(chan string, chan string, string)) {
 	}()
 
 	fn(req, resp, fakeServerBinding)
-	listener.Close()
+	_ = listener.Close()
 }
 
 func stacks() {

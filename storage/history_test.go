@@ -11,7 +11,7 @@ import (
 func TestStats(t *testing.T) {
 	withRedis(t, "history", func(t *testing.T, store Store) {
 		bg := context.Background()
-		store.Flush(bg)
+		_ = store.Flush(bg)
 		var err error
 
 		for i := range 10000 {

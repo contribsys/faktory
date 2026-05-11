@@ -1,0 +1,6 @@
+version = "2"
+
+# https://github.com/kisielk/errcheck/issues/101
+[[linters.exclusions.rules]]
+linters = [ "errcheck" ]
+source = "^\\s*defer\\s+"

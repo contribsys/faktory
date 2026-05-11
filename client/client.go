@@ -234,7 +234,7 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 
 	line, err := readString(r)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
@@ -244,7 +244,7 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 		var hi HIv2
 		err = util.JsonUnmarshal([]byte(str), &hi)
 		if err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 		if ExpectedProtocolVersion != hi.V {
@@ -257,7 +257,7 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 			client.PasswordHash = hash(password, salt, iter)
 		}
 	} else {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("expecting HI but got: %s", line)
 	}
 
@@ -267,13 +267,13 @@ func dial(srv *Server, password string, dialer Dialer) (*Client, error) {
 	}
 
 	if err := writeLine(w, "HELLO", data); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
 	err = ok(r)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 

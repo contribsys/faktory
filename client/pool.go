@@ -79,7 +79,7 @@ func (p *Pool) Get() (*Client, error) {
 
 // Put returns a client to the pool.
 func (p *Pool) Put(client *Client) {
-	client.poolConn.Close()
+	_ = client.poolConn.Close()
 }
 
 func (p *Pool) With(fn func(conn *Client) error) error {

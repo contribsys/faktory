@@ -15,7 +15,7 @@ func TestLoadWorkingSet(t *testing.T) {
 	withRedis(t, "working", func(t *testing.T, store storage.Store) {
 		bg := context.Background()
 		t.Run("LoadWorkingSet", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)
@@ -36,7 +36,7 @@ func TestLoadWorkingSet(t *testing.T) {
 		})
 
 		t.Run("ManagerReserve", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)
@@ -53,7 +53,7 @@ func TestLoadWorkingSet(t *testing.T) {
 		})
 
 		t.Run("ReserveWithInvalidTimeout", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			timeouts := []int{0, 20, 50, 59, 86401, 100000}
@@ -74,7 +74,7 @@ func TestLoadWorkingSet(t *testing.T) {
 		})
 
 		t.Run("ManagerAcknowledge", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job, err := m.Acknowledge(bg, "")
@@ -120,7 +120,7 @@ func TestLoadWorkingSet(t *testing.T) {
 		})
 
 		t.Run("ManagerReapExpiredJobs", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job := client.NewJob("WorkingJob", 1, 2, 3)

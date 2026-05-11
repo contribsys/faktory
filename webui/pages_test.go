@@ -96,7 +96,7 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("Queue", func(t *testing.T) {
-			s.Store().Flush(bg)
+			assert.NoError(t, s.Store().Flush(bg))
 			req, err := ui.NewRequest("GET", "http://localhost:7420/queues/foobar", nil)
 			assert.NoError(t, err)
 
@@ -133,7 +133,7 @@ func TestPages(t *testing.T) {
 		})
 
 		t.Run("Retries", func(t *testing.T) {
-			s.Store().Flush(bg)
+			assert.NoError(t, s.Store().Flush(bg))
 			req, err := ui.NewRequest("GET", "http://localhost:7420/retries", nil)
 			assert.NoError(t, err)
 

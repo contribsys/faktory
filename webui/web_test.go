@@ -111,7 +111,7 @@ func bootRuntime(t *testing.T, name string, fn func(*WebUI, *server.Server, *tes
 		panic(err)
 	}
 	defer s.Stop(nil)
-	s.Store().Flush(context.Background())
+	assert.NoError(t, s.Store().Flush(context.Background()))
 
 	go func() {
 		err := s.Run()

@@ -24,7 +24,7 @@ func TestManager(t *testing.T) {
 		bg := context.Background()
 
 		t.Run("Push", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
@@ -41,7 +41,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushJobWithInvalidId", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			q, err := store.GetQueue(bg, "default")
@@ -66,7 +66,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushJobWithInvalidType", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("", 1, 2, 3)
@@ -83,7 +83,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushJobWithoutArgs", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("NoArgs")
@@ -100,7 +100,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushScheduledJob", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ScheduledJob", 1, 2, 3)
@@ -121,7 +121,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushScheduledJobWithPastTime", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ScheduledJob", 1, 2, 3)
@@ -140,7 +140,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("PushScheduledJobWithInvalidTime", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ScheduledJob", 1, 2, 3)
@@ -159,7 +159,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("Fetch", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
@@ -180,7 +180,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("EmptyFetch", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			queues := []string{}
@@ -202,7 +202,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("FetchWithPause", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 
 			dq, err := store.GetQueue(bg, "default")
 			assert.NoError(t, err)
@@ -261,7 +261,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("FetchFromMultipleQueues", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
@@ -303,7 +303,7 @@ func TestManager(t *testing.T) {
 		})
 
 		t.Run("FetchAwaitsForNewJob", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			q, err := store.GetQueue(bg, "default")

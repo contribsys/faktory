@@ -69,7 +69,7 @@ func ego_job_info(w io.Writer, req *http.Request, job *client.Job) {
           <th><%= t(req, "Custom") %></th>
           <td>
             <% for k, v := range job.Custom { %>
-              <code><%= k %>: <%= fmt.Sprintf("%#v", v) %></code><br/>
+              <code><%= k %>: <%== html.EscapeString(fmt.Sprintf("%#v", v)) %></code><br/>
             <% } %>
           </td>
         </tr>

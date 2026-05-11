@@ -110,7 +110,7 @@ func ctx(req *http.Request) *DefaultContext {
 	return req.Context().(*DefaultContext)
 }
 
-func csrfTag(req *http.Request) string {
+func csrfTag(_ *http.Request) string {
 	// No longer needed after issue #517
 	return ""
 }

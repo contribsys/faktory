@@ -153,7 +153,7 @@ func TestServerStart(t *testing.T) {
 		// assert.NoError(t, err)
 		// assert.Equal(t, "OK\n", result)
 
-		conn.Close()
+		_ = conn.Close()
 	})
 
 }

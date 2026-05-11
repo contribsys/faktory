@@ -49,7 +49,7 @@ func TestLiveMiddleware(t *testing.T) {
 
 		t.Run("Push", func(t *testing.T) {
 			denied := ExpectedError("DENIED", "push denied")
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 			counter := 0
 
@@ -91,7 +91,7 @@ func TestLiveMiddleware(t *testing.T) {
 		t.Run("Fetch", func(t *testing.T) {
 			denied := ExpectedError("DENIED", "fetch denied")
 
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 			m.AddMiddleware("fetch", func(ctx context.Context, next func() error) error {
 				mh := ctx.Value(MiddlewareHelperKey).(Ctx)
@@ -145,7 +145,7 @@ func TestLiveMiddleware(t *testing.T) {
 		})
 
 		t.Run("Ack", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 			m.AddMiddleware("push", func(ctx context.Context, next func() error) error {
 				mh := ctx.Value(MiddlewareHelperKey).(Ctx)

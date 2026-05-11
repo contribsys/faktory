@@ -159,7 +159,7 @@ func flush(c *Connection, s *Server, cmd string) {
 
 // END
 func end(c *Connection, s *Server, cmd string) {
-	c.Close()
+	_ = c.Close()
 }
 
 // PUSHB [{job},{job},{job},...] => Map<JID, Error>

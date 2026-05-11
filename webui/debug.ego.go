@@ -60,7 +60,7 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:29
 		})
 //line debug.ego:30
-		_, _ = io.WriteString(w, "\n          </select>\n          <span style=\"font-size: small\">\n            Want to help us improve the translations?\n            <a href=\"https://github.com/contribsys/faktory/tree/master/webui/static/locales\">Submit a PR</a>.\n          </span>\n        </td>\n    </tr>\n    <tr>\n      <th>")
+		_, _ = io.WriteString(w, "\n          </select>\n          <span style=\"font-size: small\">\n            Want to help us improve the translations?\n            <a href=\"https://github.com/contribsys/faktory/tree/main/webui/static/locales\">Submit a PR</a>.\n          </span>\n        </td>\n    </tr>\n    <tr>\n      <th>")
 //line debug.ego:38
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Version"))))
 //line debug.ego:38

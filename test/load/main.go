@@ -50,7 +50,7 @@ func main() {
 		return
 	}
 	defer client.Close()
-	client.Flush()
+	_ = client.Flush()
 
 	opsCount = make([]int, threads)
 	run()

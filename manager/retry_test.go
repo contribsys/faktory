@@ -14,7 +14,7 @@ func TestRetry(t *testing.T) {
 		bg := context.Background()
 
 		t.Run("fail", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
@@ -68,7 +68,7 @@ func TestRetry(t *testing.T) {
 		})
 
 		t.Run("FailOneShotJob", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
 			job := client.NewJob("ManagerPush", 1, 2, 3)
@@ -99,7 +99,7 @@ func TestRetry(t *testing.T) {
 		})
 
 		t.Run("FailWithInvalidFailPayload", func(t *testing.T) {
-			store.Flush(bg)
+			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
 
 			err := m.Fail(bg, nil)

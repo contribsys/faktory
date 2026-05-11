@@ -61,22 +61,22 @@ func TestPasswords(t *testing.T) {
 	})
 
 	t.Run("ProductionEnvPassword", func(t *testing.T) {
-		os.Setenv("FAKTORY_PASSWORD", "abc123")
+		_ = os.Setenv("FAKTORY_PASSWORD", "abc123")
 
 		pwd, err := fetchPassword(emptyCfg, "production")
 		assert.NoError(t, err)
 		assert.Equal(t, "abc123", pwd)
 	})
 
-	os.Unsetenv("FAKTORY_PASSWORD")
+	_ = os.Unsetenv("FAKTORY_PASSWORD")
 
 	t.Run("ProductionSkipPassword", func(t *testing.T) {
-		os.Setenv("FAKTORY_SKIP_PASSWORD", "yes")
+		_ = os.Setenv("FAKTORY_SKIP_PASSWORD", "yes")
 
 		pwd, err := fetchPassword(emptyCfg, "production")
 		assert.NoError(t, err)
 		assert.Equal(t, "", pwd)
 	})
 
-	os.Unsetenv("FAKTORY_SKIP_PASSWORD")
+	_ = os.Unsetenv("FAKTORY_SKIP_PASSWORD")
 }

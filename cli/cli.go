@@ -208,7 +208,7 @@ func stringConfig(cfg map[string]any, subsys string, elm string, defval string) 
 // They are read in alphabetical order.
 // File contents are shallow merged, a latter file
 // can override a value from an earlier file.
-func readConfig(cdir string, env string) (map[string]any, error) {
+func readConfig(cdir string, _ string) (map[string]any, error) {
 	hash := map[string]any{}
 
 	globs := []string{

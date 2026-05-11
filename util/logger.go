@@ -58,9 +58,9 @@ func llog(lvl Level, msg string) {
 
 	if colorize {
 		color := colors[lvl]
-		fmt.Fprintf(logg, "\033[%dm%s\033[0m %s %s\n", color, prefix, ts, msg)
+		_, _ = fmt.Fprintf(logg, "\033[%dm%s\033[0m %s %s\n", color, prefix, ts, msg)
 	} else {
-		fmt.Fprintf(logg, "%s %s %s\n", prefix, ts, msg)
+		_, _ = fmt.Fprintf(logg, "%s %s %s\n", prefix, ts, msg)
 	}
 }
 

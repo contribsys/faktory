@@ -138,7 +138,7 @@ func pushAndPop(t *testing.T, count int) {
 	util.Infof("%+v", hash)
 }
 
-func pushJob(cl *client.Client, idx int) error {
+func pushJob(cl *client.Client, _ int) error {
 	return cl.Push(client.NewJob("SomeJob", 1, "string", 3))
 }
 

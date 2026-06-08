@@ -105,15 +105,16 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(NAME)_amd64 cmd/faktory/daemon.go
-	# brew install upx
+  # Allow v3 instructions, per https://lemire.me/blog/2026/06/06/how-much-do-amd64-microarchitecture-levels-help-in-go/
+  # Works on all 2013+ Intel hardware
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -o $(NAME)_amd64 cmd/faktory/daemon.go
+  # brew install upx
 	upx -qq ./$(NAME)_amd64
 	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(NAME)_arm64 cmd/faktory/daemon.go
-	# brew install upx
 	upx -qq ./$(NAME)_arm64
 
 build: clean generate
-	go build -o $(NAME) cmd/faktory/daemon.go
+	GOAMD64=v3 go build -o $(NAME) cmd/faktory/daemon.go
 
 mon:
 	redis-cli -s ~/.faktory/db/redis.sock

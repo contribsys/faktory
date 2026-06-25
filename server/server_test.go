@@ -117,6 +117,11 @@ func TestServerStart(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "+OK\r\n", result)
 
+		_, _ = fmt.Fprintf(conn, "ACK\n")
+		result, err = buf.ReadString('\n')
+		assert.NoError(t, err)
+		assert.Equal(t, "-ERR internal error\r\n", result)
+
 		_, _ = fmt.Fprintf(conn, "ACK {\"jid\":%q}\n", hash["jid"])
 		result, err = buf.ReadString('\n')
 		assert.NoError(t, err)

@@ -398,13 +398,23 @@ func (s *Server) processLines(conn *Connection) {
 			atomic.AddUint64(&s.Stats.Commands, 1)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
 			conn.Context = ctx
-			proc(conn, s, cmd)
+			safeDispatch(proc, conn, s, cmd)
 			cancel()
 		}
 		if verb == "END" {
 			break
 		}
 	}
+}
+
+func safeDispatch(proc command, conn *Connection, s *Server, cmd string) {
+	defer func() {
+		if r := recover(); r != nil {
+			util.Error("panic handling command", fmt.Errorf("%v: `%s`", r, cmd))
+			_ = conn.Error(cmd, fmt.Errorf("internal error"))
+		}
+	}()
+	proc(conn, s, cmd)
 }
 
 func (s *Server) uptimeInSeconds() uint64 {

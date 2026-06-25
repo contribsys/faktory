@@ -39,6 +39,10 @@ type Store interface {
 	// Equivalent to Redis's FLUSHDB
 	Flush(ctx context.Context) error
 
+	// data version for migration tracking
+	DataVersion(context.Context) (int64, error)
+	ApplyMigrations(context.Context) (int64, error)
+
 	Raw() KV
 	Redis
 }

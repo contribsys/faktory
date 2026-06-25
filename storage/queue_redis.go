@@ -13,12 +13,19 @@ import (
 type redisQueue struct {
 	store *redisStore
 	name  string
+	rname string
 	done  bool
 }
 
 func (store *redisStore) NewQueue(name string) *redisQueue {
 	return &redisQueue{
-		name:  name,
+		name: name,
+		// Inside redis, the queue data structure uses a "q:" prefix
+		// because the queue name is user-settable and we don't want the name
+		// to ever collide with other Faktory keys like "retries". If someone
+		// creates a queue called "retries", it will be called "q:retries" in
+		// Redis and not collide.
+		rname: "q:" + name,
 		store: store,
 		done:  false,
 	}
@@ -48,7 +55,7 @@ func (q *redisQueue) Name() string {
 func (q *redisQueue) Page(ctx context.Context, start int64, count int64, fn func(index int, data []byte) error) error {
 	index := 0
 
-	slice, err := q.store.rclient.LRange(ctx, q.name, start, start+count).Result()
+	slice, err := q.store.rclient.LRange(ctx, q.rname, start, start+count).Result()
 	for idx := range slice {
 		err = fn(index, []byte(slice[idx]))
 		if err != nil {
@@ -68,7 +75,7 @@ func (q *redisQueue) Clear(ctx context.Context) (uint64, error) {
 	defer q.store.mu.Unlock()
 
 	_, err := q.store.rclient.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.Unlink(ctx, q.name)
+		pipe.Unlink(ctx, q.rname)
 		pipe.SRem(ctx, "queues", q.name)
 		pipe.SRem(ctx, "paused", q.name)
 		return nil
@@ -87,7 +94,7 @@ func (q *redisQueue) init(ctx context.Context) error {
 }
 
 func (q *redisQueue) Size(ctx context.Context) uint64 {
-	return uint64(q.store.rclient.LLen(ctx, q.name).Val()) // nolint:gosec
+	return uint64(q.store.rclient.LLen(ctx, q.rname).Val()) // nolint:gosec
 }
 
 func (q *redisQueue) Add(ctx context.Context, job *client.Job) error {
@@ -101,7 +108,7 @@ func (q *redisQueue) Add(ctx context.Context, job *client.Job) error {
 }
 
 func (q *redisQueue) Push(ctx context.Context, payload []byte) error {
-	return q.store.rclient.LPush(ctx, q.name, payload).Err()
+	return q.store.rclient.LPush(ctx, q.rname, payload).Err()
 }
 
 // non-blocking, returns immediately if there's nothing enqueued
@@ -114,7 +121,7 @@ func (q *redisQueue) Pop(ctx context.Context) ([]byte, error) {
 }
 
 func (q *redisQueue) _pop(ctx context.Context) ([]byte, error) {
-	val, err := q.store.rclient.RPop(ctx, q.name).Result()
+	val, err := q.store.rclient.RPop(ctx, q.rname).Result()
 	if val == "" {
 		return nil, nil
 	}
@@ -122,7 +129,7 @@ func (q *redisQueue) _pop(ctx context.Context) ([]byte, error) {
 }
 
 func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
-	val, err := q.store.rclient.BRPop(ctx, 2*time.Second, q.name).Result()
+	val, err := q.store.rclient.BRPop(ctx, 2*time.Second, q.rname).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
@@ -135,7 +142,7 @@ func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
 
 func (q *redisQueue) Delete(ctx context.Context, vals [][]byte) error {
 	for idx := range vals {
-		err := q.store.rclient.LRem(ctx, q.name, 1, vals[idx]).Err()
+		err := q.store.rclient.LRem(ctx, q.rname, 1, vals[idx]).Err()
 		if err != nil {
 			return err
 		}

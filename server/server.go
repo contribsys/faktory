@@ -419,7 +419,7 @@ func (s *Server) CurrentState() (*client.FaktoryState, error) {
 	setCmd := map[string]*redis.IntCmd{}
 	_, err := s.store.Redis().Pipelined(ctx, func(pipe redis.Pipeliner) error {
 		s.store.EachQueue(ctx, func(q storage.Queue) {
-			queueCmd[q.Name()] = pipe.LLen(ctx, q.Name())
+			queueCmd[q.Name()] = pipe.LLen(ctx, "q:"+q.Name())
 		})
 		setCmd["scheduled"] = pipe.ZCard(ctx, "scheduled")
 		setCmd["retries"] = pipe.ZCard(ctx, "retries")

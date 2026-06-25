@@ -133,6 +133,7 @@ func TestLiveMiddleware(t *testing.T) {
 
 			j1, err := m.Fetch(context.Background(), "12345", "default")
 			assert.NoError(t, err)
+			assert.NotNil(t, j1)
 			assert.Equal(t, "Yep", j1.Type)
 			assert.EqualValues(t, 2, q.Size(bg))
 

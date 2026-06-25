@@ -107,7 +107,7 @@ func gatherLatencies(ctx context.Context, qs []string, store storage.Store) (map
 	queueCmd := map[string]*redis.StringCmd{}
 	_, err := store.Redis().Pipelined(ctx, func(pipe redis.Pipeliner) error {
 		for _, q := range qs {
-			queueCmd[q] = pipe.LIndex(ctx, q, -1)
+			queueCmd[q] = pipe.LIndex(ctx, "q:"+q, -1)
 		}
 		return nil
 	})

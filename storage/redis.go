@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -92,17 +93,9 @@ func bootRedis(path string, sock string) (func() error, error) {
 	if err != nil {
 		// util.Debugf("Redis not alive, booting... -- %s", err)
 
-		conffilename := "/tmp/redis.conf"
-		if _, err := os.Stat(conffilename); err != nil {
-			if os.IsNotExist(err) {
-				// nolint:gosec
-				err := os.WriteFile("/tmp/redis.conf", fmt.Appendf(nil, redisconf, client.Version), 0o444)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
+		conffilename := filepath.Join(path, "redis.conf") // path = operator-controlled StorageDirectory, not world-writable
+		if err := os.WriteFile(conffilename, fmt.Appendf(nil, redisconf, client.Version), 0o600); err != nil {
+			return nil, err
 		}
 
 		binary, err := exec.LookPath("redis-server")
@@ -440,6 +433,7 @@ port 0
 
 # Faktory's redis is only available via local Unix socket.
 # This maximizes performance and minimizes opsec risk.
+# This path is overridden by CLI argument above
 unixsocket /tmp/faktory-redis.sock
 unixsocketperm 700
 timeout 0
@@ -454,6 +448,7 @@ maxmemory-policy noeviction
 # notice (moderately verbose, what you want in production probably)
 # warning (only very important / critical messages are logged)
 loglevel notice
+# this path is overridden by CLI argument above
 logfile /tmp/faktory-redis.log
 
 # we're pretty aggressive on persistence to minimize data loss.

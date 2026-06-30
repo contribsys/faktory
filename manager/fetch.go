@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"slices"
+
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/redis/go-redis/v9"
-	"slices"
 )
 
 var (
@@ -55,17 +56,15 @@ func (m *manager) ResumeQueue(ctx context.Context, qName string) error {
 }
 
 // returns the subset of "queues" which are not in "paused"
+// and also adds the necessary "q:" prefix for the proper key name in Redis
 func filter(paused []string, queues []string) []string {
-	if len(paused) == 0 {
-		return queues
-	}
-
+	lenp := len(paused)
 	qs := make([]string, len(queues))
 	count := 0
 
 	for qidx := range queues {
-		if !contains(queues[qidx], paused) {
-			qs[count] = queues[qidx]
+		if lenp == 0 || !contains(queues[qidx], paused) {
+			qs[count] = "q:" + queues[qidx]
 			count++
 		}
 	}
@@ -179,6 +178,8 @@ func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) (L
 }
 
 func brpop(ctx context.Context, r *redis.Client, queues ...string) ([]byte, error) {
+	util.LogInfo = true
+	util.Infof("Fetching %v", queues)
 	val, err := r.BRPop(ctx, 2*time.Second, queues...).Result()
 	if err != nil {
 		if err == redis.Nil {

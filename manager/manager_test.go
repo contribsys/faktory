@@ -15,8 +15,8 @@ import (
 
 func TestManagerBasics(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, []string{"b", "c"}, filter([]string{"a"}, []string{"a", "b", "c"}))
-	assert.Equal(t, []string{"a"}, filter([]string{"c", "b"}, []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"q:b", "q:c"}, filter([]string{"a"}, []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"q:a"}, filter([]string{"c", "b"}, []string{"a", "b", "c"}))
 }
 
 func TestManager(t *testing.T) {
@@ -342,6 +342,7 @@ func withRedis(t *testing.T, name string, fn func(*testing.T, storage.Store)) {
 		panic(err)
 	}
 	defer func() { _ = stopper() }()
+	time.Sleep(10 * time.Millisecond)
 
 	store, err := storage.Open(sock, 10)
 	if err != nil {

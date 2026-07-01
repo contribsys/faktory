@@ -64,7 +64,7 @@ func filter(paused []string, queues []string) []string {
 
 	for qidx := range queues {
 		if lenp == 0 || !contains(queues[qidx], paused) {
-			qs[count] = "q:" + queues[qidx]
+			qs[count] = queues[qidx]
 			count++
 		}
 	}
@@ -178,9 +178,13 @@ func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) (L
 }
 
 func brpop(ctx context.Context, r *redis.Client, queues ...string) ([]byte, error) {
-	util.LogInfo = true
-	util.Infof("Fetching %v", queues)
-	val, err := r.BRPop(ctx, 2*time.Second, queues...).Result()
+	// util.Infof("Fetching %v", queues)
+
+	qs := make([]string, len(queues))
+	for _, q := range queues {
+		qs = append(qs, "q:"+q)
+	}
+	val, err := r.BRPop(ctx, 2*time.Second, qs...).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil

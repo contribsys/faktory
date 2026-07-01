@@ -15,8 +15,8 @@ import (
 
 func TestManagerBasics(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, []string{"q:b", "q:c"}, filter([]string{"a"}, []string{"a", "b", "c"}))
-	assert.Equal(t, []string{"q:a"}, filter([]string{"c", "b"}, []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"b", "c"}, filter([]string{"a"}, []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"a"}, filter([]string{"c", "b"}, []string{"a", "b", "c"}))
 }
 
 func TestManager(t *testing.T) {

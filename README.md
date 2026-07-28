@@ -1,4 +1,4 @@
-# Faktory [![CI](https://github.com/contribsys/faktory/actions/workflows/ci.yml/badge.svg)](https://github.com/contribsys/faktory/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory)
+# Faktory [![CI](https://github.com/contribsys/faktory/actions/workflows/ci.yml/badge.svg)](https://github.com/contribsys/faktory/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/contribsys/faktory)](https://goreportcard.com/report/github.com/contribsys/faktory) [![Ruby Users Forum](https://img.shields.io/discourse/topics?server=https%3A%2F%2Fwww.rubyforum.org&style=flat&logo=discourse&label=Ruby%20Users%20Forum)](https://www.rubyforum.org/tag/faktory)
 
 At a high level, Faktory is a work server.  It is the repository for
 background jobs within your application. Jobs have a type and a set of
@@ -30,7 +30,8 @@ Please [see the Faktory wiki](https://github.com/contribsys/faktory/wiki) for fu
 
 ## Support
 
-Open up a Discussion or Issue.
+- Open up a Discussion or Issue.
+- Join us in the `fakctory` tag on the [Ruby Users Forum](https://www.rubyforum.org/tag/faktory).
 
 ## Author
 

@@ -5,6 +5,10 @@ Changelog: [Faktory](https://github.com/contribsys/faktory/blob/main/Changes.md)
 A trial version of Faktory Enterprise for macOS is available with each [release](/contribsys/faktory/releases/).
 Click to purchase [Faktory Enterprise](https://billing.contribsys.com/fent/).
 
+## 1.10.0
+
+- Per Changes.md, security fixes, dependency updates, and optimized builds with `GOAMD64=v3`
+
 ## 1.9.4
 
 - Statsd now emits `queue.size` and `queue.latency` metrics with tags [#515]

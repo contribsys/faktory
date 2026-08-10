@@ -80,7 +80,7 @@ func decompose(key []byte) (float64, string, error) {
 
 func (rs *redisSorted) getScore(ctx context.Context, score float64) ([]string, error) {
 	strf := strconv.FormatFloat(score, 'f', -1, 64)
-	elms, err := rs.store.rclient.ZRangeByScore(ctx, rs.name, &redis.ZRangeBy{Min: strf, Max: strf}).Result()
+	elms, err := rs.store.rclient.ZRangeArgs(ctx, redis.ZRangeArgs{Key: rs.name, Start: strf, Stop: strf, ByScore: true}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (rs *redisSorted) RemoveBefore(ctx context.Context, timestamp string, maxCo
 	time_f := float64(tim.Unix()) + (float64(tim.Nanosecond()) / 1000000000)
 	strf := strconv.FormatFloat(time_f, 'f', -1, 64)
 
-	vals := rs.store.rclient.ZRangeByScore(ctx, rs.name, &redis.ZRangeBy{Min: "-inf", Max: strf, Count: maxCount})
+	vals := rs.store.rclient.ZRangeArgs(ctx, redis.ZRangeArgs{Key: rs.name, Start: "-inf", Stop: strf, Count: maxCount, ByScore: true})
 	jobs, err := vals.Result()
 	if err != nil {
 		return 0, err

@@ -31,7 +31,7 @@ Please [see the Faktory wiki](https://github.com/contribsys/faktory/wiki) for fu
 ## Support
 
 - Open up a Discussion or Issue.
-- Join us in the `fakctory` tag on the [Ruby Users Forum](https://www.rubyforum.org/tag/faktory).
+- Join us in the `faktory` tag on the [Ruby Users Forum](https://www.rubyforum.org/tag/faktory).
 
 ## Author
 

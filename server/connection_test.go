@@ -67,7 +67,7 @@ func dummyConnection() *Connection {
 	wc := &TestingWriteCloser{output: writeBuffer, Writer: bufio.NewWriter(writeBuffer)}
 
 	return &Connection{
-		client:  dummyClientData(),
+		Client:  dummyClientData(),
 		conn:    wc,
 		buf:     bufio.NewReader(strings.NewReader("")),
 		Context: context.Background(),

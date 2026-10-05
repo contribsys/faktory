@@ -207,12 +207,12 @@ func (w *workers) heartbeat(client *ClientBeat) (*ClientData, bool) {
 
 func (w *workers) RemoveConnection(c *Connection) {
 	w.mu.Lock()
-	cd, ok := w.heartbeats[c.client.Wid]
+	cd, ok := w.heartbeats[c.Client.Wid]
 	if ok {
 		delete(cd.connections, c)
 		if len(cd.connections) == 0 {
 			// util.Debugf("All worker connections closed, reaping %s", c.client.Wid)
-			delete(w.heartbeats, c.client.Wid)
+			delete(w.heartbeats, c.Client.Wid)
 		}
 	}
 	w.mu.Unlock()

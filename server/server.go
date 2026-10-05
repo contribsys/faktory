@@ -330,7 +330,7 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	cn := &Connection{
-		client: cl,
+		Client: cl,
 		conn:   conn,
 		buf:    buf,
 	}

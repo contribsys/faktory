@@ -17,13 +17,14 @@ func TestRetry(t *testing.T) {
 			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
+			wid := WorkerId("workerId")
 			job := client.NewJob("ManagerPush", 1, 2, 3)
 			retries := 1
 			job.Retry = &retries
 
-			lease := &simpleLease{job: job}
+			lease := &simpleLease{wid: wid, job: job}
 
-			err := m.reserve(bg, "workerId", lease)
+			err := m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -36,7 +37,7 @@ func TestRetry(t *testing.T) {
 			assert.False(t, lease.released)
 
 			fail := failure(job.Jid, "uh no", "SomeError", nil)
-			err = m.Fail(bg, fail)
+			err = m.Fail(bg, wid, fail)
 
 			assert.NoError(t, err)
 			assert.Nil(t, m.workingMap[job.Jid])
@@ -46,7 +47,7 @@ func TestRetry(t *testing.T) {
 			assert.True(t, lease.released)
 
 			// retry job
-			err = m.reserve(bg, "workerId", lease)
+			err = m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -57,7 +58,7 @@ func TestRetry(t *testing.T) {
 			assert.EqualValues(t, 0, store.Dead().Size(bg))
 
 			fail = failure(job.Jid, "uh no again", "YetAnotherError", nil)
-			err = m.Fail(bg, fail)
+			err = m.Fail(bg, wid, fail)
 
 			assert.NoError(t, err)
 			assert.Nil(t, m.workingMap[job.Jid])
@@ -71,12 +72,13 @@ func TestRetry(t *testing.T) {
 			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
+			wid := WorkerId("workerId")
 			job := client.NewJob("ManagerPush", 1, 2, 3)
 			retries := 0
 			job.Retry = &retries
 
-			lease := &simpleLease{job: job}
-			err := m.reserve(bg, "workerId", lease)
+			lease := &simpleLease{wid: wid, job: job}
+			err := m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -88,7 +90,7 @@ func TestRetry(t *testing.T) {
 			assert.EqualValues(t, 0, store.TotalFailures(bg))
 
 			fail := failure(job.Jid, "uh no", "SomeError", nil)
-			err = m.Fail(bg, fail)
+			err = m.Fail(bg, wid, fail)
 
 			assert.NoError(t, err)
 			assert.Nil(t, m.workingMap[job.Jid])
@@ -101,16 +103,17 @@ func TestRetry(t *testing.T) {
 		t.Run("FailWithInvalidFailPayload", func(t *testing.T) {
 			assert.NoError(t, store.Flush(bg))
 			m := NewManager(store)
+			wid := WorkerId("1234")
 
-			err := m.Fail(bg, nil)
+			err := m.Fail(bg, wid, nil)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "missing failure info")
 
-			err = m.Fail(bg, &FailPayload{})
+			err = m.Fail(bg, wid, &FailPayload{})
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "missing JID")
 
-			err = m.Fail(bg, &FailPayload{Jid: "1238123123"})
+			err = m.Fail(bg, wid, &FailPayload{Jid: "1238123123"})
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "not found")
 		})

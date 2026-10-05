@@ -20,7 +20,7 @@ type FailPayload struct {
 	Backtrace    []string `json:"backtrace"`
 }
 
-func (m *manager) Fail(ctx context.Context, failure *FailPayload) error {
+func (m *manager) Fail(ctx context.Context, wid WorkerId, failure *FailPayload) error {
 	if failure == nil {
 		return fmt.Errorf("missing failure info")
 	}
@@ -32,7 +32,7 @@ func (m *manager) Fail(ctx context.Context, failure *FailPayload) error {
 
 	cleanse(failure)
 
-	return m.processFailure(ctx, jid, failure)
+	return m.processFailure(ctx, wid, jid, failure)
 }
 
 func cleanse(failure *FailPayload) {
@@ -63,21 +63,26 @@ func cleanse(failure *FailPayload) {
 	}
 }
 
-func (m *manager) clearReservation(jid string) *Reservation {
+func (m *manager) clearReservation(wid WorkerId, jid string) *Reservation {
 	m.workingMutex.Lock()
+	defer m.workingMutex.Unlock()
+
 	res, ok := m.workingMap[jid]
 	if !ok {
-		m.workingMutex.Unlock()
+		return nil
+	}
+
+	// Only the owning worker can clear a reservation
+	if res.Wid != wid {
 		return nil
 	}
 
 	delete(m.workingMap, jid)
-	m.workingMutex.Unlock()
 	return res
 }
 
-func (m *manager) processFailure(ctx context.Context, jid string, failure *FailPayload) error {
-	res := m.clearReservation(jid)
+func (m *manager) processFailure(ctx context.Context, wid WorkerId, jid string, failure *FailPayload) error {
+	res := m.clearReservation(wid, jid)
 	if res == nil {
 		return fmt.Errorf("Job not found %s", jid)
 	}

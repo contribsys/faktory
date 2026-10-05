@@ -75,7 +75,7 @@ func contains(a string, slc []string) bool {
 	return slices.Contains(slc, a)
 }
 
-func (m *manager) Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error) {
+func (m *manager) Fetch(ctx context.Context, wid WorkerId, queues ...string) (*client.Job, error) {
 	if len(queues) == 0 {
 		return nil, fmt.Errorf("must call fetch with at least one queue")
 	}
@@ -121,7 +121,7 @@ restart:
 }
 
 type Fetcher interface {
-	Fetch(ctx context.Context, wid string, queues ...string) (Lease, error)
+	Fetch(ctx context.Context, wid WorkerId, queues ...string) (Lease, error)
 }
 
 type BasicFetch struct {
@@ -131,6 +131,7 @@ type BasicFetch struct {
 type simpleLease struct {
 	job      *client.Job
 	payload  []byte
+	wid      WorkerId
 	released bool
 }
 
@@ -166,13 +167,13 @@ func BasicFetcher(r *redis.Client) Fetcher {
 	return &BasicFetch{r: r}
 }
 
-func (f *BasicFetch) Fetch(ctx context.Context, wid string, queues ...string) (Lease, error) {
+func (f *BasicFetch) Fetch(ctx context.Context, wid WorkerId, queues ...string) (Lease, error) {
 	data, err := brpop(ctx, f.r, queues...)
 	if err != nil {
 		return nil, err
 	}
 	if data != nil {
-		return &simpleLease{payload: data}, nil
+		return &simpleLease{wid: wid, payload: data}, nil
 	}
 	return Nothing, nil
 }

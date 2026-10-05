@@ -245,8 +245,9 @@ func fetch(c *Connection, s *Server, cmd string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	wid := manager.WorkerId(c.Client.Wid)
 	qs := strings.Split(cmd, " ")[1:]
-	job, err := s.manager.Fetch(ctx, c.client.Wid, qs...)
+	job, err := s.manager.Fetch(ctx, wid, qs...)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return
@@ -278,7 +279,7 @@ func ack(c *Connection, s *Server, cmd string) {
 		_ = c.Error(cmd, fmt.Errorf("invalid ACK %s", data))
 		return
 	}
-	_, err = s.manager.Acknowledge(c.Context, jid)
+	_, err = s.manager.Acknowledge(c.Context, manager.WorkerId(c.Client.Wid), jid)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return
@@ -298,7 +299,8 @@ func fail(c *Connection, s *Server, cmd string) {
 		return
 	}
 
-	err = s.manager.Fail(c.Context, &failure)
+	wid := manager.WorkerId(c.Client.Wid)
+	err = s.manager.Fail(c.Context, wid, &failure)
 	if err != nil {
 		_ = c.Error(cmd, err)
 		return

@@ -318,7 +318,7 @@ func TestManager(t *testing.T) {
 
 				t.Log("Pushing job")
 				job := client.NewJob("ManagerPush", 1, 2, 3)
-				err = m.Push(bg, job)
+				err := m.Push(bg, job)
 				assert.NoError(t, err)
 			}()
 

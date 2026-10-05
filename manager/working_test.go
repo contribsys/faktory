@@ -23,8 +23,9 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.Working().Size(bg))
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			lease := &simpleLease{job: job}
-			err := m.reserve(bg, "workerId", lease)
+			wid := WorkerId("workerId")
+			lease := &simpleLease{wid: wid, job: job}
+			err := m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -44,8 +45,9 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.Working().Size(bg))
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			lease := &simpleLease{job: job}
-			err := m.reserve(bg, "workerId", lease)
+			wid := WorkerId("workerId")
+			lease := &simpleLease{wid: wid, job: job}
+			err := m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -63,8 +65,9 @@ func TestLoadWorkingSet(t *testing.T) {
 				assert.EqualValues(t, 0, store.Working().Size(bg))
 
 				// doesn't return an error but resets to default timeout
-				lease := &simpleLease{job: job}
-				err := m.reserve(bg, "workerId", lease)
+				wid := WorkerId("workerId")
+				lease := &simpleLease{wid: wid, job: job}
+				err := m.reserve(bg, wid, lease)
 
 				assert.NoError(t, err)
 				assert.EqualValues(t, 1, store.Working().Size(bg))
@@ -77,7 +80,8 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
-			job, err := m.Acknowledge(bg, "")
+			wid := WorkerId("1234")
+			job, err := m.Acknowledge(bg, wid, "")
 			assert.NoError(t, err)
 			assert.Nil(t, job)
 
@@ -90,8 +94,8 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.TotalProcessed(bg))
 			assert.EqualValues(t, 0, store.TotalFailures(bg))
 
-			lease := &simpleLease{job: job}
-			err = m.reserve(bg, "workerId", lease)
+			lease := &simpleLease{wid: wid, job: job}
+			err = m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, q.Size(bg))
@@ -101,18 +105,22 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.TotalFailures(bg))
 			assert.False(t, lease.released)
 
-			assert.EqualValues(t, 1, m.BusyCount("workerId"))
+			assert.EqualValues(t, 1, m.BusyCount(wid))
 			assert.EqualValues(t, 0, m.BusyCount("fakeId"))
 
-			aJob, err := m.Acknowledge(bg, job.Jid)
+			aJob, err := m.Acknowledge(bg, WorkerId("none"), job.Jid)
+			assert.NoError(t, err)
+			assert.Nil(t, aJob)
+
+			aJob, err = m.Acknowledge(bg, wid, job.Jid)
 			assert.NoError(t, err)
 			assert.Equal(t, job.Jid, aJob.Jid)
 			assert.EqualValues(t, 1, store.TotalProcessed(bg))
 			assert.EqualValues(t, 0, store.TotalFailures(bg))
-			assert.EqualValues(t, 0, m.BusyCount("workerId"))
+			assert.EqualValues(t, 0, m.BusyCount(wid))
 			assert.True(t, lease.released)
 
-			aJob, err = m.Acknowledge(bg, job.Jid)
+			aJob, err = m.Acknowledge(bg, wid, job.Jid)
 			assert.NoError(t, err)
 			assert.Nil(t, aJob)
 			assert.EqualValues(t, 1, store.TotalProcessed(bg))
@@ -123,6 +131,7 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.NoError(t, store.Flush(bg))
 			m := newManager(store)
 
+			wid := WorkerId("12345")
 			job := client.NewJob("WorkingJob", 1, 2, 3)
 			q, err := store.GetQueue(bg, job.Queue)
 			assert.NoError(t, err)
@@ -130,8 +139,8 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, store.Working().Size(bg))
 			assert.EqualValues(t, 0, m.WorkingCount())
 
-			lease := &simpleLease{job: job}
-			err = m.reserve(bg, "workerId", lease)
+			lease := &simpleLease{wid: wid, job: job}
+			err = m.reserve(bg, wid, lease)
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, 0, q.Size(bg))
@@ -144,13 +153,13 @@ func TestLoadWorkingSet(t *testing.T) {
 			assert.EqualValues(t, 0, count)
 			assert.EqualValues(t, 0, store.Retries().Size(bg))
 
-			err = m.ExtendReservation(bg, "nosuch", time.Now().Add(50*time.Hour))
+			err = m.ExtendReservation(bg, wid, "nosuch", time.Now().Add(50*time.Hour))
 			assert.NoError(t, err)
 
 			util.LogInfo = true
 			util.LogDebug = true
 			util.Infof("Extending %s", job.Jid)
-			err = m.ExtendReservation(bg, job.Jid, time.Now().Add(50*time.Hour))
+			err = m.ExtendReservation(bg, wid, job.Jid, time.Now().Add(50*time.Hour))
 			assert.NoError(t, err)
 
 			exp = time.Now().Add(time.Duration(DefaultTimeout+10) * time.Second)

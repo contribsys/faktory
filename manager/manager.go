@@ -23,6 +23,8 @@ const (
 	DeadTTL = 180 * 24 * time.Hour
 )
 
+type WorkerId string
+
 // A KnownError is one that returns a specific error code to the client
 // such that it can be handled explicitly.  For example, the unique job feature
 // will return a NOTUNIQUE error when the client tries to push() a job that already
@@ -84,16 +86,16 @@ type Manager interface {
 	// and returns if it gets any non-nil data.
 	//
 	// If all nil, the connection registers itself, blocking for a job.
-	Fetch(ctx context.Context, wid string, queues ...string) (*client.Job, error)
+	Fetch(ctx context.Context, wid WorkerId, queues ...string) (*client.Job, error)
 
-	Acknowledge(ctx context.Context, jid string) (*client.Job, error)
+	Acknowledge(ctx context.Context, wid WorkerId, jid string) (*client.Job, error)
 
-	Fail(ctx context.Context, fail *FailPayload) error
+	Fail(ctx context.Context, wid WorkerId, fail *FailPayload) error
 
 	// Allows arbitrary extension of a job's current reservation
 	// This is a no-op if you set the time before the current
 	// reservation expiry.
-	ExtendReservation(ctx context.Context, jid string, until time.Time) error
+	ExtendReservation(ctx context.Context, wid WorkerId, jid string, until time.Time) error
 
 	WorkingCount() int
 
@@ -108,7 +110,7 @@ type Manager interface {
 	// RetryJobs enqueues failed jobs
 	RetryJobs(ctx context.Context, when time.Time) (int64, error)
 
-	BusyCount(wid string) int
+	BusyCount(wid WorkerId) int
 
 	AddMiddleware(fntype string, fn MiddlewareFunc)
 

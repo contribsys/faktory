@@ -126,7 +126,7 @@ func ego_busy(w io.Writer, req *http.Request) {
 //line busy.ego:60
 			_, _ = io.WriteString(w, "</td>\n        <td>")
 //line busy.ego:61
-			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Manager().BusyCount(worker.Wid))))
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(ctx(req).Server().Manager().BusyCount(manager.WorkerId(worker.Wid)))))
 //line busy.ego:61
 			_, _ = io.WriteString(w, "</td>\n        <td>\n          <div class=\"btn-group d-flex justify-content-end\">\n            <form method=\"POST\">\n              ")
 //line busy.ego:65

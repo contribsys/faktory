@@ -26,7 +26,7 @@ type Reservation struct {
 	Job       *client.Job `json:"job"`
 	Since     string      `json:"reserved_at"`
 	Expiry    string      `json:"expires_at"`
-	Wid       string      `json:"wid"`
+	Wid       WorkerId    `json:"wid"`
 }
 
 func (res *Reservation) ReservedAt() time.Time {
@@ -37,10 +37,10 @@ func (res *Reservation) ExpiresAt() time.Time {
 	return res.texpiry
 }
 
-func (m *manager) ExtendReservation(ctx context.Context, jid string, until time.Time) error {
+func (m *manager) ExtendReservation(ctx context.Context, wid WorkerId, jid string, until time.Time) error {
 	m.workingMutex.Lock()
 	if localres, ok := m.workingMap[jid]; ok {
-		if localres.texpiry.Before(until) {
+		if localres.Wid == wid && localres.texpiry.Before(until) {
 			localres.extension = until
 		}
 	}
@@ -54,7 +54,7 @@ func (m *manager) WorkingCount() int {
 	return len(m.workingMap)
 }
 
-func (m *manager) BusyCount(wid string) int {
+func (m *manager) BusyCount(wid WorkerId) int {
 	m.workingMutex.RLock()
 	defer m.workingMutex.RUnlock()
 
@@ -108,7 +108,7 @@ func (m *manager) loadWorkingSet(ctx context.Context) error {
 	return nil
 }
 
-func (m *manager) reserve(ctx context.Context, wid string, lease Lease) error {
+func (m *manager) reserve(ctx context.Context, wid WorkerId, lease Lease) error {
 	now := time.Now()
 	job, _ := lease.Job()
 	timeout := job.ReserveFor
@@ -154,8 +154,8 @@ func (m *manager) reserve(ctx context.Context, wid string, lease Lease) error {
 	return nil
 }
 
-func (m *manager) Acknowledge(ctx context.Context, jid string) (*client.Job, error) {
-	res := m.clearReservation(jid)
+func (m *manager) Acknowledge(ctx context.Context, wid WorkerId, jid string) (*client.Job, error) {
+	res := m.clearReservation(wid, jid)
 	if res == nil {
 		util.Infof("No such job to acknowledge %s", jid)
 		return nil, nil
@@ -220,7 +220,7 @@ func (m *manager) ReapExpiredJobs(ctx context.Context, when time.Time) (int64, e
 			}
 
 			job := res.Job
-			err = m.processFailure(ctx, job.Jid, JobReservationExpired)
+			err = m.processFailure(ctx, res.Wid, job.Jid, JobReservationExpired)
 			if err != nil {
 				return fmt.Errorf("cannot retry reservation: %w", err)
 			}

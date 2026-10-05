@@ -182,7 +182,7 @@ func TestLiveMiddleware(t *testing.T) {
 			assert.Equal(t, "Yep", j1.Type)
 			assert.EqualValues(t, 0, q.Size(bg))
 
-			job, err = m.Acknowledge(bg, j1.Jid)
+			job, err = m.Acknowledge(bg, "12345", j1.Jid)
 			assert.NoError(t, err)
 			assert.NotNil(t, job)
 

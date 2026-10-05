@@ -58,7 +58,7 @@ func ego_busy(w io.Writer, req *http.Request) {
         <td><%= Timeago(worker.StartedAt) %></td>
         <td><%= worker.ConnectionCount() %></td>
         <td><%= displayRss(worker.RssKb) %></td>
-        <td><%= ctx(req).Server().Manager().BusyCount(worker.Wid) %></td>
+        <td><%= ctx(req).Server().Manager().BusyCount(manager.WorkerId(worker.Wid)) %></td>
         <td>
           <div class="btn-group d-flex justify-content-end">
             <form method="POST">

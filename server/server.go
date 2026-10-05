@@ -50,7 +50,7 @@ type Server struct {
 	Subsystems []Subsystem
 
 	mu     sync.Mutex
-	closed bool
+	closed atomic.Bool
 }
 
 func (s *Server) useTLS() error {
@@ -102,7 +102,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Subsystems: []Subsystem{},
 
 		stopper: make(chan bool),
-		closed:  false,
+		closed:  atomic.Bool{},
 	}
 
 	return s, nil
@@ -211,7 +211,7 @@ func (s *Server) Stopper() chan bool {
 func (s *Server) Stop(onStop func()) {
 	// Don't allow new network connections
 	s.mu.Lock()
-	s.closed = true
+	s.closed.Store(true)
 	if s.listener != nil {
 		_ = s.listener.Close()
 	}
@@ -391,7 +391,7 @@ func (s *Server) processLines(conn *Connection) {
 			}
 			util.Error("Unexpected socket error", e)
 		}
-		if s.closed {
+		if s.closed.Load() {
 			_ = conn.Error("Closing connection", fmt.Errorf("shutdown in progress"))
 			return
 		}

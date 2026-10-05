@@ -4,15 +4,13 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
 
 ## HEAD
 
+- **SECURITY** Authenticated clients could dribble in commands slowly, causing excessive memory usage and creating excessive connections.
+  Connections are now limited to a 10MB buffer and a 30 second timeout.
+- Fix erroneous ACK/FAIL with slow clients when a job reservation times out [#529]
 - Upgrade to Alpine Linux 3.24
 - Upgrade to Go 1.27
 - Enable Go's runtime monitoring with `pprof`. Start Faktory locally and hit `http://localhost:7421/debug/pprof`.
 Note the different port so you can't [expose pprof accidentally](https://mmcloughlin.com/posts/your-pprof-is-showing).
-
-## 1.10.1
-
-- **SECURITY** Authenticated clients could dribble in commands slowly, causing excessive
-  memory usage and creating excessive connections. Connections are now liimted to a 1MB buffer and a 30 second timeout.
 
 ## 1.10.0
 

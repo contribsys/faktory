@@ -73,7 +73,8 @@ func (m *manager) clearReservation(wid WorkerId, jid string) *Reservation {
 	}
 
 	// Only the owning worker can clear a reservation
-	if res.Wid != wid {
+	// TODO Remove first bit in 2.x since started tracking Wid in 1.10.1., issue 529
+	if res.Wid != "" && res.Wid != wid {
 		return nil
 	}
 

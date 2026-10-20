@@ -73,7 +73,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
     </div>
     <div class="pull-left">
       <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryNow") %></button>
-      <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "Delete") %></button>
+      <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "Delete") %></button>
     </div>
   </form>
 
@@ -83,7 +83,7 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
       <input type="hidden" name="key" value="all" />
       <div class="pull-right">
         <button class="btn btn-primary btn-sm" type="submit" name="action" value="retry"><%= t(req, "RetryAll") %></button>
-        <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete"><%= t(req, "DeleteAll") %></button>
+        <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-confirm="<%= t(req, "AreYouSure") %>"><%= t(req, "DeleteAll") %></button>
       </div>
     </form>
   <% } %>

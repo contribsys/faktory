@@ -95,7 +95,11 @@ func ego_dead(w io.Writer, req *http.Request, key string, dead *client.Job) {
 //line dead.ego:52
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetryNow"))))
 //line dead.ego:52
-		_, _ = io.WriteString(w, "</button>\n    <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\">")
+		_, _ = io.WriteString(w, "</button>\n    <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\" data-confirm=\"")
+//line dead.ego:53
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AreYouSure"))))
+//line dead.ego:53
+		_, _ = io.WriteString(w, "\">")
 //line dead.ego:53
 		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Delete"))))
 //line dead.ego:53

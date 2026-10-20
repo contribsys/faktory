@@ -141,7 +141,11 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 //line morgue.ego:75
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetryNow"))))
 //line morgue.ego:75
-			_, _ = io.WriteString(w, "</button>\n      <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\">")
+			_, _ = io.WriteString(w, "</button>\n      <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\" data-confirm=\"")
+//line morgue.ego:76
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AreYouSure"))))
+//line morgue.ego:76
+			_, _ = io.WriteString(w, "\">")
 //line morgue.ego:76
 			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Delete"))))
 //line morgue.ego:76
@@ -161,7 +165,11 @@ func ego_listDead(w io.Writer, req *http.Request, set storage.SortedSet, count, 
 //line morgue.ego:85
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "RetryAll"))))
 //line morgue.ego:85
-				_, _ = io.WriteString(w, "</button>\n        <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\">")
+				_, _ = io.WriteString(w, "</button>\n        <button class=\"btn btn-danger btn-sm\" type=\"submit\" name=\"action\" value=\"delete\" data-confirm=\"")
+//line morgue.ego:86
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "AreYouSure"))))
+//line morgue.ego:86
+				_, _ = io.WriteString(w, "\">")
 //line morgue.ego:86
 				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "DeleteAll"))))
 //line morgue.ego:86

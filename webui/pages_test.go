@@ -339,6 +339,8 @@ func TestPages(t *testing.T) {
 			morgueHandler(w, req)
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+			// Delete and Delete All ask before removing dead jobs
+			assert.Equal(t, 2, strings.Count(w.Body.String(), `value="delete" data-confirm=`), w.Body.String())
 		})
 
 		t.Run("Dead", func(t *testing.T) {
@@ -358,6 +360,7 @@ func TestPages(t *testing.T) {
 			deadHandler(w, req)
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), jid), w.Body.String())
+			assert.True(t, strings.Contains(w.Body.String(), `value="delete" data-confirm=`), w.Body.String())
 
 			assert.EqualValues(t, 1, q.Size(bg))
 			key := fmt.Sprintf("%s|%s", ts, jid)

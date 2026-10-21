@@ -10,7 +10,11 @@ import (
 )
 
 func TestMutateCommands(t *testing.T) {
-	runServer(":7419", func(*Server) {
+	// Not 7419: `go test` runs packages in parallel, and the system test in
+	// ./test serves the default port at the same time, so binding it here
+	// panicked with "address already in use" (#533).
+	t.Setenv("FAKTORY_URL", "tcp://localhost:4479")
+	runServer("localhost:4479", func(*Server) {
 		cl, err := faktory.Open()
 		assert.NoError(t, err)
 

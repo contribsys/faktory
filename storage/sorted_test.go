@@ -9,6 +9,7 @@ import (
 	"github.com/contribsys/faktory/client"
 	"github.com/contribsys/faktory/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasicSortedOps(t *testing.T) {
@@ -187,6 +188,118 @@ func TestBasicSortedOps(t *testing.T) {
 			assert.EqualValues(t, 0, sset.Size(bg))
 			assert.EqualValues(t, 1, store.Dead().Size(bg))
 
+		})
+	})
+}
+
+func TestSortedEntriesMatchByJid(t *testing.T) {
+	withRedis(t, "sorted_jid", func(t *testing.T, store Store) {
+		bg := context.Background()
+		at := util.Thens(time.Now().Add(time.Hour))
+
+		t.Run("stale key", func(t *testing.T) {
+			sset := store.Scheduled()
+			assert.NoError(t, sset.Clear(bg))
+
+			// two jobs scheduled for the same time
+			first := client.NewJob("First", 1)
+			first.At = at
+			assert.NoError(t, sset.Add(bg, first))
+			second := client.NewJob("Second", 2)
+			second.At = at
+			assert.NoError(t, sset.Add(bg, second))
+			assert.EqualValues(t, 2, sset.Size(bg))
+
+			key := []byte(at + "|" + first.Jid)
+			ok, err := sset.Remove(bg, key)
+			assert.NoError(t, err)
+			assert.True(t, ok)
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			// the first job is gone, so its key must not match the second job
+			entry, err := sset.Get(bg, key)
+			assert.NoError(t, err)
+			assert.Nil(t, entry)
+
+			ok, err = sset.Remove(bg, key)
+			assert.NoError(t, err)
+			assert.False(t, ok)
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			ok, err = sset.RemoveElement(bg, at, first.Jid)
+			assert.NoError(t, err)
+			assert.False(t, ok)
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			q, err := store.GetQueue(bg, "default")
+			assert.NoError(t, err)
+			_, err = q.Clear(bg)
+			assert.NoError(t, err)
+			assert.NoError(t, store.EnqueueFrom(bg, sset, key))
+			assert.EqualValues(t, 0, q.Size(bg))
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			entry, err = sset.Get(bg, []byte(at+"|"+second.Jid))
+			assert.NoError(t, err)
+			require.NotNil(t, entry)
+			job, err := entry.Job()
+			assert.NoError(t, err)
+			assert.Equal(t, second.Jid, job.Jid)
+			assert.NoError(t, sset.Clear(bg))
+		})
+
+		t.Run("jid in another job's payload", func(t *testing.T) {
+			sset := store.Scheduled()
+			assert.NoError(t, sset.Clear(bg))
+
+			child := client.NewJob("Child", 1)
+			child.At = at
+			// a job that references the other job's jid in its args
+			parent := client.NewJob("Parent")
+			parent.At = at
+			parent.Jid = "0" + parent.Jid[1:] // sorts before the child's payload
+			child.Jid = "1" + child.Jid[1:]
+			parent.Args = []any{child.Jid}
+			assert.NoError(t, sset.Add(bg, parent))
+			assert.NoError(t, sset.Add(bg, child))
+
+			ok, err := sset.Remove(bg, []byte(at+"|"+child.Jid))
+			assert.NoError(t, err)
+			assert.True(t, ok)
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			entry, err := sset.Get(bg, []byte(at+"|"+parent.Jid))
+			assert.NoError(t, err)
+			require.NotNil(t, entry)
+			job, err := entry.Job()
+			assert.NoError(t, err)
+			assert.Equal(t, parent.Jid, job.Jid)
+			assert.NoError(t, sset.Clear(bg))
+		})
+
+		t.Run("working set reservations", func(t *testing.T) {
+			sset := store.Working()
+			assert.NoError(t, sset.Clear(bg))
+
+			jid1, jid2 := util.RandomJid(), util.RandomJid()
+			res := func(jid string) []byte {
+				return fmt.Appendf(nil, `{"job":{"jid":%q,"queue":"default","jobtype":"X","args":[]},"reserved_at":%q,"expires_at":%q,"wid":"w1"}`, jid, at, at)
+			}
+			assert.NoError(t, sset.AddElement(bg, at, jid1, res(jid1)))
+			assert.NoError(t, sset.AddElement(bg, at, jid2, res(jid2)))
+
+			ok, err := sset.RemoveElement(bg, at, jid1)
+			assert.NoError(t, err)
+			assert.True(t, ok)
+			ok, err = sset.RemoveElement(bg, at, jid1)
+			assert.NoError(t, err)
+			assert.False(t, ok)
+			assert.EqualValues(t, 1, sset.Size(bg))
+
+			ok, err = sset.RemoveElement(bg, at, jid2)
+			assert.NoError(t, err)
+			assert.True(t, ok)
+			assert.EqualValues(t, 0, sset.Size(bg))
 		})
 	})
 }

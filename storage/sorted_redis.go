@@ -97,19 +97,35 @@ func (rs *redisSorted) Get(ctx context.Context, key []byte) (SortedEntry, error)
 	if err != nil {
 		return nil, err
 	}
-	if len(elms) == 0 {
-		return nil, nil
-	}
-	if len(elms) == 1 {
-		return NewEntry(time_f, []byte(elms[0])), nil
-	}
-
 	for idx := range elms {
-		if strings.Index(elms[idx], jid) > 0 {
+		if memberHasJid(elms[idx], jid) {
 			return NewEntry(time_f, []byte(elms[idx])), nil
 		}
 	}
 	return nil, nil
+}
+
+// memberHasJid reports whether a sorted set member is the payload of the
+// given job: either the job itself or a reservation wrapping it. Several
+// members can share a score, and the member at a key's score may belong to
+// another job once the key's own job is gone, so the jid has to be checked.
+func memberHasJid(member string, jid string) bool {
+	if !strings.Contains(member, jid) {
+		return false
+	}
+	var payload struct {
+		Job *struct {
+			Jid string `json:"jid"`
+		} `json:"job"`
+		Jid string `json:"jid"`
+	}
+	if err := util.JsonUnmarshal([]byte(member), &payload); err != nil {
+		return false
+	}
+	if payload.Jid != "" {
+		return payload.Jid == jid
+	}
+	return payload.Job != nil && payload.Job.Jid == jid
 }
 
 type setEntry struct {
@@ -225,16 +241,8 @@ func (rs *redisSorted) rem(ctx context.Context, time_f float64, jid string) (boo
 	if err != nil {
 		return false, err
 	}
-	if len(elms) == 0 {
-		return false, nil
-	}
-	if len(elms) == 1 {
-		count, err := rs.store.rclient.ZRem(ctx, rs.name, elms[0]).Result()
-		return count == 1, err
-	}
-
 	for idx := range elms {
-		if strings.Index(elms[idx], jid) > 0 {
+		if memberHasJid(elms[idx], jid) {
 			count, err := rs.store.rclient.ZRem(ctx, rs.name, elms[idx]).Result()
 			return count == 1, err
 		}

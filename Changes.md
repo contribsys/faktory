@@ -8,6 +8,7 @@ Changelog: Faktory || [Faktory Enterprise](https://github.com/contribsys/faktory
   Connections are now limited to a 10MB buffer and a 30 second timeout.
 - Fix erroneous ACK/FAIL with slow clients when a job reservation times out [#529]
 - Web UI asks for confirmation before deleting a dead job or all dead jobs [#530]
+- Web UI Debug page lists all connected processes, workers and clients, with their connection counts [#532]
 - Upgrade to Alpine Linux 3.24
 - Upgrade to Go 1.27
 - Enable Go's runtime monitoring with `pprof`. Start Faktory locally and hit `http://localhost:7421/debug/pprof`.

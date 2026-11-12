@@ -142,26 +142,130 @@ func ego_debug(w io.Writer, req *http.Request) {
 //line debug.ego:72
 		_, _ = io.WriteString(w, " µs\n      </td>\n    </tr>\n  </tbody>\n</table>\n</div>\n\n<h3>")
 //line debug.ego:79
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Info"))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Connections"))))
 //line debug.ego:79
-		_, _ = io.WriteString(w, "</h3>\n<pre>\n")
-//line debug.ego:81
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rdata)))
-//line debug.ego:82
-		_, _ = io.WriteString(w, "\n</pre>\n\n<h3>")
+		_, _ = io.WriteString(w, "</h3>\n<div class=\"table-responsive\">\n  <table class=\"connections table table-hover table-bordered table-striped table-light\">\n    <thead>\n      <th>")
+//line debug.ego:83
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Name"))))
+//line debug.ego:83
+		_, _ = io.WriteString(w, "</th>\n      <th>")
 //line debug.ego:84
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Disk Usage"))))
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Address"))))
 //line debug.ego:84
-		_, _ = io.WriteString(w, "</h3>\n<pre>\n<code>&gt; df -h</code>\n")
+		_, _ = io.WriteString(w, "</th>\n      <th>")
+//line debug.ego:85
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "ID"))))
+//line debug.ego:85
+		_, _ = io.WriteString(w, "</th>\n      <th>")
+//line debug.ego:86
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Started"))))
+//line debug.ego:86
+		_, _ = io.WriteString(w, "</th>\n      <th>")
 //line debug.ego:87
-		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(df_h())))
-//line debug.ego:88
-		_, _ = io.WriteString(w, "\n</pre>\n\n")
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Connections"))))
+//line debug.ego:87
+		_, _ = io.WriteString(w, "</th>\n    </thead>\n    ")
+//line debug.ego:89
+		total := 0
 //line debug.ego:90
+		_, _ = io.WriteString(w, "\n    ")
+//line debug.ego:90
+		for _, cc := range ctx(req).Server().ClientConnections() {
+//line debug.ego:91
+			_, _ = io.WriteString(w, "\n      ")
+//line debug.ego:91
+			total += cc.Connections
+//line debug.ego:92
+			_, _ = io.WriteString(w, "\n      <tr>\n        <td>\n          ")
+//line debug.ego:94
+			if cc.Hostname != "" || cc.Pid != 0 {
+//line debug.ego:95
+				_, _ = io.WriteString(w, "\n            <code>")
+//line debug.ego:95
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(cc.Hostname)))
+//line debug.ego:95
+				_, _ = io.WriteString(w, ":")
+//line debug.ego:95
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(cc.Pid)))
+//line debug.ego:95
+				_, _ = io.WriteString(w, "</code>\n          ")
+//line debug.ego:96
+			}
+//line debug.ego:97
+			_, _ = io.WriteString(w, "\n          ")
+//line debug.ego:97
+			if cc.IsConsumer() {
+//line debug.ego:98
+				_, _ = io.WriteString(w, "\n            <span class=\"badge bg-success\">worker</span>\n          ")
+//line debug.ego:99
+			} else {
+//line debug.ego:100
+				_, _ = io.WriteString(w, "\n            <span class=\"badge bg-secondary\">client</span>\n          ")
+//line debug.ego:101
+			}
+//line debug.ego:102
+			_, _ = io.WriteString(w, "\n          ")
+//line debug.ego:102
+			for _, label := range cc.Labels {
+//line debug.ego:103
+				_, _ = io.WriteString(w, "\n            <span class=\"badge bg-primary\">")
+//line debug.ego:103
+				_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(label)))
+//line debug.ego:103
+				_, _ = io.WriteString(w, "</span>\n          ")
+//line debug.ego:104
+			}
+//line debug.ego:105
+			_, _ = io.WriteString(w, "\n        </td>\n        <td><code>")
+//line debug.ego:106
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(cc.Address)))
+//line debug.ego:106
+			_, _ = io.WriteString(w, "</code></td>\n        <td><code>")
+//line debug.ego:107
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(cc.Wid)))
+//line debug.ego:107
+			_, _ = io.WriteString(w, "</code></td>\n        <td>")
+//line debug.ego:108
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(Timeago(cc.Since))))
+//line debug.ego:108
+			_, _ = io.WriteString(w, "</td>\n        <td>")
+//line debug.ego:109
+			_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(cc.Connections)))
+//line debug.ego:109
+			_, _ = io.WriteString(w, "</td>\n      </tr>\n    ")
+//line debug.ego:111
+		}
+//line debug.ego:112
+		_, _ = io.WriteString(w, "\n    <tfoot>\n      <tr>\n        <th colspan=\"4\">")
+//line debug.ego:114
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Total"))))
+//line debug.ego:114
+		_, _ = io.WriteString(w, "</th>\n        <th>")
+//line debug.ego:115
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(total)))
+//line debug.ego:115
+		_, _ = io.WriteString(w, "</th>\n      </tr>\n    </tfoot>\n  </table>\n</div>\n\n<h3>")
+//line debug.ego:121
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Redis Info"))))
+//line debug.ego:121
+		_, _ = io.WriteString(w, "</h3>\n<pre>\n")
+//line debug.ego:123
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(rdata)))
+//line debug.ego:124
+		_, _ = io.WriteString(w, "\n</pre>\n\n<h3>")
+//line debug.ego:126
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(t(req, "Disk Usage"))))
+//line debug.ego:126
+		_, _ = io.WriteString(w, "</h3>\n<pre>\n<code>&gt; df -h</code>\n")
+//line debug.ego:129
+		_, _ = io.WriteString(w, html.EscapeString(fmt.Sprint(df_h())))
+//line debug.ego:130
+		_, _ = io.WriteString(w, "\n</pre>\n\n")
+//line debug.ego:132
 	})
-//line debug.ego:91
+//line debug.ego:133
 	_, _ = io.WriteString(w, "\n")
-//line debug.ego:91
+//line debug.ego:133
 }
 
 var _ fmt.Stringer

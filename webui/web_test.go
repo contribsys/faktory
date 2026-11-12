@@ -34,6 +34,7 @@ func TestLiveServer(t *testing.T) {
 			debugHandler(w, req)
 			assert.Equal(t, 200, w.Code)
 			assert.True(t, strings.Contains(w.Body.String(), "Disk Usage"), w.Body.String())
+			assert.True(t, strings.Contains(w.Body.String(), "Connections"), w.Body.String())
 		})
 
 		t.Run("Health", func(t *testing.T) {

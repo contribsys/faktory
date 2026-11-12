@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"github.com/contribsys/faktory/manager"
 )
@@ -21,6 +22,10 @@ type Connection struct {
 	conn   io.WriteCloser
 	buf    *bufio.Reader
 	context.Context
+
+	// remote IP of the client
+	address   string
+	startedAt time.Time
 }
 
 func (c *Connection) Close() error {

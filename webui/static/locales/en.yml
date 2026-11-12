@@ -53,6 +53,8 @@ en: # <---- change this to your locale code
   active: active
   Version: Version
   Connections: Connections
+  Address: Address
+  Total: Total
   MemoryUsage: Memory Usage
   PeakMemoryUsage: Peak Memory Usage
   Uptime: Uptime (days)

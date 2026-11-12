@@ -41,6 +41,7 @@ type Server struct {
 
 	tlsConfig  *tls.Config
 	workers    *workers
+	conns      *connections
 	taskRunner *taskRunner
 	stopper    chan bool
 
@@ -101,6 +102,7 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 		Stats:      &RuntimeStats{StartedAt: time.Now()},
 		Subsystems: []Subsystem{},
 
+		conns:   newConnections(),
 		stopper: make(chan bool),
 		closed:  atomic.Bool{},
 	}
@@ -110,6 +112,12 @@ func NewServer(opts *ServerOptions) (*Server, error) {
 
 func (s *Server) Heartbeats() map[string]*ClientData {
 	return s.workers.heartbeats
+}
+
+// ClientConnections returns the live connection count for every
+// connected process, both workers and clients which only push jobs.
+func (s *Server) ClientConnections() []*ClientConnections {
+	return s.conns.summary()
 }
 
 func (s *Server) Store() storage.Store {
@@ -229,6 +237,7 @@ func (s *Server) Stop(onStop func()) {
 func cleanupConnection(s *Server, c *Connection) {
 	// util.Debugf("Removing client connection %+v", c)
 	s.workers.RemoveConnection(c)
+	s.conns.remove(c)
 }
 
 func hash(pwd, salt string, iterations int) string {
@@ -330,9 +339,11 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 	}
 
 	cn := &Connection{
-		Client: cl,
-		conn:   conn,
-		buf:    buf,
+		Client:    cl,
+		conn:      conn,
+		buf:       buf,
+		address:   remoteIP(conn),
+		startedAt: time.Now(),
 	}
 
 	if cl.Wid == "" {
@@ -350,6 +361,8 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	// disable deadline
 	_ = conn.SetDeadline(time.Time{})
+
+	s.conns.add(cn)
 
 	// if cl.Username != "" {
 	// util.Debugf("Successful connection from %s", cl.Username)

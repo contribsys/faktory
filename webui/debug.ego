@@ -76,6 +76,48 @@ func ego_debug(w io.Writer, req *http.Request) {
 </table>
 </div>
 
+<h3><%= t(req, "Connections") %></h3>
+<div class="table-responsive">
+  <table class="connections table table-hover table-bordered table-striped table-light">
+    <thead>
+      <th><%= t(req, "Name") %></th>
+      <th><%= t(req, "Address") %></th>
+      <th><%= t(req, "ID") %></th>
+      <th><%= t(req, "Started") %></th>
+      <th><%= t(req, "Connections") %></th>
+    </thead>
+    <% total := 0 %>
+    <% for _, cc := range ctx(req).Server().ClientConnections() { %>
+      <% total += cc.Connections %>
+      <tr>
+        <td>
+          <% if cc.Hostname != "" || cc.Pid != 0 { %>
+            <code><%= cc.Hostname %>:<%= cc.Pid %></code>
+          <% } %>
+          <% if cc.IsConsumer() { %>
+            <span class="badge bg-success">worker</span>
+          <% } else { %>
+            <span class="badge bg-secondary">client</span>
+          <% } %>
+          <% for _, label := range cc.Labels { %>
+            <span class="badge bg-primary"><%= label %></span>
+          <% } %>
+        </td>
+        <td><code><%= cc.Address %></code></td>
+        <td><code><%= cc.Wid %></code></td>
+        <td><%= Timeago(cc.Since) %></td>
+        <td><%= cc.Connections %></td>
+      </tr>
+    <% } %>
+    <tfoot>
+      <tr>
+        <th colspan="4"><%= t(req, "Total") %></th>
+        <th><%= total %></th>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
 <h3><%= t(req, "Redis Info") %></h3>
 <pre>
 <%= rdata %>
